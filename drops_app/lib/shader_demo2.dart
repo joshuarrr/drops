@@ -405,8 +405,8 @@ class _ShaderDemo2State extends State<ShaderDemo2>
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         _buildEffectButton(ShaderEffect.none, Icons.panorama, 'None'),
-        _buildEffectButton(ShaderEffect.wave, Icons.waves, 'Wave'),
         _buildEffectButton(ShaderEffect.color, Icons.color_lens, 'Color'),
+        _buildEffectButton(ShaderEffect.wave, Icons.waves, 'Wave'),
         _buildEffectButton(ShaderEffect.pixelate, Icons.grain, 'Blur'),
       ],
     );
@@ -489,49 +489,13 @@ class _ShaderDemo2State extends State<ShaderDemo2>
     return Center(
       child: Container(
         width: MediaQuery.of(context).size.width * 0.8,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: _isCurrentImageDark
-              ? Colors.black.withOpacity(0.7)
-              : Colors.white.withOpacity(0.7),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: _isCurrentImageDark
-                ? Colors.white.withOpacity(0.3)
-                : Colors.black.withOpacity(0.3),
-            width: 1,
-          ),
-        ),
+        padding: const EdgeInsets.symmetric(vertical: 16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              _getEffectTitle(),
-              style: TextStyle(
-                color: _isCurrentImageDark ? Colors.white : Colors.black,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-            ..._buildSlidersForCurrentEffect(),
-          ],
+          children: _buildSlidersForCurrentEffect(),
         ),
       ),
     );
-  }
-
-  String _getEffectTitle() {
-    switch (_selectedEffect) {
-      case ShaderEffect.wave:
-        return 'Wave Effect Settings';
-      case ShaderEffect.color:
-        return 'Color Effect Settings';
-      case ShaderEffect.pixelate:
-        return 'Blur Effect Settings';
-      default:
-        return 'Effect Settings';
-    }
   }
 
   List<Widget> _buildSlidersForCurrentEffect() {
@@ -566,18 +530,6 @@ class _ShaderDemo2State extends State<ShaderDemo2>
 
       case ShaderEffect.color:
         return [
-          // Section header for base image adjustments
-          Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: Text(
-              'Image Color Adjustments',
-              style: TextStyle(
-                color: _isCurrentImageDark ? Colors.white : Colors.black,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
           _buildSlider(
             label: 'Hue',
             value: _colorSettings.hue,
@@ -611,30 +563,7 @@ class _ShaderDemo2State extends State<ShaderDemo2>
             sliderColor: sliderColor,
             defaultValue: 0.0,
           ),
-
-          // Section divider
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Divider(
-              color: _isCurrentImageDark
-                  ? Colors.white.withOpacity(0.3)
-                  : Colors.black.withOpacity(0.3),
-              thickness: 1,
-            ),
-          ),
-
-          // Section header for color overlay
-          Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: Text(
-              'Color Overlay',
-              style: TextStyle(
-                color: _isCurrentImageDark ? Colors.white : Colors.black,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
+          const SizedBox(height: 16),
           _buildSlider(
             label: 'Overlay Hue',
             value: _colorSettings.overlayHue,
