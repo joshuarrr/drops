@@ -145,7 +145,12 @@ class _ShaderDemo2State extends State<ShaderDemo2>
                 right: 0,
                 left: 0,
                 child: Container(
-                  padding: const EdgeInsets.fromLTRB(16, 40, 16, 8),
+                  padding: const EdgeInsets.fromLTRB(
+                    16,
+                    20,
+                    16,
+                    8,
+                  ), // Reduce top padding
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
@@ -491,8 +496,8 @@ class _ShaderDemo2State extends State<ShaderDemo2>
         width: MediaQuery.of(context).size.width * 0.8,
         padding: const EdgeInsets.symmetric(vertical: 16),
         margin: const EdgeInsets.only(
-          top: 60,
-        ), // Add margin from the top buttons
+          top: 100,
+        ), // Increase top margin significantly
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: _buildSlidersForCurrentEffect(),
