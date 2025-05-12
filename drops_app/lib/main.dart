@@ -1,7 +1,18 @@
 import 'package:flutter/material.dart';
-import 'shader_demo.dart';
+import 'package:flutter/services.dart';
+import 'demos_screen.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Set preferred orientations and full screen mode
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge, overlays: []);
+
   runApp(const MyApp());
 }
 
@@ -15,6 +26,8 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
+        // Make app background black to ensure no white edges
+        scaffoldBackgroundColor: Colors.black,
       ),
       home: const MainScreen(),
       debugShowCheckedModeBanner: false,
@@ -30,11 +43,11 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _selectedIndex = 0;
+  int _selectedIndex = 1; // Start with Demos selected
 
   static final List<Widget> _screens = [
     const GradientScreen(),
-    const ShaderDemo(),
+    const DemosScreen(),
     const ThemesScreen(),
   ];
 
@@ -48,26 +61,27 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: _screens[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.science), label: 'Demos'),
-          BottomNavigationBarItem(icon: Icon(Icons.palette), label: 'Themes'),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.blue,
-        onTap: _onItemTapped,
+      extendBody: true,
+      bottomNavigationBar: Theme(
+        data: Theme.of(context).copyWith(
+          // Make navigation bar transparent with a slight gradient background
+          canvasColor: Colors.black.withOpacity(0.7),
+        ),
+        child: BottomNavigationBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          items: const <BottomNavigationBarItem>[
+            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+            BottomNavigationBarItem(icon: Icon(Icons.science), label: 'Demos'),
+            BottomNavigationBarItem(icon: Icon(Icons.palette), label: 'Themes'),
+          ],
+          currentIndex: _selectedIndex,
+          selectedItemColor: Colors.blue,
+          unselectedItemColor: Colors.grey,
+          onTap: _onItemTapped,
+        ),
       ),
     );
-  }
-}
-
-class DemosScreen extends StatelessWidget {
-  const DemosScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const ShaderDemo();
   }
 }
 
@@ -120,12 +134,12 @@ class _GradientScreenState extends State<GradientScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: const Text('Home'),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      extendBodyBehindAppBar: true,
       body: FadeTransition(
         opacity: _animation,
         child: Container(
