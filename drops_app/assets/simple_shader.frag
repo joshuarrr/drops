@@ -11,29 +11,43 @@ out vec4 fragColor;
 void main() {
   vec2 uv = gl_FragCoord.xy / uResolution;
   
-  // Calculate aspect ratio to ensure image fills screen
-  float imageAspect = float(textureSize(uTexture, 0).x) / float(textureSize(uTexture, 0).y);
+  // Reduce overscale factor to improve performance
+  const float overscaleFactor = 1.2; // Reduced from 2.0 to 1.2 for better performance
+  
+  // Get texture dimensions
+  vec2 texSize = vec2(textureSize(uTexture, 0));
+  float imageAspect = texSize.x / texSize.y;
   float screenAspect = uResolution.x / uResolution.y;
   
-  // Adjust UVs to fill screen while maintaining aspect ratio
-  vec2 adjustedUV = uv;
+  // Calculate scaling to ensure both dimensions are fully covered
+  vec2 scale = vec2(1.0);
+  
   if (screenAspect > imageAspect) {
-    // Screen is wider than image
-    float scale = screenAspect / imageAspect;
-    adjustedUV.x = (uv.x - 0.5) * scale + 0.5;
+    // Screen is wider than image - scale based on width but ensure height fills too
+    scale = vec2(screenAspect / imageAspect, 1.0) * overscaleFactor;
   } else {
-    // Screen is taller than image
-    float scale = imageAspect / screenAspect;
-    adjustedUV.y = (uv.y - 0.5) * scale + 0.5;
+    // Screen is taller than image - scale based on height but ensure width fills too
+    scale = vec2(1.0, imageAspect / screenAspect) * overscaleFactor;
   }
   
-  // Apply distortion effect
-  vec2 distortedUV = adjustedUV + vec2(
-    sin(adjustedUV.y * 10.0 + uTime) * 0.01, 
-    cos(adjustedUV.x * 10.0 + uTime) * 0.01
+  // Center the image with the new scaling
+  vec2 centered = (uv - 0.5) / scale + 0.5;
+  
+  // Simplify distortion effect to improve performance
+  vec2 distortedUV = centered + vec2(
+    sin(centered.y * 4.0 + uTime) * 0.001, // Reduced frequency and amplitude
+    cos(centered.x * 4.0 + uTime) * 0.001
   );
   
+  // Use normal clamp to prevent image "cropping"
+  distortedUV = clamp(distortedUV, 0.0, 1.0);
+  
   vec4 color = texture(uTexture, distortedUV);
+  
+  // Handle images with transparency
+  if (color.a < 1.0) {
+    color = vec4(mix(vec3(0.0), color.rgb, color.a), 1.0);
+  }
   
   fragColor = color;
 } 
