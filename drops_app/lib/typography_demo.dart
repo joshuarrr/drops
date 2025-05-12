@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'theme/theme_provider.dart';
+import 'package:provider/provider.dart';
+import 'common/app_scaffold.dart';
 
 class TypographyDemo extends StatefulWidget {
   const TypographyDemo({super.key});
@@ -8,7 +11,6 @@ class TypographyDemo extends StatefulWidget {
 }
 
 class _TypographyDemoState extends State<TypographyDemo> {
-  bool _useDarkMode = true;
   String _selectedFontFamily = 'Default';
 
   // Available font families to showcase
@@ -22,38 +24,49 @@ class _TypographyDemoState extends State<TypographyDemo> {
 
   @override
   Widget build(BuildContext context) {
-    final Color backgroundColor = _useDarkMode ? Colors.black : Colors.white;
-    final Color textColor = _useDarkMode ? Colors.white : Colors.black;
-    final Color accentColor = _useDarkMode
-        ? Colors.blue.shade400
-        : Colors.blue.shade800;
+    final theme = Theme.of(context);
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Typography Demo'),
-        backgroundColor: backgroundColor.withOpacity(0.8),
-        foregroundColor: textColor,
-        actions: [
-          // Toggle between light and dark mode
-          IconButton(
-            icon: Icon(_useDarkMode ? Icons.light_mode : Icons.dark_mode),
-            onPressed: () {
-              setState(() {
-                _useDarkMode = !_useDarkMode;
-              });
-            },
-          ),
-        ],
+    final textColor = theme.colorScheme.onBackground;
+    final accentColor = theme.colorScheme.primary;
+
+    // Theme toggle action for app bar
+    final themeToggle = IconButton(
+      icon: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        transitionBuilder: (Widget child, Animation<double> animation) {
+          return RotationTransition(
+            turns: animation,
+            child: FadeTransition(opacity: animation, child: child),
+          );
+        },
+        child: Icon(
+          isDarkMode ? Icons.light_mode : Icons.dark_mode,
+          key: ValueKey<bool>(isDarkMode),
+        ),
       ),
-      body: Container(
-        color: backgroundColor,
+      onPressed: () {
+        themeProvider.toggleTheme();
+      },
+    );
+
+    return AppScaffold(
+      title: 'Typography Demo',
+      showBackButton: true,
+      currentIndex: 1, // Demos tab
+      appBarActions: [themeToggle],
+      body: AnimatedContainer(
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+        color: theme.colorScheme.background,
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Font family selector
-              _buildFontFamilySelector(textColor, accentColor),
+              _buildFontFamilySelector(textColor, accentColor, theme),
               const SizedBox(height: 24),
 
               // Material Typography Showcase
@@ -77,7 +90,7 @@ class _TypographyDemoState extends State<TypographyDemo> {
 
               // Text Alignment Showcase
               _buildSectionHeader('Text Alignment', textColor, accentColor),
-              _buildTextAlignment(textColor, backgroundColor),
+              _buildTextAlignment(textColor, theme),
               const SizedBox(height: 32),
 
               // Lorem Ipsum Paragraph
@@ -91,7 +104,13 @@ class _TypographyDemoState extends State<TypographyDemo> {
     );
   }
 
-  Widget _buildFontFamilySelector(Color textColor, Color accentColor) {
+  Widget _buildFontFamilySelector(
+    Color textColor,
+    Color accentColor,
+    ThemeData theme,
+  ) {
+    final isDarkMode = theme.brightness == Brightness.dark;
+
     return Row(
       children: [
         Text(
@@ -106,7 +125,7 @@ class _TypographyDemoState extends State<TypographyDemo> {
         Expanded(
           child: DropdownButton<String>(
             value: _selectedFontFamily,
-            dropdownColor: _useDarkMode ? Colors.black87 : Colors.white,
+            dropdownColor: isDarkMode ? Colors.black87 : Colors.white,
             isExpanded: true,
             icon: Icon(Icons.arrow_drop_down, color: accentColor),
             underline: Container(height: 2, color: accentColor),
@@ -398,18 +417,22 @@ class _TypographyDemoState extends State<TypographyDemo> {
     );
   }
 
-  Widget _buildTextAlignment(Color textColor, Color backgroundColor) {
+  Widget _buildTextAlignment(Color textColor, ThemeData theme) {
     final fontFamily = _selectedFontFamily == 'Default'
         ? null
         : _selectedFontFamily;
 
+    final isDarkMode = theme.brightness == Brightness.dark;
+    final containerColor = isDarkMode ? Colors.grey[900] : Colors.grey[200];
+
     return Column(
       children: [
-        Container(
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
           width: double.infinity,
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: _useDarkMode ? Colors.grey[900] : Colors.grey[200],
+            color: containerColor,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
@@ -423,11 +446,12 @@ class _TypographyDemoState extends State<TypographyDemo> {
           ),
         ),
         const SizedBox(height: 8),
-        Container(
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
           width: double.infinity,
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: _useDarkMode ? Colors.grey[900] : Colors.grey[200],
+            color: containerColor,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
@@ -441,11 +465,12 @@ class _TypographyDemoState extends State<TypographyDemo> {
           ),
         ),
         const SizedBox(height: 8),
-        Container(
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
           width: double.infinity,
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: _useDarkMode ? Colors.grey[900] : Colors.grey[200],
+            color: containerColor,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
@@ -459,11 +484,12 @@ class _TypographyDemoState extends State<TypographyDemo> {
           ),
         ),
         const SizedBox(height: 8),
-        Container(
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
           width: double.infinity,
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: _useDarkMode ? Colors.grey[900] : Colors.grey[200],
+            color: containerColor,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
