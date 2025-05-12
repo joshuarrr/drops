@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'shader_demo.dart';
 import 'shader_demo2.dart';
+import 'typography_demo.dart';
 
 class DemosScreen extends StatelessWidget {
   const DemosScreen({super.key});
@@ -27,20 +27,7 @@ class DemosScreen extends StatelessWidget {
             children: [
               _buildDemoCard(
                 context,
-                'Advanced Shader Demo',
-                'Image display with advanced shader effects',
-                Icons.blur_on,
-                () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const ShaderDemo()),
-                  );
-                },
-              ),
-              const SizedBox(height: 20),
-              _buildDemoCard(
-                context,
-                'Simple Shader Demo',
+                'Shaders',
                 'Image display with simple bitmap shader',
                 Icons.auto_fix_high,
                 () {
@@ -48,6 +35,21 @@ class DemosScreen extends StatelessWidget {
                     context,
                     MaterialPageRoute(
                       builder: (context) => const ShaderDemo2(),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 20),
+              _buildDemoCard(
+                context,
+                'Fonts',
+                'Explore text styles and typography options',
+                Icons.text_fields,
+                () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const TypographyDemo(),
                     ),
                   );
                 },
