@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'shader_demo.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,8 +16,71 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      home: const GradientScreen(),
+      home: const MainScreen(),
       debugShowCheckedModeBanner: false,
+    );
+  }
+}
+
+class MainScreen extends StatefulWidget {
+  const MainScreen({super.key});
+
+  @override
+  State<MainScreen> createState() => _MainScreenState();
+}
+
+class _MainScreenState extends State<MainScreen> {
+  int _selectedIndex = 0;
+
+  static final List<Widget> _screens = [
+    const GradientScreen(),
+    const ShaderDemo(),
+    const ThemesScreen(),
+  ];
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: _screens[_selectedIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.science), label: 'Demos'),
+          BottomNavigationBarItem(icon: Icon(Icons.palette), label: 'Themes'),
+        ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: Colors.blue,
+        onTap: _onItemTapped,
+      ),
+    );
+  }
+}
+
+class DemosScreen extends StatelessWidget {
+  const DemosScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const ShaderDemo();
+  }
+}
+
+class ThemesScreen extends StatelessWidget {
+  const ThemesScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Themes')),
+      body: const Center(
+        child: Text('Themes Coming Soon', style: TextStyle(fontSize: 24)),
+      ),
     );
   }
 }
@@ -56,6 +120,12 @@ class _GradientScreenState extends State<GradientScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Home'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+      extendBodyBehindAppBar: true,
       body: FadeTransition(
         opacity: _animation,
         child: Container(
