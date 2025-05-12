@@ -60,7 +60,8 @@ class _ShaderDemoState extends State<ShaderDemo>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Shader Demo'), elevation: 0),
+      extendBodyBehindAppBar: true,
+      extendBody: true,
       body: _buildBody(),
     );
   }
@@ -106,7 +107,10 @@ class _ShaderDemoState extends State<ShaderDemo>
             ..setImageSampler(0, _loadedImage!); // uTexture
 
           return SizedBox.expand(
-            child: CustomPaint(painter: ShaderPainter(shader)),
+            child: CustomPaint(
+              size: Size(size.width, size.height),
+              painter: ShaderPainter(shader),
+            ),
           );
         });
       },
