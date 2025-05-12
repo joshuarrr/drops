@@ -490,6 +490,9 @@ class _ShaderDemo2State extends State<ShaderDemo2>
       child: Container(
         width: MediaQuery.of(context).size.width * 0.8,
         padding: const EdgeInsets.symmetric(vertical: 16),
+        margin: const EdgeInsets.only(
+          top: 60,
+        ), // Add margin from the top buttons
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: _buildSlidersForCurrentEffect(),
