@@ -156,25 +156,6 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                         ),
                         child: Column(
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                EffectControls.buildImageSelector(
-                                  selectedImage: _selectedImage,
-                                  availableImages: _availableImages,
-                                  isCurrentImageDark: _isCurrentImageDark,
-                                  onImageSelected: (String? value) {
-                                    if (value != null &&
-                                        value != _selectedImage) {
-                                      setState(() {
-                                        _selectedImage = value;
-                                      });
-                                    }
-                                  },
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
                             EffectControls.buildAspectToggleBar(
                               settings: _shaderSettings,
                               isCurrentImageDark: _isCurrentImageDark,
@@ -187,6 +168,9 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                                       break;
                                     case ShaderAspect.blur:
                                       _shaderSettings.blurEnabled = enabled;
+                                      break;
+                                    case ShaderAspect.image:
+                                      // No enable/disable for image aspect
                                       break;
                                   }
                                 });
@@ -302,7 +286,7 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
           alignment: Alignment.center, // Ensure content is centered
           child: Image.asset(
             _selectedImage,
-            fit: BoxFit.contain,
+            fit: _shaderSettings.fillScreen ? BoxFit.cover : BoxFit.contain,
             width: double.infinity,
             height: double.infinity,
           ),
@@ -330,16 +314,33 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: EffectControls.buildSlidersForAspect(
-            aspect: _selectedAspect,
-            settings: _shaderSettings,
-            onSettingsChanged: (settings) {
-              setState(() {
-                _shaderSettings = settings;
-              });
-            },
-            sliderColor: sliderColor,
-          ),
+          children: [
+            if (_selectedAspect == ShaderAspect.image) ...[
+              EffectControls.buildImageSelector(
+                selectedImage: _selectedImage,
+                availableImages: _availableImages,
+                isCurrentImageDark: _isCurrentImageDark,
+                onImageSelected: (String? value) {
+                  if (value != null && value != _selectedImage) {
+                    setState(() {
+                      _selectedImage = value;
+                    });
+                  }
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
+            ...EffectControls.buildSlidersForAspect(
+              aspect: _selectedAspect,
+              settings: _shaderSettings,
+              onSettingsChanged: (settings) {
+                setState(() {
+                  _shaderSettings = settings;
+                });
+              },
+              sliderColor: sliderColor,
+            ),
+          ],
         ),
       ),
     );

@@ -30,6 +30,13 @@ class EffectControls {
           onToggled: onAspectToggled,
           onTap: onAspectSelected,
         ),
+        _buildAspectToggle(
+          aspect: ShaderAspect.image,
+          isEnabled: true,
+          isCurrentImageDark: isCurrentImageDark,
+          onToggled: onAspectToggled,
+          onTap: onAspectSelected,
+        ),
       ],
     );
   }
@@ -131,6 +138,9 @@ class EffectControls {
           break;
         case ShaderAspect.blur:
           if (!settings.blurEnabled) settings.blurEnabled = true;
+          break;
+        case ShaderAspect.image:
+          // No enabling logic required for image aspect
           break;
       }
 
@@ -305,6 +315,45 @@ class EffectControls {
                 onSettingsChanged,
               ),
             ],
+          ),
+        ];
+
+      case ShaderAspect.image:
+        return [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              "Image Mode",
+              style: TextStyle(
+                color: sliderColor,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          RadioListTile<bool>(
+            value: false,
+            groupValue: settings.fillScreen,
+            onChanged: (value) {
+              if (value != null) {
+                settings.fillScreen = value;
+                onSettingsChanged(settings);
+              }
+            },
+            title: Text('Fit to Screen', style: TextStyle(color: sliderColor)),
+            activeColor: sliderColor,
+          ),
+          RadioListTile<bool>(
+            value: true,
+            groupValue: settings.fillScreen,
+            onChanged: (value) {
+              if (value != null) {
+                settings.fillScreen = value;
+                onSettingsChanged(settings);
+              }
+            },
+            title: Text('Fill Screen', style: TextStyle(color: sliderColor)),
+            activeColor: sliderColor,
           ),
         ];
     }

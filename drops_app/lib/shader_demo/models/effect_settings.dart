@@ -24,6 +24,9 @@ class ShaderSettings {
   // Animation flag for blur (shatter) effect
   bool _blurAnimated;
 
+  // Image setting
+  bool _fillScreen;
+
   // Flag to control logging
   static bool enableLogging = false;
 
@@ -125,6 +128,12 @@ class ShaderSettings {
     if (enableLogging) print("SETTINGS: blurBlendMode set to $value");
   }
 
+  bool get fillScreen => _fillScreen;
+  set fillScreen(bool value) {
+    _fillScreen = value;
+    if (enableLogging) print("SETTINGS: fillScreen set to $value");
+  }
+
   ShaderSettings({
     // Enable flags
     bool colorEnabled = false,
@@ -149,6 +158,9 @@ class ShaderSettings {
 
     // Animation flag
     bool blurAnimated = false,
+
+    // Image setting
+    bool fillScreen = false,
   }) : _colorEnabled = colorEnabled,
        _blurEnabled = blurEnabled,
        _hue = hue,
@@ -162,7 +174,8 @@ class ShaderSettings {
        _blurOpacity = blurOpacity,
        _blurFacets = blurFacets,
        _blurBlendMode = blurBlendMode,
-       _blurAnimated = blurAnimated {
+       _blurAnimated = blurAnimated,
+       _fillScreen = fillScreen {
     if (enableLogging) print("SETTINGS: ShaderSettings initialized");
   }
 }
