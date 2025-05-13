@@ -51,9 +51,11 @@ class EffectControls {
     required Function(ShaderAspect) onTap,
   }) {
     final Color textColor = isCurrentImageDark ? Colors.white : Colors.black;
-    final Color backgroundColor = isCurrentImageDark
-        ? Colors.white.withOpacity(isEnabled ? 0.25 : 0.15)
-        : Colors.black.withOpacity(isEnabled ? 0.25 : 0.15);
+    final Color backgroundColor = Colors.white.withOpacity(
+      isCurrentImageDark
+          ? (isEnabled ? 0.25 : 0.15) // Dark mode (keep higher for contrast)
+          : 0.70, // Light mode uniform opacity
+    );
 
     final Color borderColor = isEnabled
         ? textColor
@@ -68,7 +70,7 @@ class EffectControls {
       verticalOffset: 20,
       textStyle: TextStyle(
         color: isCurrentImageDark ? Colors.black : Colors.white,
-        fontSize: 12,
+        fontSize: 11,
       ),
       decoration: BoxDecoration(
         color: isCurrentImageDark
@@ -99,7 +101,7 @@ class EffectControls {
                   aspect.label,
                   style: TextStyle(
                     color: textColor,
-                    fontSize: 10,
+                    fontSize: 11,
                     fontWeight: isEnabled ? FontWeight.bold : FontWeight.normal,
                   ),
                 ),
@@ -234,29 +236,6 @@ class EffectControls {
               ),
             ),
           ),
-          // Toggle animation switch
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Animate',
-                style: TextStyle(color: sliderColor, fontSize: 14),
-              ),
-              Switch(
-                value: settings.blurAnimated,
-                activeColor: sliderColor,
-                onChanged: (value) {
-                  settings.blurAnimated = value;
-                  if (enableLogging) {
-                    print('SLIDER: Shatter animate set to \\$value');
-                  }
-                  // Ensure effect is enabled when animation toggled on
-                  if (!settings.blurEnabled) settings.blurEnabled = true;
-                  onSettingsChanged(settings);
-                },
-              ),
-            ],
-          ),
           buildSlider(
             label: 'Shatter Amount',
             value: settings.blurAmount,
@@ -322,21 +301,33 @@ class EffectControls {
               ),
             ],
           ),
+          // Toggle animation switch moved to bottom
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Animate',
+                style: TextStyle(color: sliderColor, fontSize: 14),
+              ),
+              Switch(
+                value: settings.blurAnimated,
+                activeColor: sliderColor,
+                onChanged: (value) {
+                  settings.blurAnimated = value;
+                  if (enableLogging) {
+                    print('SLIDER: Shatter animate set to \\$value');
+                  }
+                  // Ensure effect is enabled when animation toggled on
+                  if (!settings.blurEnabled) settings.blurEnabled = true;
+                  onSettingsChanged(settings);
+                },
+              ),
+            ],
+          ),
         ];
 
       case ShaderAspect.image:
         return [
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Text(
-              "Image Mode",
-              style: TextStyle(
-                color: sliderColor,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
           RadioListTile<bool>(
             value: false,
             groupValue: settings.fillScreen,
@@ -346,7 +337,10 @@ class EffectControls {
                 onSettingsChanged(settings);
               }
             },
-            title: Text('Fit to Screen', style: TextStyle(color: sliderColor)),
+            title: Text(
+              'Fit to Screen',
+              style: TextStyle(color: sliderColor, fontSize: 14),
+            ),
             activeColor: sliderColor,
           ),
           RadioListTile<bool>(
@@ -358,7 +352,10 @@ class EffectControls {
                 onSettingsChanged(settings);
               }
             },
-            title: Text('Fill Screen', style: TextStyle(color: sliderColor)),
+            title: Text(
+              'Fill Screen',
+              style: TextStyle(color: sliderColor, fontSize: 14),
+            ),
             activeColor: sliderColor,
           ),
         ];

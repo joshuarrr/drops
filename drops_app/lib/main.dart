@@ -323,23 +323,45 @@ class ThemesScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Text preview
-          AnimatedDefaultTextStyle(
-            duration: const Duration(milliseconds: 300),
-            style: theme.textTheme.bodyLarge ?? const TextStyle(),
-            child: const Text('This is how text will look'),
-          ),
+          // Typography showcase
+          Text('Display Large', style: theme.textTheme.displayLarge),
+          Text('Headline Medium', style: theme.textTheme.headlineMedium),
+          Text('Title Large', style: theme.textTheme.titleLarge),
+          Text('Body Large', style: theme.textTheme.bodyLarge),
+          Text('Label Small', style: theme.textTheme.labelSmall),
+
           const SizedBox(height: 16),
 
           // Buttons preview
           Row(
             children: [
-              ElevatedButton(onPressed: () {}, child: const Text('Button')),
+              ElevatedButton(onPressed: () {}, child: const Text('Elevated')),
               const SizedBox(width: 8),
-              OutlinedButton(onPressed: () {}, child: const Text('Button')),
+              OutlinedButton(onPressed: () {}, child: const Text('Outlined')),
               const SizedBox(width: 8),
-              TextButton(onPressed: () {}, child: const Text('Button')),
+              TextButton(onPressed: () {}, child: const Text('Text')),
             ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // Interactive controls preview
+          Row(
+            children: [
+              Switch(value: true, onChanged: (_) {}),
+              const SizedBox(width: 16),
+              Expanded(child: Slider(value: 0.5, onChanged: (_) {})),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // TextField preview
+          TextField(
+            decoration: InputDecoration(
+              labelText: 'Input',
+              border: const OutlineInputBorder(),
+            ),
           ),
 
           const SizedBox(height: 16),

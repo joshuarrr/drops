@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'theme/theme_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'common/app_scaffold.dart';
 
 class TypographyDemo extends StatefulWidget {
@@ -11,15 +12,29 @@ class TypographyDemo extends StatefulWidget {
 }
 
 class _TypographyDemoState extends State<TypographyDemo> {
-  String _selectedFontFamily = 'Default';
+  String _selectedFontFamily = 'Alumni Sans';
 
   // Available font families to showcase
   final List<String> _fontFamilies = [
-    'Default',
-    'Roboto',
-    'Helvetica',
-    'Times New Roman',
-    'Courier',
+    'Averia Serif Libre',
+    'Alumni Sans',
+    'Orbitron',
+    'Anaheim',
+    'Danfo',
+    'Bree Serif',
+    'Young Serif',
+    'Oxanium',
+    'Geist Mono',
+    'MuseoModerno',
+    'DM Serif Display',
+    'Lexend Deca',
+    'Pixelify Sans',
+    'Gemunu Libre',
+    'Podkova',
+    'Tourney',
+    'Instrument Serif',
+    'Tektur',
+    'Asap Condensed',
   ];
 
   @override
@@ -27,9 +42,6 @@ class _TypographyDemoState extends State<TypographyDemo> {
     final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDarkMode = theme.brightness == Brightness.dark;
-
-    final textColor = theme.colorScheme.onSurface;
-    final accentColor = theme.colorScheme.primary;
 
     // Theme toggle action for app bar
     final themeToggle = IconButton(
@@ -51,53 +63,28 @@ class _TypographyDemoState extends State<TypographyDemo> {
       },
     );
 
+    final textColor = theme.colorScheme.onSurface;
+
     return AppScaffold(
       title: 'Typography Demo',
       showBackButton: true,
-      currentIndex: 1, // Demos tab
+      currentIndex: 1,
       appBarActions: [themeToggle],
-      body: AnimatedContainer(
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeInOut,
-        color: theme.colorScheme.surface,
+      body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.symmetric(vertical: 32),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Font family selector
-              _buildFontFamilySelector(textColor, accentColor, theme),
-              const SizedBox(height: 24),
-
-              // Material Typography Showcase
-              _buildSectionHeader(
-                'Material Typography',
-                textColor,
-                accentColor,
-              ),
-              _buildMaterialTypography(textColor),
-              const SizedBox(height: 32),
-
-              // Font Weight Showcase
-              _buildSectionHeader('Font Weights', textColor, accentColor),
-              _buildFontWeights(textColor),
-              const SizedBox(height: 32),
-
-              // Text Styling Showcase
-              _buildSectionHeader('Text Styling', textColor, accentColor),
-              _buildTextStyling(textColor, accentColor),
-              const SizedBox(height: 32),
-
-              // Text Alignment Showcase
-              _buildSectionHeader('Text Alignment', textColor, accentColor),
-              _buildTextAlignment(textColor, theme),
-              const SizedBox(height: 32),
-
-              // Lorem Ipsum Paragraph
-              _buildSectionHeader('Text Paragraph', textColor, accentColor),
-              _buildTextParagraph(textColor),
-              const SizedBox(height: 40),
-            ],
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: _fontFamilies.map((font) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                child: Text(
+                  font,
+                  textAlign: TextAlign.center,
+                  style: _safeFontStyle(font, theme, textColor),
+                ),
+              );
+            }).toList(),
           ),
         ),
       ),
@@ -520,5 +507,23 @@ class _TypographyDemoState extends State<TypographyDemo> {
         fontFamily: fontFamily,
       ),
     );
+  }
+
+  TextStyle _safeFontStyle(String family, ThemeData theme, Color defaultColor) {
+    try {
+      return GoogleFonts.getFont(
+        family,
+        textStyle: theme.textTheme.headlineMedium?.copyWith(
+          color: defaultColor,
+        ),
+      );
+    } catch (_) {
+      // google_fonts doesn't have this family – fall back to plain TextStyle
+      return theme.textTheme.headlineMedium?.copyWith(
+            color: defaultColor,
+            fontFamily: family,
+          ) ??
+          TextStyle(fontSize: 24, color: defaultColor, fontFamily: family);
+    }
   }
 }

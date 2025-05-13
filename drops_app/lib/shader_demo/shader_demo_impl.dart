@@ -38,20 +38,8 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     'assets/img/londoncalling.png',
   ];
 
-  // Map to identify which images are dark (true) vs light (false)
-  final Map<String, bool> _darkImages = {
-    'assets/img/abbey.png': false,
-    'assets/img/darkside.png': true,
-    'assets/img/bollocks.png': false,
-    'assets/img/ill.png': true,
-    'assets/img/londoncalling.png': false,
-  };
-
   // Currently selected image
   String _selectedImage = 'assets/img/darkside.png';
-
-  // Helper to determine if current image is dark
-  bool get _isCurrentImageDark => _darkImages[_selectedImage] ?? false;
 
   @override
   void initState() {
@@ -83,6 +71,9 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final bool isDarkTheme = theme.brightness == Brightness.dark;
+
     return AppScaffold(
       title: 'Shader Demo',
       showAppBar: true,
@@ -118,20 +109,23 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                     final double topInset = MediaQuery.of(context).padding.top;
                     const double toolbarHeight = kToolbarHeight; // 56
                     return Container(
+                      // Add extra bottom padding so the gradient extends
+                      // further down the screen without moving the toggle bar.
                       padding: EdgeInsets.fromLTRB(
                         16,
                         topInset + 8, // below system inset
                         16,
-                        8,
+                        kToolbarHeight, // extend ~56 px further
                       ),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
+                          // Fade starts roughly halfway down the app-bar title.
+                          stops: const [0.0, 0.5, 1.0],
                           colors: [
-                            _isCurrentImageDark
-                                ? Colors.black.withOpacity(0.7)
-                                : Colors.white.withOpacity(0.7),
+                            theme.colorScheme.surface.withOpacity(0.7),
+                            theme.colorScheme.surface.withOpacity(0.0),
                             Colors.transparent,
                           ],
                         ),
@@ -140,7 +134,7 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                         children: [
                           EffectControls.buildAspectToggleBar(
                             settings: _shaderSettings,
-                            isCurrentImageDark: _isCurrentImageDark,
+                            isCurrentImageDark: isDarkTheme,
                             onAspectToggled: (aspect, enabled) {
                               setState(() {
                                 // Toggle the enabled state of the selected aspect
@@ -201,27 +195,39 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.4),
+                        color:
+                            (theme.brightness == Brightness.dark
+                                    ? Colors.white
+                                    : Colors.black)
+                                .withOpacity(0.4),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           if (_shaderSettings.colorEnabled)
-                            const Text(
+                            Text(
                               "Color: ON",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                              ),
+                              style:
+                                  theme.textTheme.labelSmall?.copyWith(
+                                    color: Colors.white,
+                                  ) ??
+                                  const TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.white,
+                                  ),
                             ),
                           if (_shaderSettings.blurEnabled)
-                            const Text(
+                            Text(
                               "Shatter: ON",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                              ),
+                              style:
+                                  theme.textTheme.labelSmall?.copyWith(
+                                    color: Colors.white,
+                                  ) ??
+                                  const TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.white,
+                                  ),
                             ),
                         ],
                       ),
@@ -267,6 +273,7 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
           alignment: Alignment.center, // Ensure content is centered
           child: Image.asset(
             _selectedImage,
+            alignment: Alignment.center,
             fit: _shaderSettings.fillScreen ? BoxFit.cover : BoxFit.contain,
             width: double.infinity,
             height: double.infinity,
@@ -278,14 +285,15 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
 
   // Build parameter sliders for the selected aspect
   Widget _buildAspectParameterSliders() {
-    final Color sliderColor = _isCurrentImageDark ? Colors.white : Colors.black;
+    final theme = Theme.of(context);
     final double screenWidth = MediaQuery.of(context).size.width;
+    final Color sliderColor = theme.colorScheme.onSurface;
 
     return Center(
       child: SizedBox(
         width: screenWidth * 0.8,
         child: PanelContainer(
-          isDark: _isCurrentImageDark,
+          isDark: theme.brightness == Brightness.dark,
           margin: const EdgeInsets.only(top: 100),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -294,7 +302,7 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                 EffectControls.buildImageSelector(
                   selectedImage: _selectedImage,
                   availableImages: _availableImages,
-                  isCurrentImageDark: _isCurrentImageDark,
+                  isCurrentImageDark: theme.brightness == Brightness.dark,
                   onImageSelected: (String? value) {
                     if (value != null && value != _selectedImage) {
                       setState(() {

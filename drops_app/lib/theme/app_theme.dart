@@ -14,6 +14,9 @@ class AppTheme {
     onError: Colors.white,
     surface: Colors.grey[100]!,
     onSurface: Colors.black,
+    background: Colors.white,
+    onBackground: Colors.black,
+    surfaceTint: Colors.black,
   );
 
   // Dark theme colors
@@ -27,6 +30,9 @@ class AppTheme {
     onError: Colors.black,
     surface: Colors.grey[900]!,
     onSurface: Colors.white,
+    background: Colors.black,
+    onBackground: Colors.white,
+    surfaceTint: Colors.white,
   );
 
   // Light theme
@@ -74,7 +80,35 @@ class AppTheme {
       backgroundColor: _lightColorScheme.primary,
       foregroundColor: _lightColorScheme.onPrimary,
     ),
-    textTheme: _buildTextTheme(_lightColorScheme), dialogTheme: DialogThemeData(backgroundColor: _lightColorScheme.background),
+    inputDecorationTheme: InputDecorationTheme(
+      border: const OutlineInputBorder(),
+      focusedBorder: OutlineInputBorder(
+        borderSide: BorderSide(color: _lightColorScheme.primary, width: 2),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderSide: BorderSide(
+          color: _lightColorScheme.primary.withOpacity(0.4),
+        ),
+      ),
+      floatingLabelStyle: TextStyle(color: _lightColorScheme.primary),
+    ),
+    switchTheme: SwitchThemeData(
+      trackColor: MaterialStateProperty.resolveWith<Color?>((states) {
+        if (states.contains(MaterialState.selected)) {
+          return _lightColorScheme.primary.withOpacity(0.5);
+        }
+        return null;
+      }),
+      thumbColor: MaterialStateProperty.all(_lightColorScheme.primary),
+    ),
+    checkboxTheme: CheckboxThemeData(
+      fillColor: MaterialStateProperty.all(_lightColorScheme.primary),
+    ),
+    radioTheme: RadioThemeData(
+      fillColor: MaterialStateProperty.all(_lightColorScheme.primary),
+    ),
+    textTheme: _buildTextTheme(_lightColorScheme),
+    dialogTheme: DialogThemeData(backgroundColor: _lightColorScheme.background),
   );
 
   // Dark theme
@@ -122,27 +156,174 @@ class AppTheme {
       backgroundColor: _darkColorScheme.primary,
       foregroundColor: _darkColorScheme.onPrimary,
     ),
-    textTheme: _buildTextTheme(_darkColorScheme), dialogTheme: DialogThemeData(backgroundColor: _darkColorScheme.background),
+    inputDecorationTheme: InputDecorationTheme(
+      border: const OutlineInputBorder(),
+      focusedBorder: OutlineInputBorder(
+        borderSide: BorderSide(color: _darkColorScheme.primary, width: 2),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderSide: BorderSide(
+          color: _darkColorScheme.primary.withOpacity(0.4),
+        ),
+      ),
+      floatingLabelStyle: TextStyle(color: _darkColorScheme.primary),
+    ),
+    switchTheme: SwitchThemeData(
+      trackColor: MaterialStateProperty.resolveWith<Color?>((states) {
+        if (states.contains(MaterialState.selected)) {
+          return _darkColorScheme.primary.withOpacity(0.5);
+        }
+        return null;
+      }),
+      thumbColor: MaterialStateProperty.all(_darkColorScheme.primary),
+    ),
+    checkboxTheme: CheckboxThemeData(
+      fillColor: MaterialStateProperty.all(_darkColorScheme.primary),
+    ),
+    radioTheme: RadioThemeData(
+      fillColor: MaterialStateProperty.all(_darkColorScheme.primary),
+    ),
+    textTheme: _buildTextTheme(_darkColorScheme),
+    dialogTheme: DialogThemeData(backgroundColor: _darkColorScheme.background),
   );
 
   // Helper method to build consistent text themes
   static TextTheme _buildTextTheme(ColorScheme colorScheme) {
+    // Material-3 reference typography
+    // https://m3.material.io/styles/typography/overview
+
+    const String? defaultFontFamily = null; // Keep null → use platform font
+
     return TextTheme(
-      displayLarge: TextStyle(color: colorScheme.onSurface),
-      displayMedium: TextStyle(color: colorScheme.onSurface),
-      displaySmall: TextStyle(color: colorScheme.onSurface),
-      headlineLarge: TextStyle(color: colorScheme.onSurface),
-      headlineMedium: TextStyle(color: colorScheme.onSurface),
-      headlineSmall: TextStyle(color: colorScheme.onSurface),
-      titleLarge: TextStyle(color: colorScheme.onSurface),
-      titleMedium: TextStyle(color: colorScheme.onSurface),
-      titleSmall: TextStyle(color: colorScheme.onSurface),
-      bodyLarge: TextStyle(color: colorScheme.onSurface),
-      bodyMedium: TextStyle(color: colorScheme.onSurface),
-      bodySmall: TextStyle(color: colorScheme.onSurface),
-      labelLarge: TextStyle(color: colorScheme.onSurface),
-      labelMedium: TextStyle(color: colorScheme.onSurface),
-      labelSmall: TextStyle(color: colorScheme.onSurface),
+      // Display
+      displayLarge: TextStyle(
+        fontSize: 57,
+        fontWeight: FontWeight.normal,
+        letterSpacing: -0.25,
+        height: 64 / 57, // line-height ratio recommended by M3
+        fontFamily: defaultFontFamily,
+        color: colorScheme.onSurface,
+      ),
+      displayMedium: TextStyle(
+        fontSize: 45,
+        fontWeight: FontWeight.normal,
+        letterSpacing: -0.25,
+        height: 52 / 45,
+        fontFamily: defaultFontFamily,
+        color: colorScheme.onSurface,
+      ),
+      displaySmall: TextStyle(
+        fontSize: 36,
+        fontWeight: FontWeight.normal,
+        letterSpacing: 0,
+        height: 44 / 36,
+        fontFamily: defaultFontFamily,
+        color: colorScheme.onSurface,
+      ),
+
+      // Headlines
+      headlineLarge: TextStyle(
+        fontSize: 32,
+        fontWeight: FontWeight.normal,
+        letterSpacing: 0,
+        height: 40 / 32,
+        fontFamily: defaultFontFamily,
+        color: colorScheme.onSurface,
+      ),
+      headlineMedium: TextStyle(
+        fontSize: 28,
+        fontWeight: FontWeight.normal,
+        letterSpacing: 0,
+        height: 36 / 28,
+        fontFamily: defaultFontFamily,
+        color: colorScheme.onSurface,
+      ),
+      headlineSmall: TextStyle(
+        fontSize: 24,
+        fontWeight: FontWeight.normal,
+        letterSpacing: 0,
+        height: 32 / 24,
+        fontFamily: defaultFontFamily,
+        color: colorScheme.onSurface,
+      ),
+
+      // Titles
+      titleLarge: TextStyle(
+        fontSize: 22,
+        fontWeight: FontWeight.w400,
+        letterSpacing: 0,
+        height: 28 / 22,
+        fontFamily: defaultFontFamily,
+        color: colorScheme.onSurface,
+      ),
+      titleMedium: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+        letterSpacing: 0.1,
+        height: 24 / 16,
+        fontFamily: defaultFontFamily,
+        color: colorScheme.onSurface,
+      ),
+      titleSmall: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        letterSpacing: 0.1,
+        height: 20 / 14,
+        fontFamily: defaultFontFamily,
+        color: colorScheme.onSurface,
+      ),
+
+      // Body
+      bodyLarge: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.normal,
+        letterSpacing: 0.5,
+        height: 24 / 16,
+        fontFamily: defaultFontFamily,
+        color: colorScheme.onSurface,
+      ),
+      bodyMedium: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.normal,
+        letterSpacing: 0.25,
+        height: 20 / 14,
+        fontFamily: defaultFontFamily,
+        color: colorScheme.onSurface,
+      ),
+      bodySmall: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.normal,
+        letterSpacing: 0.4,
+        height: 16 / 12,
+        fontFamily: defaultFontFamily,
+        color: colorScheme.onSurface,
+      ),
+
+      // Labels
+      labelLarge: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        letterSpacing: 0.1,
+        height: 20 / 14,
+        fontFamily: defaultFontFamily,
+        color: colorScheme.onSurface,
+      ),
+      labelMedium: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        letterSpacing: 0.5,
+        height: 16 / 12,
+        fontFamily: defaultFontFamily,
+        color: colorScheme.onSurface,
+      ),
+      labelSmall: TextStyle(
+        fontSize: 11,
+        fontWeight: FontWeight.w500,
+        letterSpacing: 0.5,
+        height: 16 / 11,
+        fontFamily: defaultFontFamily,
+        color: colorScheme.onSurface,
+      ),
     );
   }
 }
