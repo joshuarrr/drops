@@ -83,173 +83,153 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData dynamicTheme = _isCurrentImageDark
-        ? ThemeData.dark().copyWith(
-            appBarTheme: const AppBarTheme(
-              backgroundColor: Colors.transparent,
-              foregroundColor: Colors.white,
-              iconTheme: IconThemeData(color: Colors.white),
-            ),
-            bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-              selectedItemColor: Colors.white,
-              unselectedItemColor: Colors.white70,
-              backgroundColor: Colors.transparent,
-            ),
-          )
-        : ThemeData.light();
+    return AppScaffold(
+      title: 'Shader Demo',
+      showAppBar: true,
+      showBackButton: true,
+      currentIndex: 1, // Demos tab
+      extendBodyBehindAppBar: true,
+      appBarBackgroundColor: Colors.transparent,
+      appBarElevation: 0,
+      body: GestureDetector(
+        onTap: () {
+          setState(() {
+            // Tap on screen hides both top controls and effect sliders
+            _showControls = !_showControls;
+            if (!_showControls) {
+              _showAspectSliders = false;
+            }
+          });
+        },
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Animated shader effect with all enabled aspects
+            _buildShaderEffect(),
 
-    return Theme(
-      data: dynamicTheme,
-      child: AppScaffold(
-        title: 'Shader Demo',
-        showAppBar: true,
-        showBackButton: true,
-        currentIndex: 1, // Demos tab
-        extendBodyBehindAppBar: true,
-        appBarBackgroundColor: Colors.transparent,
-        appBarElevation: 0,
-        body: GestureDetector(
-          onTap: () {
-            setState(() {
-              // Tap on screen hides both top controls and effect sliders
-              _showControls = !_showControls;
-              if (!_showControls) {
-                _showAspectSliders = false;
-              }
-            });
-          },
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              // Animated shader effect with all enabled aspects
-              _buildShaderEffect(),
-
-              // Controls overlay that can be toggled
-              if (_showControls)
-                Positioned(
-                  top: 0,
-                  right: 0,
-                  left: 0,
-                  child: Builder(
-                    builder: (context) {
-                      final double topInset = MediaQuery.of(
-                        context,
-                      ).padding.top;
-                      const double toolbarHeight = kToolbarHeight; // 56
-                      return Container(
-                        padding: EdgeInsets.fromLTRB(
-                          16,
-                          topInset + 8, // below system inset
-                          16,
-                          8,
-                        ),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              _isCurrentImageDark
-                                  ? Colors.black.withOpacity(0.7)
-                                  : Colors.white.withOpacity(0.7),
-                              Colors.transparent,
-                            ],
-                          ),
-                        ),
-                        child: Column(
-                          children: [
-                            EffectControls.buildAspectToggleBar(
-                              settings: _shaderSettings,
-                              isCurrentImageDark: _isCurrentImageDark,
-                              onAspectToggled: (aspect, enabled) {
-                                setState(() {
-                                  // Toggle the enabled state of the selected aspect
-                                  switch (aspect) {
-                                    case ShaderAspect.color:
-                                      _shaderSettings.colorEnabled = enabled;
-                                      break;
-                                    case ShaderAspect.blur:
-                                      _shaderSettings.blurEnabled = enabled;
-                                      break;
-                                    case ShaderAspect.image:
-                                      // No enable/disable for image aspect
-                                      break;
-                                  }
-                                });
-                              },
-                              onAspectSelected: (aspect) {
-                                setState(() {
-                                  // Check if user is selecting a new aspect or tapping the existing one
-                                  final bool selectingNewAspect =
-                                      _selectedAspect != aspect;
-                                  _selectedAspect = aspect;
-
-                                  // If selecting a new aspect, always show sliders
-                                  if (selectingNewAspect) {
-                                    _showAspectSliders = true;
-                                  } else {
-                                    // If tapping the same aspect, toggle sliders
-                                    _showAspectSliders = !_showAspectSliders;
-                                  }
-                                });
-                              },
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ),
-
-              // Aspect parameter sliders for the selected aspect
-              if (_showControls && _showAspectSliders)
-                _buildAspectParameterSliders(),
-
-              // Show active effects info in bottom left
+            // Controls overlay that can be toggled
+            if (_showControls)
               Positioned(
-                left: 16,
-                bottom: 80,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (_shaderSettings.colorEnabled ||
-                        _shaderSettings.blurEnabled)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.4),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (_shaderSettings.colorEnabled)
-                              const Text(
-                                "Color: ON",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                ),
-                              ),
-                            if (_shaderSettings.blurEnabled)
-                              const Text(
-                                "Shatter: ON",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                ),
-                              ),
+                top: 0,
+                right: 0,
+                left: 0,
+                child: Builder(
+                  builder: (context) {
+                    final double topInset = MediaQuery.of(context).padding.top;
+                    const double toolbarHeight = kToolbarHeight; // 56
+                    return Container(
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        topInset + 8, // below system inset
+                        16,
+                        8,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            _isCurrentImageDark
+                                ? Colors.black.withOpacity(0.7)
+                                : Colors.white.withOpacity(0.7),
+                            Colors.transparent,
                           ],
                         ),
                       ),
-                  ],
+                      child: Column(
+                        children: [
+                          EffectControls.buildAspectToggleBar(
+                            settings: _shaderSettings,
+                            isCurrentImageDark: _isCurrentImageDark,
+                            onAspectToggled: (aspect, enabled) {
+                              setState(() {
+                                // Toggle the enabled state of the selected aspect
+                                switch (aspect) {
+                                  case ShaderAspect.color:
+                                    _shaderSettings.colorEnabled = enabled;
+                                    break;
+                                  case ShaderAspect.blur:
+                                    _shaderSettings.blurEnabled = enabled;
+                                    break;
+                                  case ShaderAspect.image:
+                                    // No enable/disable for image aspect
+                                    break;
+                                }
+                              });
+                            },
+                            onAspectSelected: (aspect) {
+                              setState(() {
+                                // Check if user is selecting a new aspect or tapping the existing one
+                                final bool selectingNewAspect =
+                                    _selectedAspect != aspect;
+                                _selectedAspect = aspect;
+
+                                // If selecting a new aspect, always show sliders
+                                if (selectingNewAspect) {
+                                  _showAspectSliders = true;
+                                } else {
+                                  // If tapping the same aspect, toggle sliders
+                                  _showAspectSliders = !_showAspectSliders;
+                                }
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
               ),
-            ],
-          ),
+
+            // Aspect parameter sliders for the selected aspect
+            if (_showControls && _showAspectSliders)
+              _buildAspectParameterSliders(),
+
+            // Show active effects info in bottom left
+            Positioned(
+              left: 16,
+              bottom: 80,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_shaderSettings.colorEnabled ||
+                      _shaderSettings.blurEnabled)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.4),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (_shaderSettings.colorEnabled)
+                            const Text(
+                              "Color: ON",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                              ),
+                            ),
+                          if (_shaderSettings.blurEnabled)
+                            const Text(
+                              "Shatter: ON",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

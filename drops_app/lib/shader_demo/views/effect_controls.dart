@@ -81,36 +81,41 @@ class EffectControls {
         onTap: () => onTap(aspect),
         // Long press to toggle the effect on/off
         onLongPress: () => onToggled(aspect, !isEnabled),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: borderColor, width: isEnabled ? 2 : 1),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(aspect.icon, color: textColor, size: 24),
-              const SizedBox(height: 4),
-              Text(
-                aspect.label,
-                style: TextStyle(
-                  color: textColor,
-                  fontSize: 12,
-                  fontWeight: isEnabled ? FontWeight.bold : FontWeight.normal,
+        child: SizedBox(
+          width: 70,
+          height: 78,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(aspect.icon, color: textColor, size: 20),
+                const SizedBox(height: 6),
+                Text(
+                  aspect.label,
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 10,
+                    fontWeight: isEnabled ? FontWeight.bold : FontWeight.normal,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 2),
-              Container(
-                height: 6,
-                width: 6,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: isEnabled ? Colors.green : textColor.withOpacity(0.3),
+                const SizedBox(height: 1),
+                Container(
+                  height: 6,
+                  width: 6,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isEnabled
+                        ? Colors.green
+                        : textColor.withOpacity(0.3),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
