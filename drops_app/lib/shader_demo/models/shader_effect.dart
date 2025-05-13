@@ -10,7 +10,7 @@ extension ShaderAspectExtension on ShaderAspect {
       case ShaderAspect.color:
         return 'Color';
       case ShaderAspect.blur:
-        return 'Blur';
+        return 'Shatter';
     }
   }
 

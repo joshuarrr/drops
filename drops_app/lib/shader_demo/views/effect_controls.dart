@@ -3,6 +3,9 @@ import '../models/shader_effect.dart';
 import '../models/effect_settings.dart';
 
 class EffectControls {
+  // Control logging verbosity
+  static bool enableLogging = false;
+
   // Build controls for toggling and configuring shader aspects
   static Widget buildAspectToggleBar({
     required ShaderSettings settings,
@@ -115,6 +118,12 @@ class EffectControls {
   }) {
     // Helper function to enable the effect if needed when slider changes
     void onSliderChanged(double value, Function(double) setter) {
+      if (enableLogging) {
+        print(
+          "SLIDER: ${aspect.label} slider changing to ${(value * 100).round()}%",
+        );
+      }
+
       // Enable the corresponding effect if it's not already enabled
       switch (aspect) {
         case ShaderAspect.color:
@@ -201,7 +210,7 @@ class EffectControls {
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: Text(
-              "Blur Settings",
+              "Shatter Settings",
               style: TextStyle(
                 color: sliderColor,
                 fontSize: 16,
@@ -209,8 +218,31 @@ class EffectControls {
               ),
             ),
           ),
+          // Toggle animation switch
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Animate',
+                style: TextStyle(color: sliderColor, fontSize: 14),
+              ),
+              Switch(
+                value: settings.blurAnimated,
+                activeColor: sliderColor,
+                onChanged: (value) {
+                  settings.blurAnimated = value;
+                  if (enableLogging) {
+                    print('SLIDER: Shatter animate set to \\$value');
+                  }
+                  // Ensure effect is enabled when animation toggled on
+                  if (!settings.blurEnabled) settings.blurEnabled = true;
+                  onSettingsChanged(settings);
+                },
+              ),
+            ],
+          ),
           buildSlider(
-            label: 'Blur Amount',
+            label: 'Shatter Amount',
             value: settings.blurAmount,
             onChanged: (value) =>
                 onSliderChanged(value, (v) => settings.blurAmount = v),
@@ -218,16 +250,61 @@ class EffectControls {
             defaultValue: 0.0,
           ),
           buildSlider(
-            label: 'Blur Radius',
+            label: 'Shatter Radius',
             value:
                 settings.blurRadius /
-                30.0, // Scale down from max 30 to 0-1 range
+                60.0, // Scale down from max 60 to 0-1 range
             onChanged: (value) => onSliderChanged(
               value,
-              (v) => settings.blurRadius = v * 30.0,
-            ), // Scale up to 0-30 range
+              (v) => settings.blurRadius = v * 60.0,
+            ), // Scale up to 0-60 range
             sliderColor: sliderColor,
-            defaultValue: 15.0 / 30.0, // Default is 15.0 scaled to 0-1 range
+            defaultValue: 15.0 / 60.0, // Default is 15.0 scaled to 0-1 range
+          ),
+          // Opacity slider
+          buildSlider(
+            label: 'Shatter Opacity',
+            value: settings.blurOpacity,
+            onChanged: (value) =>
+                onSliderChanged(value, (v) => settings.blurOpacity = v),
+            sliderColor: sliderColor,
+            defaultValue: 1.0,
+          ),
+          // Facets slider (0-1 mapped to 1-50 facets)
+          buildSlider(
+            label: 'Facets',
+            value: settings.blurFacets / 50.0,
+            onChanged: (value) =>
+                onSliderChanged(value, (v) => settings.blurFacets = v * 50.0),
+            sliderColor: sliderColor,
+            defaultValue: 1.0 / 50.0,
+          ),
+          // Blend mode chips
+          Wrap(
+            spacing: 6,
+            children: [
+              _buildBlendChip(
+                'Normal',
+                0,
+                settings,
+                sliderColor,
+                onSettingsChanged,
+              ),
+              _buildBlendChip(
+                'Multiply',
+                1,
+                settings,
+                sliderColor,
+                onSettingsChanged,
+              ),
+              _buildBlendChip(
+                'Screen',
+                2,
+                settings,
+                sliderColor,
+                onSettingsChanged,
+              ),
+            ],
           ),
         ];
     }
@@ -291,7 +368,17 @@ class EffectControls {
                   thumbColor: sliderColor,
                   overlayColor: sliderColor.withOpacity(0.1),
                 ),
-                child: Slider(value: value, onChanged: onChanged),
+                child: Slider(
+                  value: value,
+                  onChanged: (newValue) {
+                    if (enableLogging) {
+                      print(
+                        "SLIDER: $label changing to ${(newValue * 100).round()}%",
+                      );
+                    }
+                    onChanged(newValue);
+                  },
+                ),
               ),
             ),
             SizedBox(
@@ -327,6 +414,28 @@ class EffectControls {
           ],
         ),
       ],
+    );
+  }
+
+  // Helper to build a single blend mode chip
+  static Widget _buildBlendChip(
+    String label,
+    int mode,
+    ShaderSettings settings,
+    Color sliderColor,
+    Function(ShaderSettings) onSettingsChanged,
+  ) {
+    return ChoiceChip(
+      label: Text(label, style: TextStyle(color: sliderColor)),
+      selected: settings.blurBlendMode == mode,
+      selectedColor: sliderColor.withOpacity(0.3),
+      backgroundColor: sliderColor.withOpacity(0.1),
+      onSelected: (selected) {
+        if (selected) {
+          settings.blurBlendMode = mode;
+          onSettingsChanged(settings);
+        }
+      },
     );
   }
 }

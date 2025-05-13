@@ -4,16 +4,14 @@ precision highp float;
 
 // Input from Flutter
 uniform sampler2D uTexture;
-uniform vec2 uResolution;
 uniform float uTime;
-
-// Color parameters
 uniform float uHue;
 uniform float uSaturation;
 uniform float uLightness;
 uniform float uOverlayHue;
 uniform float uOverlayIntensity;
 uniform float uOverlayOpacity;
+uniform vec2 uResolution;
 
 // Define output
 out vec4 fragColor;
@@ -43,8 +41,14 @@ vec3 rgb2hsl(vec3 rgb) {
     return hsl;
 }
 
-// Forward declaration of hueToRgb function
-float hueToRgb(float p, float q, float t);
+float hueToRgb(float p, float q, float t) {
+    if (t < 0.0) t += 1.0;
+    if (t > 1.0) t -= 1.0;
+    if (t < 1.0/6.0) return p + (q - p) * 6.0 * t;
+    if (t < 1.0/2.0) return q;
+    if (t < 2.0/3.0) return p + (q - p) * (2.0/3.0 - t) * 6.0;
+    return p;
+}
 
 vec3 hsl2rgb(vec3 hsl) {
     if (hsl.y == 0.0) return vec3(hsl.z);
@@ -66,19 +70,20 @@ vec3 hsl2rgb(vec3 hsl) {
     return rgb;
 }
 
-float hueToRgb(float p, float q, float t) {
-    if (t < 0.0) t += 1.0;
-    if (t > 1.0) t -= 1.0;
-    if (t < 1.0/6.0) return p + (q - p) * 6.0 * t;
-    if (t < 1.0/2.0) return q;
-    if (t < 2.0/3.0) return p + (q - p) * (2.0/3.0 - t) * 6.0;
-    return p;
-}
-
 // Main fragment shader function
 void main() {
     vec2 uv = gl_FragCoord.xy / uResolution;
+    
+    // Sample the texture
     vec4 color = texture(uTexture, uv);
+    
+    // If texture sampling failed, use a default color to make it obvious
+    if (color.a == 0.0) {
+        fragColor = vec4(1.0, 0.0, 1.0, 1.0); // Bright magenta for debugging
+        return;
+    }
+    
+    // Convert to HSL for easier manipulation
     vec3 hsl = rgb2hsl(color.rgb);
     
     // Apply hue, saturation, and lightness adjustments

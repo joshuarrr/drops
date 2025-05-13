@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'dart:io' show Platform;
 import 'common/app_scaffold.dart';
 import 'demos_screen.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_provider.dart';
 import 'shader_demo/controllers/effect_controller.dart';
+import 'shader_demo/controllers/custom_shader_widgets.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,6 +19,22 @@ void main() async {
   ]);
 
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge, overlays: []);
+
+  // Check for debug mode flags in environment variables
+  final bool isVerboseDebugMode =
+      Platform.environment.containsKey('FLUTTER_LOG_LEVEL') &&
+      Platform.environment['FLUTTER_LOG_LEVEL'] == 'verbose';
+
+  final bool isShaderDebugMode = Platform.environment.containsKey(
+    'ENABLE_SHADER_DEBUG',
+  );
+
+  // Configure shader debugging based on debug mode
+  enableShaderDebugLogs = isVerboseDebugMode || isShaderDebugMode;
+
+  if (enableShaderDebugLogs) {
+    print("Shader debugging enabled");
+  }
 
   runApp(
     ChangeNotifierProvider(

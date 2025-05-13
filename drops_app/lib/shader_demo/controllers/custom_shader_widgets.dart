@@ -1,9 +1,14 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_shaders/flutter_shaders.dart';
+import 'dart:developer' as developer;
+import 'dart:math' as math;
 
 import '../models/effect_settings.dart';
 import 'shader_program_loader.dart';
+
+/// Controls debug logging for shaders
+bool enableShaderDebugLogs = false;
 
 /// Custom color effect shader widget
 class ColorEffectShader extends StatelessWidget {
@@ -20,34 +25,50 @@ class ColorEffectShader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Use ShaderBuilder for loading and applying the shader
+    if (enableShaderDebugLogs) {
+      print("COLOR_SHADER: Building widget");
+    }
+
+    // Simplified approach using AnimatedSampler with ShaderBuilder
     return ShaderBuilder(assetKey: 'assets/shaders/color_effect.frag', (
       context,
       shader,
       child,
     ) {
-      // Set shader uniforms
-      shader.setFloat(0, animationValue); // uTime
-      shader.setFloat(1, settings.hue); // uHue
-      shader.setFloat(2, settings.saturation); // uSaturation
-      shader.setFloat(3, settings.lightness); // uLightness
-      shader.setFloat(4, settings.overlayHue); // uOverlayHue
-      shader.setFloat(5, settings.overlayIntensity); // uOverlayIntensity
-      shader.setFloat(6, settings.overlayOpacity); // uOverlayOpacity
+      return AnimatedSampler((image, size, canvas) {
+        try {
+          // Set the texture sampler first
+          shader.setImageSampler(0, image);
 
-      // Get screen size for shader resolution
-      final Size size = MediaQuery.of(context).size;
-      shader.setFloat(7, size.width); // uResolution.x
-      shader.setFloat(8, size.height); // uResolution.y
+          // Set uniforms after the texture sampler
+          shader.setFloat(0, animationValue);
+          shader.setFloat(1, settings.hue);
+          shader.setFloat(2, settings.saturation);
+          shader.setFloat(3, settings.lightness);
+          shader.setFloat(4, settings.overlayHue);
+          shader.setFloat(5, settings.overlayIntensity);
+          shader.setFloat(6, settings.overlayOpacity);
+          shader.setFloat(7, image.width.toDouble());
+          shader.setFloat(8, image.height.toDouble());
 
-      // Apply shader to child
-      return AnimatedSampler((ui.Image image, Size size, Canvas canvas) {
-        // Set the sampled texture
-        shader.setImageSampler(0, image);
-
-        // Draw the shader
-        canvas.drawRect(Offset.zero & size, Paint()..shader = shader);
-      }, child: child!);
+          // Draw with the shader, ensuring it covers the full area
+          canvas.drawRect(Offset.zero & size, Paint()..shader = shader);
+        } catch (e) {
+          print("COLOR_SHADER ERROR: $e");
+          // Fall back to drawing the original image
+          canvas.drawImageRect(
+            image,
+            Rect.fromLTWH(
+              0,
+              0,
+              image.width.toDouble(),
+              image.height.toDouble(),
+            ),
+            Rect.fromLTWH(0, 0, size.width, size.height),
+            Paint(),
+          );
+        }
+      }, child: this.child);
     }, child: child);
   }
 }
@@ -56,38 +77,68 @@ class ColorEffectShader extends StatelessWidget {
 class BlurEffectShader extends StatelessWidget {
   final Widget child;
   final ShaderSettings settings;
+  final double animationValue;
 
   const BlurEffectShader({
     super.key,
     required this.child,
     required this.settings,
+    required this.animationValue,
   });
 
   @override
   Widget build(BuildContext context) {
-    // Use ShaderBuilder for loading and applying the shader
+    if (enableShaderDebugLogs) {
+      print(
+        "SHATTER_SHADER: Building widget with amount=${settings.blurAmount.toStringAsFixed(2)} (animated: ${settings.blurAnimated})",
+      );
+    }
+
+    // Simplified approach using AnimatedSampler with ShaderBuilder
     return ShaderBuilder(assetKey: 'assets/shaders/blur_effect.frag', (
       context,
       shader,
       child,
     ) {
-      // Set shader uniforms
-      shader.setFloat(0, settings.blurAmount); // uBlurAmount
-      shader.setFloat(1, settings.blurRadius); // uBlurRadius
+      return AnimatedSampler((image, size, canvas) {
+        try {
+          // Set the texture sampler first
+          shader.setImageSampler(0, image);
 
-      // Get screen size for shader resolution
-      final Size size = MediaQuery.of(context).size;
-      shader.setFloat(2, size.width); // uResolution.x
-      shader.setFloat(3, size.height); // uResolution.y
+          // Compute animated amount if enabled
+          double amount = settings.blurAmount;
+          if (settings.blurAnimated) {
+            amount =
+                amount * (0.5 + 0.5 * math.sin(animationValue * 2 * math.pi));
+          }
 
-      // Apply shader to child
-      return AnimatedSampler((ui.Image image, Size size, Canvas canvas) {
-        // Set the sampled texture
-        shader.setImageSampler(0, image);
+          // Set uniforms after the texture sampler
+          shader.setFloat(0, amount);
+          shader.setFloat(1, settings.blurRadius);
+          shader.setFloat(2, image.width.toDouble());
+          shader.setFloat(3, image.height.toDouble());
+          shader.setFloat(4, settings.blurOpacity);
+          shader.setFloat(5, settings.blurFacets);
+          shader.setFloat(6, settings.blurBlendMode.toDouble());
 
-        // Draw the shader
-        canvas.drawRect(Offset.zero & size, Paint()..shader = shader);
-      }, child: child!);
+          // Draw with the shader, ensuring it covers the full area
+          canvas.drawRect(Offset.zero & size, Paint()..shader = shader);
+        } catch (e) {
+          print("BLUR_SHADER ERROR: $e");
+          // Fall back to drawing the original image
+          canvas.drawImageRect(
+            image,
+            Rect.fromLTWH(
+              0,
+              0,
+              image.width.toDouble(),
+              image.height.toDouble(),
+            ),
+            Rect.fromLTWH(0, 0, size.width, size.height),
+            Paint(),
+          );
+        }
+      }, child: this.child);
     }, child: child);
   }
 }

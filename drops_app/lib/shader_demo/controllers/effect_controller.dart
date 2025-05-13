@@ -6,6 +6,9 @@ import '../models/effect_settings.dart';
 import '../models/shader_effect.dart';
 import 'custom_shader_widgets.dart';
 
+/// Controls logging for effect application
+bool enableEffectLogs = false;
+
 class EffectController {
   // Apply all enabled effects to a widget
   static Widget applyEffects({
@@ -15,14 +18,19 @@ class EffectController {
   }) {
     // If no effects are enabled, return the original child
     if (!settings.colorEnabled && !settings.blurEnabled) {
+      if (enableEffectLogs) print("EFFECTS: No effects enabled");
       return child;
     }
 
     // Start with the original child
     Widget result = child;
 
+    // Wrap in a SizedBox.expand to maintain full dimensions
+    result = SizedBox.expand(child: result);
+
     // Apply color effect first if enabled
     if (settings.colorEnabled) {
+      if (enableEffectLogs) print("EFFECTS: Applying color");
       result = _applyColorEffect(
         child: result,
         settings: settings,
@@ -32,7 +40,12 @@ class EffectController {
 
     // Apply blur effect last if enabled
     if (settings.blurEnabled) {
-      result = _applyBlurEffect(child: result, settings: settings);
+      if (enableEffectLogs) print("EFFECTS: Applying blur/shatter");
+      result = _applyBlurEffect(
+        child: result,
+        settings: settings,
+        animationValue: animationValue,
+      );
     }
 
     return result;
@@ -45,10 +58,14 @@ class EffectController {
     required double animationValue,
   }) {
     // Skip if all color settings are zero
-    if (settings.hue == 0.0 &&
+    bool allZero =
+        settings.hue == 0.0 &&
         settings.saturation == 0.0 &&
         settings.lightness == 0.0 &&
-        settings.overlayOpacity == 0.0) {
+        settings.overlayOpacity == 0.0;
+
+    if (allZero) {
+      if (enableEffectLogs) print("EFFECTS: Color settings zero, skipping");
       return child;
     }
 
@@ -64,13 +81,19 @@ class EffectController {
   static Widget _applyBlurEffect({
     required Widget child,
     required ShaderSettings settings,
+    required double animationValue,
   }) {
     // Skip if blur amount is zero
-    if (settings.blurAmount <= 0.0) {
+    if (settings.blurAmount <= 0.0 && !settings.blurAnimated) {
+      if (enableEffectLogs) print("EFFECTS: Blur amount zero, skipping");
       return child;
     }
 
     // Use custom shader implementation
-    return BlurEffectShader(child: child, settings: settings);
+    return BlurEffectShader(
+      child: child,
+      settings: settings,
+      animationValue: animationValue,
+    );
   }
 }
