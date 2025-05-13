@@ -73,7 +73,7 @@ class BlurEffectShader extends StatelessWidget {
     ) {
       // Set shader uniforms
       shader.setFloat(0, settings.blurAmount); // uBlurAmount
-      shader.setFloat(1, settings.blurQuality); // uBlurQuality
+      shader.setFloat(1, settings.blurRadius); // uBlurRadius
 
       // Get screen size for shader resolution
       final Size size = MediaQuery.of(context).size;

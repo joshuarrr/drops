@@ -8,18 +8,18 @@ uniform vec2 uResolution;
 
 // Blur parameters
 uniform float uBlurAmount;
-uniform float uBlurQuality;
+uniform float uBlurRadius;
 
 // Define output
 out vec4 fragColor;
 
 // Gaussian blur implementation
-vec4 gaussianBlur(sampler2D tex, vec2 uv, vec2 resolution, float strength) {
+vec4 gaussianBlur(sampler2D tex, vec2 uv, vec2 resolution, float strength, float radius) {
     // Calculate pixel size
     vec2 pixel = 1.0 / resolution;
     
-    // Adjust blur quality (1.0 = best quality, more samples)
-    float quality = max(1.0, 8.0 * (1.0 - uBlurQuality));
+    // Always use best quality (1.0)
+    float quality = 1.0;
     
     // Sample contribution weights (Gaussian approximation)
     float weights[5];
@@ -33,13 +33,13 @@ vec4 gaussianBlur(sampler2D tex, vec2 uv, vec2 resolution, float strength) {
     vec4 color = texture(tex, uv) * weights[0];
     float totalWeight = weights[0];
     
-    // Adjust step based on strength and quality
-    vec2 step = pixel * strength * 2.0;
+    // Adjust step based on strength and radius
+    vec2 step = pixel * radius * strength;
     
     // X direction (horizontal blur)
     for (int i = 1; i < 5; i++) {
         float weight = weights[i];
-        float offset = float(i) * quality;
+        float offset = float(i);
         
         // Add weighted samples in both directions
         color += texture(tex, uv + vec2(offset * step.x, 0.0)) * weight;
@@ -50,7 +50,7 @@ vec4 gaussianBlur(sampler2D tex, vec2 uv, vec2 resolution, float strength) {
     // Y direction (vertical blur)
     for (int i = 1; i < 5; i++) {
         float weight = weights[i];
-        float offset = float(i) * quality;
+        float offset = float(i);
         
         // Add weighted samples in both directions
         color += texture(tex, uv + vec2(0.0, offset * step.y)) * weight;
@@ -71,9 +71,9 @@ void main() {
         return;
     }
     
-    // Scale blur amount for better control (0-1 range to 0-20 range)
-    float blurStrength = uBlurAmount * 15.0;
+    // Use blur radius directly (default should be 15.0)
+    float blurStrength = uBlurAmount;
     
-    // Apply gaussian blur
-    fragColor = gaussianBlur(uTexture, uv, uResolution, blurStrength);
+    // Apply gaussian blur with radius parameter
+    fragColor = gaussianBlur(uTexture, uv, uResolution, blurStrength, uBlurRadius);
 } 

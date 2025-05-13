@@ -218,12 +218,16 @@ class EffectControls {
             defaultValue: 0.0,
           ),
           buildSlider(
-            label: 'Quality',
-            value: settings.blurQuality,
-            onChanged: (value) =>
-                onSliderChanged(value, (v) => settings.blurQuality = v),
+            label: 'Blur Radius',
+            value:
+                settings.blurRadius /
+                30.0, // Scale down from max 30 to 0-1 range
+            onChanged: (value) => onSliderChanged(
+              value,
+              (v) => settings.blurRadius = v * 30.0,
+            ), // Scale up to 0-30 range
             sliderColor: sliderColor,
-            defaultValue: 0.0,
+            defaultValue: 15.0 / 30.0, // Default is 15.0 scaled to 0-1 range
           ),
         ];
     }

@@ -14,7 +14,7 @@ class ShaderSettings {
 
   // Blur settings
   double blurAmount;
-  double blurQuality;
+  double blurRadius;
 
   ShaderSettings({
     // Enable flags
@@ -31,6 +31,6 @@ class ShaderSettings {
 
     // Blur settings
     this.blurAmount = 0.0,
-    this.blurQuality = 0.0,
+    this.blurRadius = 15.0,
   });
 }
