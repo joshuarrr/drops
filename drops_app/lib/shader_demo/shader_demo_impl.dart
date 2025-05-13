@@ -6,6 +6,7 @@ import 'models/shader_effect.dart';
 import 'models/effect_settings.dart';
 import 'controllers/effect_controller.dart';
 import 'views/effect_controls.dart';
+import 'views/panel_container.dart';
 
 class ShaderDemoImpl extends StatefulWidget {
   const ShaderDemoImpl({super.key});
@@ -301,46 +302,41 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     final double screenWidth = MediaQuery.of(context).size.width;
 
     return Center(
-      child: Container(
+      child: SizedBox(
         width: screenWidth * 0.8,
-        padding: const EdgeInsets.all(16),
-        margin: const EdgeInsets.only(top: 100),
-        decoration: BoxDecoration(
-          color: _isCurrentImageDark
-              ? Colors.black.withOpacity(0.7)
-              : Colors.white.withOpacity(0.7),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: sliderColor.withOpacity(0.2), width: 1),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (_selectedAspect == ShaderAspect.image) ...[
-              EffectControls.buildImageSelector(
-                selectedImage: _selectedImage,
-                availableImages: _availableImages,
-                isCurrentImageDark: _isCurrentImageDark,
-                onImageSelected: (String? value) {
-                  if (value != null && value != _selectedImage) {
-                    setState(() {
-                      _selectedImage = value;
-                    });
-                  }
+        child: PanelContainer(
+          isDark: _isCurrentImageDark,
+          margin: const EdgeInsets.only(top: 100),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (_selectedAspect == ShaderAspect.image) ...[
+                EffectControls.buildImageSelector(
+                  selectedImage: _selectedImage,
+                  availableImages: _availableImages,
+                  isCurrentImageDark: _isCurrentImageDark,
+                  onImageSelected: (String? value) {
+                    if (value != null && value != _selectedImage) {
+                      setState(() {
+                        _selectedImage = value;
+                      });
+                    }
+                  },
+                ),
+                const SizedBox(height: 16),
+              ],
+              ...EffectControls.buildSlidersForAspect(
+                aspect: _selectedAspect,
+                settings: _shaderSettings,
+                onSettingsChanged: (settings) {
+                  setState(() {
+                    _shaderSettings = settings;
+                  });
                 },
+                sliderColor: sliderColor,
               ),
-              const SizedBox(height: 16),
             ],
-            ...EffectControls.buildSlidersForAspect(
-              aspect: _selectedAspect,
-              settings: _shaderSettings,
-              onSettingsChanged: (settings) {
-                setState(() {
-                  _shaderSettings = settings;
-                });
-              },
-              sliderColor: sliderColor,
-            ),
-          ],
+          ),
         ),
       ),
     );

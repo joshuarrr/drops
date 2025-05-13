@@ -16,6 +16,14 @@ class EffectControls {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
+        // Image toggle first for quick access
+        _buildAspectToggle(
+          aspect: ShaderAspect.image,
+          isEnabled: true,
+          isCurrentImageDark: isCurrentImageDark,
+          onToggled: onAspectToggled,
+          onTap: onAspectSelected,
+        ),
         _buildAspectToggle(
           aspect: ShaderAspect.color,
           isEnabled: settings.colorEnabled,
@@ -26,13 +34,6 @@ class EffectControls {
         _buildAspectToggle(
           aspect: ShaderAspect.blur,
           isEnabled: settings.blurEnabled,
-          isCurrentImageDark: isCurrentImageDark,
-          onToggled: onAspectToggled,
-          onTap: onAspectSelected,
-        ),
-        _buildAspectToggle(
-          aspect: ShaderAspect.image,
-          isEnabled: true,
           isCurrentImageDark: isCurrentImageDark,
           onToggled: onAspectToggled,
           onTap: onAspectSelected,
