@@ -10,6 +10,7 @@ class AppScaffold extends StatelessWidget {
   final Color? appBarBackgroundColor;
   final double? appBarElevation;
   final int currentIndex;
+  final bool showBottomNavigationBar;
 
   const AppScaffold({
     super.key,
@@ -22,6 +23,7 @@ class AppScaffold extends StatelessWidget {
     this.appBarBackgroundColor,
     this.appBarElevation,
     this.currentIndex = 1, // Default to Demos tab
+    this.showBottomNavigationBar = false,
   });
 
   @override
@@ -49,7 +51,9 @@ class AppScaffold extends StatelessWidget {
       extendBodyBehindAppBar: extendBodyBehindAppBar,
       extendBody: true,
       body: body,
-      bottomNavigationBar: _buildBottomNavigationBar(context, currentIndex),
+      bottomNavigationBar: showBottomNavigationBar
+          ? _buildBottomNavigationBar(context, currentIndex)
+          : null,
     );
   }
 
