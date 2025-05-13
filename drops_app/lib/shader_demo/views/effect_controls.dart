@@ -1,130 +1,102 @@
 import 'package:flutter/material.dart';
 import '../models/shader_effect.dart';
+import '../models/effect_settings.dart';
 
 class EffectControls {
-  static Widget buildEffectSelector({
-    required ShaderEffect selectedEffect,
+  // Build controls for toggling and configuring shader aspects
+  static Widget buildAspectToggleBar({
+    required ShaderSettings settings,
+    required Function(ShaderAspect, bool) onAspectToggled,
+    required Function(ShaderAspect) onAspectSelected,
     required bool isCurrentImageDark,
-    required Function(ShaderEffect) onEffectSelected,
-    required Function() onEffectButtonPressed,
   }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        _buildEffectButton(
-          effect: ShaderEffect.none,
-          icon: Icons.panorama,
-          label: 'None',
-          selectedEffect: selectedEffect,
+        _buildAspectToggle(
+          aspect: ShaderAspect.color,
+          isEnabled: settings.colorEnabled,
           isCurrentImageDark: isCurrentImageDark,
-          onEffectSelected: onEffectSelected,
-          onEffectButtonPressed: onEffectButtonPressed,
+          onToggled: onAspectToggled,
+          onTap: onAspectSelected,
         ),
-        _buildEffectButton(
-          effect: ShaderEffect.color,
-          icon: Icons.color_lens,
-          label: 'Color',
-          selectedEffect: selectedEffect,
+        _buildAspectToggle(
+          aspect: ShaderAspect.blur,
+          isEnabled: settings.blurEnabled,
           isCurrentImageDark: isCurrentImageDark,
-          onEffectSelected: onEffectSelected,
-          onEffectButtonPressed: onEffectButtonPressed,
-        ),
-        _buildEffectButton(
-          effect: ShaderEffect.wave,
-          icon: Icons.waves,
-          label: 'Wave',
-          selectedEffect: selectedEffect,
-          isCurrentImageDark: isCurrentImageDark,
-          onEffectSelected: onEffectSelected,
-          onEffectButtonPressed: onEffectButtonPressed,
-        ),
-        _buildEffectButton(
-          effect: ShaderEffect.pixelate,
-          icon: Icons.grain,
-          label: 'Blur',
-          selectedEffect: selectedEffect,
-          isCurrentImageDark: isCurrentImageDark,
-          onEffectSelected: onEffectSelected,
-          onEffectButtonPressed: onEffectButtonPressed,
+          onToggled: onAspectToggled,
+          onTap: onAspectSelected,
         ),
       ],
     );
   }
 
-  static Widget _buildEffectButton({
-    required ShaderEffect effect,
-    required IconData icon,
-    required String label,
-    required ShaderEffect selectedEffect,
+  // Build a toggleable button for each shader aspect
+  static Widget _buildAspectToggle({
+    required ShaderAspect aspect,
+    required bool isEnabled,
     required bool isCurrentImageDark,
-    required Function(ShaderEffect) onEffectSelected,
-    required Function() onEffectButtonPressed,
+    required Function(ShaderAspect, bool) onToggled,
+    required Function(ShaderAspect) onTap,
   }) {
-    final isSelected = selectedEffect == effect;
+    final Color textColor = isCurrentImageDark ? Colors.white : Colors.black;
+    final Color backgroundColor = isCurrentImageDark
+        ? Colors.white.withOpacity(isEnabled ? 0.25 : 0.15)
+        : Colors.black.withOpacity(isEnabled ? 0.25 : 0.15);
 
-    // Apply transparent black for light images, transparent white for dark images
-    final Color buttonBgColor = isCurrentImageDark
-        ? Colors.white.withOpacity(0.15)
-        : Colors.black.withOpacity(0.15);
+    final Color borderColor = isEnabled
+        ? textColor
+        : textColor.withOpacity(0.5);
 
-    // For selected state, use white outline for dark images and black for light
-    final Color selectedBorderColor = isCurrentImageDark
-        ? Colors.white
-        : Colors.black;
-
-    final Color borderColor = isSelected
-        ? selectedBorderColor
-        : (isCurrentImageDark
-              ? Colors.white.withOpacity(0.5)
-              : Colors.black.withOpacity(0.5));
-
-    // For selected state, use white text for dark images and black for light
-    final Color selectedTextColor = isCurrentImageDark
-        ? Colors.white
-        : Colors.black;
-
-    final Color iconAndTextColor = isSelected
-        ? selectedTextColor
-        : (isCurrentImageDark ? Colors.white : Colors.black);
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          // Always call onEffectSelected to select or reselect the effect
-          onEffectSelected(effect);
-
-          // If the same effect is being tapped again, toggle the controls
-          if (isSelected) {
-            onEffectButtonPressed();
-          }
-        },
-        splashColor: isCurrentImageDark
-            ? Colors.white.withOpacity(0.1)
-            : Colors.black.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
+    return Tooltip(
+      message: isEnabled
+          ? "Long press to disable ${aspect.label}"
+          : "Long press to enable ${aspect.label}",
+      preferBelow: true,
+      showDuration: const Duration(seconds: 1),
+      verticalOffset: 20,
+      textStyle: TextStyle(
+        color: isCurrentImageDark ? Colors.black : Colors.white,
+        fontSize: 12,
+      ),
+      decoration: BoxDecoration(
+        color: isCurrentImageDark
+            ? Colors.white.withOpacity(0.9)
+            : Colors.black.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: GestureDetector(
+        // Single tap to select the aspect and show sliders
+        onTap: () => onTap(aspect),
+        // Long press to toggle the effect on/off
+        onLongPress: () => onToggled(aspect, !isEnabled),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: isSelected
-                ? (isCurrentImageDark
-                      ? Colors.white.withOpacity(0.25)
-                      : Colors.black.withOpacity(0.25))
-                : buttonBgColor,
+            color: backgroundColor,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: borderColor, width: isSelected ? 2 : 1),
+            border: Border.all(color: borderColor, width: isEnabled ? 2 : 1),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: iconAndTextColor, size: 24),
+              Icon(aspect.icon, color: textColor, size: 24),
               const SizedBox(height: 4),
               Text(
-                label,
+                aspect.label,
                 style: TextStyle(
-                  color: iconAndTextColor,
+                  color: textColor,
                   fontSize: 12,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  fontWeight: isEnabled ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Container(
+                height: 6,
+                width: 6,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isEnabled ? Colors.green : textColor.withOpacity(0.3),
                 ),
               ),
             ],
@@ -134,6 +106,130 @@ class EffectControls {
     );
   }
 
+  // Build sliders for a specific aspect with proper grouping
+  static List<Widget> buildSlidersForAspect({
+    required ShaderAspect aspect,
+    required ShaderSettings settings,
+    required Function(ShaderSettings) onSettingsChanged,
+    required Color sliderColor,
+  }) {
+    // Helper function to enable the effect if needed when slider changes
+    void onSliderChanged(double value, Function(double) setter) {
+      // Enable the corresponding effect if it's not already enabled
+      switch (aspect) {
+        case ShaderAspect.color:
+          if (!settings.colorEnabled) settings.colorEnabled = true;
+          break;
+        case ShaderAspect.blur:
+          if (!settings.blurEnabled) settings.blurEnabled = true;
+          break;
+      }
+
+      // Update the setting value
+      setter(value);
+      // Notify the parent widget
+      onSettingsChanged(settings);
+    }
+
+    switch (aspect) {
+      case ShaderAspect.color:
+        return [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              "Color Settings",
+              style: TextStyle(
+                color: sliderColor,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          buildSlider(
+            label: 'Hue',
+            value: settings.hue,
+            onChanged: (value) =>
+                onSliderChanged(value, (v) => settings.hue = v),
+            sliderColor: sliderColor,
+            defaultValue: 0.0,
+          ),
+          buildSlider(
+            label: 'Saturation',
+            value: settings.saturation,
+            onChanged: (value) =>
+                onSliderChanged(value, (v) => settings.saturation = v),
+            sliderColor: sliderColor,
+            defaultValue: 0.0,
+          ),
+          buildSlider(
+            label: 'Lightness',
+            value: settings.lightness,
+            onChanged: (value) =>
+                onSliderChanged(value, (v) => settings.lightness = v),
+            sliderColor: sliderColor,
+            defaultValue: 0.0,
+          ),
+          const SizedBox(height: 16),
+          buildSlider(
+            label: 'Overlay Hue',
+            value: settings.overlayHue,
+            onChanged: (value) =>
+                onSliderChanged(value, (v) => settings.overlayHue = v),
+            sliderColor: sliderColor,
+            defaultValue: 0.0,
+          ),
+          buildSlider(
+            label: 'Overlay Intensity',
+            value: settings.overlayIntensity,
+            onChanged: (value) =>
+                onSliderChanged(value, (v) => settings.overlayIntensity = v),
+            sliderColor: sliderColor,
+            defaultValue: 0.0,
+          ),
+          buildSlider(
+            label: 'Overlay Opacity',
+            value: settings.overlayOpacity,
+            onChanged: (value) =>
+                onSliderChanged(value, (v) => settings.overlayOpacity = v),
+            sliderColor: sliderColor,
+            defaultValue: 0.0,
+          ),
+        ];
+
+      case ShaderAspect.blur:
+        return [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              "Blur Settings",
+              style: TextStyle(
+                color: sliderColor,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          buildSlider(
+            label: 'Blur Amount',
+            value: settings.blurAmount,
+            onChanged: (value) =>
+                onSliderChanged(value, (v) => settings.blurAmount = v),
+            sliderColor: sliderColor,
+            defaultValue: 0.0,
+          ),
+          buildSlider(
+            label: 'Quality',
+            value: settings.blurQuality,
+            onChanged: (value) =>
+                onSliderChanged(value, (v) => settings.blurQuality = v),
+            sliderColor: sliderColor,
+            defaultValue: 0.0,
+          ),
+        ];
+    }
+  }
+
+  // Utility method to build image selector dropdown
   static Widget buildImageSelector({
     required String selectedImage,
     required List<String> availableImages,
@@ -159,6 +255,7 @@ class EffectControls {
     );
   }
 
+  // Builds a single slider control
   static Widget buildSlider({
     required String label,
     required double value,
@@ -177,7 +274,7 @@ class EffectControls {
           label,
           style: TextStyle(
             color: isCurrentImageDark ? Colors.white : Colors.black,
-            fontSize: 16,
+            fontSize: 14,
           ),
         ),
         Row(

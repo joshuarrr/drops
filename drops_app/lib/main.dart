@@ -5,8 +5,9 @@ import 'common/app_scaffold.dart';
 import 'demos_screen.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_provider.dart';
+import 'shader_demo/controllers/effect_controller.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Set preferred orientations and full screen mode

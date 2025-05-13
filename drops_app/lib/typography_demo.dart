@@ -28,7 +28,7 @@ class _TypographyDemoState extends State<TypographyDemo> {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDarkMode = theme.brightness == Brightness.dark;
 
-    final textColor = theme.colorScheme.onBackground;
+    final textColor = theme.colorScheme.onSurface;
     final accentColor = theme.colorScheme.primary;
 
     // Theme toggle action for app bar
@@ -59,7 +59,7 @@ class _TypographyDemoState extends State<TypographyDemo> {
       body: AnimatedContainer(
         duration: const Duration(milliseconds: 500),
         curve: Curves.easeInOut,
-        color: theme.colorScheme.background,
+        color: theme.colorScheme.surface,
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
           child: Column(

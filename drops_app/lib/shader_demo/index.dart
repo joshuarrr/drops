@@ -1,6 +1,15 @@
+// Main entry point
 export 'shader_demo.dart';
+
+// Models
 export 'models/shader_effect.dart';
 export 'models/effect_settings.dart';
-export 'controllers/effect_controller.dart';
+
+// Views
 export 'views/effect_controls.dart';
-export 'views/wave_distortion_painter.dart';
+
+// Controllers
+export 'controllers/effect_controller.dart';
+
+// Implementation
+export 'shader_demo_impl.dart';

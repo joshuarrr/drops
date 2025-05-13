@@ -64,8 +64,8 @@ class AppScaffold extends StatelessWidget {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            theme.colorScheme.background.withOpacity(0),
-            theme.colorScheme.background.withOpacity(0.8),
+            theme.colorScheme.surface.withOpacity(0),
+            theme.colorScheme.surface.withOpacity(0.8),
           ],
         ),
       ),
@@ -79,7 +79,7 @@ class AppScaffold extends StatelessWidget {
         ],
         currentIndex: selectedIndex,
         selectedItemColor: theme.colorScheme.primary,
-        unselectedItemColor: theme.colorScheme.onBackground.withOpacity(0.5),
+        unselectedItemColor: theme.colorScheme.onSurface.withOpacity(0.5),
         onTap: (index) => _handleNavigation(context, index, selectedIndex),
       ),
     );

@@ -12,8 +12,6 @@ class AppTheme {
     onSecondary: Colors.white,
     error: Colors.red[700]!,
     onError: Colors.white,
-    background: Colors.white,
-    onBackground: Colors.black,
     surface: Colors.grey[100]!,
     onSurface: Colors.black,
   );
@@ -27,8 +25,6 @@ class AppTheme {
     onSecondary: Colors.black,
     error: Colors.red[300]!,
     onError: Colors.black,
-    background: Colors.black,
-    onBackground: Colors.white,
     surface: Colors.grey[900]!,
     onSurface: Colors.white,
   );
@@ -37,10 +33,10 @@ class AppTheme {
   static final ThemeData lightTheme = ThemeData(
     useMaterial3: true,
     colorScheme: _lightColorScheme,
-    scaffoldBackgroundColor: _lightColorScheme.background,
+    scaffoldBackgroundColor: _lightColorScheme.surface,
     appBarTheme: AppBarTheme(
-      backgroundColor: _lightColorScheme.background,
-      foregroundColor: _lightColorScheme.onBackground,
+      backgroundColor: _lightColorScheme.surface,
+      foregroundColor: _lightColorScheme.onSurface,
       elevation: _defaultElevation,
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
@@ -71,7 +67,6 @@ class AppTheme {
       unselectedItemColor: _lightColorScheme.primary.withOpacity(0.6),
     ),
     cardColor: _lightColorScheme.surface,
-    dialogBackgroundColor: _lightColorScheme.background,
     dividerTheme: DividerThemeData(
       color: _lightColorScheme.primary.withOpacity(0.2),
     ),
@@ -79,17 +74,17 @@ class AppTheme {
       backgroundColor: _lightColorScheme.primary,
       foregroundColor: _lightColorScheme.onPrimary,
     ),
-    textTheme: _buildTextTheme(_lightColorScheme),
+    textTheme: _buildTextTheme(_lightColorScheme), dialogTheme: DialogThemeData(backgroundColor: _lightColorScheme.background),
   );
 
   // Dark theme
   static final ThemeData darkTheme = ThemeData(
     useMaterial3: true,
     colorScheme: _darkColorScheme,
-    scaffoldBackgroundColor: _darkColorScheme.background,
+    scaffoldBackgroundColor: _darkColorScheme.surface,
     appBarTheme: AppBarTheme(
-      backgroundColor: _darkColorScheme.background,
-      foregroundColor: _darkColorScheme.onBackground,
+      backgroundColor: _darkColorScheme.surface,
+      foregroundColor: _darkColorScheme.onSurface,
       elevation: _defaultElevation,
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
@@ -120,7 +115,6 @@ class AppTheme {
       unselectedItemColor: _darkColorScheme.primary.withOpacity(0.6),
     ),
     cardColor: _darkColorScheme.surface,
-    dialogBackgroundColor: _darkColorScheme.background,
     dividerTheme: DividerThemeData(
       color: _darkColorScheme.primary.withOpacity(0.2),
     ),
@@ -128,27 +122,27 @@ class AppTheme {
       backgroundColor: _darkColorScheme.primary,
       foregroundColor: _darkColorScheme.onPrimary,
     ),
-    textTheme: _buildTextTheme(_darkColorScheme),
+    textTheme: _buildTextTheme(_darkColorScheme), dialogTheme: DialogThemeData(backgroundColor: _darkColorScheme.background),
   );
 
   // Helper method to build consistent text themes
   static TextTheme _buildTextTheme(ColorScheme colorScheme) {
     return TextTheme(
-      displayLarge: TextStyle(color: colorScheme.onBackground),
-      displayMedium: TextStyle(color: colorScheme.onBackground),
-      displaySmall: TextStyle(color: colorScheme.onBackground),
-      headlineLarge: TextStyle(color: colorScheme.onBackground),
-      headlineMedium: TextStyle(color: colorScheme.onBackground),
-      headlineSmall: TextStyle(color: colorScheme.onBackground),
-      titleLarge: TextStyle(color: colorScheme.onBackground),
-      titleMedium: TextStyle(color: colorScheme.onBackground),
-      titleSmall: TextStyle(color: colorScheme.onBackground),
-      bodyLarge: TextStyle(color: colorScheme.onBackground),
-      bodyMedium: TextStyle(color: colorScheme.onBackground),
-      bodySmall: TextStyle(color: colorScheme.onBackground),
-      labelLarge: TextStyle(color: colorScheme.onBackground),
-      labelMedium: TextStyle(color: colorScheme.onBackground),
-      labelSmall: TextStyle(color: colorScheme.onBackground),
+      displayLarge: TextStyle(color: colorScheme.onSurface),
+      displayMedium: TextStyle(color: colorScheme.onSurface),
+      displaySmall: TextStyle(color: colorScheme.onSurface),
+      headlineLarge: TextStyle(color: colorScheme.onSurface),
+      headlineMedium: TextStyle(color: colorScheme.onSurface),
+      headlineSmall: TextStyle(color: colorScheme.onSurface),
+      titleLarge: TextStyle(color: colorScheme.onSurface),
+      titleMedium: TextStyle(color: colorScheme.onSurface),
+      titleSmall: TextStyle(color: colorScheme.onSurface),
+      bodyLarge: TextStyle(color: colorScheme.onSurface),
+      bodyMedium: TextStyle(color: colorScheme.onSurface),
+      bodySmall: TextStyle(color: colorScheme.onSurface),
+      labelLarge: TextStyle(color: colorScheme.onSurface),
+      labelMedium: TextStyle(color: colorScheme.onSurface),
+      labelSmall: TextStyle(color: colorScheme.onSurface),
     );
   }
 }

@@ -65,7 +65,8 @@ flutter:
     - assets/img/
 
   shaders:
-    - assets/simple_shader.frag
+    - assets/shaders/color_effect.frag
+    - assets/shaders/blur_effect.frag
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
