@@ -533,12 +533,39 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
 
     List<Widget> positionedLines = [];
 
+    // Local helper to map int weight (100-900) to FontWeight constant
+    FontWeight _toFontWeight(int w) {
+      switch (w) {
+        case 100:
+          return FontWeight.w100;
+        case 200:
+          return FontWeight.w200;
+        case 300:
+          return FontWeight.w300;
+        case 400:
+          return FontWeight.w400;
+        case 500:
+          return FontWeight.w500;
+        case 600:
+          return FontWeight.w600;
+        case 700:
+          return FontWeight.w700;
+        case 800:
+          return FontWeight.w800;
+        case 900:
+          return FontWeight.w900;
+        default:
+          return FontWeight.w400;
+      }
+    }
+
     void addLine({
       required String text,
       required String font,
       required double size,
       required double posX,
       required double posY,
+      required int weight,
     }) {
       if (text.isEmpty) return;
       // Compute appropriate text style for this line
@@ -551,6 +578,7 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
       TextStyle baseStyle = TextStyle(
         color: Colors.white,
         fontSize: computedSize,
+        fontWeight: _toFontWeight(weight),
       );
 
       late TextStyle textStyle;
@@ -580,6 +608,9 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
       size: _shaderSettings.titleSize,
       posX: _shaderSettings.titlePosX,
       posY: _shaderSettings.titlePosY,
+      weight: _shaderSettings.titleWeight > 0
+          ? _shaderSettings.titleWeight
+          : _shaderSettings.textWeight,
     );
 
     addLine(
@@ -588,6 +619,9 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
       size: _shaderSettings.subtitleSize,
       posX: _shaderSettings.subtitlePosX,
       posY: _shaderSettings.subtitlePosY,
+      weight: _shaderSettings.subtitleWeight > 0
+          ? _shaderSettings.subtitleWeight
+          : _shaderSettings.textWeight,
     );
 
     addLine(
@@ -596,6 +630,9 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
       size: _shaderSettings.artistSize,
       posX: _shaderSettings.artistPosX,
       posY: _shaderSettings.artistPosY,
+      weight: _shaderSettings.artistWeight > 0
+          ? _shaderSettings.artistWeight
+          : _shaderSettings.textWeight,
     );
 
     return Stack(children: positionedLines);

@@ -178,6 +178,89 @@ class EffectControls {
     required Function(ShaderSettings) onSettingsChanged,
     required Color sliderColor,
   }) {
+    // ---------------------------------------------------------------
+    // Local helpers -------------------------------------------------
+    // ---------------------------------------------------------------
+
+    // Generic reset header widget reused across aspects
+    Widget _buildResetRow(VoidCallback onReset) {
+      return Align(
+        alignment: Alignment.centerRight,
+        child: TextButton.icon(
+          style: TextButton.styleFrom(
+            foregroundColor: sliderColor,
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+          ),
+          icon: const Icon(Icons.restore, size: 18),
+          label: const Text('Reset'),
+          onPressed: onReset,
+        ),
+      );
+    }
+
+    // Reset helpers for each aspect – mutate the provided settings object
+    void _resetColor() {
+      final defaults = ShaderSettings();
+      settings
+        ..colorEnabled = false
+        ..hue = defaults.hue
+        ..saturation = defaults.saturation
+        ..lightness = defaults.lightness
+        ..overlayHue = defaults.overlayHue
+        ..overlayIntensity = defaults.overlayIntensity
+        ..overlayOpacity = defaults.overlayOpacity
+        ..colorAnimated = false
+        ..overlayAnimated = false
+        ..colorAnimOptions = AnimationOptions()
+        ..overlayAnimOptions = AnimationOptions();
+    }
+
+    void _resetBlur() {
+      final defaults = ShaderSettings();
+      settings
+        ..blurEnabled = false
+        ..blurAmount = defaults.blurAmount
+        ..blurRadius = defaults.blurRadius
+        ..blurOpacity = defaults.blurOpacity
+        ..blurFacets = defaults.blurFacets
+        ..blurBlendMode = defaults.blurBlendMode
+        ..blurAnimated = false
+        ..blurAnimOptions = AnimationOptions();
+    }
+
+    void _resetImage() {
+      settings.fillScreen = false;
+    }
+
+    void _resetText() {
+      final defaults = ShaderSettings();
+      settings
+        ..textEnabled = false
+        ..textTitle = defaults.textTitle
+        ..textSubtitle = defaults.textSubtitle
+        ..textArtist = defaults.textArtist
+        ..textFont = defaults.textFont
+        ..textSize = defaults.textSize
+        ..textPosX = defaults.textPosX
+        ..textPosY = defaults.textPosY
+        ..textWeight = defaults.textWeight
+        ..titleFont = defaults.titleFont
+        ..titleSize = defaults.titleSize
+        ..titlePosX = defaults.titlePosX
+        ..titlePosY = defaults.titlePosY
+        ..titleWeight = defaults.titleWeight
+        ..subtitleFont = defaults.subtitleFont
+        ..subtitleSize = defaults.subtitleSize
+        ..subtitlePosX = defaults.subtitlePosX
+        ..subtitlePosY = defaults.subtitlePosY
+        ..subtitleWeight = defaults.subtitleWeight
+        ..artistFont = defaults.artistFont
+        ..artistSize = defaults.artistSize
+        ..artistPosX = defaults.artistPosX
+        ..artistPosY = defaults.artistPosY
+        ..artistWeight = defaults.artistWeight;
+    }
+
     // Helper function to enable the effect if needed when slider changes
     void onSliderChanged(double value, Function(double) setter) {
       if (enableLogging) {
@@ -208,9 +291,18 @@ class EffectControls {
       onSettingsChanged(settings);
     }
 
+    // ---------------------------------------------------------------
+    // Build UI per aspect ------------------------------------------
+    // ---------------------------------------------------------------
+
     switch (aspect) {
       case ShaderAspect.color:
         return [
+          _buildResetRow(() {
+            _resetColor();
+            onSettingsChanged(settings);
+          }),
+          const SizedBox(height: 8),
           buildSlider(
             label: 'Hue',
             value: settings.hue,
@@ -362,6 +454,11 @@ class EffectControls {
 
       case ShaderAspect.blur:
         return [
+          _buildResetRow(() {
+            _resetBlur();
+            onSettingsChanged(settings);
+          }),
+          const SizedBox(height: 8),
           buildSlider(
             label: 'Shatter Amount',
             value: settings.blurAmount,
@@ -479,6 +576,11 @@ class EffectControls {
 
       case ShaderAspect.image:
         return [
+          _buildResetRow(() {
+            _resetImage();
+            onSettingsChanged(settings);
+          }),
+          const SizedBox(height: 8),
           RadioListTile<bool>(
             value: false,
             groupValue: settings.fillScreen,
@@ -701,8 +803,101 @@ class EffectControls {
             }
           }
 
+          // -------- Weight helpers ---------
+          int getCurrentWeight() {
+            switch (EffectControls.selectedTextLine) {
+              case TextLine.title:
+                return settings.titleWeight > 0
+                    ? settings.titleWeight
+                    : settings.textWeight;
+              case TextLine.subtitle:
+                return settings.subtitleWeight > 0
+                    ? settings.subtitleWeight
+                    : settings.textWeight;
+              case TextLine.artist:
+                return settings.artistWeight > 0
+                    ? settings.artistWeight
+                    : settings.textWeight;
+            }
+            return settings.textWeight;
+          }
+
+          void setCurrentWeight(int w) {
+            switch (EffectControls.selectedTextLine) {
+              case TextLine.title:
+                settings.titleWeight = w;
+                break;
+              case TextLine.subtitle:
+                settings.subtitleWeight = w;
+                break;
+              case TextLine.artist:
+                settings.artistWeight = w;
+                break;
+            }
+          }
+
+          // Helper to convert int weight to FontWeight
+          FontWeight _toFontWeight(int weight) {
+            switch (weight) {
+              case 100:
+                return FontWeight.w100;
+              case 200:
+                return FontWeight.w200;
+              case 300:
+                return FontWeight.w300;
+              case 400:
+                return FontWeight.w400;
+              case 500:
+                return FontWeight.w500;
+              case 600:
+                return FontWeight.w600;
+              case 700:
+                return FontWeight.w700;
+              case 800:
+                return FontWeight.w800;
+              case 900:
+                return FontWeight.w900;
+              default:
+                return FontWeight.w400;
+            }
+          }
+
+          int _fromFontWeight(FontWeight fw) {
+            switch (fw) {
+              case FontWeight.w100:
+                return 100;
+              case FontWeight.w200:
+                return 200;
+              case FontWeight.w300:
+                return 300;
+              case FontWeight.w400:
+                return 400;
+              case FontWeight.w500:
+                return 500;
+              case FontWeight.w600:
+                return 600;
+              case FontWeight.w700:
+                return 700;
+              case FontWeight.w800:
+                return 800;
+              case FontWeight.w900:
+                return 900;
+              default:
+                return 400;
+            }
+          }
+
           // ------------------------------------------------------------------
           List<Widget> widgets = [];
+
+          widgets.add(
+            _buildResetRow(() {
+              _resetText();
+              onSettingsChanged(settings);
+            }),
+          );
+
+          widgets.add(const SizedBox(height: 8));
 
           widgets.add(
             Wrap(
@@ -737,10 +932,16 @@ class EffectControls {
               selectedFont: getCurrentFont().isEmpty
                   ? 'Default'
                   : getCurrentFont(),
+              selectedWeight: _toFontWeight(getCurrentWeight()),
               labelText: 'Font',
               onFontSelected: (font) {
                 final selected = font == 'Default' ? '' : font;
                 setCurrentFont(selected);
+                if (!settings.textEnabled) settings.textEnabled = true;
+                onSettingsChanged(settings);
+              },
+              onWeightSelected: (fw) {
+                setCurrentWeight(_fromFontWeight(fw));
                 if (!settings.textEnabled) settings.textEnabled = true;
                 onSettingsChanged(settings);
               },

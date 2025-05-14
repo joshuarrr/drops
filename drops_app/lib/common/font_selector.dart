@@ -69,6 +69,8 @@ class FontSelector extends StatelessWidget {
     super.key,
     required this.selectedFont,
     required this.onFontSelected,
+    this.selectedWeight,
+    this.onWeightSelected,
     this.dropdownColor,
     this.labelText,
   });
@@ -78,6 +80,12 @@ class FontSelector extends StatelessWidget {
 
   /// Called when the user picks a new font.
   final ValueChanged<String> onFontSelected;
+
+  /// Currently selected weight – if null the dropdown defaults to w400.
+  final FontWeight? selectedWeight;
+
+  /// Callback when the weight is changed. If null the weight dropdown is still shown but disabled.
+  final ValueChanged<FontWeight>? onWeightSelected;
 
   /// Optional dropdown background color – defaults to Theme brightness.
   final Color? dropdownColor;
@@ -158,9 +166,64 @@ class FontSelector extends StatelessWidget {
               const SizedBox(height: 4),
             ],
             buildDropdown(families),
+            const SizedBox(height: 8),
+            _buildWeightDropdown(textColor, accent),
           ],
         );
       },
+    );
+  }
+
+  /// Builds weight dropdown using common typographic weights.
+  Widget _buildWeightDropdown(Color textColor, Color accent) {
+    // Common display names for weights
+    const weightLabels = {
+      FontWeight.w100: 'Thin',
+      FontWeight.w200: 'Extra-Light',
+      FontWeight.w300: 'Light',
+      FontWeight.w400: 'Regular',
+      FontWeight.w500: 'Medium',
+      FontWeight.w600: 'Semi-Bold',
+      FontWeight.w700: 'Bold',
+      FontWeight.w800: 'Extra-Bold',
+      FontWeight.w900: 'Black',
+    };
+
+    final FontWeight current = selectedWeight ?? FontWeight.w400;
+
+    return DropdownButton<FontWeight>(
+      value: current,
+      dropdownColor: dropdownColor ?? Colors.black87,
+      isExpanded: true,
+      icon: Icon(Icons.arrow_drop_down, color: accent),
+      underline: Container(height: 2, color: accent),
+      style: TextStyle(color: textColor),
+      onChanged: onWeightSelected == null
+          ? null
+          : (FontWeight? w) {
+              if (w != null) onWeightSelected!(w);
+            },
+      items: weightLabels.entries.map((entry) {
+        final weight = entry.key;
+        final label = '${entry.value} (${weight.index + 1}00)';
+        TextStyle preview;
+        try {
+          preview = GoogleFonts.getFont(
+            selectedFont == 'Default' ? 'Roboto' : selectedFont,
+            textStyle: TextStyle(color: textColor, fontWeight: weight),
+          );
+        } catch (_) {
+          preview = TextStyle(
+            color: textColor,
+            fontWeight: weight,
+            fontFamily: selectedFont == 'Default' ? null : selectedFont,
+          );
+        }
+        return DropdownMenuItem<FontWeight>(
+          value: weight,
+          child: Text(label, style: preview),
+        );
+      }).toList(),
     );
   }
 }

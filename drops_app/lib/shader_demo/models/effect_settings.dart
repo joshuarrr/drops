@@ -61,6 +61,12 @@ class ShaderSettings {
   double _artistPosX;
   double _artistPosY;
 
+  // Weight settings
+  int _textWeight; // 100-900 (default 400)
+  int _titleWeight;
+  int _subtitleWeight;
+  int _artistWeight;
+
   // Flag to control logging
   static bool enableLogging = false;
 
@@ -231,6 +237,31 @@ class ShaderSettings {
     if (enableLogging) print("SETTINGS: textPosY set to $value");
   }
 
+  // Weight getters/setters
+  int get textWeight => _textWeight;
+  set textWeight(int v) {
+    _textWeight = v;
+    if (enableLogging) print("SETTINGS: textWeight set to $v");
+  }
+
+  int get titleWeight => _titleWeight;
+  set titleWeight(int v) {
+    _titleWeight = v;
+    if (enableLogging) print("SETTINGS: titleWeight set to $v");
+  }
+
+  int get subtitleWeight => _subtitleWeight;
+  set subtitleWeight(int v) {
+    _subtitleWeight = v;
+    if (enableLogging) print("SETTINGS: subtitleWeight set to $v");
+  }
+
+  int get artistWeight => _artistWeight;
+  set artistWeight(int v) {
+    _artistWeight = v;
+    if (enableLogging) print("SETTINGS: artistWeight set to $v");
+  }
+
   // --------------------- Per-line getters/setters ---------------------
   String get titleFont => _titleFont;
   set titleFont(String v) {
@@ -373,6 +404,9 @@ class ShaderSettings {
     double textPosX = 0.1,
     double textPosY = 0.1,
 
+    // New weight defaults
+    int textWeight = 400,
+
     // Independent animation options
     AnimationOptions? colorAnimOptions,
     AnimationOptions? overlayAnimOptions,
@@ -396,6 +430,11 @@ class ShaderSettings {
     double artistSize = 0.035,
     double artistPosX = 0.1,
     double artistPosY = 0.26,
+
+    // Per-line weight defaults
+    int titleWeight = 400,
+    int subtitleWeight = 400,
+    int artistWeight = 400,
   }) : _colorEnabled = colorEnabled,
        _blurEnabled = blurEnabled,
        _hue = hue,
@@ -424,6 +463,10 @@ class ShaderSettings {
        _textSize = textSize,
        _textPosX = textPosX,
        _textPosY = textPosY,
+       _textWeight = textWeight,
+       _titleWeight = titleWeight,
+       _subtitleWeight = subtitleWeight,
+       _artistWeight = artistWeight,
        _titleFont = titleFont,
        _titleSize = titleSize,
        _titlePosX = titlePosX,
@@ -473,6 +516,7 @@ class ShaderSettings {
       'textSize': _textSize,
       'textPosX': _textPosX,
       'textPosY': _textPosY,
+      'textWeight': _textWeight,
       'titleFont': _titleFont,
       'titleSize': _titleSize,
       'titlePosX': _titlePosX,
@@ -485,6 +529,9 @@ class ShaderSettings {
       'artistSize': _artistSize,
       'artistPosX': _artistPosX,
       'artistPosY': _artistPosY,
+      'titleWeight': _titleWeight,
+      'subtitleWeight': _subtitleWeight,
+      'artistWeight': _artistWeight,
     };
   }
 
@@ -530,6 +577,7 @@ class ShaderSettings {
       textSize: (map['textSize'] as num?)?.toDouble() ?? 0.05,
       textPosX: (map['textPosX'] as num?)?.toDouble() ?? 0.1,
       textPosY: (map['textPosY'] as num?)?.toDouble() ?? 0.1,
+      textWeight: (map['textWeight'] as int?) ?? 400,
       titleFont: map['titleFont'] as String? ?? '',
       titleSize: (map['titleSize'] as num?)?.toDouble() ?? 0.05,
       titlePosX: (map['titlePosX'] as num?)?.toDouble() ?? 0.1,
@@ -542,6 +590,9 @@ class ShaderSettings {
       artistSize: (map['artistSize'] as num?)?.toDouble() ?? 0.035,
       artistPosX: (map['artistPosX'] as num?)?.toDouble() ?? 0.1,
       artistPosY: (map['artistPosY'] as num?)?.toDouble() ?? 0.26,
+      titleWeight: (map['titleWeight'] as int?) ?? 400,
+      subtitleWeight: (map['subtitleWeight'] as int?) ?? 400,
+      artistWeight: (map['artistWeight'] as int?) ?? 400,
     );
   }
 }
