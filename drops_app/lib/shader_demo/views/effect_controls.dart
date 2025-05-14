@@ -161,17 +161,6 @@ class EffectControls {
     switch (aspect) {
       case ShaderAspect.color:
         return [
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Text(
-              "Color Settings",
-              style: TextStyle(
-                color: sliderColor,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
           buildSlider(
             label: 'Hue',
             value: settings.hue,
@@ -225,17 +214,6 @@ class EffectControls {
 
       case ShaderAspect.blur:
         return [
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Text(
-              "Shatter Settings",
-              style: TextStyle(
-                color: sliderColor,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
           buildSlider(
             label: 'Shatter Amount',
             value: settings.blurAmount,
@@ -248,13 +226,13 @@ class EffectControls {
             label: 'Shatter Radius',
             value:
                 settings.blurRadius /
-                60.0, // Scale down from max 60 to 0-1 range
+                120.0, // Scale down from max 120 to 0-1 range
             onChanged: (value) => onSliderChanged(
               value,
-              (v) => settings.blurRadius = v * 60.0,
-            ), // Scale up to 0-60 range
+              (v) => settings.blurRadius = v * 120.0,
+            ), // Scale up to 0-120 range
             sliderColor: sliderColor,
-            defaultValue: 15.0 / 60.0, // Default is 15.0 scaled to 0-1 range
+            defaultValue: 15.0 / 120.0, // Default scaled value
           ),
           // Opacity slider
           buildSlider(
@@ -265,14 +243,14 @@ class EffectControls {
             sliderColor: sliderColor,
             defaultValue: 1.0,
           ),
-          // Facets slider (0-1 mapped to 1-50 facets)
+          // Facets slider (0-1 mapped to 1-150 facets)
           buildSlider(
             label: 'Facets',
-            value: settings.blurFacets / 50.0,
+            value: settings.blurFacets / 150.0,
             onChanged: (value) =>
-                onSliderChanged(value, (v) => settings.blurFacets = v * 50.0),
+                onSliderChanged(value, (v) => settings.blurFacets = v * 150.0),
             sliderColor: sliderColor,
-            defaultValue: 1.0 / 50.0,
+            defaultValue: 1.0 / 150.0,
           ),
           // Blend mode chips
           Wrap(

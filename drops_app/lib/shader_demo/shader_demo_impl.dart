@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:convert';
+import 'dart:math';
+import 'dart:ui' as ui;
 
 import '../common/app_scaffold.dart';
 import 'models/shader_effect.dart';
@@ -10,6 +12,9 @@ import 'views/effect_controls.dart';
 import 'views/panel_container.dart';
 
 enum ImageCategory { covers, artists }
+
+// Two animation behaviours for the shader demo
+enum AnimationMode { pulse, randomixed }
 
 class ShaderDemoImpl extends StatefulWidget {
   const ShaderDemoImpl({super.key});
@@ -40,6 +45,40 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
   ImageCategory _imageCategory = ImageCategory.covers;
   String _selectedImage = '';
 
+  // Currently selected animation behaviour
+  AnimationMode _animationMode = AnimationMode.pulse;
+
+  // Random generator for the "randomixed" animation
+  final Random _rand = Random();
+
+  // Animation duration bounds
+  static const int _minDurationMs = 30000; // 30 s
+  static const int _maxDurationMs = 300; // 0.3 s
+
+  // Normalized speed slider value in [0,1] (0 = slowest, 1 = fastest)
+  double _animationSpeed = 0.5; // start mid-range
+
+  // Hashing utility for deterministic pseudo-random per segment
+  double _hash(double x) {
+    // Based on https://stackoverflow.com/a/17479300 (simple hash)
+    return (sin(x * 12.9898) * 43758.5453).abs() % 1;
+  }
+
+  // Returns a smoothly varying random value in \[0,1) given normalized time t (0-1)
+  double _smoothRandom(double t, {int segments = 8}) {
+    final double scaled = t * segments;
+    final double idx0 = scaled.floorToDouble();
+    final double idx1 = idx0 + 1.0;
+    final double frac = scaled - idx0;
+
+    final double r0 = _hash(idx0);
+    final double r1 = _hash(idx1);
+
+    // Smooth interpolation using easeInOut for softer transitions
+    final double eased = Curves.easeInOut.transform(frac);
+    return ui.lerpDouble(r0, r1, eased)!;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -49,7 +88,9 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
 
     // Create animation controller for shader effects
     _controller = AnimationController(
-      duration: const Duration(seconds: 3),
+      duration: Duration(
+        milliseconds: ((_minDurationMs + _maxDurationMs) ~/ 2),
+      ),
       vsync: this,
     )..repeat();
 
@@ -179,63 +220,6 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
             // Aspect parameter sliders for the selected aspect
             if (_showControls && _showAspectSliders)
               _buildAspectParameterSliders(),
-
-            // Show active effects info in bottom left
-            Positioned(
-              left: 16,
-              bottom: 80,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (_shaderSettings.colorEnabled ||
-                      _shaderSettings.blurEnabled)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color:
-                            (theme.brightness == Brightness.dark
-                                    ? Colors.white
-                                    : Colors.black)
-                                .withOpacity(0.4),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (_shaderSettings.colorEnabled)
-                            Text(
-                              "Color: ON",
-                              style:
-                                  theme.textTheme.labelSmall?.copyWith(
-                                    color: Colors.white,
-                                  ) ??
-                                  const TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.white,
-                                  ),
-                            ),
-                          if (_shaderSettings.blurEnabled)
-                            Text(
-                              "Shatter: ON",
-                              style:
-                                  theme.textTheme.labelSmall?.copyWith(
-                                    color: Colors.white,
-                                  ) ??
-                                  const TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.white,
-                                  ),
-                            ),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-            ),
           ],
         ),
       ),
@@ -246,11 +230,16 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
-        // Apply all enabled effects using the controller
+        // Determine the value fed into shader effects based on selected mode
+        final double animationValue = _animationMode == AnimationMode.pulse
+            ? _controller.value
+            : _smoothRandom(_controller.value);
+
+        // Apply all enabled effects using the computed animation value
         Widget effectsWidget = EffectController.applyEffects(
           child: _buildCenteredImage(),
           settings: _shaderSettings,
-          animationValue: _controller.value,
+          animationValue: animationValue,
         );
 
         // Ensure the effect widget maintains the full screen size
@@ -319,6 +308,10 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                 },
                 sliderColor: sliderColor,
               ),
+              // Animation speed & type selectors (visible only when animate enabled)
+              if (_selectedAspect == ShaderAspect.blur &&
+                  _shaderSettings.blurAnimated)
+                _buildAnimationSelector(sliderColor),
             ],
           ),
         ),
@@ -458,5 +451,75 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     return _imageCategory == ImageCategory.covers
         ? _coverImages
         : _artistImages;
+  }
+
+  // Control to pick the current animation behaviour
+  Widget _buildAnimationSelector(Color sliderColor) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 16),
+        Text('Speed', style: TextStyle(color: sliderColor, fontSize: 14)),
+        SliderTheme(
+          data: SliderThemeData(
+            activeTrackColor: sliderColor,
+            inactiveTrackColor: sliderColor.withOpacity(0.3),
+            thumbColor: sliderColor,
+          ),
+          child: Slider(
+            value: _animationSpeed,
+            min: 0.0,
+            max: 1.0,
+            divisions: 20,
+            onChanged: (value) {
+              setState(() {
+                _animationSpeed = value;
+                final int newMillis = ui
+                    .lerpDouble(
+                      _minDurationMs.toDouble(),
+                      _maxDurationMs.toDouble(),
+                      value,
+                    )!
+                    .round();
+                _controller.duration = Duration(milliseconds: newMillis);
+                _controller
+                  ..stop()
+                  ..repeat();
+              });
+            },
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'Animation Type',
+          style: TextStyle(color: sliderColor, fontSize: 14),
+        ),
+        const SizedBox(height: 8),
+        Column(
+          children: AnimationMode.values.map((mode) {
+            final String label = mode == AnimationMode.pulse
+                ? 'Pulse'
+                : 'Randomixed';
+            return RadioListTile<AnimationMode>(
+              value: mode,
+              groupValue: _animationMode,
+              activeColor: sliderColor,
+              contentPadding: EdgeInsets.zero,
+              title: Text(label, style: TextStyle(color: sliderColor)),
+              dense: true,
+              visualDensity: const VisualDensity(horizontal: 0, vertical: -4),
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              onChanged: (AnimationMode? value) {
+                if (value != null) {
+                  setState(() {
+                    _animationMode = value;
+                  });
+                }
+              },
+            );
+          }).toList(),
+        ),
+      ],
+    );
   }
 }

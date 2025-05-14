@@ -37,11 +37,11 @@ vec4 gaussianBlur(sampler2D tex, vec2 uv, vec2 resolution, float strength, float
     // Ensure blur parameters stay within safe ranges
     // Both amount and radius need proper clamping
     float effectiveStrength = clamp(strength, 0.0, 1.0);
-    float effectiveRadius = clamp(radius, 1.0, 60.0);
+    float effectiveRadius = clamp(radius, 1.0, 120.0);
     
     // Calculate sampling step size with better scaling
     // Use a more conservative scale factor for visual effect
-    vec2 step = pixel * effectiveRadius * effectiveStrength * 5.0;
+    vec2 step = pixel * effectiveRadius * effectiveStrength * 10.0;
     
     // X direction (horizontal blur)
     for (int i = 1; i < 5; i++) {
@@ -113,19 +113,20 @@ void main() {
     // Apply gaussian blur (shatter effect) using possibly faceted UVs
     vec4 effectColor = gaussianBlur(uTexture, uv, uResolution, uBlurAmount, uBlurRadius);
     
-    // Blend with base according to selected blend mode
+    float mixFactor = clamp(uOpacity * uBlurAmount, 0.0, 1.0);
+
     vec3 base = directSample.rgb;
     vec3 blend = effectColor.rgb;
     vec3 result;
     
     if (uBlendMode < 0.5) {            // Normal
-        result = mix(base, blend, uOpacity);
+        result = mix(base, blend, mixFactor);
     } else if (uBlendMode < 1.5) {     // Multiply
-        result = mix(base, base * blend, uOpacity);
+        result = mix(base, base * blend, mixFactor);
     } else if (uBlendMode < 2.5) {     // Screen
-        result = mix(base, 1.0 - (1.0 - base) * (1.0 - blend), uOpacity);
+        result = mix(base, 1.0 - (1.0 - base) * (1.0 - blend), mixFactor);
     } else {                           // Fallback normal
-        result = mix(base, blend, uOpacity);
+        result = mix(base, blend, mixFactor);
     }
     
     fragColor = vec4(result, directSample.a);
