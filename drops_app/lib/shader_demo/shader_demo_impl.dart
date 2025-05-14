@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:convert';
 
 import '../common/app_scaffold.dart';
 import 'models/shader_effect.dart';
@@ -7,6 +8,8 @@ import 'models/effect_settings.dart';
 import 'controllers/effect_controller.dart';
 import 'views/effect_controls.dart';
 import 'views/panel_container.dart';
+
+enum ImageCategory { covers, artists }
 
 class ShaderDemoImpl extends StatefulWidget {
   const ShaderDemoImpl({super.key});
@@ -29,17 +32,13 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
   // Unified settings object for all shader aspects
   late ShaderSettings _shaderSettings;
 
-  // List of available images
-  final List<String> _availableImages = [
-    'assets/img/abbey.png',
-    'assets/img/darkside.png',
-    'assets/img/bollocks.png',
-    'assets/img/ill.png',
-    'assets/img/londoncalling.png',
-  ];
+  // Image lists populated from AssetManifest
+  List<String> _coverImages = [];
+  List<String> _artistImages = [];
 
-  // Currently selected image
-  String _selectedImage = 'assets/img/darkside.png';
+  // Currently selected category and image
+  ImageCategory _imageCategory = ImageCategory.covers;
+  String _selectedImage = '';
 
   @override
   void initState() {
@@ -53,6 +52,8 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
       duration: const Duration(seconds: 3),
       vsync: this,
     )..repeat();
+
+    _loadImageAssets();
 
     // Delay full immersive mode until after widget is built
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -270,14 +271,18 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
           color: Colors.black,
           width: screenWidth,
           height: screenHeight,
-          alignment: Alignment.center, // Ensure content is centered
-          child: Image.asset(
-            _selectedImage,
-            alignment: Alignment.center,
-            fit: _shaderSettings.fillScreen ? BoxFit.cover : BoxFit.contain,
-            width: double.infinity,
-            height: double.infinity,
-          ),
+          alignment: Alignment.center,
+          child: _selectedImage.isEmpty
+              ? const SizedBox.shrink()
+              : Image.asset(
+                  _selectedImage,
+                  alignment: Alignment.center,
+                  fit: _shaderSettings.fillScreen
+                      ? BoxFit.cover
+                      : BoxFit.contain,
+                  width: double.infinity,
+                  height: double.infinity,
+                ),
         );
       },
     );
@@ -299,18 +304,9 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
             mainAxisSize: MainAxisSize.min,
             children: [
               if (_selectedAspect == ShaderAspect.image) ...[
-                EffectControls.buildImageSelector(
-                  selectedImage: _selectedImage,
-                  availableImages: _availableImages,
-                  isCurrentImageDark: theme.brightness == Brightness.dark,
-                  onImageSelected: (String? value) {
-                    if (value != null && value != _selectedImage) {
-                      setState(() {
-                        _selectedImage = value;
-                      });
-                    }
-                  },
-                ),
+                _buildImageCategorySelector(theme),
+                const SizedBox(height: 12),
+                _buildImageThumbnails(theme),
                 const SizedBox(height: 16),
               ],
               ...EffectControls.buildSlidersForAspect(
@@ -328,5 +324,139 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
         ),
       ),
     );
+  }
+
+  Future<void> _loadImageAssets() async {
+    try {
+      final manifestContent = await rootBundle.loadString('AssetManifest.json');
+      final dynamic manifestJson = json.decode(manifestContent);
+
+      // Support both the legacy and the v2 manifest structure introduced in recent Flutter versions.
+      // In the legacy format `manifestJson` is a Map<String, dynamic> whose keys are the asset paths.
+      // In the new format it looks like {"version": ..., "assets": { <path>: { ... } }}.
+      Iterable<String> assetKeys = [];
+      if (manifestJson is Map<String, dynamic>) {
+        if (manifestJson.containsKey('assets') &&
+            manifestJson['assets'] is Map<String, dynamic>) {
+          assetKeys = (manifestJson['assets'] as Map<String, dynamic>).keys;
+        } else {
+          assetKeys = manifestJson.keys;
+        }
+      }
+
+      final covers =
+          assetKeys
+              .where((path) => path.startsWith('assets/img/covers/'))
+              .toList()
+            ..sort();
+
+      final artists =
+          assetKeys
+              .where((path) => path.startsWith('assets/img/artists/'))
+              .toList()
+            ..sort();
+
+      setState(() {
+        _coverImages = covers;
+        _artistImages = artists;
+
+        // Default selected image
+        if (covers.isNotEmpty) {
+          _selectedImage = covers.first;
+        } else if (artists.isNotEmpty) {
+          _imageCategory = ImageCategory.artists;
+          _selectedImage = artists.first;
+        }
+      });
+    } catch (e, stack) {
+      debugPrint('Failed to load asset manifest: $e\n$stack');
+    }
+  }
+
+  // Build radio selector for image category
+  Widget _buildImageCategorySelector(ThemeData theme) {
+    Color textColor = theme.colorScheme.onSurface;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _buildCategoryRadio(ImageCategory.covers, 'Covers', textColor),
+        const SizedBox(width: 24),
+        _buildCategoryRadio(ImageCategory.artists, 'Artists', textColor),
+      ],
+    );
+  }
+
+  Widget _buildCategoryRadio(
+    ImageCategory category,
+    String label,
+    Color textColor,
+  ) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Radio<ImageCategory>(
+          value: category,
+          groupValue: _imageCategory,
+          onChanged: (ImageCategory? value) {
+            if (value != null) {
+              setState(() {
+                _imageCategory = value;
+
+                // Ensure selected image belongs to category
+                final images = _getCurrentImages();
+                if (!images.contains(_selectedImage) && images.isNotEmpty) {
+                  _selectedImage = images.first;
+                }
+              });
+            }
+          },
+          activeColor: textColor,
+        ),
+        Text(label, style: TextStyle(color: textColor)),
+      ],
+    );
+  }
+
+  // Build thumbnails for current category
+  Widget _buildImageThumbnails(ThemeData theme) {
+    final images = _getCurrentImages();
+    if (images.isEmpty) {
+      return Text(
+        'No images',
+        style: TextStyle(color: theme.colorScheme.onSurface),
+      );
+    }
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: images.map((path) {
+        final bool isSelected = path == _selectedImage;
+        return GestureDetector(
+          onTap: () {
+            setState(() {
+              _selectedImage = path;
+            });
+          },
+          child: Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: isSelected ? Colors.white : Colors.transparent,
+                width: 1,
+              ),
+            ),
+            child: Image.asset(path, fit: BoxFit.cover),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  List<String> _getCurrentImages() {
+    return _imageCategory == ImageCategory.covers
+        ? _coverImages
+        : _artistImages;
   }
 }
