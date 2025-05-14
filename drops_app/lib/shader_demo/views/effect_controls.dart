@@ -2,10 +2,39 @@ import 'package:flutter/material.dart';
 import '../models/shader_effect.dart';
 import '../models/effect_settings.dart';
 import '../models/animation_options.dart';
+import '../../common/font_selector.dart';
+
+// Enum for identifying each text line (outside class for reuse)
+enum TextLine { title, subtitle, artist }
+
+extension TextLineExt on TextLine {
+  String get label {
+    switch (this) {
+      case TextLine.title:
+        return 'Title';
+      case TextLine.subtitle:
+        return 'Subtitle';
+      case TextLine.artist:
+        return 'Artist';
+    }
+  }
+}
 
 class EffectControls {
   // Control logging verbosity
   static bool enableLogging = false;
+
+  // Selected text line for editing (shared across rebuilds)
+  static TextLine selectedTextLine = TextLine.title;
+
+  // Whether the font selector overlay is visible.
+  static bool fontSelectorOpen = false;
+
+  // Load font choices via the shared FontUtils helper so the logic is
+  // centralized and can be reused by other widgets as well.
+  static Future<List<String>> getFontChoices() {
+    return FontUtils.loadFontFamilies();
+  }
 
   // Build controls for toggling and configuring shader aspects
   static Widget buildAspectToggleBar({
@@ -13,33 +42,50 @@ class EffectControls {
     required Function(ShaderAspect, bool) onAspectToggled,
     required Function(ShaderAspect) onAspectSelected,
     required bool isCurrentImageDark,
+    required bool hidden,
   }) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        // Image toggle first for quick access
-        _buildAspectToggle(
-          aspect: ShaderAspect.image,
-          isEnabled: true,
-          isCurrentImageDark: isCurrentImageDark,
-          onToggled: onAspectToggled,
-          onTap: onAspectSelected,
+    return AnimatedSlide(
+      offset: hidden ? const Offset(0, -1.2) : Offset.zero,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      child: AnimatedOpacity(
+        opacity: hidden ? 0.0 : 1.0,
+        duration: const Duration(milliseconds: 300),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            // Image toggle first for quick access
+            _buildAspectToggle(
+              aspect: ShaderAspect.image,
+              isEnabled: true,
+              isCurrentImageDark: isCurrentImageDark,
+              onToggled: onAspectToggled,
+              onTap: onAspectSelected,
+            ),
+            _buildAspectToggle(
+              aspect: ShaderAspect.color,
+              isEnabled: settings.colorEnabled,
+              isCurrentImageDark: isCurrentImageDark,
+              onToggled: onAspectToggled,
+              onTap: onAspectSelected,
+            ),
+            _buildAspectToggle(
+              aspect: ShaderAspect.blur,
+              isEnabled: settings.blurEnabled,
+              isCurrentImageDark: isCurrentImageDark,
+              onToggled: onAspectToggled,
+              onTap: onAspectSelected,
+            ),
+            _buildAspectToggle(
+              aspect: ShaderAspect.text,
+              isEnabled: settings.textEnabled,
+              isCurrentImageDark: isCurrentImageDark,
+              onToggled: onAspectToggled,
+              onTap: onAspectSelected,
+            ),
+          ],
         ),
-        _buildAspectToggle(
-          aspect: ShaderAspect.color,
-          isEnabled: settings.colorEnabled,
-          isCurrentImageDark: isCurrentImageDark,
-          onToggled: onAspectToggled,
-          onTap: onAspectSelected,
-        ),
-        _buildAspectToggle(
-          aspect: ShaderAspect.blur,
-          isEnabled: settings.blurEnabled,
-          isCurrentImageDark: isCurrentImageDark,
-          onToggled: onAspectToggled,
-          onTap: onAspectSelected,
-        ),
-      ],
+      ),
     );
   }
 
@@ -52,10 +98,10 @@ class EffectControls {
     required Function(ShaderAspect) onTap,
   }) {
     final Color textColor = isCurrentImageDark ? Colors.white : Colors.black;
+    // Set a very subtle background for all modes: 10% opacity (inactive) or 15% (active).
+    // This keeps the look consistent regardless of the underlying image brightness.
     final Color backgroundColor = Colors.white.withOpacity(
-      isCurrentImageDark
-          ? (isEnabled ? 0.25 : 0.15) // Dark mode (keep higher for contrast)
-          : 0.70, // Light mode uniform opacity
+      isEnabled ? 0.15 : 0.10,
     );
 
     final Color borderColor = isEnabled
@@ -150,6 +196,9 @@ class EffectControls {
           break;
         case ShaderAspect.image:
           // No enabling logic required for image aspect
+          break;
+        case ShaderAspect.text:
+          if (!settings.textEnabled) settings.textEnabled = true;
           break;
       }
 
@@ -461,6 +510,277 @@ class EffectControls {
             activeColor: sliderColor,
           ),
         ];
+
+      case ShaderAspect.text:
+        {
+          // Local helper for a labeled editable text field used for title / subtitle / artist.
+          Widget buildTextField({
+            required String label,
+            required String value,
+            required Function(String) setter,
+          }) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: TextStyle(color: sliderColor, fontSize: 14)),
+                const SizedBox(height: 4),
+                TextFormField(
+                  initialValue: value,
+                  style: TextStyle(color: sliderColor),
+                  decoration: InputDecoration(
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 6,
+                    ),
+                    border: OutlineInputBorder(
+                      borderSide: BorderSide(
+                        color: sliderColor.withOpacity(0.5),
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(
+                        color: sliderColor.withOpacity(0.5),
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: sliderColor),
+                    ),
+                  ),
+                  onChanged: (txt) {
+                    setter(txt);
+                    if (!settings.textEnabled) settings.textEnabled = true;
+                    onSettingsChanged(settings);
+                  },
+                ),
+                const SizedBox(height: 12),
+              ],
+            );
+          }
+
+          // Mapping helpers for the currently selected text line
+          String getCurrentText() {
+            switch (EffectControls.selectedTextLine) {
+              case TextLine.title:
+                return settings.textTitle;
+              case TextLine.subtitle:
+                return settings.textSubtitle;
+              case TextLine.artist:
+                return settings.textArtist;
+            }
+            return '';
+          }
+
+          void setCurrentText(String v) {
+            switch (EffectControls.selectedTextLine) {
+              case TextLine.title:
+                settings.textTitle = v;
+                break;
+              case TextLine.subtitle:
+                settings.textSubtitle = v;
+                break;
+              case TextLine.artist:
+                settings.textArtist = v;
+                break;
+            }
+          }
+
+          String getCurrentFont() {
+            switch (EffectControls.selectedTextLine) {
+              case TextLine.title:
+                return settings.titleFont.isNotEmpty
+                    ? settings.titleFont
+                    : settings.textFont;
+              case TextLine.subtitle:
+                return settings.subtitleFont.isNotEmpty
+                    ? settings.subtitleFont
+                    : settings.textFont;
+              case TextLine.artist:
+                return settings.artistFont.isNotEmpty
+                    ? settings.artistFont
+                    : settings.textFont;
+            }
+            return settings.textFont;
+          }
+
+          void setCurrentFont(String f) {
+            switch (EffectControls.selectedTextLine) {
+              case TextLine.title:
+                settings.titleFont = f;
+                break;
+              case TextLine.subtitle:
+                settings.subtitleFont = f;
+                break;
+              case TextLine.artist:
+                settings.artistFont = f;
+                break;
+            }
+          }
+
+          double getCurrentSize() {
+            switch (EffectControls.selectedTextLine) {
+              case TextLine.title:
+                return settings.titleSize > 0
+                    ? settings.titleSize
+                    : settings.textSize;
+              case TextLine.subtitle:
+                return settings.subtitleSize > 0
+                    ? settings.subtitleSize
+                    : settings.textSize;
+              case TextLine.artist:
+                return settings.artistSize > 0
+                    ? settings.artistSize
+                    : settings.textSize;
+            }
+            return settings.textSize;
+          }
+
+          void setCurrentSize(double v) {
+            switch (EffectControls.selectedTextLine) {
+              case TextLine.title:
+                settings.titleSize = v;
+                break;
+              case TextLine.subtitle:
+                settings.subtitleSize = v;
+                break;
+              case TextLine.artist:
+                settings.artistSize = v;
+                break;
+            }
+          }
+
+          double getCurrentPosX() {
+            switch (EffectControls.selectedTextLine) {
+              case TextLine.title:
+                return settings.titlePosX;
+              case TextLine.subtitle:
+                return settings.subtitlePosX;
+              case TextLine.artist:
+                return settings.artistPosX;
+            }
+            return 0.0;
+          }
+
+          void setCurrentPosX(double v) {
+            switch (EffectControls.selectedTextLine) {
+              case TextLine.title:
+                settings.titlePosX = v;
+                break;
+              case TextLine.subtitle:
+                settings.subtitlePosX = v;
+                break;
+              case TextLine.artist:
+                settings.artistPosX = v;
+                break;
+            }
+          }
+
+          double getCurrentPosY() {
+            switch (EffectControls.selectedTextLine) {
+              case TextLine.title:
+                return settings.titlePosY;
+              case TextLine.subtitle:
+                return settings.subtitlePosY;
+              case TextLine.artist:
+                return settings.artistPosY;
+            }
+            return 0.0;
+          }
+
+          void setCurrentPosY(double v) {
+            switch (EffectControls.selectedTextLine) {
+              case TextLine.title:
+                settings.titlePosY = v;
+                break;
+              case TextLine.subtitle:
+                settings.subtitlePosY = v;
+                break;
+              case TextLine.artist:
+                settings.artistPosY = v;
+                break;
+            }
+          }
+
+          // ------------------------------------------------------------------
+          List<Widget> widgets = [];
+
+          widgets.add(
+            Wrap(
+              spacing: 6,
+              children: TextLine.values.map((line) {
+                return ChoiceChip(
+                  label: Text(line.label, style: TextStyle(color: sliderColor)),
+                  selected: EffectControls.selectedTextLine == line,
+                  selectedColor: sliderColor.withOpacity(0.3),
+                  backgroundColor: sliderColor.withOpacity(0.1),
+                  onSelected: (_) {
+                    EffectControls.selectedTextLine = line;
+                    onSettingsChanged(settings);
+                  },
+                );
+              }).toList(),
+            ),
+          );
+
+          widgets.add(const SizedBox(height: 12));
+
+          widgets.add(
+            buildTextField(
+              label: '${EffectControls.selectedTextLine.label} Text',
+              value: getCurrentText(),
+              setter: setCurrentText,
+            ),
+          );
+
+          widgets.add(
+            FontSelector(
+              selectedFont: getCurrentFont().isEmpty
+                  ? 'Default'
+                  : getCurrentFont(),
+              labelText: 'Font',
+              onFontSelected: (font) {
+                final selected = font == 'Default' ? '' : font;
+                setCurrentFont(selected);
+                if (!settings.textEnabled) settings.textEnabled = true;
+                onSettingsChanged(settings);
+              },
+            ),
+          );
+
+          widgets.add(const SizedBox(height: 12));
+
+          widgets.add(
+            buildSlider(
+              label: 'Size',
+              value: getCurrentSize(),
+              onChanged: (v) => onSliderChanged(v, setCurrentSize),
+              sliderColor: sliderColor,
+              defaultValue: 0.05,
+            ),
+          );
+
+          widgets.add(
+            buildSlider(
+              label: 'Position X',
+              value: getCurrentPosX(),
+              onChanged: (v) => onSliderChanged(v, setCurrentPosX),
+              sliderColor: sliderColor,
+              defaultValue: 0.1,
+            ),
+          );
+
+          widgets.add(
+            buildSlider(
+              label: 'Position Y',
+              value: getCurrentPosY(),
+              onChanged: (v) => onSliderChanged(v, setCurrentPosY),
+              sliderColor: sliderColor,
+              defaultValue: 0.1,
+            ),
+          );
+
+          return widgets;
+        }
     }
   }
 

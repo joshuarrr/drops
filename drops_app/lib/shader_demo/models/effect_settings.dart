@@ -35,6 +35,32 @@ class ShaderSettings {
   // Image setting
   bool _fillScreen;
 
+  // Text settings
+  bool _textEnabled;
+  String _textTitle;
+  String _textSubtitle;
+  String _textArtist;
+  String _textFont;
+  double _textSize;
+  double _textPosX;
+  double _textPosY;
+
+  // Per-line styling (independent font, size, position)
+  String _titleFont;
+  double _titleSize;
+  double _titlePosX;
+  double _titlePosY;
+
+  String _subtitleFont;
+  double _subtitleSize;
+  double _subtitlePosX;
+  double _subtitlePosY;
+
+  String _artistFont;
+  double _artistSize;
+  double _artistPosX;
+  double _artistPosY;
+
   // Flag to control logging
   static bool enableLogging = false;
 
@@ -156,6 +182,128 @@ class ShaderSettings {
     if (enableLogging) print("SETTINGS: fillScreen set to $value");
   }
 
+  // Text getters/setters
+  bool get textEnabled => _textEnabled;
+  set textEnabled(bool value) {
+    _textEnabled = value;
+    if (enableLogging) print("SETTINGS: textEnabled set to $value");
+  }
+
+  String get textTitle => _textTitle;
+  set textTitle(String value) {
+    _textTitle = value;
+    if (enableLogging) print("SETTINGS: textTitle set to $value");
+  }
+
+  String get textSubtitle => _textSubtitle;
+  set textSubtitle(String value) {
+    _textSubtitle = value;
+    if (enableLogging) print("SETTINGS: textSubtitle set to $value");
+  }
+
+  String get textArtist => _textArtist;
+  set textArtist(String value) {
+    _textArtist = value;
+    if (enableLogging) print("SETTINGS: textArtist set to $value");
+  }
+
+  String get textFont => _textFont;
+  set textFont(String value) {
+    _textFont = value;
+    if (enableLogging) print("SETTINGS: textFont set to $value");
+  }
+
+  double get textSize => _textSize;
+  set textSize(double value) {
+    _textSize = value;
+    if (enableLogging) print("SETTINGS: textSize set to $value");
+  }
+
+  double get textPosX => _textPosX;
+  set textPosX(double value) {
+    _textPosX = value;
+    if (enableLogging) print("SETTINGS: textPosX set to $value");
+  }
+
+  double get textPosY => _textPosY;
+  set textPosY(double value) {
+    _textPosY = value;
+    if (enableLogging) print("SETTINGS: textPosY set to $value");
+  }
+
+  // --------------------- Per-line getters/setters ---------------------
+  String get titleFont => _titleFont;
+  set titleFont(String v) {
+    _titleFont = v;
+    if (enableLogging) print("SETTINGS: titleFont set to $v");
+  }
+
+  double get titleSize => _titleSize;
+  set titleSize(double v) {
+    _titleSize = v;
+    if (enableLogging) print("SETTINGS: titleSize set to $v");
+  }
+
+  double get titlePosX => _titlePosX;
+  set titlePosX(double v) {
+    _titlePosX = v;
+    if (enableLogging) print("SETTINGS: titlePosX set to $v");
+  }
+
+  double get titlePosY => _titlePosY;
+  set titlePosY(double v) {
+    _titlePosY = v;
+    if (enableLogging) print("SETTINGS: titlePosY set to $v");
+  }
+
+  String get subtitleFont => _subtitleFont;
+  set subtitleFont(String v) {
+    _subtitleFont = v;
+    if (enableLogging) print("SETTINGS: subtitleFont set to $v");
+  }
+
+  double get subtitleSize => _subtitleSize;
+  set subtitleSize(double v) {
+    _subtitleSize = v;
+    if (enableLogging) print("SETTINGS: subtitleSize set to $v");
+  }
+
+  double get subtitlePosX => _subtitlePosX;
+  set subtitlePosX(double v) {
+    _subtitlePosX = v;
+    if (enableLogging) print("SETTINGS: subtitlePosX set to $v");
+  }
+
+  double get subtitlePosY => _subtitlePosY;
+  set subtitlePosY(double v) {
+    _subtitlePosY = v;
+    if (enableLogging) print("SETTINGS: subtitlePosY set to $v");
+  }
+
+  String get artistFont => _artistFont;
+  set artistFont(String v) {
+    _artistFont = v;
+    if (enableLogging) print("SETTINGS: artistFont set to $v");
+  }
+
+  double get artistSize => _artistSize;
+  set artistSize(double v) {
+    _artistSize = v;
+    if (enableLogging) print("SETTINGS: artistSize set to $v");
+  }
+
+  double get artistPosX => _artistPosX;
+  set artistPosX(double v) {
+    _artistPosX = v;
+    if (enableLogging) print("SETTINGS: artistPosX set to $v");
+  }
+
+  double get artistPosY => _artistPosY;
+  set artistPosY(double v) {
+    _artistPosY = v;
+    if (enableLogging) print("SETTINGS: artistPosY set to $v");
+  }
+
   // ---------------------------------------------------------------------------
   // Independent animation options for HSL and Overlay
   // ---------------------------------------------------------------------------
@@ -216,10 +364,38 @@ class ShaderSettings {
     // Image setting
     bool fillScreen = false,
 
+    // Text defaults
+    String textTitle = '',
+    String textSubtitle = '',
+    String textArtist = '',
+    String textFont = 'Roboto',
+    double textSize = 0.05,
+    double textPosX = 0.1,
+    double textPosY = 0.1,
+
     // Independent animation options
     AnimationOptions? colorAnimOptions,
     AnimationOptions? overlayAnimOptions,
     AnimationOptions? blurAnimOptions,
+
+    // Text enabled flag
+    bool textEnabled = false,
+
+    // Per-line styling (independent font, size, position)
+    String titleFont = '',
+    double titleSize = 0.05,
+    double titlePosX = 0.1,
+    double titlePosY = 0.1,
+
+    String subtitleFont = '',
+    double subtitleSize = 0.04,
+    double subtitlePosX = 0.1,
+    double subtitlePosY = 0.18,
+
+    String artistFont = '',
+    double artistSize = 0.035,
+    double artistPosX = 0.1,
+    double artistPosY = 0.26,
   }) : _colorEnabled = colorEnabled,
        _blurEnabled = blurEnabled,
        _hue = hue,
@@ -239,7 +415,27 @@ class ShaderSettings {
        _colorAnimOptions = colorAnimOptions ?? AnimationOptions(),
        _overlayAnimOptions = overlayAnimOptions ?? AnimationOptions(),
        _blurAnimOptions = blurAnimOptions ?? AnimationOptions(),
-       _fillScreen = fillScreen {
+       _fillScreen = fillScreen,
+       _textEnabled = textEnabled,
+       _textTitle = textTitle,
+       _textSubtitle = textSubtitle,
+       _textArtist = textArtist,
+       _textFont = textFont,
+       _textSize = textSize,
+       _textPosX = textPosX,
+       _textPosY = textPosY,
+       _titleFont = titleFont,
+       _titleSize = titleSize,
+       _titlePosX = titlePosX,
+       _titlePosY = titlePosY,
+       _subtitleFont = subtitleFont,
+       _subtitleSize = subtitleSize,
+       _subtitlePosX = subtitlePosX,
+       _subtitlePosY = subtitlePosY,
+       _artistFont = artistFont,
+       _artistSize = artistSize,
+       _artistPosX = artistPosX,
+       _artistPosY = artistPosY {
     if (enableLogging) print("SETTINGS: ShaderSettings initialized");
   }
 
@@ -269,6 +465,26 @@ class ShaderSettings {
       'overlayAnimOptions': _overlayAnimOptions.toMap(),
       'blurAnimOptions': _blurAnimOptions.toMap(),
       'fillScreen': _fillScreen,
+      'textEnabled': _textEnabled,
+      'textTitle': _textTitle,
+      'textSubtitle': _textSubtitle,
+      'textArtist': _textArtist,
+      'textFont': _textFont,
+      'textSize': _textSize,
+      'textPosX': _textPosX,
+      'textPosY': _textPosY,
+      'titleFont': _titleFont,
+      'titleSize': _titleSize,
+      'titlePosX': _titlePosX,
+      'titlePosY': _titlePosY,
+      'subtitleFont': _subtitleFont,
+      'subtitleSize': _subtitleSize,
+      'subtitlePosX': _subtitlePosX,
+      'subtitlePosY': _subtitlePosY,
+      'artistFont': _artistFont,
+      'artistSize': _artistSize,
+      'artistPosX': _artistPosX,
+      'artistPosY': _artistPosY,
     };
   }
 
@@ -306,6 +522,26 @@ class ShaderSettings {
             )
           : null,
       fillScreen: map['fillScreen'] as bool? ?? false,
+      textEnabled: map['textEnabled'] as bool? ?? false,
+      textTitle: map['textTitle'] as String? ?? '',
+      textSubtitle: map['textSubtitle'] as String? ?? '',
+      textArtist: map['textArtist'] as String? ?? '',
+      textFont: map['textFont'] as String? ?? 'Roboto',
+      textSize: (map['textSize'] as num?)?.toDouble() ?? 0.05,
+      textPosX: (map['textPosX'] as num?)?.toDouble() ?? 0.1,
+      textPosY: (map['textPosY'] as num?)?.toDouble() ?? 0.1,
+      titleFont: map['titleFont'] as String? ?? '',
+      titleSize: (map['titleSize'] as num?)?.toDouble() ?? 0.05,
+      titlePosX: (map['titlePosX'] as num?)?.toDouble() ?? 0.1,
+      titlePosY: (map['titlePosY'] as num?)?.toDouble() ?? 0.1,
+      subtitleFont: map['subtitleFont'] as String? ?? '',
+      subtitleSize: (map['subtitleSize'] as num?)?.toDouble() ?? 0.04,
+      subtitlePosX: (map['subtitlePosX'] as num?)?.toDouble() ?? 0.1,
+      subtitlePosY: (map['subtitlePosY'] as num?)?.toDouble() ?? 0.18,
+      artistFont: map['artistFont'] as String? ?? '',
+      artistSize: (map['artistSize'] as num?)?.toDouble() ?? 0.035,
+      artistPosX: (map['artistPosX'] as num?)?.toDouble() ?? 0.1,
+      artistPosY: (map['artistPosY'] as num?)?.toDouble() ?? 0.26,
     );
   }
 }

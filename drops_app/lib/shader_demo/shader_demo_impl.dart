@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'dart:convert';
 import 'dart:math';
 import 'dart:ui' as ui;
+import 'package:google_fonts/google_fonts.dart';
 
 import '../common/app_scaffold.dart';
 import 'models/shader_effect.dart';
@@ -82,11 +83,11 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     // Load persisted settings (if any) before building UI
     _loadShaderSettings();
 
-    // Create animation controller for shader effects
+    // Drive animations using the slowest duration (_minDurationMs). Individual
+    // effects scale this base time based on the user-selected speed so the
+    // "Min" position on the speed slider truly results in the slowest motion.
     _controller = AnimationController(
-      duration: Duration(
-        milliseconds: ((_minDurationMs + _maxDurationMs) ~/ 2),
-      ),
+      duration: Duration(milliseconds: _minDurationMs),
       vsync: this,
     )..repeat();
 
@@ -113,7 +114,7 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     final bool isDarkTheme = theme.brightness == Brightness.dark;
 
     return AppScaffold(
-      title: 'Shader Demo',
+      title: 'Shaders',
       showAppBar: true,
       showBackButton: true,
       currentIndex: 1, // Demos tab
@@ -186,6 +187,9 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                                   case ShaderAspect.image:
                                     // No enable/disable for image aspect
                                     break;
+                                  case ShaderAspect.text:
+                                    _shaderSettings.textEnabled = enabled;
+                                    break;
                                 }
                               });
                               _saveShaderSettings();
@@ -206,6 +210,7 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                                 }
                               });
                             },
+                            hidden: _showAspectSliders,
                           ),
                         ],
                       ),
@@ -232,14 +237,24 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
         final double animationValue = _controller.value;
 
         // Apply all enabled effects using the shared base time
+        Widget baseImage = _buildCenteredImage();
         Widget effectsWidget = EffectController.applyEffects(
-          child: _buildCenteredImage(),
+          child: baseImage,
           settings: _shaderSettings,
           animationValue: animationValue,
         );
 
-        // Ensure the effect widget maintains the full screen size
-        return SizedBox.expand(child: effectsWidget);
+        // Compose text overlay if enabled
+        List<Widget> stackChildren = [SizedBox.expand(child: effectsWidget)];
+
+        if (_shaderSettings.textEnabled &&
+            (_shaderSettings.textTitle.isNotEmpty ||
+                _shaderSettings.textSubtitle.isNotEmpty ||
+                _shaderSettings.textArtist.isNotEmpty)) {
+          stackChildren.add(_buildTextOverlay());
+        }
+
+        return Stack(fit: StackFit.expand, children: stackChildren);
       },
     );
   }
@@ -510,5 +525,79 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     } catch (e, stack) {
       debugPrint('ShaderDemoImpl: Failed to save settings → $e\n$stack');
     }
+  }
+
+  // Build positioned text overlay
+  Widget _buildTextOverlay() {
+    final Size screenSize = MediaQuery.of(context).size;
+
+    List<Widget> positionedLines = [];
+
+    void addLine({
+      required String text,
+      required String font,
+      required double size,
+      required double posX,
+      required double posY,
+    }) {
+      if (text.isEmpty) return;
+      // Compute appropriate text style for this line
+      final double computedSize = size > 0
+          ? size * screenSize.width
+          : _shaderSettings.textSize * screenSize.width;
+
+      final String family = font.isNotEmpty ? font : _shaderSettings.textFont;
+
+      TextStyle baseStyle = TextStyle(
+        color: Colors.white,
+        fontSize: computedSize,
+      );
+
+      late TextStyle textStyle;
+      if (family.isEmpty) {
+        textStyle = baseStyle; // Default system font
+      } else {
+        try {
+          textStyle = GoogleFonts.getFont(family, textStyle: baseStyle);
+        } catch (_) {
+          // Fallback to system/default font family
+          textStyle = baseStyle.copyWith(fontFamily: family);
+        }
+      }
+
+      positionedLines.add(
+        Positioned(
+          left: posX * screenSize.width,
+          top: posY * screenSize.height,
+          child: Text(text, style: textStyle),
+        ),
+      );
+    }
+
+    addLine(
+      text: _shaderSettings.textTitle,
+      font: _shaderSettings.titleFont,
+      size: _shaderSettings.titleSize,
+      posX: _shaderSettings.titlePosX,
+      posY: _shaderSettings.titlePosY,
+    );
+
+    addLine(
+      text: _shaderSettings.textSubtitle,
+      font: _shaderSettings.subtitleFont,
+      size: _shaderSettings.subtitleSize,
+      posX: _shaderSettings.subtitlePosX,
+      posY: _shaderSettings.subtitlePosY,
+    );
+
+    addLine(
+      text: _shaderSettings.textArtist,
+      font: _shaderSettings.artistFont,
+      size: _shaderSettings.artistSize,
+      posX: _shaderSettings.artistPosX,
+      posY: _shaderSettings.artistPosY,
+    );
+
+    return Stack(children: positionedLines);
   }
 }

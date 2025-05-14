@@ -32,8 +32,9 @@ class DemosScreen extends StatelessWidget {
         ),
         child: Center(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.max,
             children: [
+              const Spacer(),
               _buildDemoCard(
                 context,
                 'Shaders',
@@ -61,6 +62,7 @@ class DemosScreen extends StatelessWidget {
                   );
                 },
               ),
+              const Spacer(),
             ],
           ),
         ),
@@ -83,10 +85,7 @@ class DemosScreen extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 20),
       child: Card(
         elevation: 8,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15),
-          side: BorderSide(color: theme.colorScheme.primary, width: 1),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(15),

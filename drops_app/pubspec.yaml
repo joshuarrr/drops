@@ -69,7 +69,25 @@ flutter:
     # nested folders when the parent directory contains no files of its own.
     - assets/img/covers/
     - assets/img/artists/
-    - assets/google_fonts/
+    - assets/google_fonts/Alumni_Sans/
+    - assets/google_fonts/Averia_Serif_Libre/
+    - assets/google_fonts/Orbitron/
+    - assets/google_fonts/Anaheim/
+    - assets/google_fonts/Danfo/
+    - assets/google_fonts/Bree_Serif/
+    - assets/google_fonts/Young_Serif/
+    - assets/google_fonts/Oxanium/
+    - assets/google_fonts/Geist_Mono/
+    - assets/google_fonts/MuseoModerno/
+    - assets/google_fonts/DM_Serif_Display/
+    - assets/google_fonts/Lexend_Deca/
+    - assets/google_fonts/Pixelify_Sans/
+    - assets/google_fonts/Gemunu_Libre/
+    - assets/google_fonts/Podkova/
+    - assets/google_fonts/Tourney/
+    - assets/google_fonts/Instrument_Serif/
+    - assets/google_fonts/Tektur/
+    - assets/google_fonts/Asap_Condensed/
 
   shaders:
     - assets/shaders/color_effect.frag

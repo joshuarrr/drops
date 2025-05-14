@@ -3,6 +3,7 @@ import 'theme/theme_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'common/app_scaffold.dart';
+import 'common/font_selector.dart';
 
 class TypographyDemo extends StatefulWidget {
   const TypographyDemo({super.key});
@@ -75,16 +76,30 @@ class _TypographyDemoState extends State<TypographyDemo> {
           padding: const EdgeInsets.symmetric(vertical: 32),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: _fontFamilies.map((font) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16.0),
-                child: Text(
-                  font,
-                  textAlign: TextAlign.center,
-                  style: _safeFontStyle(font, theme, textColor),
+            children: [
+              // Font selector dropdown – updates _selectedFontFamily state.
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+                child: FontSelector(
+                  selectedFont: _selectedFontFamily,
+                  labelText: 'Font Family',
+                  onFontSelected: (font) {
+                    setState(() => _selectedFontFamily = font);
+                  },
                 ),
-              );
-            }).toList(),
+              ),
+              const SizedBox(height: 32),
+              ..._fontFamilies.map((font) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16.0),
+                  child: Text(
+                    font,
+                    textAlign: TextAlign.center,
+                    style: _safeFontStyle(font, theme, textColor),
+                  ),
+                );
+              }).toList(),
+            ],
           ),
         ),
       ),
