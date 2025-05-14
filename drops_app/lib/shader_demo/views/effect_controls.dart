@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/shader_effect.dart';
 import '../models/effect_settings.dart';
+import '../models/animation_options.dart';
 
 class EffectControls {
   // Control logging verbosity
@@ -186,6 +187,18 @@ class EffectControls {
             defaultValue: 0.0,
           ),
           const SizedBox(height: 16),
+          // ----- Overlay group header -----
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Text(
+              'Overlay',
+              style: TextStyle(
+                color: sliderColor.withOpacity(0.8),
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
           buildSlider(
             label: 'Overlay Hue',
             value: settings.overlayHue,
@@ -210,6 +223,92 @@ class EffectControls {
             sliderColor: sliderColor,
             defaultValue: 0.0,
           ),
+          // Toggle animation for HSL adjustments
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Animate HSL',
+                style: TextStyle(color: sliderColor, fontSize: 14),
+              ),
+              Switch(
+                value: settings.colorAnimated,
+                activeColor: sliderColor,
+                onChanged: (value) {
+                  settings.colorAnimated = value;
+                  if (!settings.colorEnabled) settings.colorEnabled = true;
+                  onSettingsChanged(settings);
+                },
+              ),
+            ],
+          ),
+          if (settings.colorAnimated)
+            buildAnimationControls(
+              animationSpeed: settings.colorAnimOptions.speed,
+              onSpeedChanged: (v) {
+                settings.colorAnimOptions = settings.colorAnimOptions.copyWith(
+                  speed: v,
+                );
+                onSettingsChanged(settings);
+              },
+              animationMode: settings.colorAnimOptions.mode,
+              onModeChanged: (m) {
+                settings.colorAnimOptions = settings.colorAnimOptions.copyWith(
+                  mode: m,
+                );
+                onSettingsChanged(settings);
+              },
+              animationEasing: settings.colorAnimOptions.easing,
+              onEasingChanged: (e) {
+                settings.colorAnimOptions = settings.colorAnimOptions.copyWith(
+                  easing: e,
+                );
+                onSettingsChanged(settings);
+              },
+              sliderColor: sliderColor,
+            ),
+
+          // Toggle animation for overlay
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Animate Overlay',
+                style: TextStyle(color: sliderColor, fontSize: 14),
+              ),
+              Switch(
+                value: settings.overlayAnimated,
+                activeColor: sliderColor,
+                onChanged: (value) {
+                  settings.overlayAnimated = value;
+                  if (!settings.colorEnabled) settings.colorEnabled = true;
+                  onSettingsChanged(settings);
+                },
+              ),
+            ],
+          ),
+          if (settings.overlayAnimated)
+            buildAnimationControls(
+              animationSpeed: settings.overlayAnimOptions.speed,
+              onSpeedChanged: (v) {
+                settings.overlayAnimOptions = settings.overlayAnimOptions
+                    .copyWith(speed: v);
+                onSettingsChanged(settings);
+              },
+              animationMode: settings.overlayAnimOptions.mode,
+              onModeChanged: (m) {
+                settings.overlayAnimOptions = settings.overlayAnimOptions
+                    .copyWith(mode: m);
+                onSettingsChanged(settings);
+              },
+              animationEasing: settings.overlayAnimOptions.easing,
+              onEasingChanged: (e) {
+                settings.overlayAnimOptions = settings.overlayAnimOptions
+                    .copyWith(easing: e);
+                onSettingsChanged(settings);
+              },
+              sliderColor: sliderColor,
+            ),
         ];
 
       case ShaderAspect.blur:
@@ -302,6 +401,31 @@ class EffectControls {
               ),
             ],
           ),
+          if (settings.blurAnimated)
+            buildAnimationControls(
+              animationSpeed: settings.blurAnimOptions.speed,
+              onSpeedChanged: (v) {
+                settings.blurAnimOptions = settings.blurAnimOptions.copyWith(
+                  speed: v,
+                );
+                onSettingsChanged(settings);
+              },
+              animationMode: settings.blurAnimOptions.mode,
+              onModeChanged: (m) {
+                settings.blurAnimOptions = settings.blurAnimOptions.copyWith(
+                  mode: m,
+                );
+                onSettingsChanged(settings);
+              },
+              animationEasing: settings.blurAnimOptions.easing,
+              onEasingChanged: (e) {
+                settings.blurAnimOptions = settings.blurAnimOptions.copyWith(
+                  easing: e,
+                );
+                onSettingsChanged(settings);
+              },
+              sliderColor: sliderColor,
+            ),
         ];
 
       case ShaderAspect.image:
@@ -466,6 +590,100 @@ class EffectControls {
           onSettingsChanged(settings);
         }
       },
+    );
+  }
+
+  // Helper to build animation speed + type + easing controls so they can be reused
+  static Widget buildAnimationControls({
+    required double animationSpeed,
+    required ValueChanged<double> onSpeedChanged,
+    required AnimationMode animationMode,
+    required ValueChanged<AnimationMode> onModeChanged,
+    required AnimationEasing animationEasing,
+    required ValueChanged<AnimationEasing> onEasingChanged,
+    required Color sliderColor,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 16),
+        Text('Speed', style: TextStyle(color: sliderColor, fontSize: 14)),
+        SliderTheme(
+          data: SliderThemeData(
+            activeTrackColor: sliderColor,
+            inactiveTrackColor: sliderColor.withOpacity(0.3),
+            thumbColor: sliderColor,
+          ),
+          child: Slider(
+            value: animationSpeed,
+            min: 0.0,
+            max: 1.0,
+            divisions: 20,
+            onChanged: onSpeedChanged,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'Animation Type',
+          style: TextStyle(color: sliderColor, fontSize: 14),
+        ),
+        const SizedBox(height: 8),
+        Column(
+          children: AnimationMode.values.map((mode) {
+            final String label = mode == AnimationMode.pulse
+                ? 'Pulse'
+                : 'Randomixed';
+            return RadioListTile<AnimationMode>(
+              value: mode,
+              groupValue: animationMode,
+              activeColor: sliderColor,
+              contentPadding: EdgeInsets.zero,
+              title: Text(label, style: TextStyle(color: sliderColor)),
+              dense: true,
+              visualDensity: const VisualDensity(horizontal: 0, vertical: -4),
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              onChanged: (val) {
+                if (val != null) onModeChanged(val);
+              },
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 12),
+        Text('Easing', style: TextStyle(color: sliderColor, fontSize: 14)),
+        const SizedBox(height: 8),
+        Column(
+          children: AnimationEasing.values.map((ease) {
+            final String label;
+            switch (ease) {
+              case AnimationEasing.linear:
+                label = 'Linear';
+                break;
+              case AnimationEasing.easeIn:
+                label = 'Ease In';
+                break;
+              case AnimationEasing.easeOut:
+                label = 'Ease Out';
+                break;
+              case AnimationEasing.easeInOut:
+                label = 'Ease In Out';
+                break;
+            }
+            return RadioListTile<AnimationEasing>(
+              value: ease,
+              groupValue: animationEasing,
+              activeColor: sliderColor,
+              contentPadding: EdgeInsets.zero,
+              title: Text(label, style: TextStyle(color: sliderColor)),
+              dense: true,
+              visualDensity: const VisualDensity(horizontal: 0, vertical: -4),
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              onChanged: (val) {
+                if (val != null) onEasingChanged(val);
+              },
+            );
+          }).toList(),
+        ),
+      ],
     );
   }
 }

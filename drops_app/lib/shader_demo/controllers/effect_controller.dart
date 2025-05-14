@@ -57,14 +57,14 @@ class EffectController {
     required ShaderSettings settings,
     required double animationValue,
   }) {
-    // Skip if all color settings are zero
+    // Skip if all color settings are zero *and* no animation requested
     bool allZero =
         settings.hue == 0.0 &&
         settings.saturation == 0.0 &&
         settings.lightness == 0.0 &&
         settings.overlayOpacity == 0.0;
 
-    if (allZero) {
+    if (allZero && !settings.colorAnimated && !settings.overlayAnimated) {
       if (enableEffectLogs) print("EFFECTS: Color settings zero, skipping");
       return child;
     }

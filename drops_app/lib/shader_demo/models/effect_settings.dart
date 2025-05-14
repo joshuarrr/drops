@@ -1,3 +1,5 @@
+import 'animation_options.dart';
+
 // Class to store all shader effect settings
 class ShaderSettings {
   // Enable flags for each aspect
@@ -23,6 +25,12 @@ class ShaderSettings {
 
   // Animation flag for blur (shatter) effect
   bool _blurAnimated;
+
+  // Animation flag for color effect
+  bool _colorAnimated;
+
+  // Animation flag for overlay color
+  bool _overlayAnimated;
 
   // Image setting
   bool _fillScreen;
@@ -107,6 +115,20 @@ class ShaderSettings {
     if (enableLogging) print("SETTINGS: blurAnimated set to $value");
   }
 
+  // Color animation toggle with logging
+  bool get colorAnimated => _colorAnimated;
+  set colorAnimated(bool value) {
+    _colorAnimated = value;
+    if (enableLogging) print("SETTINGS: colorAnimated set to $value");
+  }
+
+  // Overlay animation toggle with logging
+  bool get overlayAnimated => _overlayAnimated;
+  set overlayAnimated(bool value) {
+    _overlayAnimated = value;
+    if (enableLogging) print("SETTINGS: overlayAnimated set to $value");
+  }
+
   // New shatter settings with logging
   double get blurOpacity => _blurOpacity;
   set blurOpacity(double value) {
@@ -134,6 +156,32 @@ class ShaderSettings {
     if (enableLogging) print("SETTINGS: fillScreen set to $value");
   }
 
+  // ---------------------------------------------------------------------------
+  // Independent animation options for HSL and Overlay
+  // ---------------------------------------------------------------------------
+
+  AnimationOptions _colorAnimOptions;
+  AnimationOptions _overlayAnimOptions;
+  AnimationOptions _blurAnimOptions;
+
+  AnimationOptions get colorAnimOptions => _colorAnimOptions;
+  set colorAnimOptions(AnimationOptions value) {
+    _colorAnimOptions = value;
+    if (enableLogging) print("SETTINGS: colorAnimOptions updated");
+  }
+
+  AnimationOptions get overlayAnimOptions => _overlayAnimOptions;
+  set overlayAnimOptions(AnimationOptions value) {
+    _overlayAnimOptions = value;
+    if (enableLogging) print("SETTINGS: overlayAnimOptions updated");
+  }
+
+  AnimationOptions get blurAnimOptions => _blurAnimOptions;
+  set blurAnimOptions(AnimationOptions value) {
+    _blurAnimOptions = value;
+    if (enableLogging) print("SETTINGS: blurAnimOptions updated");
+  }
+
   ShaderSettings({
     // Enable flags
     bool colorEnabled = false,
@@ -159,8 +207,19 @@ class ShaderSettings {
     // Animation flag
     bool blurAnimated = false,
 
+    // Color animation flag
+    bool colorAnimated = false,
+
+    // Overlay animation flag
+    bool overlayAnimated = false,
+
     // Image setting
     bool fillScreen = false,
+
+    // Independent animation options
+    AnimationOptions? colorAnimOptions,
+    AnimationOptions? overlayAnimOptions,
+    AnimationOptions? blurAnimOptions,
   }) : _colorEnabled = colorEnabled,
        _blurEnabled = blurEnabled,
        _hue = hue,
@@ -175,6 +234,11 @@ class ShaderSettings {
        _blurFacets = blurFacets,
        _blurBlendMode = blurBlendMode,
        _blurAnimated = blurAnimated,
+       _colorAnimated = colorAnimated,
+       _overlayAnimated = overlayAnimated,
+       _colorAnimOptions = colorAnimOptions ?? AnimationOptions(),
+       _overlayAnimOptions = overlayAnimOptions ?? AnimationOptions(),
+       _blurAnimOptions = blurAnimOptions ?? AnimationOptions(),
        _fillScreen = fillScreen {
     if (enableLogging) print("SETTINGS: ShaderSettings initialized");
   }
@@ -199,6 +263,11 @@ class ShaderSettings {
       'blurFacets': _blurFacets,
       'blurBlendMode': _blurBlendMode,
       'blurAnimated': _blurAnimated,
+      'colorAnimated': _colorAnimated,
+      'overlayAnimated': _overlayAnimated,
+      'colorAnimOptions': _colorAnimOptions.toMap(),
+      'overlayAnimOptions': _overlayAnimOptions.toMap(),
+      'blurAnimOptions': _blurAnimOptions.toMap(),
       'fillScreen': _fillScreen,
     };
   }
@@ -219,6 +288,23 @@ class ShaderSettings {
       blurFacets: (map['blurFacets'] as num?)?.toDouble() ?? 1.0,
       blurBlendMode: map['blurBlendMode'] as int? ?? 0,
       blurAnimated: map['blurAnimated'] as bool? ?? false,
+      colorAnimated: map['colorAnimated'] as bool? ?? false,
+      overlayAnimated: map['overlayAnimated'] as bool? ?? false,
+      colorAnimOptions: map.containsKey('colorAnimOptions')
+          ? AnimationOptions.fromMap(
+              Map<String, dynamic>.from(map['colorAnimOptions'] as Map),
+            )
+          : null,
+      overlayAnimOptions: map.containsKey('overlayAnimOptions')
+          ? AnimationOptions.fromMap(
+              Map<String, dynamic>.from(map['overlayAnimOptions'] as Map),
+            )
+          : null,
+      blurAnimOptions: map.containsKey('blurAnimOptions')
+          ? AnimationOptions.fromMap(
+              Map<String, dynamic>.from(map['blurAnimOptions'] as Map),
+            )
+          : null,
       fillScreen: map['fillScreen'] as bool? ?? false,
     );
   }
