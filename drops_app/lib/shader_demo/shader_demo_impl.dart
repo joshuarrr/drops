@@ -10,11 +10,15 @@ import 'models/effect_settings.dart';
 import 'controllers/effect_controller.dart';
 import 'views/effect_controls.dart';
 import 'views/panel_container.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 enum ImageCategory { covers, artists }
 
 // Two animation behaviours for the shader demo
 enum AnimationMode { pulse, randomixed }
+
+// Easing curves for animation timing
+enum AnimationEasing { linear, easeIn, easeOut, easeInOut }
 
 class ShaderDemoImpl extends StatefulWidget {
   const ShaderDemoImpl({super.key});
@@ -51,12 +55,18 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
   // Random generator for the "randomixed" animation
   final Random _rand = Random();
 
+  // Selected easing curve
+  AnimationEasing _animationEasing = AnimationEasing.linear;
+
   // Animation duration bounds
   static const int _minDurationMs = 30000; // 30 s
   static const int _maxDurationMs = 300; // 0.3 s
 
   // Normalized speed slider value in [0,1] (0 = slowest, 1 = fastest)
   double _animationSpeed = 0.5; // start mid-range
+
+  // Persistent storage key
+  static const String _kShaderSettingsKey = 'shader_demo_settings';
 
   // Hashing utility for deterministic pseudo-random per segment
   double _hash(double x) {
@@ -79,12 +89,30 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     return ui.lerpDouble(r0, r1, eased)!;
   }
 
+  // Apply selected easing curve to normalized time value
+  double _applyEasing(double t) {
+    switch (_animationEasing) {
+      case AnimationEasing.easeIn:
+        return Curves.easeIn.transform(t);
+      case AnimationEasing.easeOut:
+        return Curves.easeOut.transform(t);
+      case AnimationEasing.easeInOut:
+        return Curves.easeInOut.transform(t);
+      case AnimationEasing.linear:
+      default:
+        return t;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
 
     // Initialize unified settings object
     _shaderSettings = ShaderSettings();
+
+    // Load persisted settings (if any) before building UI
+    _loadShaderSettings();
 
     // Create animation controller for shader effects
     _controller = AnimationController(
@@ -192,6 +220,7 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                                     break;
                                 }
                               });
+                              _saveShaderSettings();
                             },
                             onAspectSelected: (aspect) {
                               setState(() {
@@ -231,9 +260,10 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
       animation: _controller,
       builder: (context, child) {
         // Determine the value fed into shader effects based on selected mode
+        final double easedTime = _applyEasing(_controller.value);
         final double animationValue = _animationMode == AnimationMode.pulse
-            ? _controller.value
-            : _smoothRandom(_controller.value);
+            ? easedTime
+            : _smoothRandom(easedTime);
 
         // Apply all enabled effects using the computed animation value
         Widget effectsWidget = EffectController.applyEffects(
@@ -289,30 +319,35 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
         child: PanelContainer(
           isDark: theme.brightness == Brightness.dark,
           margin: const EdgeInsets.only(top: 100),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (_selectedAspect == ShaderAspect.image) ...[
-                _buildImageCategorySelector(theme),
+          child: SingleChildScrollView(
+            physics: BouncingScrollPhysics(),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (_selectedAspect == ShaderAspect.image) ...[
+                  _buildImageCategorySelector(theme),
+                  const SizedBox(height: 12),
+                  _buildImageThumbnails(theme),
+                  const SizedBox(height: 16),
+                ],
+                ...EffectControls.buildSlidersForAspect(
+                  aspect: _selectedAspect,
+                  settings: _shaderSettings,
+                  onSettingsChanged: (settings) {
+                    setState(() {
+                      _shaderSettings = settings;
+                    });
+                    _saveShaderSettings();
+                  },
+                  sliderColor: sliderColor,
+                ),
+                // Animation speed & type selectors (visible only when animate enabled)
+                if (_selectedAspect == ShaderAspect.blur &&
+                    _shaderSettings.blurAnimated)
+                  _buildAnimationSelector(sliderColor),
                 const SizedBox(height: 12),
-                _buildImageThumbnails(theme),
-                const SizedBox(height: 16),
               ],
-              ...EffectControls.buildSlidersForAspect(
-                aspect: _selectedAspect,
-                settings: _shaderSettings,
-                onSettingsChanged: (settings) {
-                  setState(() {
-                    _shaderSettings = settings;
-                  });
-                },
-                sliderColor: sliderColor,
-              ),
-              // Animation speed & type selectors (visible only when animate enabled)
-              if (_selectedAspect == ShaderAspect.blur &&
-                  _shaderSettings.blurAnimated)
-                _buildAnimationSelector(sliderColor),
-            ],
+            ),
           ),
         ),
       ),
@@ -353,12 +388,28 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
         _coverImages = covers;
         _artistImages = artists;
 
-        // Default selected image
-        if (covers.isNotEmpty) {
-          _selectedImage = covers.first;
-        } else if (artists.isNotEmpty) {
-          _imageCategory = ImageCategory.artists;
-          _selectedImage = artists.first;
+        // Determine whether current persisted image is valid
+        bool isPersistedValid =
+            _selectedImage.isNotEmpty &&
+            (covers.contains(_selectedImage) ||
+                artists.contains(_selectedImage));
+
+        if (!isPersistedValid) {
+          // No valid persisted image → choose default
+          if (covers.isNotEmpty) {
+            _imageCategory = ImageCategory.covers;
+            _selectedImage = covers.first;
+          } else if (artists.isNotEmpty) {
+            _imageCategory = ImageCategory.artists;
+            _selectedImage = artists.first;
+          } else {
+            _selectedImage = '';
+          }
+        } else {
+          // Update category to match persisted image
+          _imageCategory = covers.contains(_selectedImage)
+              ? ImageCategory.covers
+              : ImageCategory.artists;
         }
       });
     } catch (e, stack) {
@@ -401,6 +452,7 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                   _selectedImage = images.first;
                 }
               });
+              _saveShaderSettings();
             }
           },
           activeColor: textColor,
@@ -430,6 +482,7 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
             setState(() {
               _selectedImage = path;
             });
+            _saveShaderSettings();
           },
           child: Container(
             width: 64,
@@ -519,7 +572,89 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
             );
           }).toList(),
         ),
+        const SizedBox(height: 12),
+        Text('Easing', style: TextStyle(color: sliderColor, fontSize: 14)),
+        const SizedBox(height: 8),
+        Column(
+          children: AnimationEasing.values.map((ease) {
+            final String label;
+            switch (ease) {
+              case AnimationEasing.linear:
+                label = 'Linear';
+                break;
+              case AnimationEasing.easeIn:
+                label = 'Ease In';
+                break;
+              case AnimationEasing.easeOut:
+                label = 'Ease Out';
+                break;
+              case AnimationEasing.easeInOut:
+                label = 'Ease In Out';
+                break;
+            }
+            return RadioListTile<AnimationEasing>(
+              value: ease,
+              groupValue: _animationEasing,
+              activeColor: sliderColor,
+              contentPadding: EdgeInsets.zero,
+              title: Text(label, style: TextStyle(color: sliderColor)),
+              dense: true,
+              visualDensity: const VisualDensity(horizontal: 0, vertical: -4),
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              onChanged: (AnimationEasing? value) {
+                if (value != null) {
+                  setState(() {
+                    _animationEasing = value;
+                  });
+                }
+              },
+            );
+          }).toList(),
+        ),
       ],
     );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Persistence helpers
+  // ---------------------------------------------------------------------------
+  Future<void> _loadShaderSettings() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonStr = prefs.getString(_kShaderSettingsKey);
+      if (jsonStr != null && jsonStr.isNotEmpty) {
+        final Map<String, dynamic> map = jsonDecode(jsonStr);
+
+        // Support legacy format where only settings map was stored
+        if (map.containsKey('settings')) {
+          _shaderSettings = ShaderSettings.fromMap(
+            Map<String, dynamic>.from(map['settings'] as Map),
+          );
+          _selectedImage = map['selectedImage'] as String? ?? _selectedImage;
+          _imageCategory = ImageCategory
+              .values[(map['imageCategory'] as int?) ?? _imageCategory.index];
+        } else {
+          // Legacy: map is the settings itself
+          _shaderSettings = ShaderSettings.fromMap(map);
+        }
+        setState(() {});
+      }
+    } catch (e, stack) {
+      debugPrint('ShaderDemoImpl: Failed to load settings → $e\n$stack');
+    }
+  }
+
+  Future<void> _saveShaderSettings() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final payload = {
+        'settings': _shaderSettings.toMap(),
+        'selectedImage': _selectedImage,
+        'imageCategory': _imageCategory.index,
+      };
+      await prefs.setString(_kShaderSettingsKey, jsonEncode(payload));
+    } catch (e, stack) {
+      debugPrint('ShaderDemoImpl: Failed to save settings → $e\n$stack');
+    }
   }
 }

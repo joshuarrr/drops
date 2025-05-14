@@ -178,4 +178,48 @@ class ShaderSettings {
        _fillScreen = fillScreen {
     if (enableLogging) print("SETTINGS: ShaderSettings initialized");
   }
+
+  // ---------------------------------------------------------------------------
+  // Serialization helpers for persistence
+  // ---------------------------------------------------------------------------
+
+  Map<String, dynamic> toMap() {
+    return {
+      'colorEnabled': _colorEnabled,
+      'blurEnabled': _blurEnabled,
+      'hue': _hue,
+      'saturation': _saturation,
+      'lightness': _lightness,
+      'overlayHue': _overlayHue,
+      'overlayIntensity': _overlayIntensity,
+      'overlayOpacity': _overlayOpacity,
+      'blurAmount': _blurAmount,
+      'blurRadius': _blurRadius,
+      'blurOpacity': _blurOpacity,
+      'blurFacets': _blurFacets,
+      'blurBlendMode': _blurBlendMode,
+      'blurAnimated': _blurAnimated,
+      'fillScreen': _fillScreen,
+    };
+  }
+
+  factory ShaderSettings.fromMap(Map<String, dynamic> map) {
+    return ShaderSettings(
+      colorEnabled: map['colorEnabled'] as bool? ?? false,
+      blurEnabled: map['blurEnabled'] as bool? ?? false,
+      hue: (map['hue'] as num?)?.toDouble() ?? 0.0,
+      saturation: (map['saturation'] as num?)?.toDouble() ?? 0.0,
+      lightness: (map['lightness'] as num?)?.toDouble() ?? 0.0,
+      overlayHue: (map['overlayHue'] as num?)?.toDouble() ?? 0.0,
+      overlayIntensity: (map['overlayIntensity'] as num?)?.toDouble() ?? 0.0,
+      overlayOpacity: (map['overlayOpacity'] as num?)?.toDouble() ?? 0.0,
+      blurAmount: (map['blurAmount'] as num?)?.toDouble() ?? 0.0,
+      blurRadius: (map['blurRadius'] as num?)?.toDouble() ?? 15.0,
+      blurOpacity: (map['blurOpacity'] as num?)?.toDouble() ?? 1.0,
+      blurFacets: (map['blurFacets'] as num?)?.toDouble() ?? 1.0,
+      blurBlendMode: map['blurBlendMode'] as int? ?? 0,
+      blurAnimated: map['blurAnimated'] as bool? ?? false,
+      fillScreen: map['fillScreen'] as bool? ?? false,
+    );
+  }
 }
