@@ -5,6 +5,11 @@ import '../models/animation_options.dart';
 import '../../common/font_selector.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../widgets/aspect_toggle.dart';
+import '../widgets/value_slider.dart';
+import '../widgets/aspect_panel_header.dart';
+import '../widgets/alignment_selector.dart';
+import '../widgets/animation_controls.dart';
 
 // Enum for identifying each text line (outside class for reuse)
 enum TextLine { title, subtitle, artist }
@@ -197,6 +202,18 @@ class EffectControls {
     presetsRefreshCounter++;
   }
 
+  // Delete a preset from storage, update the in-memory cache, and report success
+  static Future<bool> deletePresetAndUpdate(
+    ShaderAspect aspect,
+    String name,
+  ) async {
+    final success = await PresetsManager.deletePreset(aspect, name);
+    if (success) {
+      cachedPresets[aspect] = await PresetsManager.getPresetsForAspect(aspect);
+    }
+    return success;
+  }
+
   // Load font choices via the shared FontUtils helper so the logic is
   // centralized and can be reused by other widgets as well.
   static Future<List<String>> getFontChoices() {
@@ -222,28 +239,28 @@ class EffectControls {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             // Image toggle first for quick access
-            _buildAspectToggle(
+            AspectToggle(
               aspect: ShaderAspect.image,
               isEnabled: true,
               isCurrentImageDark: isCurrentImageDark,
               onToggled: onAspectToggled,
               onTap: onAspectSelected,
             ),
-            _buildAspectToggle(
+            AspectToggle(
               aspect: ShaderAspect.color,
               isEnabled: settings.colorEnabled,
               isCurrentImageDark: isCurrentImageDark,
               onToggled: onAspectToggled,
               onTap: onAspectSelected,
             ),
-            _buildAspectToggle(
+            AspectToggle(
               aspect: ShaderAspect.blur,
               isEnabled: settings.blurEnabled,
               isCurrentImageDark: isCurrentImageDark,
               onToggled: onAspectToggled,
               onTap: onAspectSelected,
             ),
-            _buildAspectToggle(
+            AspectToggle(
               aspect: ShaderAspect.text,
               isEnabled: settings.textEnabled,
               isCurrentImageDark: isCurrentImageDark,
@@ -251,88 +268,6 @@ class EffectControls {
               onTap: onAspectSelected,
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  // Build a toggleable button for each shader aspect
-  static Widget _buildAspectToggle({
-    required ShaderAspect aspect,
-    required bool isEnabled,
-    required bool isCurrentImageDark,
-    required Function(ShaderAspect, bool) onToggled,
-    required Function(ShaderAspect) onTap,
-  }) {
-    final Color textColor = isCurrentImageDark ? Colors.white : Colors.black;
-    // Set a very subtle background for all modes: 10% opacity (inactive) or 15% (active).
-    // This keeps the look consistent regardless of the underlying image brightness.
-    final Color backgroundColor = Colors.white.withOpacity(
-      isEnabled ? 0.15 : 0.10,
-    );
-
-    final Color borderColor = isEnabled
-        ? textColor
-        : textColor.withOpacity(0.5);
-
-    return Tooltip(
-      message: isEnabled
-          ? "Long press to disable ${aspect.label}"
-          : "Long press to enable ${aspect.label}",
-      preferBelow: true,
-      showDuration: const Duration(seconds: 1),
-      verticalOffset: 20,
-      textStyle: TextStyle(
-        color: isCurrentImageDark ? Colors.black : Colors.white,
-        fontSize: 11,
-      ),
-      decoration: BoxDecoration(
-        color: isCurrentImageDark
-            ? Colors.white.withOpacity(0.9)
-            : Colors.black.withOpacity(0.9),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: GestureDetector(
-        // Single tap to select the aspect and show sliders
-        onTap: () => onTap(aspect),
-        // Long press to toggle the effect on/off
-        onLongPress: () => onToggled(aspect, !isEnabled),
-        child: SizedBox(
-          width: 70,
-          height: 78,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(aspect.icon, color: textColor, size: 20),
-                const SizedBox(height: 6),
-                Text(
-                  aspect.label,
-                  style: TextStyle(
-                    color: textColor,
-                    fontSize: 11,
-                    fontWeight: isEnabled ? FontWeight.bold : FontWeight.normal,
-                  ),
-                ),
-                const SizedBox(height: 1),
-                Container(
-                  height: 6,
-                  width: 6,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isEnabled
-                        ? Colors.green
-                        : textColor.withOpacity(0.3),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ),
       ),
     );
@@ -838,7 +773,7 @@ class EffectControls {
     switch (aspect) {
       case ShaderAspect.color:
         return [
-          buildPanelHeader(
+          AspectPanelHeader(
             aspect: aspect,
             onPresetSelected: applyPreset,
             onReset: () {
@@ -847,9 +782,12 @@ class EffectControls {
             },
             onSavePreset: savePresetForAspect,
             sliderColor: sliderColor,
-            context: context,
+            loadPresets: EffectControls.loadPresetsForAspect,
+            deletePreset: deletePresetAndUpdate,
+            refreshPresets: EffectControls.refreshPresets,
+            refreshCounter: EffectControls.presetsRefreshCounter,
           ),
-          buildSlider(
+          ValueSlider(
             label: 'Hue',
             value: settings.hue,
             onChanged: (value) =>
@@ -857,7 +795,7 @@ class EffectControls {
             sliderColor: sliderColor,
             defaultValue: 0.0,
           ),
-          buildSlider(
+          ValueSlider(
             label: 'Saturation',
             value: settings.saturation,
             onChanged: (value) =>
@@ -865,7 +803,7 @@ class EffectControls {
             sliderColor: sliderColor,
             defaultValue: 0.0,
           ),
-          buildSlider(
+          ValueSlider(
             label: 'Lightness',
             value: settings.lightness,
             onChanged: (value) =>
@@ -886,7 +824,7 @@ class EffectControls {
               ),
             ),
           ),
-          buildSlider(
+          ValueSlider(
             label: 'Overlay Hue',
             value: settings.overlayHue,
             onChanged: (value) =>
@@ -894,7 +832,7 @@ class EffectControls {
             sliderColor: sliderColor,
             defaultValue: 0.0,
           ),
-          buildSlider(
+          ValueSlider(
             label: 'Overlay Intensity',
             value: settings.overlayIntensity,
             onChanged: (value) =>
@@ -902,7 +840,7 @@ class EffectControls {
             sliderColor: sliderColor,
             defaultValue: 0.0,
           ),
-          buildSlider(
+          ValueSlider(
             label: 'Overlay Opacity',
             value: settings.overlayOpacity,
             onChanged: (value) =>
@@ -930,7 +868,7 @@ class EffectControls {
             ],
           ),
           if (settings.colorAnimated)
-            buildAnimationControls(
+            AnimationControls(
               animationSpeed: settings.colorAnimOptions.speed,
               onSpeedChanged: (v) {
                 settings.colorAnimOptions = settings.colorAnimOptions.copyWith(
@@ -975,7 +913,7 @@ class EffectControls {
             ],
           ),
           if (settings.overlayAnimated)
-            buildAnimationControls(
+            AnimationControls(
               animationSpeed: settings.overlayAnimOptions.speed,
               onSpeedChanged: (v) {
                 settings.overlayAnimOptions = settings.overlayAnimOptions
@@ -1000,7 +938,7 @@ class EffectControls {
 
       case ShaderAspect.blur:
         return [
-          buildPanelHeader(
+          AspectPanelHeader(
             aspect: aspect,
             onPresetSelected: applyPreset,
             onReset: () {
@@ -1009,9 +947,12 @@ class EffectControls {
             },
             onSavePreset: savePresetForAspect,
             sliderColor: sliderColor,
-            context: context,
+            loadPresets: EffectControls.loadPresetsForAspect,
+            deletePreset: deletePresetAndUpdate,
+            refreshPresets: EffectControls.refreshPresets,
+            refreshCounter: EffectControls.presetsRefreshCounter,
           ),
-          buildSlider(
+          ValueSlider(
             label: 'Shatter Amount',
             value: settings.blurAmount,
             onChanged: (value) =>
@@ -1019,7 +960,7 @@ class EffectControls {
             sliderColor: sliderColor,
             defaultValue: 0.0,
           ),
-          buildSlider(
+          ValueSlider(
             label: 'Shatter Radius',
             value:
                 settings.blurRadius /
@@ -1032,7 +973,7 @@ class EffectControls {
             defaultValue: 15.0 / 120.0, // Default scaled value
           ),
           // Opacity slider
-          buildSlider(
+          ValueSlider(
             label: 'Shatter Opacity',
             value: settings.blurOpacity,
             onChanged: (value) =>
@@ -1041,7 +982,7 @@ class EffectControls {
             defaultValue: 1.0,
           ),
           // Facets slider (0-1 mapped to 1-150 facets)
-          buildSlider(
+          ValueSlider(
             label: 'Facets',
             value: settings.blurFacets / 150.0,
             onChanged: (value) =>
@@ -1134,7 +1075,7 @@ class EffectControls {
             ],
           ),
           if (settings.blurAnimated)
-            buildAnimationControls(
+            AnimationControls(
               animationSpeed: settings.blurAnimOptions.speed,
               onSpeedChanged: (v) {
                 settings.blurAnimOptions = settings.blurAnimOptions.copyWith(
@@ -1162,7 +1103,7 @@ class EffectControls {
 
       case ShaderAspect.image:
         return [
-          buildPanelHeader(
+          AspectPanelHeader(
             aspect: aspect,
             onPresetSelected: applyPreset,
             onReset: () {
@@ -1171,7 +1112,10 @@ class EffectControls {
             },
             onSavePreset: savePresetForAspect,
             sliderColor: sliderColor,
-            context: context,
+            loadPresets: EffectControls.loadPresetsForAspect,
+            deletePreset: deletePresetAndUpdate,
+            refreshPresets: EffectControls.refreshPresets,
+            refreshCounter: EffectControls.presetsRefreshCounter,
           ),
           RadioListTile<bool>(
             value: false,
@@ -1210,7 +1154,7 @@ class EffectControls {
           List<Widget> widgets = [];
 
           widgets.add(
-            buildPanelHeader(
+            AspectPanelHeader(
               aspect: aspect,
               onPresetSelected: applyPreset,
               onReset: () {
@@ -1219,7 +1163,10 @@ class EffectControls {
               },
               onSavePreset: savePresetForAspect,
               sliderColor: sliderColor,
-              context: context,
+              loadPresets: EffectControls.loadPresetsForAspect,
+              deletePreset: deletePresetAndUpdate,
+              refreshPresets: EffectControls.refreshPresets,
+              refreshCounter: EffectControls.presetsRefreshCounter,
             ),
           );
 
@@ -1700,7 +1647,7 @@ class EffectControls {
           widgets.add(const SizedBox(height: 12));
 
           widgets.add(
-            buildSlider(
+            ValueSlider(
               label: 'Size',
               value: getCurrentSize(),
               onChanged: (v) => onSliderChanged(v, setCurrentSize),
@@ -1738,7 +1685,7 @@ class EffectControls {
           // Only show line height slider if fitToWidth is enabled
           if (getCurrentFitToWidth()) {
             widgets.add(
-              buildSlider(
+              ValueSlider(
                 label: 'Line Height',
                 value: getCurrentLineHeight() / 2.0, // Scale to 0-1 range
                 onChanged: (v) => onSliderChanged(
@@ -1752,7 +1699,7 @@ class EffectControls {
           }
 
           widgets.add(
-            buildSlider(
+            ValueSlider(
               label: 'Position X',
               value: getCurrentPosX(),
               onChanged: (v) => onSliderChanged(v, setCurrentPosX),
@@ -1762,7 +1709,7 @@ class EffectControls {
           );
 
           widgets.add(
-            buildSlider(
+            ValueSlider(
               label: 'Position Y',
               value: getCurrentPosY(),
               onChanged: (v) => onSliderChanged(v, setCurrentPosY),
@@ -1773,7 +1720,7 @@ class EffectControls {
 
           // Add horizontal alignment controls
           widgets.add(
-            buildAlignmentControls(
+            AlignmentSelector(
               label: 'Horizontal Alignment',
               currentValue: getCurrentHAlign(),
               onChanged: (value) {
@@ -1795,7 +1742,7 @@ class EffectControls {
 
           // Add vertical alignment controls
           widgets.add(
-            buildAlignmentControls(
+            AlignmentSelector(
               label: 'Vertical Alignment',
               currentValue: getCurrentVAlign(),
               onChanged: (value) {
@@ -1844,247 +1791,9 @@ class EffectControls {
     );
   }
 
-  // Builds a single slider control
-  static Widget buildSlider({
-    required String label,
-    required double value,
-    required ValueChanged<double> onChanged,
-    required Color sliderColor,
-    double defaultValue = 0.0,
-  }) {
-    // Check if the current value is different from the default value
-    final bool valueChanged = value != defaultValue;
-    final bool isCurrentImageDark = sliderColor == Colors.white;
+  // Helper method removed - now using AlignmentSelector widget
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: isCurrentImageDark ? Colors.white : Colors.black,
-            fontSize: 14,
-          ),
-        ),
-        Row(
-          children: [
-            Expanded(
-              child: SliderTheme(
-                data: SliderThemeData(
-                  activeTrackColor: sliderColor,
-                  inactiveTrackColor: sliderColor.withOpacity(0.3),
-                  thumbColor: sliderColor,
-                  overlayColor: sliderColor.withOpacity(0.1),
-                ),
-                child: Slider(
-                  value: value,
-                  onChanged: (newValue) {
-                    if (enableLogging) {
-                      print(
-                        "SLIDER: $label changing to ${(newValue * 100).round()}%",
-                      );
-                    }
-                    onChanged(newValue);
-                  },
-                ),
-              ),
-            ),
-            SizedBox(
-              width: 40,
-              child: Text(
-                '${(value * 100).round()}%',
-                style: TextStyle(
-                  color: isCurrentImageDark ? Colors.white : Colors.black,
-                ),
-              ),
-            ),
-            // Reset button for this specific slider - disabled if value hasn't changed
-            InkWell(
-              onTap: valueChanged ? () => onChanged(defaultValue) : null,
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                margin: const EdgeInsets.only(left: 4),
-                decoration: BoxDecoration(
-                  color: valueChanged
-                      ? sliderColor.withOpacity(0.1)
-                      : sliderColor.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Icon(
-                  Icons.refresh,
-                  color: valueChanged
-                      ? sliderColor
-                      : sliderColor.withOpacity(0.3),
-                  size: 16,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  // Helper to build a single blend mode chip
-  static Widget _buildBlendChip(
-    String label,
-    int mode,
-    ShaderSettings settings,
-    Color sliderColor,
-    Function(ShaderSettings) onSettingsChanged,
-  ) {
-    return ChoiceChip(
-      label: Text(label, style: TextStyle(color: sliderColor)),
-      selected: settings.blurBlendMode == mode,
-      selectedColor: sliderColor.withOpacity(0.3),
-      backgroundColor: sliderColor.withOpacity(0.1),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: BorderSide(color: Colors.transparent),
-      ),
-      onSelected: (selected) {
-        if (selected) {
-          settings.blurBlendMode = mode;
-          onSettingsChanged(settings);
-        }
-      },
-    );
-  }
-
-  // Helper to build text alignment button group
-  static Widget buildAlignmentControls({
-    required String label,
-    required int currentValue,
-    required ValueChanged<int> onChanged,
-    required Color sliderColor,
-    required List<IconData> icons,
-    required List<String> tooltips,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: TextStyle(color: sliderColor, fontSize: 14)),
-        const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: List.generate(
-            icons.length,
-            (index) => Tooltip(
-              message: tooltips[index],
-              child: InkWell(
-                onTap: () => onChanged(index),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: currentValue == index
-                        ? sliderColor.withOpacity(0.3)
-                        : sliderColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.transparent),
-                  ),
-                  child: Icon(icons[index], color: sliderColor, size: 20),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // Helper to build animation speed + type + easing controls so they can be reused
-  static Widget buildAnimationControls({
-    required double animationSpeed,
-    required ValueChanged<double> onSpeedChanged,
-    required AnimationMode animationMode,
-    required ValueChanged<AnimationMode> onModeChanged,
-    required AnimationEasing animationEasing,
-    required ValueChanged<AnimationEasing> onEasingChanged,
-    required Color sliderColor,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 16),
-        Text('Speed', style: TextStyle(color: sliderColor, fontSize: 14)),
-        SliderTheme(
-          data: SliderThemeData(
-            activeTrackColor: sliderColor,
-            inactiveTrackColor: sliderColor.withOpacity(0.3),
-            thumbColor: sliderColor,
-          ),
-          child: Slider(
-            value: animationSpeed,
-            min: 0.0,
-            max: 1.0,
-            divisions: 20,
-            onChanged: onSpeedChanged,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          'Animation Type',
-          style: TextStyle(color: sliderColor, fontSize: 14),
-        ),
-        const SizedBox(height: 8),
-        Column(
-          children: AnimationMode.values.map((mode) {
-            final String label = mode == AnimationMode.pulse
-                ? 'Pulse'
-                : 'Randomixed';
-            return RadioListTile<AnimationMode>(
-              value: mode,
-              groupValue: animationMode,
-              activeColor: sliderColor,
-              contentPadding: EdgeInsets.zero,
-              title: Text(label, style: TextStyle(color: sliderColor)),
-              dense: true,
-              visualDensity: const VisualDensity(horizontal: 0, vertical: -4),
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              onChanged: (val) {
-                if (val != null) onModeChanged(val);
-              },
-            );
-          }).toList(),
-        ),
-        const SizedBox(height: 12),
-        Text('Easing', style: TextStyle(color: sliderColor, fontSize: 14)),
-        const SizedBox(height: 8),
-        Column(
-          children: AnimationEasing.values.map((ease) {
-            final String label;
-            switch (ease) {
-              case AnimationEasing.linear:
-                label = 'Linear';
-                break;
-              case AnimationEasing.easeIn:
-                label = 'Ease In';
-                break;
-              case AnimationEasing.easeOut:
-                label = 'Ease Out';
-                break;
-              case AnimationEasing.easeInOut:
-                label = 'Ease In Out';
-                break;
-            }
-            return RadioListTile<AnimationEasing>(
-              value: ease,
-              groupValue: animationEasing,
-              activeColor: sliderColor,
-              contentPadding: EdgeInsets.zero,
-              title: Text(label, style: TextStyle(color: sliderColor)),
-              dense: true,
-              visualDensity: const VisualDensity(horizontal: 0, vertical: -4),
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              onChanged: (val) {
-                if (val != null) onEasingChanged(val);
-              },
-            );
-          }).toList(),
-        ),
-      ],
-    );
-  }
+  // Helper method removed - now using AnimationControls widget
 
   // Build a widget to display saved presets
   static Widget buildPresetsBar({
@@ -2158,15 +1867,10 @@ class EffectControls {
                                   style: TextStyle(color: Colors.red),
                                 ),
                                 onPressed: () async {
-                                  await PresetsManager.deletePreset(
+                                  await deletePresetAndUpdate(
                                     aspect,
                                     entry.key,
                                   );
-                                  // Update cached presets
-                                  cachedPresets[aspect] =
-                                      await PresetsManager.getPresetsForAspect(
-                                        aspect,
-                                      );
                                   // Force refresh
                                   refreshPresets();
                                   Navigator.of(context).pop();
@@ -2206,234 +1910,6 @@ class EffectControls {
           ],
         );
       },
-    );
-  }
-
-  // Create a combined header that includes title, presets, and menu
-  static Widget buildPanelHeader({
-    required ShaderAspect aspect,
-    required Function(Map<String, dynamic>) onPresetSelected,
-    required VoidCallback onReset,
-    required Function(ShaderAspect, String) onSavePreset,
-    required Color sliderColor,
-    required BuildContext context,
-  }) {
-    return Column(
-      children: [
-        // Top row with title and menu
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              aspect.label + ' Settings',
-              style: TextStyle(
-                color: sliderColor,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            // Menu button
-            PopupMenuButton<String>(
-              icon: Icon(Icons.more_vert, color: sliderColor, size: 20),
-              padding: EdgeInsets.zero,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              itemBuilder: (context) => [
-                PopupMenuItem<String>(
-                  value: 'save_preset',
-                  child: Row(
-                    children: [
-                      Icon(Icons.save, color: sliderColor, size: 18),
-                      const SizedBox(width: 8),
-                      Text('Save preset', style: TextStyle(color: sliderColor)),
-                    ],
-                  ),
-                ),
-                PopupMenuItem<String>(
-                  value: 'reset',
-                  child: Row(
-                    children: [
-                      Icon(Icons.restore, color: sliderColor, size: 18),
-                      const SizedBox(width: 8),
-                      Text('Reset', style: TextStyle(color: sliderColor)),
-                    ],
-                  ),
-                ),
-              ],
-              onSelected: (value) {
-                if (value == 'reset') {
-                  onReset();
-                } else if (value == 'save_preset') {
-                  // Show a dialog to name the preset
-                  final TextEditingController nameController =
-                      TextEditingController();
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: Text(
-                        'Save Preset',
-                        style: TextStyle(color: sliderColor),
-                      ),
-                      content: TextField(
-                        controller: nameController,
-                        decoration: InputDecoration(
-                          hintText: 'Enter preset name',
-                          hintStyle: TextStyle(
-                            color: sliderColor.withOpacity(0.6),
-                          ),
-                          enabledBorder: UnderlineInputBorder(
-                            borderSide: BorderSide(
-                              color: sliderColor.withOpacity(0.3),
-                            ),
-                          ),
-                          focusedBorder: UnderlineInputBorder(
-                            borderSide: BorderSide(color: sliderColor),
-                          ),
-                        ),
-                        style: TextStyle(color: sliderColor),
-                        autofocus: true,
-                      ),
-                      actions: [
-                        TextButton(
-                          child: Text(
-                            'Cancel',
-                            style: TextStyle(color: sliderColor),
-                          ),
-                          onPressed: () => Navigator.of(context).pop(),
-                        ),
-                        TextButton(
-                          child: Text(
-                            'Save',
-                            style: TextStyle(color: sliderColor),
-                          ),
-                          onPressed: () {
-                            if (nameController.text.isNotEmpty) {
-                              onSavePreset(aspect, nameController.text);
-                              Navigator.of(context).pop();
-                            }
-                          },
-                        ),
-                      ],
-                      backgroundColor: sliderColor.withOpacity(0.1),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  );
-                }
-              },
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        // Presets row
-        FutureBuilder<Map<String, dynamic>>(
-          key: ValueKey(
-            'presets_${aspect.toString()}_${presetsRefreshCounter}',
-          ),
-          future: loadPresetsForAspect(aspect),
-          builder: (context, snapshot) {
-            if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return const SizedBox.shrink();
-            }
-
-            final presets = snapshot.data!;
-
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  height: 32,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: presets.entries.map((entry) {
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 6.0),
-                        child: InkWell(
-                          onTap: () => onPresetSelected(entry.value),
-                          onLongPress: () {
-                            // Show delete confirmation
-                            showDialog(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                title: Text(
-                                  'Delete Preset',
-                                  style: TextStyle(color: sliderColor),
-                                ),
-                                content: Text(
-                                  'Are you sure you want to delete the preset "${entry.key}"?',
-                                  style: TextStyle(color: sliderColor),
-                                ),
-                                actions: [
-                                  TextButton(
-                                    child: Text(
-                                      'Cancel',
-                                      style: TextStyle(color: sliderColor),
-                                    ),
-                                    onPressed: () =>
-                                        Navigator.of(context).pop(),
-                                  ),
-                                  TextButton(
-                                    child: Text(
-                                      'Delete',
-                                      style: TextStyle(color: Colors.red),
-                                    ),
-                                    onPressed: () async {
-                                      await PresetsManager.deletePreset(
-                                        aspect,
-                                        entry.key,
-                                      );
-                                      // Update cached presets
-                                      cachedPresets[aspect] =
-                                          await PresetsManager.getPresetsForAspect(
-                                            aspect,
-                                          );
-                                      // Force refresh
-                                      refreshPresets();
-                                      Navigator.of(context).pop();
-                                    },
-                                  ),
-                                ],
-                                backgroundColor: sliderColor.withOpacity(0.1),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            );
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: sliderColor.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(
-                                color: sliderColor.withOpacity(0.3),
-                              ),
-                            ),
-                            child: Text(
-                              entry.key,
-                              style: TextStyle(
-                                color: sliderColor,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
-        const SizedBox(height: 12),
-      ],
     );
   }
 }
