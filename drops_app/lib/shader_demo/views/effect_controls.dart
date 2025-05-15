@@ -10,6 +10,7 @@ import '../widgets/blur_panel.dart';
 import '../widgets/image_panel.dart';
 import '../widgets/text_panel.dart';
 import '../widgets/noise_panel.dart';
+import '../widgets/text_fx_panel.dart';
 
 // Enum for identifying each text line (outside class for reuse)
 enum TextLine { title, subtitle, artist }
@@ -132,6 +133,13 @@ class EffectControls {
               onToggled: onAspectToggled,
               onTap: onAspectSelected,
             ),
+            AspectToggle(
+              aspect: ShaderAspect.textfx,
+              isEnabled: settings.textfxEnabled,
+              isCurrentImageDark: isCurrentImageDark,
+              onToggled: onAspectToggled,
+              onTap: onAspectSelected,
+            ),
           ],
         ),
       ),
@@ -190,6 +198,16 @@ class EffectControls {
       case ShaderAspect.noise:
         return [
           NoisePanel(
+            settings: settings,
+            onSettingsChanged: onSettingsChanged,
+            sliderColor: sliderColor,
+            context: context,
+          ),
+        ];
+
+      case ShaderAspect.textfx:
+        return [
+          TextFxPanel(
             settings: settings,
             onSettingsChanged: onSettingsChanged,
             sliderColor: sliderColor,

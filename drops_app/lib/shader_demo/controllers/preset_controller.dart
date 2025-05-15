@@ -155,8 +155,12 @@ class PresetController {
         return null;
       }
 
+      // Wait a frame to ensure all animations and shader effects are properly rendered
+      await Future.delayed(const Duration(milliseconds: 100));
+
       // Use a higher pixelRatio for better quality thumbnails
-      final ui.Image image = await boundary.toImage(pixelRatio: 0.8);
+      // Changed from 0.8 to 1.5 for higher quality that captures all shader effects
+      final ui.Image image = await boundary.toImage(pixelRatio: 1.5);
       final ByteData? byteData = await image.toByteData(
         format: ui.ImageByteFormat.png,
       );

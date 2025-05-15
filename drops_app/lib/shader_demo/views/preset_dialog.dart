@@ -232,17 +232,20 @@ class _PresetsDialogState extends State<PresetsDialog> {
           Expanded(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: preset.thumbnailData != null
-                  ? Image.memory(
-                      preset.thumbnailData!,
-                      fit: BoxFit.cover,
-                      alignment: Alignment.center,
-                    )
-                  : Image.asset(
-                      preset.imagePath,
-                      fit: BoxFit.cover,
-                      alignment: Alignment.center,
-                    ),
+              child: Container(
+                color: Colors.black,
+                child: preset.thumbnailData != null
+                    ? Image.memory(
+                        preset.thumbnailData!,
+                        fit: BoxFit.cover,
+                        alignment: Alignment.center,
+                      )
+                    : Image.asset(
+                        preset.imagePath,
+                        fit: BoxFit.cover,
+                        alignment: Alignment.center,
+                      ),
+              ),
             ),
           ),
           const SizedBox(height: 8),

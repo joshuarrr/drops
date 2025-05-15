@@ -41,6 +41,13 @@ class AppTheme {
       foregroundColor: _lightColorScheme.onSurface,
       elevation: _defaultElevation,
     ),
+    snackBarTheme: SnackBarThemeData(
+      backgroundColor: _lightColorScheme.primary,
+      contentTextStyle: TextStyle(color: _lightColorScheme.onPrimary),
+      actionTextColor: _lightColorScheme.onPrimary.withOpacity(0.8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      behavior: SnackBarBehavior.floating,
+    ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         foregroundColor: _lightColorScheme.onPrimary,
@@ -116,6 +123,13 @@ class AppTheme {
       backgroundColor: _darkColorScheme.surface,
       foregroundColor: _darkColorScheme.onSurface,
       elevation: _defaultElevation,
+    ),
+    snackBarTheme: SnackBarThemeData(
+      backgroundColor: _darkColorScheme.primary,
+      contentTextStyle: TextStyle(color: _darkColorScheme.onPrimary),
+      actionTextColor: _darkColorScheme.onPrimary.withOpacity(0.8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      behavior: SnackBarBehavior.floating,
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(

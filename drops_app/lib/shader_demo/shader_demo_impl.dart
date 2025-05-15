@@ -237,6 +237,9 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                                   case ShaderAspect.noise:
                                     _shaderSettings.noiseEnabled = enabled;
                                     break;
+                                  case ShaderAspect.textfx:
+                                    _shaderSettings.textfxEnabled = enabled;
+                                    break;
                                 }
                               });
                               _saveShaderSettings();
@@ -251,6 +254,13 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                                 // If selecting a new aspect, always show sliders
                                 if (selectingNewAspect) {
                                   _showAspectSliders = true;
+
+                                  // Auto-enable text effects if selecting the TextFx aspect and text is enabled
+                                  if (aspect == ShaderAspect.textfx &&
+                                      _shaderSettings.textEnabled &&
+                                      !_shaderSettings.textfxEnabled) {
+                                    _shaderSettings.textfxEnabled = true;
+                                  }
                                 } else {
                                   // If tapping the same aspect, toggle sliders
                                   _showAspectSliders = !_showAspectSliders;
@@ -385,6 +395,9 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
 
   // Show dialog to save a preset
   void _showSavePresetDialog() {
+    // Store a reference to the scaffold context before showing the dialog
+    final scaffoldContext = context;
+
     showDialog(
       context: context,
       barrierColor: Colors.black.withOpacity(0.5),
@@ -398,7 +411,8 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
               previewKey: _previewKey,
             );
 
-            ScaffoldMessenger.of(context).showSnackBar(
+            // Use the stored scaffold context instead of the dialog context
+            ScaffoldMessenger.of(scaffoldContext).showSnackBar(
               SnackBar(
                 content: Text('Preset "$name" saved successfully'),
                 behavior: SnackBarBehavior.floating,
@@ -407,10 +421,11 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
             );
           } catch (e) {
             debugPrint('Error saving preset: $e');
-            ScaffoldMessenger.of(context).showSnackBar(
+            // Use the stored scaffold context instead of the dialog context
+            ScaffoldMessenger.of(scaffoldContext).showSnackBar(
               SnackBar(
                 content: Text('Error saving preset: ${e.toString()}'),
-                backgroundColor: Colors.red,
+                backgroundColor: Theme.of(scaffoldContext).colorScheme.error,
                 behavior: SnackBarBehavior.floating,
                 duration: const Duration(seconds: 4),
               ),
@@ -423,6 +438,9 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
 
   // Show dialog to load a preset
   void _showLoadPresetDialog() {
+    // Store a reference to the scaffold context before showing the dialog
+    final scaffoldContext = context;
+
     showDialog(
       context: context,
       barrierColor: Colors.black.withOpacity(0.5),
@@ -444,7 +462,8 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
           // Save changes to persistent storage
           _saveShaderSettings();
 
-          ScaffoldMessenger.of(context).showSnackBar(
+          // Use the stored scaffold context instead of the dialog context
+          ScaffoldMessenger.of(scaffoldContext).showSnackBar(
             SnackBar(
               content: Text('Preset "${preset.name}" loaded'),
               behavior: SnackBarBehavior.floating,
@@ -669,6 +688,270 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     }
   }
 
+  // Add method to apply text effects to text styles
+  TextStyle _applyTextEffects(TextStyle baseStyle) {
+    if (!_shaderSettings.textfxEnabled) {
+      return baseStyle;
+    }
+
+    TextStyle style = baseStyle;
+    List<Shadow> shadows = [];
+
+    // Apply shadow if enabled
+    if (_shaderSettings.textShadowEnabled) {
+      shadows.add(
+        Shadow(
+          blurRadius: _shaderSettings.textShadowBlur,
+          color: _shaderSettings.textShadowColor.withOpacity(
+            _shaderSettings.textShadowOpacity,
+          ),
+          offset: Offset(
+            _shaderSettings.textShadowOffsetX,
+            _shaderSettings.textShadowOffsetY,
+          ),
+        ),
+      );
+    }
+
+    // Apply glow if enabled (multiple shadows with decreasing opacity)
+    if (_shaderSettings.textGlowEnabled) {
+      // Create a glow effect with multiple shadows
+      final int steps = 5;
+      for (int i = 0; i < steps; i++) {
+        double intensity = 1.0 - (i / steps);
+        shadows.add(
+          Shadow(
+            color: _shaderSettings.textGlowColor.withOpacity(
+              _shaderSettings.textGlowOpacity * intensity,
+            ),
+            blurRadius: _shaderSettings.textGlowBlur * (i + 1) / steps,
+          ),
+        );
+      }
+    }
+
+    // Apply outline if enabled
+    if (_shaderSettings.textOutlineEnabled) {
+      // Simulate outline with shadows in 8 directions
+      final double offset = _shaderSettings.textOutlineWidth;
+      final Color outlineColor = _shaderSettings.textOutlineColor;
+
+      // Create outline using multiple shadows
+      // First do the corners
+      shadows.add(
+        Shadow(color: outlineColor, offset: Offset(-offset, -offset)),
+      );
+      shadows.add(Shadow(color: outlineColor, offset: Offset(-offset, offset)));
+      shadows.add(Shadow(color: outlineColor, offset: Offset(offset, -offset)));
+      shadows.add(Shadow(color: outlineColor, offset: Offset(offset, offset)));
+
+      // Then do the cardinal directions
+      shadows.add(Shadow(color: outlineColor, offset: Offset(-offset, 0)));
+      shadows.add(Shadow(color: outlineColor, offset: Offset(0, -offset)));
+      shadows.add(Shadow(color: outlineColor, offset: Offset(offset, 0)));
+      shadows.add(Shadow(color: outlineColor, offset: Offset(0, offset)));
+    }
+
+    // Apply metal effect if enabled
+    if (_shaderSettings.textMetalEnabled) {
+      // Create metallic effect with linear gradient foreground
+      final baseColor = _shaderSettings.textMetalBaseColor;
+      final shineColor = _shaderSettings.textMetalShineColor;
+      final shine = _shaderSettings.textMetalShine;
+
+      // Helper function to darken a color
+      Color darken(Color color, int percent) {
+        assert(percent >= 0 && percent <= 100);
+        final double factor = 1 - (percent / 100);
+        return Color.fromARGB(
+          color.alpha,
+          (color.red * factor).round().clamp(0, 255),
+          (color.green * factor).round().clamp(0, 255),
+          (color.blue * factor).round().clamp(0, 255),
+        );
+      }
+
+      // Helper function to brighten a color
+      Color brighten(Color color, int percent) {
+        assert(percent >= 0 && percent <= 100);
+        final double factor = percent / 100;
+        return Color.fromARGB(
+          color.alpha,
+          (color.red + (255 - color.red) * factor).round().clamp(0, 255),
+          (color.green + (255 - color.green) * factor).round().clamp(0, 255),
+          (color.blue + (255 - color.blue) * factor).round().clamp(0, 255),
+        );
+      }
+
+      // More dynamic metal gradient with multiple reflection points
+      final darkEdge = darken(baseColor, 60);
+      final darkShadow = darken(baseColor, 40);
+      final shadow = darken(baseColor, 20);
+      final midtone = baseColor;
+      final highlight = brighten(shineColor, 15);
+      final brightHighlight = brighten(shineColor, 50);
+      final superBright = brighten(shineColor, 90);
+
+      // Create a dynamic bevel effect by rotating the gradient slightly
+      final double angle = 0.7; // ~40 degrees
+      final beginAlignment = Alignment(sin(angle) - 0.5, cos(angle) - 0.5);
+      final endAlignment = Alignment(-sin(angle) + 0.5, -cos(angle) + 0.5);
+
+      // For realistic polished metal, we need:
+      // 1. Sharp contrasts between light and dark areas
+      // 2. Multiple highlights to simulate reflections from different angles
+      // 3. Beveled edges for 3D appearance
+      style = style.copyWith(
+        foreground: Paint()
+          ..shader = LinearGradient(
+            begin: beginAlignment,
+            end: endAlignment,
+            // More color stops creates more realistic metal look with multiple reflection bands
+            colors: [
+              darkEdge, // Deep edge shadow for 3D effect
+              darkShadow, // Dark edge
+              shadow, // Shadow transitioning to metal
+              midtone, // Base metal color
+              highlight, // First light reflection
+              brightHighlight, // Strong highlight
+              superBright, // Intense specular highlight
+              brightHighlight, // Back to strong highlight
+              highlight, // Softer highlight
+              midtone, // Return to base
+              shadow, // Shadow
+            ],
+            // More carefully spaced stops for realistic metal banding
+            stops: [
+              0.0,
+              0.1,
+              0.2,
+              0.35,
+              0.45,
+              0.48,
+              0.5 +
+                  (shine *
+                      0.05), // Center highlight position affected by intensity
+              0.52 + (shine * 0.05),
+              0.55 + (shine * 0.1),
+              0.7,
+              1.0,
+            ],
+            // Create shader over the text area with slight scale to enhance highlight
+          ).createShader(Rect.fromLTWH(0, 0, 500, 150)),
+      );
+
+      // Multiple shadows for better 3D effect and bevel appearance
+      // Bottom shadow (main drop shadow)
+      shadows.add(
+        Shadow(
+          color: Colors.black.withOpacity(0.7),
+          offset: Offset(1.5, 1.5),
+          blurRadius: 2,
+        ),
+      );
+
+      // Inner darker shadow for depth along bottom/right edge
+      shadows.add(
+        Shadow(
+          color: darkShadow.withOpacity(0.7),
+          offset: Offset(0.8, 0.8),
+          blurRadius: 0.8,
+        ),
+      );
+
+      // Top/left highlight for embossed effect
+      shadows.add(
+        Shadow(
+          color: superBright.withOpacity(0.9),
+          offset: Offset(-1, -1),
+          blurRadius: 0.5,
+        ),
+      );
+
+      // Subtle secondary highlight
+      shadows.add(
+        Shadow(
+          color: brightHighlight.withOpacity(0.5),
+          offset: Offset(-1.5, -1.5),
+          blurRadius: 2,
+        ),
+      );
+    }
+
+    // Apply glass effect if enabled
+    if (_shaderSettings.textGlassEnabled) {
+      final glassColor = _shaderSettings.textGlassColor;
+      final opacity = _shaderSettings.textGlassOpacity;
+      final blur = _shaderSettings.textGlassBlur;
+      final refraction = _shaderSettings.textGlassRefraction;
+
+      // Add a series of very soft, offset shadows to simulate refraction
+      for (int i = 0; i < 8; i++) {
+        final double angle = i * (3.14159 / 4); // Distribute around 360 degrees
+        shadows.add(
+          Shadow(
+            color: glassColor.withOpacity(opacity * 0.05),
+            blurRadius: blur * 1.5,
+            offset: Offset(
+              cos(angle) * blur * 0.2 * refraction,
+              sin(angle) * blur * 0.2 * refraction,
+            ),
+          ),
+        );
+      }
+
+      // Make the text semi-transparent and add a subtle border
+      style = style.copyWith(
+        color: style.color?.withOpacity(opacity * 0.8),
+        shadows: shadows,
+        background: Paint()..color = glassColor.withOpacity(0.15),
+      );
+    }
+
+    // Apply neon effect if enabled
+    if (_shaderSettings.textNeonEnabled) {
+      final neonColor = _shaderSettings.textNeonColor;
+      final outerColor = _shaderSettings.textNeonOuterColor;
+      final intensity = _shaderSettings.textNeonIntensity;
+      final width = _shaderSettings.textNeonWidth;
+
+      // Inner glow - several tightly packed shadows
+      final int innerSteps = 3;
+      for (int i = 0; i < innerSteps; i++) {
+        shadows.add(
+          Shadow(
+            color: neonColor.withOpacity(0.8),
+            blurRadius: (i + 1) * width * 30,
+            offset: Offset.zero,
+          ),
+        );
+      }
+
+      // Outer glow - larger, more diffuse shadows
+      final int outerSteps = 3;
+      for (int i = 0; i < outerSteps; i++) {
+        double step = i + 1;
+        shadows.add(
+          Shadow(
+            color: outerColor.withOpacity(0.5 / step),
+            blurRadius: step * width * 50 * intensity,
+            offset: Offset.zero,
+          ),
+        );
+      }
+
+      // Set the text color to be the neon color
+      style = style.copyWith(color: neonColor);
+    }
+
+    // Apply all shadows to the style
+    if (shadows.isNotEmpty && style.foreground == null) {
+      style = style.copyWith(shadows: shadows);
+    }
+
+    return style;
+  }
+
   // Build positioned text overlay
   Widget _buildTextOverlay() {
     final Size screenSize = MediaQuery.of(context).size;
@@ -779,6 +1062,9 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
           textStyle = baseStyle.copyWith(fontFamily: family);
         }
       }
+
+      // Apply text effects
+      textStyle = _applyTextEffects(textStyle);
 
       // Define horizontal alignment and width constraints based on fitToWidth
       final TextAlign textAlign = getTextAlign(hAlign);
