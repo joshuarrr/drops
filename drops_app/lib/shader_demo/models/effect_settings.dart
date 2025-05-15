@@ -20,9 +20,10 @@ class ShaderSettings {
   double _blurRadius;
 
   // Additional shatter settings
-  double _blurOpacity; // 0-1 opacity of shatter overlay
-  double _blurFacets; // number of facets (1+)
+  double _blurOpacity; // 0-1 opacity applied to effect
   int _blurBlendMode; // 0=normal,1=multiply,2=screen
+  double _blurIntensity; // Amplifies the intensity of shatter fragments
+  double _blurContrast; // Increases contrast between fragments
 
   // Noise effect settings
   double _noiseScale; // Scale of the noise pattern
@@ -253,18 +254,27 @@ class ShaderSettings {
     }
   }
 
-  double get blurFacets => _blurFacets;
-  set blurFacets(double value) {
-    _blurFacets = value;
-    if (enableLogging) {
-      print("SETTINGS: blurFacets set to ${value.toStringAsFixed(3)}");
-    }
-  }
-
   int get blurBlendMode => _blurBlendMode;
   set blurBlendMode(int value) {
     _blurBlendMode = value;
     if (enableLogging) print("SETTINGS: blurBlendMode set to $value");
+  }
+
+  // New intensity and contrast controls
+  double get blurIntensity => _blurIntensity;
+  set blurIntensity(double value) {
+    _blurIntensity = value;
+    if (enableLogging) {
+      print("SETTINGS: blurIntensity set to ${value.toStringAsFixed(3)}");
+    }
+  }
+
+  double get blurContrast => _blurContrast;
+  set blurContrast(double value) {
+    _blurContrast = value;
+    if (enableLogging) {
+      print("SETTINGS: blurContrast set to ${value.toStringAsFixed(3)}");
+    }
   }
 
   bool get fillScreen => _fillScreen;
@@ -573,8 +583,9 @@ class ShaderSettings {
     double blurAmount = 0.0,
     double blurRadius = 15.0,
     double blurOpacity = 1.0,
-    double blurFacets = 1.0,
     int blurBlendMode = 0,
+    double blurIntensity = 1.0,
+    double blurContrast = 0.0,
 
     // Noise settings
     double noiseScale = 5.0,
@@ -663,8 +674,9 @@ class ShaderSettings {
        _blurAmount = blurAmount,
        _blurRadius = blurRadius,
        _blurOpacity = blurOpacity,
-       _blurFacets = blurFacets,
        _blurBlendMode = blurBlendMode,
+       _blurIntensity = blurIntensity,
+       _blurContrast = blurContrast,
        _noiseScale = noiseScale,
        _noiseSpeed = noiseSpeed,
        _colorIntensity = colorIntensity,
@@ -739,8 +751,9 @@ class ShaderSettings {
       'blurAmount': _blurAmount,
       'blurRadius': _blurRadius,
       'blurOpacity': _blurOpacity,
-      'blurFacets': _blurFacets,
       'blurBlendMode': _blurBlendMode,
+      'blurIntensity': _blurIntensity,
+      'blurContrast': _blurContrast,
       'noiseScale': _noiseScale,
       'noiseSpeed': _noiseSpeed,
       'colorIntensity': _colorIntensity,
@@ -811,8 +824,9 @@ class ShaderSettings {
       blurAmount: map['blurAmount'] ?? 0.0,
       blurRadius: map['blurRadius'] ?? 15.0,
       blurOpacity: map['blurOpacity'] ?? 1.0,
-      blurFacets: map['blurFacets'] ?? 1.0,
       blurBlendMode: map['blurBlendMode'] ?? 0,
+      blurIntensity: map['blurIntensity'] ?? 1.0,
+      blurContrast: map['blurContrast'] ?? 0.0,
       noiseScale: map['noiseScale'] ?? 5.0,
       noiseSpeed: map['noiseSpeed'] ?? 0.5,
       colorIntensity: map['colorIntensity'] ?? 0.3,

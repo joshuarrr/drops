@@ -248,19 +248,16 @@ class _TextPanelState extends State<TextPanel> {
   }
 
   void _setCurrentText(String v) {
-    // The text is coming from the text field in reverse order (last character first)
-    // Reverse it back to normal order before storing
-    final correctedText = String.fromCharCodes(v.runes.toList().reversed);
-
+    // Store the text directly without reversing
     switch (selectedTextLine) {
       case TextLine.title:
-        widget.settings.textTitle = correctedText;
+        widget.settings.textTitle = v;
         break;
       case TextLine.subtitle:
-        widget.settings.textSubtitle = correctedText;
+        widget.settings.textSubtitle = v;
         break;
       case TextLine.artist:
-        widget.settings.textArtist = correctedText;
+        widget.settings.textArtist = v;
         break;
     }
   }

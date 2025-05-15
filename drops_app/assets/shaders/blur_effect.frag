@@ -7,12 +7,25 @@ uniform sampler2D uTexture;
 uniform float uBlurAmount;
 uniform float uBlurRadius;
 uniform vec2 uResolution;
-uniform float uOpacity; // 0-1 opacity applied to effect
-uniform float uFacets; // number of facet divisions
-uniform float uBlendMode; // 0=normal 1=multiply 2=screen
+uniform float uOpacity;    // 0-1 opacity applied to effect
+uniform float uBlendMode;  // 0=normal 1=multiply 2=screen
+uniform float uIntensity;  // Amplifies the intensity of shatter fragments 
+uniform float uContrast;   // Increases contrast between fragments
 
 // Define output
 out vec4 fragColor;
+
+// Apply contrast and intensity to a color
+vec4 enhanceColor(vec4 color, float intensity, float contrast) {
+    // Apply intensity first - increase color values while preserving alpha
+    vec3 intensified = color.rgb * intensity;
+    
+    // Apply contrast - make dark areas darker and light areas lighter
+    vec3 contrasted = (intensified - 0.5) * (1.0 + contrast) + 0.5;
+    
+    // Return enhanced color with original alpha
+    return vec4(clamp(contrasted, 0.0, 1.0), color.a);
+}
 
 // Gaussian blur implementation
 vec4 gaussianBlur(sampler2D tex, vec2 uv, vec2 resolution, float strength, float radius) {
@@ -85,18 +98,10 @@ vec4 gaussianBlur(sampler2D tex, vec2 uv, vec2 resolution, float strength, float
 
 void main() {
     // Convert from pixel coordinates to 0-1 UV coordinates
-    vec2 originalUV = gl_FragCoord.xy / uResolution;
-    vec2 uv = originalUV;
+    vec2 uv = gl_FragCoord.xy / uResolution;
     
-    // Apply faceting by snapping UVs to a grid when uFacets > 1
-    float facetCount = max(1.0, uFacets);
-    if (facetCount > 1.0) {
-        vec2 grid = vec2(facetCount);
-        uv = (floor(uv * grid) + 0.5) / grid;
-    }
-    
-    // Sample base texture at original UV (no faceting)
-    vec4 directSample = texture(uTexture, originalUV);
+    // Sample base texture
+    vec4 directSample = texture(uTexture, uv);
     
     // If texture sampling failed completely, show a bright color
     if (directSample.a == 0.0) {
@@ -110,8 +115,11 @@ void main() {
         return;
     }
     
-    // Apply gaussian blur (shatter effect) using possibly faceted UVs
+    // Apply gaussian blur (shatter effect)
     vec4 effectColor = gaussianBlur(uTexture, uv, uResolution, uBlurAmount, uBlurRadius);
+    
+    // Apply intensity and contrast enhancement to the blurred effect
+    effectColor = enhanceColor(effectColor, uIntensity, uContrast);
     
     float mixFactor = clamp(uOpacity * uBlurAmount, 0.0, 1.0);
 

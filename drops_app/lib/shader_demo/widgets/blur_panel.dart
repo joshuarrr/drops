@@ -64,12 +64,24 @@ class BlurPanel extends StatelessWidget {
           defaultValue: 1.0,
         ),
         ValueSlider(
-          label: 'Facets',
-          value: settings.blurFacets / 150.0,
-          onChanged: (value) =>
-              _onSliderChanged(value, (v) => settings.blurFacets = v * 150.0),
+          label: 'Intensity',
+          value:
+              (settings.blurIntensity - 1.0) /
+              2.0, // Scale from 1-3 to 0-1 range
+          onChanged: (value) => _onSliderChanged(
+            value,
+            (v) => settings.blurIntensity = 1.0 + v * 2.0,
+          ),
           sliderColor: sliderColor,
-          defaultValue: 1.0 / 150.0,
+          defaultValue: 0.0, // Default is 1.0 (middle position)
+        ),
+        ValueSlider(
+          label: 'Contrast',
+          value: settings.blurContrast / 2.0, // Scale from 0-2 to 0-1 range
+          onChanged: (value) =>
+              _onSliderChanged(value, (v) => settings.blurContrast = v * 2.0),
+          sliderColor: sliderColor,
+          defaultValue: 0.0,
         ),
         Padding(
           padding: const EdgeInsets.only(top: 8, bottom: 8),
@@ -104,29 +116,6 @@ class BlurPanel extends StatelessWidget {
                     onSettingsChanged(settings);
                   }
                 },
-                style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.resolveWith<Color>((
-                    Set<MaterialState> states,
-                  ) {
-                    if (states.contains(MaterialState.selected)) {
-                      return sliderColor.withOpacity(0.3);
-                    }
-                    return sliderColor.withOpacity(0.1);
-                  }),
-                  foregroundColor: MaterialStateProperty.all(sliderColor),
-                  side: MaterialStateProperty.all(
-                    BorderSide(color: Colors.transparent),
-                  ),
-                  shape: MaterialStateProperty.all(
-                    RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  visualDensity: VisualDensity.compact,
-                  padding: MaterialStateProperty.all(
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                  ),
-                ),
               ),
             ],
           ),
@@ -193,8 +182,9 @@ class BlurPanel extends StatelessWidget {
       ..blurAmount = defaults.blurAmount
       ..blurRadius = defaults.blurRadius
       ..blurOpacity = defaults.blurOpacity
-      ..blurFacets = defaults.blurFacets
       ..blurBlendMode = defaults.blurBlendMode
+      ..blurIntensity = defaults.blurIntensity
+      ..blurContrast = defaults.blurContrast
       ..blurAnimated = false
       ..blurAnimOptions = AnimationOptions();
 
@@ -206,9 +196,11 @@ class BlurPanel extends StatelessWidget {
     settings.blurAmount = presetData['blurAmount'] ?? settings.blurAmount;
     settings.blurRadius = presetData['blurRadius'] ?? settings.blurRadius;
     settings.blurOpacity = presetData['blurOpacity'] ?? settings.blurOpacity;
-    settings.blurFacets = presetData['blurFacets'] ?? settings.blurFacets;
     settings.blurBlendMode =
         presetData['blurBlendMode'] ?? settings.blurBlendMode;
+    settings.blurIntensity =
+        presetData['blurIntensity'] ?? settings.blurIntensity;
+    settings.blurContrast = presetData['blurContrast'] ?? settings.blurContrast;
     settings.blurAnimated = presetData['blurAnimated'] ?? settings.blurAnimated;
 
     if (presetData['blurAnimOptions'] != null) {
@@ -226,8 +218,9 @@ class BlurPanel extends StatelessWidget {
       'blurAmount': settings.blurAmount,
       'blurRadius': settings.blurRadius,
       'blurOpacity': settings.blurOpacity,
-      'blurFacets': settings.blurFacets,
       'blurBlendMode': settings.blurBlendMode,
+      'blurIntensity': settings.blurIntensity,
+      'blurContrast': settings.blurContrast,
       'blurAnimated': settings.blurAnimated,
       'blurAnimOptions': settings.blurAnimOptions.toMap(),
     };

@@ -241,8 +241,9 @@ class BlurEffectShader extends StatelessWidget {
           shader.setFloat(2, image.width.toDouble());
           shader.setFloat(3, image.height.toDouble());
           shader.setFloat(4, settings.blurOpacity);
-          shader.setFloat(5, settings.blurFacets);
-          shader.setFloat(6, settings.blurBlendMode.toDouble());
+          shader.setFloat(5, settings.blurBlendMode.toDouble());
+          shader.setFloat(6, settings.blurIntensity);
+          shader.setFloat(7, settings.blurContrast);
 
           // Draw with the shader, ensuring it covers the full area
           canvas.drawRect(Offset.zero & size, Paint()..shader = shader);

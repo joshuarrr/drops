@@ -13,7 +13,6 @@ import 'views/effect_controls.dart';
 import 'views/panel_container.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-
 enum ImageCategory { covers, artists }
 
 class ShaderDemoImpl extends StatefulWidget {
@@ -554,6 +553,9 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     final Size screenSize = MediaQuery.of(context).size;
 
     List<Widget> positionedLines = [];
+
+    // Check if we need to reverse text direction
+    bool shouldReverseText = false;
 
     // Local helper to map int weight (100-900) to FontWeight constant
     FontWeight toFontWeight(int w) {
