@@ -3,6 +3,8 @@ import '../models/shader_effect.dart';
 import '../models/effect_settings.dart';
 import '../models/animation_options.dart';
 import '../../common/font_selector.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // Enum for identifying each text line (outside class for reuse)
 enum TextLine { title, subtitle, artist }
@@ -20,6 +22,150 @@ extension TextLineExt on TextLine {
   }
 }
 
+// Presets management helper class
+class PresetsManager {
+  static const String _presetsKey = 'shader_presets';
+
+  // Save a preset
+  static Future<bool> savePreset(
+    ShaderAspect aspect,
+    String name,
+    Map<String, dynamic> settings,
+  ) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      // Get existing presets
+      final String? existingPresetsJson = prefs.getString(_presetsKey);
+      Map<String, dynamic> presets = {};
+
+      if (existingPresetsJson != null) {
+        // Cast the decoded JSON to the correct type using Map.from
+        final dynamic decodedJson = jsonDecode(existingPresetsJson);
+        presets = _convertToStringDynamicMap(decodedJson);
+      }
+
+      // Create aspect key
+      final String aspectKey = aspect.toString();
+      if (!presets.containsKey(aspectKey)) {
+        presets[aspectKey] = <String, dynamic>{};
+      } else if (presets[aspectKey] is Map &&
+          !(presets[aspectKey] is Map<String, dynamic>)) {
+        // Ensure we have the right map type
+        presets[aspectKey] = _convertToStringDynamicMap(presets[aspectKey]);
+      }
+
+      // Add the preset to the aspect map
+      final aspectMap = presets[aspectKey] as Map<String, dynamic>;
+      aspectMap[name] = settings;
+
+      // Save back to SharedPreferences
+      await prefs.setString(_presetsKey, jsonEncode(presets));
+      return true;
+    } catch (e) {
+      print('Error saving preset: $e');
+      return false;
+    }
+  }
+
+  // Load presets for a specific aspect
+  static Future<Map<String, dynamic>> getPresetsForAspect(
+    ShaderAspect aspect,
+  ) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String? presetsJson = prefs.getString(_presetsKey);
+
+      if (presetsJson != null) {
+        final dynamic allPresets = jsonDecode(presetsJson);
+        final Map<String, dynamic> typedPresets = _convertToStringDynamicMap(
+          allPresets,
+        );
+        final String aspectKey = aspect.toString();
+
+        if (typedPresets.containsKey(aspectKey)) {
+          return _convertToStringDynamicMap(typedPresets[aspectKey]);
+        }
+      }
+      return {};
+    } catch (e) {
+      print('Error loading presets: $e');
+      return {};
+    }
+  }
+
+  // Delete a preset
+  static Future<bool> deletePreset(ShaderAspect aspect, String name) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String? presetsJson = prefs.getString(_presetsKey);
+
+      if (presetsJson != null) {
+        final dynamic decodedJson = jsonDecode(presetsJson);
+        final Map<String, dynamic> allPresets = _convertToStringDynamicMap(
+          decodedJson,
+        );
+        final String aspectKey = aspect.toString();
+
+        if (allPresets.containsKey(aspectKey)) {
+          final Map<String, dynamic> aspectPresets = _convertToStringDynamicMap(
+            allPresets[aspectKey],
+          );
+
+          if (aspectPresets.containsKey(name)) {
+            aspectPresets.remove(name);
+            allPresets[aspectKey] = aspectPresets;
+            await prefs.setString(_presetsKey, jsonEncode(allPresets));
+            return true;
+          }
+        }
+      }
+      return false;
+    } catch (e) {
+      print('Error deleting preset: $e');
+      return false;
+    }
+  }
+
+  // Helper method to safely convert dynamic maps to Map<String, dynamic>
+  static Map<String, dynamic> _convertToStringDynamicMap(dynamic input) {
+    if (input is! Map) {
+      return <String, dynamic>{};
+    }
+
+    final result = <String, dynamic>{};
+    for (final entry in (input as Map).entries) {
+      final key = entry.key.toString();
+      final value = entry.value;
+
+      // Recursively convert nested maps
+      if (value is Map) {
+        result[key] = _convertToStringDynamicMap(value);
+      } else if (value is List) {
+        // Convert lists that might contain maps
+        result[key] = _convertListElements(value);
+      } else {
+        result[key] = value;
+      }
+    }
+
+    return result;
+  }
+
+  // Helper method to handle lists that might contain maps
+  static List<dynamic> _convertListElements(List<dynamic> list) {
+    return list.map((item) {
+      if (item is Map) {
+        return _convertToStringDynamicMap(item);
+      } else if (item is List) {
+        return _convertListElements(item);
+      } else {
+        return item;
+      }
+    }).toList();
+  }
+}
+
 class EffectControls {
   // Control logging verbosity
   static bool enableLogging = false;
@@ -29,6 +175,27 @@ class EffectControls {
 
   // Whether the font selector overlay is visible.
   static bool fontSelectorOpen = false;
+
+  // New variable to track presets
+  static Map<ShaderAspect, Map<String, dynamic>> cachedPresets = {};
+
+  // Add a counter to force refresh of preset bar
+  static int presetsRefreshCounter = 0;
+
+  // Add a method to load presets for a specific aspect
+  static Future<Map<String, dynamic>> loadPresetsForAspect(
+    ShaderAspect aspect,
+  ) async {
+    if (!cachedPresets.containsKey(aspect)) {
+      cachedPresets[aspect] = await PresetsManager.getPresetsForAspect(aspect);
+    }
+    return cachedPresets[aspect] ?? {};
+  }
+
+  // Force a refresh of preset bars
+  static void refreshPresets() {
+    presetsRefreshCounter++;
+  }
 
   // Load font choices via the shared FontUtils helper so the logic is
   // centralized and can be reused by other widgets as well.
@@ -177,28 +344,103 @@ class EffectControls {
     required ShaderSettings settings,
     required Function(ShaderSettings) onSettingsChanged,
     required Color sliderColor,
+    required BuildContext context,
   }) {
     // ---------------------------------------------------------------
     // Local helpers -------------------------------------------------
     // ---------------------------------------------------------------
 
     // Generic reset header widget reused across aspects
-    Widget buildResetRow(VoidCallback onReset) {
+    Widget buildResetRow(
+      VoidCallback onReset, {
+      required ShaderAspect aspect,
+      required Function(ShaderAspect, String) onSavePreset,
+      required BuildContext context,
+    }) {
       return Align(
         alignment: Alignment.centerRight,
-        child: TextButton.icon(
-          style: TextButton.styleFrom(
-            foregroundColor: sliderColor,
-            backgroundColor: sliderColor.withOpacity(0.1),
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-              side: BorderSide(color: Colors.transparent),
+        child: PopupMenuButton<String>(
+          icon: Icon(Icons.more_vert, color: sliderColor),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          itemBuilder: (context) => [
+            PopupMenuItem<String>(
+              value: 'save_preset',
+              child: Row(
+                children: [
+                  Icon(Icons.save, color: sliderColor, size: 18),
+                  const SizedBox(width: 8),
+                  Text('Save preset', style: TextStyle(color: sliderColor)),
+                ],
+              ),
             ),
-          ),
-          icon: const Icon(Icons.restore, size: 18),
-          label: const Text('Reset'),
-          onPressed: onReset,
+            PopupMenuItem<String>(
+              value: 'reset',
+              child: Row(
+                children: [
+                  Icon(Icons.restore, color: sliderColor, size: 18),
+                  const SizedBox(width: 8),
+                  Text('Reset', style: TextStyle(color: sliderColor)),
+                ],
+              ),
+            ),
+          ],
+          onSelected: (value) {
+            if (value == 'reset') {
+              onReset();
+            } else if (value == 'save_preset') {
+              // Show a dialog to name the preset
+              final TextEditingController nameController =
+                  TextEditingController();
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: Text(
+                    'Save Preset',
+                    style: TextStyle(color: sliderColor),
+                  ),
+                  content: TextField(
+                    controller: nameController,
+                    decoration: InputDecoration(
+                      hintText: 'Enter preset name',
+                      hintStyle: TextStyle(color: sliderColor.withOpacity(0.6)),
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(
+                          color: sliderColor.withOpacity(0.3),
+                        ),
+                      ),
+                      focusedBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: sliderColor),
+                      ),
+                    ),
+                    style: TextStyle(color: sliderColor),
+                    autofocus: true,
+                  ),
+                  actions: [
+                    TextButton(
+                      child: Text(
+                        'Cancel',
+                        style: TextStyle(color: sliderColor),
+                      ),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                    TextButton(
+                      child: Text('Save', style: TextStyle(color: sliderColor)),
+                      onPressed: () {
+                        if (nameController.text.isNotEmpty) {
+                          onSavePreset(aspect, nameController.text);
+                          Navigator.of(context).pop();
+                        }
+                      },
+                    ),
+                  ],
+                  backgroundColor: sliderColor.withOpacity(0.1),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              );
+            }
+          },
         ),
       );
     }
@@ -239,7 +481,8 @@ class EffectControls {
 
     void resetText() {
       final defaults = ShaderSettings();
-      settings
+      // Create a copy of the current settings and reset only text properties
+      final resetSettings = ShaderSettings.fromMap(settings.toMap())
         ..textEnabled = false
         ..textTitle = defaults.textTitle
         ..textSubtitle = defaults.textSubtitle
@@ -280,6 +523,48 @@ class EffectControls {
         ..artistHAlign = defaults.artistHAlign
         ..artistVAlign = defaults.artistVAlign
         ..artistLineHeight = defaults.artistLineHeight;
+
+      // Update the original settings object with the reset values
+      settings.textEnabled = resetSettings.textEnabled;
+      settings.textTitle = resetSettings.textTitle;
+      settings.textSubtitle = resetSettings.textSubtitle;
+      settings.textArtist = resetSettings.textArtist;
+      settings.textFont = resetSettings.textFont;
+      settings.textSize = resetSettings.textSize;
+      settings.textPosX = resetSettings.textPosX;
+      settings.textPosY = resetSettings.textPosY;
+      settings.textWeight = resetSettings.textWeight;
+      settings.titleFont = resetSettings.titleFont;
+      settings.titleSize = resetSettings.titleSize;
+      settings.titlePosX = resetSettings.titlePosX;
+      settings.titlePosY = resetSettings.titlePosY;
+      settings.titleWeight = resetSettings.titleWeight;
+      settings.subtitleFont = resetSettings.subtitleFont;
+      settings.subtitleSize = resetSettings.subtitleSize;
+      settings.subtitlePosX = resetSettings.subtitlePosX;
+      settings.subtitlePosY = resetSettings.subtitlePosY;
+      settings.subtitleWeight = resetSettings.subtitleWeight;
+      settings.artistFont = resetSettings.artistFont;
+      settings.artistSize = resetSettings.artistSize;
+      settings.artistPosX = resetSettings.artistPosX;
+      settings.artistPosY = resetSettings.artistPosY;
+      settings.artistWeight = resetSettings.artistWeight;
+      settings.textFitToWidth = resetSettings.textFitToWidth;
+      settings.textHAlign = resetSettings.textHAlign;
+      settings.textVAlign = resetSettings.textVAlign;
+      settings.textLineHeight = resetSettings.textLineHeight;
+      settings.titleFitToWidth = resetSettings.titleFitToWidth;
+      settings.titleHAlign = resetSettings.titleHAlign;
+      settings.titleVAlign = resetSettings.titleVAlign;
+      settings.titleLineHeight = resetSettings.titleLineHeight;
+      settings.subtitleFitToWidth = resetSettings.subtitleFitToWidth;
+      settings.subtitleHAlign = resetSettings.subtitleHAlign;
+      settings.subtitleVAlign = resetSettings.subtitleVAlign;
+      settings.subtitleLineHeight = resetSettings.subtitleLineHeight;
+      settings.artistFitToWidth = resetSettings.artistFitToWidth;
+      settings.artistHAlign = resetSettings.artistHAlign;
+      settings.artistVAlign = resetSettings.artistVAlign;
+      settings.artistLineHeight = resetSettings.artistLineHeight;
     }
 
     // Helper function to enable the effect if needed when slider changes
@@ -316,14 +601,254 @@ class EffectControls {
     // Build UI per aspect ------------------------------------------
     // ---------------------------------------------------------------
 
+    // Save preset implementation function
+    Future<void> savePresetForAspect(ShaderAspect aspect, String name) async {
+      Map<String, dynamic> presetData = {};
+
+      switch (aspect) {
+        case ShaderAspect.color:
+          presetData = {
+            'colorEnabled': settings.colorEnabled,
+            'hue': settings.hue,
+            'saturation': settings.saturation,
+            'lightness': settings.lightness,
+            'overlayHue': settings.overlayHue,
+            'overlayIntensity': settings.overlayIntensity,
+            'overlayOpacity': settings.overlayOpacity,
+            'colorAnimated': settings.colorAnimated,
+            'overlayAnimated': settings.overlayAnimated,
+            'colorAnimOptions': settings.colorAnimOptions.toMap(),
+            'overlayAnimOptions': settings.overlayAnimOptions.toMap(),
+          };
+          break;
+        case ShaderAspect.blur:
+          presetData = {
+            'blurEnabled': settings.blurEnabled,
+            'blurAmount': settings.blurAmount,
+            'blurRadius': settings.blurRadius,
+            'blurOpacity': settings.blurOpacity,
+            'blurFacets': settings.blurFacets,
+            'blurBlendMode': settings.blurBlendMode,
+            'blurAnimated': settings.blurAnimated,
+            'blurAnimOptions': settings.blurAnimOptions.toMap(),
+          };
+          break;
+        case ShaderAspect.image:
+          presetData = {'fillScreen': settings.fillScreen};
+          break;
+        case ShaderAspect.text:
+          // Get current text line settings
+          String textLine = EffectControls.selectedTextLine.toString();
+          presetData = {
+            'textEnabled': settings.textEnabled,
+            'selectedTextLine': textLine,
+            'textTitle': settings.textTitle,
+            'textSubtitle': settings.textSubtitle,
+            'textArtist': settings.textArtist,
+            'textFont': settings.textFont,
+            'textSize': settings.textSize,
+            'textPosX': settings.textPosX,
+            'textPosY': settings.textPosY,
+            'textWeight': settings.textWeight,
+            'titleFont': settings.titleFont,
+            'titleSize': settings.titleSize,
+            'titlePosX': settings.titlePosX,
+            'titlePosY': settings.titlePosY,
+            'titleWeight': settings.titleWeight,
+            'subtitleFont': settings.subtitleFont,
+            'subtitleSize': settings.subtitleSize,
+            'subtitlePosX': settings.subtitlePosX,
+            'subtitlePosY': settings.subtitlePosY,
+            'subtitleWeight': settings.subtitleWeight,
+            'artistFont': settings.artistFont,
+            'artistSize': settings.artistSize,
+            'artistPosX': settings.artistPosX,
+            'artistPosY': settings.artistPosY,
+            'artistWeight': settings.artistWeight,
+            'textFitToWidth': settings.textFitToWidth,
+            'textHAlign': settings.textHAlign,
+            'textVAlign': settings.textVAlign,
+            'textLineHeight': settings.textLineHeight,
+            'titleFitToWidth': settings.titleFitToWidth,
+            'titleHAlign': settings.titleHAlign,
+            'titleVAlign': settings.titleVAlign,
+            'titleLineHeight': settings.titleLineHeight,
+            'subtitleFitToWidth': settings.subtitleFitToWidth,
+            'subtitleHAlign': settings.subtitleHAlign,
+            'subtitleVAlign': settings.subtitleVAlign,
+            'subtitleLineHeight': settings.subtitleLineHeight,
+            'artistFitToWidth': settings.artistFitToWidth,
+            'artistHAlign': settings.artistHAlign,
+            'artistVAlign': settings.artistVAlign,
+            'artistLineHeight': settings.artistLineHeight,
+          };
+          break;
+      }
+
+      // Save the preset
+      bool success = await PresetsManager.savePreset(aspect, name, presetData);
+
+      if (success) {
+        // Update cached presets
+        cachedPresets[aspect] = await PresetsManager.getPresetsForAspect(
+          aspect,
+        );
+        // Force refresh of the UI to show the new preset immediately
+        refreshPresets();
+      }
+    }
+
+    // Apply preset function
+    void applyPreset(Map<String, dynamic> presetData) {
+      switch (aspect) {
+        case ShaderAspect.color:
+          settings.colorEnabled =
+              presetData['colorEnabled'] ?? settings.colorEnabled;
+          settings.hue = presetData['hue'] ?? settings.hue;
+          settings.saturation = presetData['saturation'] ?? settings.saturation;
+          settings.lightness = presetData['lightness'] ?? settings.lightness;
+          settings.overlayHue = presetData['overlayHue'] ?? settings.overlayHue;
+          settings.overlayIntensity =
+              presetData['overlayIntensity'] ?? settings.overlayIntensity;
+          settings.overlayOpacity =
+              presetData['overlayOpacity'] ?? settings.overlayOpacity;
+          settings.colorAnimated =
+              presetData['colorAnimated'] ?? settings.colorAnimated;
+          settings.overlayAnimated =
+              presetData['overlayAnimated'] ?? settings.overlayAnimated;
+
+          if (presetData['colorAnimOptions'] != null) {
+            settings.colorAnimOptions = AnimationOptions.fromMap(
+              Map<String, dynamic>.from(presetData['colorAnimOptions']),
+            );
+          }
+
+          if (presetData['overlayAnimOptions'] != null) {
+            settings.overlayAnimOptions = AnimationOptions.fromMap(
+              Map<String, dynamic>.from(presetData['overlayAnimOptions']),
+            );
+          }
+          break;
+
+        case ShaderAspect.blur:
+          settings.blurEnabled =
+              presetData['blurEnabled'] ?? settings.blurEnabled;
+          settings.blurAmount = presetData['blurAmount'] ?? settings.blurAmount;
+          settings.blurRadius = presetData['blurRadius'] ?? settings.blurRadius;
+          settings.blurOpacity =
+              presetData['blurOpacity'] ?? settings.blurOpacity;
+          settings.blurFacets = presetData['blurFacets'] ?? settings.blurFacets;
+          settings.blurBlendMode =
+              presetData['blurBlendMode'] ?? settings.blurBlendMode;
+          settings.blurAnimated =
+              presetData['blurAnimated'] ?? settings.blurAnimated;
+
+          if (presetData['blurAnimOptions'] != null) {
+            settings.blurAnimOptions = AnimationOptions.fromMap(
+              Map<String, dynamic>.from(presetData['blurAnimOptions']),
+            );
+          }
+          break;
+
+        case ShaderAspect.image:
+          settings.fillScreen = presetData['fillScreen'] ?? settings.fillScreen;
+          break;
+
+        case ShaderAspect.text:
+          settings.textEnabled =
+              presetData['textEnabled'] ?? settings.textEnabled;
+          settings.textTitle = presetData['textTitle'] ?? settings.textTitle;
+          settings.textSubtitle =
+              presetData['textSubtitle'] ?? settings.textSubtitle;
+          settings.textArtist = presetData['textArtist'] ?? settings.textArtist;
+          settings.textFont = presetData['textFont'] ?? settings.textFont;
+          settings.textSize = presetData['textSize'] ?? settings.textSize;
+          settings.textPosX = presetData['textPosX'] ?? settings.textPosX;
+          settings.textPosY = presetData['textPosY'] ?? settings.textPosY;
+          settings.textWeight = presetData['textWeight'] ?? settings.textWeight;
+          settings.titleFont = presetData['titleFont'] ?? settings.titleFont;
+          settings.titleSize = presetData['titleSize'] ?? settings.titleSize;
+          settings.titlePosX = presetData['titlePosX'] ?? settings.titlePosX;
+          settings.titlePosY = presetData['titlePosY'] ?? settings.titlePosY;
+          settings.titleWeight =
+              presetData['titleWeight'] ?? settings.titleWeight;
+          settings.subtitleFont =
+              presetData['subtitleFont'] ?? settings.subtitleFont;
+          settings.subtitleSize =
+              presetData['subtitleSize'] ?? settings.subtitleSize;
+          settings.subtitlePosX =
+              presetData['subtitlePosX'] ?? settings.subtitlePosX;
+          settings.subtitlePosY =
+              presetData['subtitlePosY'] ?? settings.subtitlePosY;
+          settings.subtitleWeight =
+              presetData['subtitleWeight'] ?? settings.subtitleWeight;
+          settings.artistFont = presetData['artistFont'] ?? settings.artistFont;
+          settings.artistSize = presetData['artistSize'] ?? settings.artistSize;
+          settings.artistPosX = presetData['artistPosX'] ?? settings.artistPosX;
+          settings.artistPosY = presetData['artistPosY'] ?? settings.artistPosY;
+          settings.artistWeight =
+              presetData['artistWeight'] ?? settings.artistWeight;
+          settings.textFitToWidth =
+              presetData['textFitToWidth'] ?? settings.textFitToWidth;
+          settings.textHAlign = presetData['textHAlign'] ?? settings.textHAlign;
+          settings.textVAlign = presetData['textVAlign'] ?? settings.textVAlign;
+          settings.textLineHeight =
+              presetData['textLineHeight'] ?? settings.textLineHeight;
+          settings.titleFitToWidth =
+              presetData['titleFitToWidth'] ?? settings.titleFitToWidth;
+          settings.titleHAlign =
+              presetData['titleHAlign'] ?? settings.titleHAlign;
+          settings.titleVAlign =
+              presetData['titleVAlign'] ?? settings.titleVAlign;
+          settings.titleLineHeight =
+              presetData['titleLineHeight'] ?? settings.titleLineHeight;
+          settings.subtitleFitToWidth =
+              presetData['subtitleFitToWidth'] ?? settings.subtitleFitToWidth;
+          settings.subtitleHAlign =
+              presetData['subtitleHAlign'] ?? settings.subtitleHAlign;
+          settings.subtitleVAlign =
+              presetData['subtitleVAlign'] ?? settings.subtitleVAlign;
+          settings.subtitleLineHeight =
+              presetData['subtitleLineHeight'] ?? settings.subtitleLineHeight;
+          settings.artistFitToWidth =
+              presetData['artistFitToWidth'] ?? settings.artistFitToWidth;
+          settings.artistHAlign =
+              presetData['artistHAlign'] ?? settings.artistHAlign;
+          settings.artistVAlign =
+              presetData['artistVAlign'] ?? settings.artistVAlign;
+          settings.artistLineHeight =
+              presetData['artistLineHeight'] ?? settings.artistLineHeight;
+
+          // If preset has a selected text line, switch to it
+          if (presetData['selectedTextLine'] != null) {
+            final String textLineName = presetData['selectedTextLine'];
+            for (TextLine line in TextLine.values) {
+              if (line.toString() == textLineName) {
+                EffectControls.selectedTextLine = line;
+                break;
+              }
+            }
+          }
+          break;
+      }
+
+      onSettingsChanged(settings);
+    }
+
     switch (aspect) {
       case ShaderAspect.color:
         return [
-          buildResetRow(() {
-            resetColor();
-            onSettingsChanged(settings);
-          }),
-          const SizedBox(height: 8),
+          buildPanelHeader(
+            aspect: aspect,
+            onPresetSelected: applyPreset,
+            onReset: () {
+              resetColor();
+              onSettingsChanged(settings);
+            },
+            onSavePreset: savePresetForAspect,
+            sliderColor: sliderColor,
+            context: context,
+          ),
           buildSlider(
             label: 'Hue',
             value: settings.hue,
@@ -475,11 +1000,17 @@ class EffectControls {
 
       case ShaderAspect.blur:
         return [
-          buildResetRow(() {
-            resetBlur();
-            onSettingsChanged(settings);
-          }),
-          const SizedBox(height: 8),
+          buildPanelHeader(
+            aspect: aspect,
+            onPresetSelected: applyPreset,
+            onReset: () {
+              resetBlur();
+              onSettingsChanged(settings);
+            },
+            onSavePreset: savePresetForAspect,
+            sliderColor: sliderColor,
+            context: context,
+          ),
           buildSlider(
             label: 'Shatter Amount',
             value: settings.blurAmount,
@@ -631,11 +1162,17 @@ class EffectControls {
 
       case ShaderAspect.image:
         return [
-          buildResetRow(() {
-            resetImage();
-            onSettingsChanged(settings);
-          }),
-          const SizedBox(height: 8),
+          buildPanelHeader(
+            aspect: aspect,
+            onPresetSelected: applyPreset,
+            onReset: () {
+              resetImage();
+              onSettingsChanged(settings);
+            },
+            onSavePreset: savePresetForAspect,
+            sliderColor: sliderColor,
+            context: context,
+          ),
           RadioListTile<bool>(
             value: false,
             groupValue: settings.fillScreen,
@@ -670,48 +1207,111 @@ class EffectControls {
 
       case ShaderAspect.text:
         {
+          List<Widget> widgets = [];
+
+          widgets.add(
+            buildPanelHeader(
+              aspect: aspect,
+              onPresetSelected: applyPreset,
+              onReset: () {
+                resetText();
+                onSettingsChanged(settings);
+              },
+              onSavePreset: savePresetForAspect,
+              sliderColor: sliderColor,
+              context: context,
+            ),
+          );
+
+          // Add wrap for text line selection buttons
+          widgets.add(
+            Wrap(
+              spacing: 6,
+              children: TextLine.values.map((line) {
+                return ChoiceChip(
+                  label: Text(line.label, style: TextStyle(color: sliderColor)),
+                  selected: EffectControls.selectedTextLine == line,
+                  selectedColor: sliderColor.withOpacity(0.3),
+                  backgroundColor: sliderColor.withOpacity(0.1),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    side: BorderSide(color: Colors.transparent),
+                  ),
+                  onSelected: (_) {
+                    EffectControls.selectedTextLine = line;
+                    onSettingsChanged(settings);
+                  },
+                );
+              }).toList(),
+            ),
+          );
+
           // Local helper for a labeled editable text field used for title / subtitle / artist.
           Widget buildTextField({
             required String label,
             required String value,
             required Function(String) setter,
           }) {
+            // Use TextEditingController to properly update field when reset occurs
+            final controller = TextEditingController(text: value);
+
+            print('DEBUG: TextField initial value: "$value"');
+
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(label, style: TextStyle(color: sliderColor, fontSize: 14)),
                 const SizedBox(height: 4),
-                TextFormField(
-                  initialValue: value,
-                  style: TextStyle(color: sliderColor),
-                  decoration: InputDecoration(
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 6,
-                    ),
-                    filled: true,
-                    fillColor: sliderColor.withOpacity(0.1),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.transparent),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.transparent),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(
-                        color: sliderColor.withOpacity(0.3),
-                      ),
-                    ),
+                Container(
+                  decoration: BoxDecoration(
+                    color: sliderColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  onChanged: (txt) {
-                    setter(txt);
-                    if (!settings.textEnabled) settings.textEnabled = true;
-                    onSettingsChanged(settings);
-                  },
+                  child: TextFormField(
+                    controller: controller,
+                    style: TextStyle(color: sliderColor),
+                    textDirection: TextDirection.ltr,
+                    textAlign: TextAlign.left,
+                    keyboardType: TextInputType.text,
+                    decoration: InputDecoration(
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 6,
+                      ),
+                      filled: false,
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                    ),
+                    onChanged: (txt) {
+                      print('DEBUG: onChanged received text: "$txt"');
+
+                      // Store the text directly - the reversal will happen in setCurrentText
+                      setter(txt);
+
+                      final currentLine = EffectControls.selectedTextLine
+                          .toString();
+                      print('DEBUG: Current selected line: $currentLine');
+
+                      String storedValue = "";
+                      switch (EffectControls.selectedTextLine) {
+                        case TextLine.title:
+                          storedValue = settings.textTitle;
+                          break;
+                        case TextLine.subtitle:
+                          storedValue = settings.textSubtitle;
+                          break;
+                        case TextLine.artist:
+                          storedValue = settings.textArtist;
+                          break;
+                      }
+                      print('DEBUG: Value stored in settings: "$storedValue"');
+
+                      if (!settings.textEnabled) settings.textEnabled = true;
+                      onSettingsChanged(settings);
+                    },
+                  ),
                 ),
                 const SizedBox(height: 12),
               ],
@@ -720,27 +1320,42 @@ class EffectControls {
 
           // Mapping helpers for the currently selected text line
           String getCurrentText() {
+            String rawText = "";
             switch (EffectControls.selectedTextLine) {
               case TextLine.title:
-                return settings.textTitle;
+                rawText = settings.textTitle;
+                break;
               case TextLine.subtitle:
-                return settings.textSubtitle;
+                rawText = settings.textSubtitle;
+                break;
               case TextLine.artist:
-                return settings.textArtist;
+                rawText = settings.textArtist;
+                break;
             }
-            return '';
+
+            // Fix for the display - we need to show the correctly ordered text
+            return rawText;
           }
 
           void setCurrentText(String v) {
+            // The text is coming from the text field in reverse order (last character first)
+            // Reverse it back to normal order before storing
+            final correctedText = String.fromCharCodes(
+              v.runes.toList().reversed,
+            );
+            print(
+              'DEBUG: setCurrentText received: "$v", storing: "$correctedText"',
+            );
+
             switch (EffectControls.selectedTextLine) {
               case TextLine.title:
-                settings.textTitle = v;
+                settings.textTitle = correctedText;
                 break;
               case TextLine.subtitle:
-                settings.textSubtitle = v;
+                settings.textSubtitle = correctedText;
                 break;
               case TextLine.artist:
-                settings.textArtist = v;
+                settings.textArtist = correctedText;
                 break;
             }
           }
@@ -1052,42 +1667,6 @@ class EffectControls {
                 return 400;
             }
           }
-
-          // ------------------------------------------------------------------
-          List<Widget> widgets = [];
-
-          widgets.add(
-            buildResetRow(() {
-              resetText();
-              onSettingsChanged(settings);
-            }),
-          );
-
-          widgets.add(const SizedBox(height: 8));
-
-          widgets.add(
-            Wrap(
-              spacing: 6,
-              children: TextLine.values.map((line) {
-                return ChoiceChip(
-                  label: Text(line.label, style: TextStyle(color: sliderColor)),
-                  selected: EffectControls.selectedTextLine == line,
-                  selectedColor: sliderColor.withOpacity(0.3),
-                  backgroundColor: sliderColor.withOpacity(0.1),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    side: BorderSide(color: Colors.transparent),
-                  ),
-                  onSelected: (_) {
-                    EffectControls.selectedTextLine = line;
-                    onSettingsChanged(settings);
-                  },
-                );
-              }).toList(),
-            ),
-          );
-
-          widgets.add(const SizedBox(height: 12));
 
           widgets.add(
             buildTextField(
@@ -1503,6 +2082,357 @@ class EffectControls {
             );
           }).toList(),
         ),
+      ],
+    );
+  }
+
+  // Build a widget to display saved presets
+  static Widget buildPresetsBar({
+    required ShaderAspect aspect,
+    required Function(Map<String, dynamic>) onPresetSelected,
+    required Color sliderColor,
+    required BuildContext context,
+  }) {
+    return FutureBuilder<Map<String, dynamic>>(
+      // Add refresh counter to key to force rebuild
+      key: ValueKey('presets_${aspect.toString()}_${presetsRefreshCounter}'),
+      future: loadPresetsForAspect(aspect),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        final presets = snapshot.data!;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4.0),
+              child: Row(
+                children: [
+                  Text(
+                    'Presets',
+                    style: TextStyle(
+                      color: sliderColor,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(
+              height: 32,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: presets.entries.map((entry) {
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 6.0),
+                    child: InkWell(
+                      onTap: () => onPresetSelected(entry.value),
+                      onLongPress: () {
+                        // Show delete confirmation
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: Text(
+                              'Delete Preset',
+                              style: TextStyle(color: sliderColor),
+                            ),
+                            content: Text(
+                              'Are you sure you want to delete the preset "${entry.key}"?',
+                              style: TextStyle(color: sliderColor),
+                            ),
+                            actions: [
+                              TextButton(
+                                child: Text(
+                                  'Cancel',
+                                  style: TextStyle(color: sliderColor),
+                                ),
+                                onPressed: () => Navigator.of(context).pop(),
+                              ),
+                              TextButton(
+                                child: Text(
+                                  'Delete',
+                                  style: TextStyle(color: Colors.red),
+                                ),
+                                onPressed: () async {
+                                  await PresetsManager.deletePreset(
+                                    aspect,
+                                    entry.key,
+                                  );
+                                  // Update cached presets
+                                  cachedPresets[aspect] =
+                                      await PresetsManager.getPresetsForAspect(
+                                        aspect,
+                                      );
+                                  // Force refresh
+                                  refreshPresets();
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                            ],
+                            backgroundColor: sliderColor.withOpacity(0.1),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: sliderColor.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: sliderColor.withOpacity(0.3),
+                          ),
+                        ),
+                        child: Text(
+                          entry.key,
+                          style: TextStyle(color: sliderColor, fontSize: 12),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+        );
+      },
+    );
+  }
+
+  // Create a combined header that includes title, presets, and menu
+  static Widget buildPanelHeader({
+    required ShaderAspect aspect,
+    required Function(Map<String, dynamic>) onPresetSelected,
+    required VoidCallback onReset,
+    required Function(ShaderAspect, String) onSavePreset,
+    required Color sliderColor,
+    required BuildContext context,
+  }) {
+    return Column(
+      children: [
+        // Top row with title and menu
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              aspect.label + ' Settings',
+              style: TextStyle(
+                color: sliderColor,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            // Menu button
+            PopupMenuButton<String>(
+              icon: Icon(Icons.more_vert, color: sliderColor, size: 20),
+              padding: EdgeInsets.zero,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              itemBuilder: (context) => [
+                PopupMenuItem<String>(
+                  value: 'save_preset',
+                  child: Row(
+                    children: [
+                      Icon(Icons.save, color: sliderColor, size: 18),
+                      const SizedBox(width: 8),
+                      Text('Save preset', style: TextStyle(color: sliderColor)),
+                    ],
+                  ),
+                ),
+                PopupMenuItem<String>(
+                  value: 'reset',
+                  child: Row(
+                    children: [
+                      Icon(Icons.restore, color: sliderColor, size: 18),
+                      const SizedBox(width: 8),
+                      Text('Reset', style: TextStyle(color: sliderColor)),
+                    ],
+                  ),
+                ),
+              ],
+              onSelected: (value) {
+                if (value == 'reset') {
+                  onReset();
+                } else if (value == 'save_preset') {
+                  // Show a dialog to name the preset
+                  final TextEditingController nameController =
+                      TextEditingController();
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: Text(
+                        'Save Preset',
+                        style: TextStyle(color: sliderColor),
+                      ),
+                      content: TextField(
+                        controller: nameController,
+                        decoration: InputDecoration(
+                          hintText: 'Enter preset name',
+                          hintStyle: TextStyle(
+                            color: sliderColor.withOpacity(0.6),
+                          ),
+                          enabledBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(
+                              color: sliderColor.withOpacity(0.3),
+                            ),
+                          ),
+                          focusedBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(color: sliderColor),
+                          ),
+                        ),
+                        style: TextStyle(color: sliderColor),
+                        autofocus: true,
+                      ),
+                      actions: [
+                        TextButton(
+                          child: Text(
+                            'Cancel',
+                            style: TextStyle(color: sliderColor),
+                          ),
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                        TextButton(
+                          child: Text(
+                            'Save',
+                            style: TextStyle(color: sliderColor),
+                          ),
+                          onPressed: () {
+                            if (nameController.text.isNotEmpty) {
+                              onSavePreset(aspect, nameController.text);
+                              Navigator.of(context).pop();
+                            }
+                          },
+                        ),
+                      ],
+                      backgroundColor: sliderColor.withOpacity(0.1),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  );
+                }
+              },
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        // Presets row
+        FutureBuilder<Map<String, dynamic>>(
+          key: ValueKey(
+            'presets_${aspect.toString()}_${presetsRefreshCounter}',
+          ),
+          future: loadPresetsForAspect(aspect),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return const SizedBox.shrink();
+            }
+
+            final presets = snapshot.data!;
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  height: 32,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: presets.entries.map((entry) {
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 6.0),
+                        child: InkWell(
+                          onTap: () => onPresetSelected(entry.value),
+                          onLongPress: () {
+                            // Show delete confirmation
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: Text(
+                                  'Delete Preset',
+                                  style: TextStyle(color: sliderColor),
+                                ),
+                                content: Text(
+                                  'Are you sure you want to delete the preset "${entry.key}"?',
+                                  style: TextStyle(color: sliderColor),
+                                ),
+                                actions: [
+                                  TextButton(
+                                    child: Text(
+                                      'Cancel',
+                                      style: TextStyle(color: sliderColor),
+                                    ),
+                                    onPressed: () =>
+                                        Navigator.of(context).pop(),
+                                  ),
+                                  TextButton(
+                                    child: Text(
+                                      'Delete',
+                                      style: TextStyle(color: Colors.red),
+                                    ),
+                                    onPressed: () async {
+                                      await PresetsManager.deletePreset(
+                                        aspect,
+                                        entry.key,
+                                      );
+                                      // Update cached presets
+                                      cachedPresets[aspect] =
+                                          await PresetsManager.getPresetsForAspect(
+                                            aspect,
+                                          );
+                                      // Force refresh
+                                      refreshPresets();
+                                      Navigator.of(context).pop();
+                                    },
+                                  ),
+                                ],
+                                backgroundColor: sliderColor.withOpacity(0.1),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: sliderColor.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: sliderColor.withOpacity(0.3),
+                              ),
+                            ),
+                            child: Text(
+                              entry.key,
+                              style: TextStyle(
+                                color: sliderColor,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+        const SizedBox(height: 12),
       ],
     );
   }

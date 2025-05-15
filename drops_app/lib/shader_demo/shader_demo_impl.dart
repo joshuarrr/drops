@@ -321,6 +321,7 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                     _saveShaderSettings();
                   },
                   sliderColor: sliderColor,
+                  context: context,
                 ),
                 // Blur animation controls are now integrated in EffectControls
                 const SizedBox(height: 12),
@@ -705,13 +706,19 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
             text,
             style: textStyle,
             textAlign: textAlign,
+            textDirection: TextDirection.ltr,
             softWrap: true,
             overflow: TextOverflow.visible,
           ),
         );
       } else {
         // For non-wrapping text, use simple Text widget
-        textWidget = Text(text, style: textStyle, textAlign: textAlign);
+        textWidget = Text(
+          text,
+          style: textStyle,
+          textAlign: textAlign,
+          textDirection: TextDirection.ltr,
+        );
       }
 
       positionedLines.add(
