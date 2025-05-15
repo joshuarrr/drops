@@ -1,4 +1,6 @@
 import 'animation_options.dart';
+import 'package:flutter/painting.dart';
+import 'package:flutter/material.dart' show Colors;
 
 // Class to store all shader effect settings
 class ShaderSettings {
@@ -53,22 +55,26 @@ class ShaderSettings {
   double _textSize;
   double _textPosX;
   double _textPosY;
+  Color _textColor; // Default text color for all text elements
 
   // Per-line styling (independent font, size, position)
   String _titleFont;
   double _titleSize;
   double _titlePosX;
   double _titlePosY;
+  Color _titleColor; // Title-specific color
 
   String _subtitleFont;
   double _subtitleSize;
   double _subtitlePosX;
   double _subtitlePosY;
+  Color _subtitleColor; // Subtitle-specific color
 
   String _artistFont;
   double _artistSize;
   double _artistPosX;
   double _artistPosY;
+  Color _artistColor; // Artist-specific color
 
   // Weight settings
   int _textWeight; // 100-900 (default 400)
@@ -564,6 +570,36 @@ class ShaderSettings {
     if (enableLogging) print("SETTINGS: artistLineHeight set to $v");
   }
 
+  // Text color getters/setters
+  Color get textColor => _textColor;
+  set textColor(Color value) {
+    _textColor = value;
+    if (enableLogging) print("SETTINGS: textColor set to $value");
+  }
+
+  Color get titleColor => _titleColor;
+  set titleColor(Color value) {
+    _titleColor = value;
+    if (enableLogging) print("SETTINGS: titleColor set to $value");
+  }
+
+  Color get subtitleColor => _subtitleColor;
+  set subtitleColor(Color value) {
+    _subtitleColor = value;
+    if (enableLogging) print("SETTINGS: subtitleColor set to $value");
+  }
+
+  Color get artistColor => _artistColor;
+  set artistColor(Color value) {
+    _artistColor = value;
+    if (enableLogging) print("SETTINGS: artistColor set to $value");
+  }
+
+  // Helper to safely get a color's value or default to white if null
+  int _safeColorValue(Color? color) {
+    return color?.value ?? Colors.white.value;
+  }
+
   ShaderSettings({
     // Enable flags
     bool colorEnabled = false,
@@ -616,6 +652,7 @@ class ShaderSettings {
     double textSize = 0.05,
     double textPosX = 0.1,
     double textPosY = 0.1,
+    Color textColor = Colors.white,
 
     // New weight defaults
     int textWeight = 400,
@@ -625,16 +662,19 @@ class ShaderSettings {
     double titleSize = 0.05,
     double titlePosX = 0.1,
     double titlePosY = 0.1,
+    Color titleColor = Colors.white,
 
     String subtitleFont = '',
     double subtitleSize = 0.04,
     double subtitlePosX = 0.1,
     double subtitlePosY = 0.18,
+    Color subtitleColor = Colors.white,
 
     String artistFont = '',
     double artistSize = 0.035,
     double artistPosX = 0.1,
     double artistPosY = 0.26,
+    Color artistColor = Colors.white,
 
     // Per-line weight defaults
     int titleWeight = 400,
@@ -698,6 +738,7 @@ class ShaderSettings {
        _textSize = textSize,
        _textPosX = textPosX,
        _textPosY = textPosY,
+       _textColor = textColor,
        _textWeight = textWeight,
        _titleWeight = titleWeight,
        _subtitleWeight = subtitleWeight,
@@ -706,14 +747,17 @@ class ShaderSettings {
        _titleSize = titleSize,
        _titlePosX = titlePosX,
        _titlePosY = titlePosY,
+       _titleColor = titleColor,
        _subtitleFont = subtitleFont,
        _subtitleSize = subtitleSize,
        _subtitlePosX = subtitlePosX,
        _subtitlePosY = subtitlePosY,
+       _subtitleColor = subtitleColor,
        _artistFont = artistFont,
        _artistSize = artistSize,
        _artistPosX = artistPosX,
        _artistPosY = artistPosY,
+       _artistColor = artistColor,
        _textFitToWidth = textFitToWidth,
        _textHAlign = textHAlign,
        _textVAlign = textVAlign,
@@ -738,76 +782,99 @@ class ShaderSettings {
   // ---------------------------------------------------------------------------
 
   Map<String, dynamic> toMap() {
-    return {
-      'colorEnabled': _colorEnabled,
-      'blurEnabled': _blurEnabled,
-      'noiseEnabled': _noiseEnabled,
-      'hue': _hue,
-      'saturation': _saturation,
-      'lightness': _lightness,
-      'overlayHue': _overlayHue,
-      'overlayIntensity': _overlayIntensity,
-      'overlayOpacity': _overlayOpacity,
-      'blurAmount': _blurAmount,
-      'blurRadius': _blurRadius,
-      'blurOpacity': _blurOpacity,
-      'blurBlendMode': _blurBlendMode,
-      'blurIntensity': _blurIntensity,
-      'blurContrast': _blurContrast,
-      'noiseScale': _noiseScale,
-      'noiseSpeed': _noiseSpeed,
-      'colorIntensity': _colorIntensity,
-      'waveAmount': _waveAmount,
-      'colorAnimated': _colorAnimated,
-      'overlayAnimated': _overlayAnimated,
-      'blurAnimated': _blurAnimated,
-      'noiseAnimated': _noiseAnimated,
-      'colorAnimOptions': _colorAnimOptions.toMap(),
-      'overlayAnimOptions': _overlayAnimOptions.toMap(),
-      'blurAnimOptions': _blurAnimOptions.toMap(),
-      'noiseAnimOptions': _noiseAnimOptions.toMap(),
-      'fillScreen': _fillScreen,
-      'textEnabled': _textEnabled,
-      'textTitle': _textTitle,
-      'textSubtitle': _textSubtitle,
-      'textArtist': _textArtist,
-      'textFont': _textFont,
-      'textSize': _textSize,
-      'textPosX': _textPosX,
-      'textPosY': _textPosY,
-      'textWeight': _textWeight,
-      'titleFont': _titleFont,
-      'titleSize': _titleSize,
-      'titlePosX': _titlePosX,
-      'titlePosY': _titlePosY,
-      'subtitleFont': _subtitleFont,
-      'subtitleSize': _subtitleSize,
-      'subtitlePosX': _subtitlePosX,
-      'subtitlePosY': _subtitlePosY,
-      'artistFont': _artistFont,
-      'artistSize': _artistSize,
-      'artistPosX': _artistPosX,
-      'artistPosY': _artistPosY,
-      'titleWeight': _titleWeight,
-      'subtitleWeight': _subtitleWeight,
-      'artistWeight': _artistWeight,
-      'textFitToWidth': _textFitToWidth,
-      'textHAlign': _textHAlign,
-      'textVAlign': _textVAlign,
-      'textLineHeight': _textLineHeight,
-      'titleFitToWidth': _titleFitToWidth,
-      'titleHAlign': _titleHAlign,
-      'titleVAlign': _titleVAlign,
-      'titleLineHeight': _titleLineHeight,
-      'subtitleFitToWidth': _subtitleFitToWidth,
-      'subtitleHAlign': _subtitleHAlign,
-      'subtitleVAlign': _subtitleVAlign,
-      'subtitleLineHeight': _subtitleLineHeight,
-      'artistFitToWidth': _artistFitToWidth,
-      'artistHAlign': _artistHAlign,
-      'artistVAlign': _artistVAlign,
-      'artistLineHeight': _artistLineHeight,
-    };
+    try {
+      return {
+        'colorEnabled': _colorEnabled,
+        'blurEnabled': _blurEnabled,
+        'noiseEnabled': _noiseEnabled,
+        'hue': _hue,
+        'saturation': _saturation,
+        'lightness': _lightness,
+        'overlayHue': _overlayHue,
+        'overlayIntensity': _overlayIntensity,
+        'overlayOpacity': _overlayOpacity,
+        'blurAmount': _blurAmount,
+        'blurRadius': _blurRadius,
+        'blurOpacity': _blurOpacity,
+        'blurBlendMode': _blurBlendMode,
+        'blurIntensity': _blurIntensity,
+        'blurContrast': _blurContrast,
+        'noiseScale': _noiseScale,
+        'noiseSpeed': _noiseSpeed,
+        'colorIntensity': _colorIntensity,
+        'waveAmount': _waveAmount,
+        'colorAnimated': _colorAnimated,
+        'overlayAnimated': _overlayAnimated,
+        'blurAnimated': _blurAnimated,
+        'noiseAnimated': _noiseAnimated,
+        'colorAnimOptions': _colorAnimOptions.toMap(),
+        'overlayAnimOptions': _overlayAnimOptions.toMap(),
+        'blurAnimOptions': _blurAnimOptions.toMap(),
+        'noiseAnimOptions': _noiseAnimOptions.toMap(),
+        'fillScreen': _fillScreen,
+        'textEnabled': _textEnabled,
+        'textTitle': _textTitle,
+        'textSubtitle': _textSubtitle,
+        'textArtist': _textArtist,
+        'textFont': _textFont,
+        'textSize': _textSize,
+        'textPosX': _textPosX,
+        'textPosY': _textPosY,
+        // Store color as integer value using safe helper
+        'textColor': _safeColorValue(_textColor),
+        'textWeight': _textWeight,
+        'titleFont': _titleFont,
+        'titleSize': _titleSize,
+        'titlePosX': _titlePosX,
+        'titlePosY': _titlePosY,
+        // Store color as integer value using safe helper
+        'titleColor': _safeColorValue(_titleColor),
+        'subtitleFont': _subtitleFont,
+        'subtitleSize': _subtitleSize,
+        'subtitlePosX': _subtitlePosX,
+        'subtitlePosY': _subtitlePosY,
+        // Store color as integer value using safe helper
+        'subtitleColor': _safeColorValue(_subtitleColor),
+        'artistFont': _artistFont,
+        'artistSize': _artistSize,
+        'artistPosX': _artistPosX,
+        'artistPosY': _artistPosY,
+        // Store color as integer value using safe helper
+        'artistColor': _safeColorValue(_artistColor),
+        'titleWeight': _titleWeight,
+        'subtitleWeight': _subtitleWeight,
+        'artistWeight': _artistWeight,
+        'textFitToWidth': _textFitToWidth,
+        'textHAlign': _textHAlign,
+        'textVAlign': _textVAlign,
+        'textLineHeight': _textLineHeight,
+        'titleFitToWidth': _titleFitToWidth,
+        'titleHAlign': _titleHAlign,
+        'titleVAlign': _titleVAlign,
+        'titleLineHeight': _titleLineHeight,
+        'subtitleFitToWidth': _subtitleFitToWidth,
+        'subtitleHAlign': _subtitleHAlign,
+        'subtitleVAlign': _subtitleVAlign,
+        'subtitleLineHeight': _subtitleLineHeight,
+        'artistFitToWidth': _artistFitToWidth,
+        'artistHAlign': _artistHAlign,
+        'artistVAlign': _artistVAlign,
+        'artistLineHeight': _artistLineHeight,
+      };
+    } catch (e) {
+      print('Error serializing ShaderSettings: $e');
+      // Return default values to prevent serialization errors
+      return {
+        'colorEnabled': false,
+        'blurEnabled': false,
+        'noiseEnabled': false,
+        'textEnabled': false,
+        'textColor': Colors.white.value,
+        'titleColor': Colors.white.value,
+        'subtitleColor': Colors.white.value,
+        'artistColor': Colors.white.value,
+      };
+    }
   }
 
   factory ShaderSettings.fromMap(Map<String, dynamic> map) {
@@ -864,19 +931,31 @@ class ShaderSettings {
       textSize: map['textSize'] ?? 0.05,
       textPosX: map['textPosX'] ?? 0.1,
       textPosY: map['textPosY'] ?? 0.1,
+      textColor: map['textColor'] != null
+          ? Color(map['textColor'])
+          : Colors.white,
       textWeight: map['textWeight'] ?? 400,
       titleFont: map['titleFont'] ?? '',
       titleSize: map['titleSize'] ?? 0.05,
       titlePosX: map['titlePosX'] ?? 0.1,
       titlePosY: map['titlePosY'] ?? 0.1,
+      titleColor: map['titleColor'] != null
+          ? Color(map['titleColor'])
+          : Colors.white,
       subtitleFont: map['subtitleFont'] ?? '',
       subtitleSize: map['subtitleSize'] ?? 0.04,
       subtitlePosX: map['subtitlePosX'] ?? 0.1,
       subtitlePosY: map['subtitlePosY'] ?? 0.18,
+      subtitleColor: map['subtitleColor'] != null
+          ? Color(map['subtitleColor'])
+          : Colors.white,
       artistFont: map['artistFont'] ?? '',
       artistSize: map['artistSize'] ?? 0.035,
       artistPosX: map['artistPosX'] ?? 0.1,
       artistPosY: map['artistPosY'] ?? 0.26,
+      artistColor: map['artistColor'] != null
+          ? Color(map['artistColor'])
+          : Colors.white,
       titleWeight: map['titleWeight'] ?? 400,
       subtitleWeight: map['subtitleWeight'] ?? 400,
       artistWeight: map['artistWeight'] ?? 400,

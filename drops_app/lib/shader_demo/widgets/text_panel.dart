@@ -7,6 +7,8 @@ import 'value_slider.dart';
 import 'alignment_selector.dart';
 import 'aspect_panel_header.dart';
 import 'text_input_field.dart';
+import 'dart:async';
+import '../views/effect_controls.dart';
 
 // Enum for identifying each text line (outside class for reuse)
 enum TextLine { title, subtitle, artist }
@@ -21,6 +23,139 @@ extension TextLineExt on TextLine {
       case TextLine.artist:
         return 'Artist';
     }
+  }
+}
+
+// Simple color picker for text colors
+class TextColorPicker extends StatefulWidget {
+  final Color currentColor;
+  final Function(Color) onColorChanged;
+  final Color textColor;
+  final String label;
+
+  const TextColorPicker({
+    Key? key,
+    required this.currentColor,
+    required this.onColorChanged,
+    required this.textColor,
+    required this.label,
+  }) : super(key: key);
+
+  @override
+  State<TextColorPicker> createState() => _TextColorPickerState();
+}
+
+class _TextColorPickerState extends State<TextColorPicker> {
+  bool _isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    // Pre-defined color options
+    final List<Color> colorOptions = [
+      Colors.white,
+      Colors.black,
+      Colors.red,
+      Colors.pink,
+      Colors.purple,
+      Colors.deepPurple,
+      Colors.indigo,
+      Colors.blue,
+      Colors.lightBlue,
+      Colors.cyan,
+      Colors.teal,
+      Colors.green,
+      Colors.lightGreen,
+      Colors.lime,
+      Colors.yellow,
+      Colors.amber,
+      Colors.orange,
+      Colors.deepOrange,
+      Colors.brown,
+      Colors.grey,
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            children: [
+              Text(
+                widget.label,
+                style: TextStyle(
+                  color: widget.textColor,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(width: 12),
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _isExpanded = !_isExpanded;
+                  });
+                },
+                child: Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: widget.currentColor,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: widget.textColor.withOpacity(0.5),
+                      width: 1,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (_isExpanded)
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: colorOptions.map((color) {
+                    final bool isSelected =
+                        color.value == widget.currentColor.value;
+                    return GestureDetector(
+                      onTap: () {
+                        widget.onColorChanged(color);
+                        // Optionally close the palette after selection
+                        // setState(() {
+                        //   _isExpanded = false;
+                        // });
+                      },
+                      child: Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isSelected
+                                ? widget.textColor
+                                : Colors.transparent,
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+      ],
+    );
   }
 }
 
@@ -99,6 +234,20 @@ class _TextPanelState extends State<TextPanel> {
             widget.onSettingsChanged(widget.settings);
           },
         ),
+        // Add color picker
+        TextColorPicker(
+          label: 'Text Color',
+          currentColor: _getCurrentColor(),
+          onColorChanged: (color) {
+            _setCurrentColor(color);
+            if (!widget.settings.textEnabled) {
+              widget.settings.textEnabled = true;
+            }
+            widget.onSettingsChanged(widget.settings);
+          },
+          textColor: widget.sliderColor,
+        ),
+        const SizedBox(height: 12),
         FontSelector(
           selectedFont: _getCurrentFont().isEmpty
               ? 'Default'
@@ -583,21 +732,25 @@ class _TextPanelState extends State<TextPanel> {
       ..textPosX = defaults.textPosX
       ..textPosY = defaults.textPosY
       ..textWeight = defaults.textWeight
+      ..textColor = defaults.textColor
       ..titleFont = defaults.titleFont
       ..titleSize = defaults.titleSize
       ..titlePosX = defaults.titlePosX
       ..titlePosY = defaults.titlePosY
       ..titleWeight = defaults.titleWeight
+      ..titleColor = defaults.titleColor
       ..subtitleFont = defaults.subtitleFont
       ..subtitleSize = defaults.subtitleSize
       ..subtitlePosX = defaults.subtitlePosX
       ..subtitlePosY = defaults.subtitlePosY
       ..subtitleWeight = defaults.subtitleWeight
+      ..subtitleColor = defaults.subtitleColor
       ..artistFont = defaults.artistFont
       ..artistSize = defaults.artistSize
       ..artistPosX = defaults.artistPosX
       ..artistPosY = defaults.artistPosY
       ..artistWeight = defaults.artistWeight
+      ..artistColor = defaults.artistColor
       ..textFitToWidth = defaults.textFitToWidth
       ..textHAlign = defaults.textHAlign
       ..textVAlign = defaults.textVAlign
@@ -625,21 +778,25 @@ class _TextPanelState extends State<TextPanel> {
     widget.settings.textPosX = resetSettings.textPosX;
     widget.settings.textPosY = resetSettings.textPosY;
     widget.settings.textWeight = resetSettings.textWeight;
+    widget.settings.textColor = resetSettings.textColor;
     widget.settings.titleFont = resetSettings.titleFont;
     widget.settings.titleSize = resetSettings.titleSize;
     widget.settings.titlePosX = resetSettings.titlePosX;
     widget.settings.titlePosY = resetSettings.titlePosY;
     widget.settings.titleWeight = resetSettings.titleWeight;
+    widget.settings.titleColor = resetSettings.titleColor;
     widget.settings.subtitleFont = resetSettings.subtitleFont;
     widget.settings.subtitleSize = resetSettings.subtitleSize;
     widget.settings.subtitlePosX = resetSettings.subtitlePosX;
     widget.settings.subtitlePosY = resetSettings.subtitlePosY;
     widget.settings.subtitleWeight = resetSettings.subtitleWeight;
+    widget.settings.subtitleColor = resetSettings.subtitleColor;
     widget.settings.artistFont = resetSettings.artistFont;
     widget.settings.artistSize = resetSettings.artistSize;
     widget.settings.artistPosX = resetSettings.artistPosX;
     widget.settings.artistPosY = resetSettings.artistPosY;
     widget.settings.artistWeight = resetSettings.artistWeight;
+    widget.settings.artistColor = resetSettings.artistColor;
     widget.settings.textFitToWidth = resetSettings.textFitToWidth;
     widget.settings.textHAlign = resetSettings.textHAlign;
     widget.settings.textVAlign = resetSettings.textVAlign;
@@ -679,6 +836,9 @@ class _TextPanelState extends State<TextPanel> {
         presetData['textPosY'] ?? widget.settings.textPosY;
     widget.settings.textWeight =
         presetData['textWeight'] ?? widget.settings.textWeight;
+    widget.settings.textColor = presetData['textColor'] != null
+        ? Color(presetData['textColor'])
+        : widget.settings.textColor;
     widget.settings.titleFont =
         presetData['titleFont'] ?? widget.settings.titleFont;
     widget.settings.titleSize =
@@ -689,6 +849,9 @@ class _TextPanelState extends State<TextPanel> {
         presetData['titlePosY'] ?? widget.settings.titlePosY;
     widget.settings.titleWeight =
         presetData['titleWeight'] ?? widget.settings.titleWeight;
+    widget.settings.titleColor = presetData['titleColor'] != null
+        ? Color(presetData['titleColor'])
+        : widget.settings.titleColor;
     widget.settings.subtitleFont =
         presetData['subtitleFont'] ?? widget.settings.subtitleFont;
     widget.settings.subtitleSize =
@@ -699,6 +862,9 @@ class _TextPanelState extends State<TextPanel> {
         presetData['subtitlePosY'] ?? widget.settings.subtitlePosY;
     widget.settings.subtitleWeight =
         presetData['subtitleWeight'] ?? widget.settings.subtitleWeight;
+    widget.settings.subtitleColor = presetData['subtitleColor'] != null
+        ? Color(presetData['subtitleColor'])
+        : widget.settings.subtitleColor;
     widget.settings.artistFont =
         presetData['artistFont'] ?? widget.settings.artistFont;
     widget.settings.artistSize =
@@ -709,6 +875,9 @@ class _TextPanelState extends State<TextPanel> {
         presetData['artistPosY'] ?? widget.settings.artistPosY;
     widget.settings.artistWeight =
         presetData['artistWeight'] ?? widget.settings.artistWeight;
+    widget.settings.artistColor = presetData['artistColor'] != null
+        ? Color(presetData['artistColor'])
+        : widget.settings.artistColor;
     widget.settings.textFitToWidth =
         presetData['textFitToWidth'] ?? widget.settings.textFitToWidth;
     widget.settings.textHAlign =
@@ -772,21 +941,25 @@ class _TextPanelState extends State<TextPanel> {
       'textPosX': widget.settings.textPosX,
       'textPosY': widget.settings.textPosY,
       'textWeight': widget.settings.textWeight,
+      'textColor': widget.settings.textColor.value,
       'titleFont': widget.settings.titleFont,
       'titleSize': widget.settings.titleSize,
       'titlePosX': widget.settings.titlePosX,
       'titlePosY': widget.settings.titlePosY,
       'titleWeight': widget.settings.titleWeight,
+      'titleColor': widget.settings.titleColor.value,
       'subtitleFont': widget.settings.subtitleFont,
       'subtitleSize': widget.settings.subtitleSize,
       'subtitlePosX': widget.settings.subtitlePosX,
       'subtitlePosY': widget.settings.subtitlePosY,
       'subtitleWeight': widget.settings.subtitleWeight,
+      'subtitleColor': widget.settings.subtitleColor.value,
       'artistFont': widget.settings.artistFont,
       'artistSize': widget.settings.artistSize,
       'artistPosX': widget.settings.artistPosX,
       'artistPosY': widget.settings.artistPosY,
       'artistWeight': widget.settings.artistWeight,
+      'artistColor': widget.settings.artistColor.value,
       'textFitToWidth': widget.settings.textFitToWidth,
       'textHAlign': widget.settings.textHAlign,
       'textVAlign': widget.settings.textVAlign,
@@ -831,6 +1004,8 @@ class _TextPanelState extends State<TextPanel> {
 
   static void _refreshPresets() {
     _refreshCounter++;
+    // Call the central refresh method for immediate UI update
+    EffectControls.refreshPresets();
   }
 
   static Future<bool> _deletePresetAndUpdate(
@@ -842,5 +1017,31 @@ class _TextPanelState extends State<TextPanel> {
       _cachedPresets[aspect] = await PresetsManager.getPresetsForAspect(aspect);
     }
     return success;
+  }
+
+  // -------- Color helpers ---------
+  Color _getCurrentColor() {
+    switch (selectedTextLine) {
+      case TextLine.title:
+        return widget.settings.titleColor;
+      case TextLine.subtitle:
+        return widget.settings.subtitleColor;
+      case TextLine.artist:
+        return widget.settings.artistColor;
+    }
+  }
+
+  void _setCurrentColor(Color color) {
+    switch (selectedTextLine) {
+      case TextLine.title:
+        widget.settings.titleColor = color;
+        break;
+      case TextLine.subtitle:
+        widget.settings.subtitleColor = color;
+        break;
+      case TextLine.artist:
+        widget.settings.artistColor = color;
+        break;
+    }
   }
 }

@@ -8,9 +8,12 @@ import 'package:google_fonts/google_fonts.dart';
 import '../common/app_scaffold.dart';
 import 'models/shader_effect.dart';
 import 'models/effect_settings.dart';
+import 'models/shader_preset.dart';
 import 'controllers/effect_controller.dart';
+import 'controllers/preset_controller.dart';
 import 'views/effect_controls.dart';
 import 'views/panel_container.dart';
+import 'views/preset_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum ImageCategory { covers, artists }
@@ -43,6 +46,9 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
   // Currently selected category and image
   ImageCategory _imageCategory = ImageCategory.covers;
   String _selectedImage = '';
+
+  // Key for capturing the shader effect for thumbnails
+  final GlobalKey _previewKey = GlobalKey();
 
   // Animation duration bounds (shared baseline for internal timing)
   static const int _minDurationMs = 30000; // slowest
@@ -120,6 +126,45 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
       extendBodyBehindAppBar: true,
       appBarBackgroundColor: Colors.transparent,
       appBarElevation: 0,
+      appBarActions: [
+        // Match back button styling for menu
+        PopupMenuButton<String>(
+          icon: const Icon(Icons.more_vert),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          offset: const Offset(0, 40),
+          onSelected: (value) {
+            if (value == 'save_preset') {
+              _showSavePresetDialog();
+            } else if (value == 'load_preset') {
+              _showLoadPresetDialog();
+            }
+          },
+          itemBuilder: (context) => [
+            const PopupMenuItem<String>(
+              value: 'save_preset',
+              child: Row(
+                children: [
+                  Icon(Icons.save),
+                  SizedBox(width: 8),
+                  Text('Save Preset'),
+                ],
+              ),
+            ),
+            const PopupMenuItem<String>(
+              value: 'load_preset',
+              child: Row(
+                children: [
+                  Icon(Icons.photo_library),
+                  SizedBox(width: 8),
+                  Text('Load Preset'),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
       body: GestureDetector(
         onTap: () {
           setState(() {
@@ -133,8 +178,8 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // Animated shader effect with all enabled aspects
-            _buildShaderEffect(),
+            // Wrap the effect in a RepaintBoundary for thumbnail capture
+            RepaintBoundary(key: _previewKey, child: _buildShaderEffect()),
 
             // Controls overlay that can be toggled
             if (_showControls)
@@ -256,7 +301,10 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
           stackChildren.add(_buildTextOverlay());
         }
 
-        return Stack(fit: StackFit.expand, children: stackChildren);
+        return Container(
+          color: Colors.black,
+          child: Stack(fit: StackFit.expand, children: stackChildren),
+        );
       },
     );
   }
@@ -331,6 +379,79 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  // Show dialog to save a preset
+  void _showSavePresetDialog() {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.5),
+      builder: (context) => SavePresetDialog(
+        onSave: (name) async {
+          try {
+            final preset = await PresetController.savePreset(
+              name: name,
+              settings: _shaderSettings,
+              imagePath: _selectedImage,
+              previewKey: _previewKey,
+            );
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Preset "$name" saved successfully'),
+                behavior: SnackBarBehavior.floating,
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          } catch (e) {
+            debugPrint('Error saving preset: $e');
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error saving preset: ${e.toString()}'),
+                backgroundColor: Colors.red,
+                behavior: SnackBarBehavior.floating,
+                duration: const Duration(seconds: 4),
+              ),
+            );
+          }
+        },
+      ),
+    );
+  }
+
+  // Show dialog to load a preset
+  void _showLoadPresetDialog() {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.5),
+      builder: (context) => PresetsDialog(
+        onLoad: (preset) {
+          setState(() {
+            // Apply all settings from the preset
+            _shaderSettings = preset.settings;
+            _selectedImage = preset.imagePath;
+
+            // Update image category based on the loaded image
+            if (_selectedImage.contains('/covers/')) {
+              _imageCategory = ImageCategory.covers;
+            } else if (_selectedImage.contains('/artists/')) {
+              _imageCategory = ImageCategory.artists;
+            }
+          });
+
+          // Save changes to persistent storage
+          _saveShaderSettings();
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Preset "${preset.name}" loaded'),
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        },
       ),
     );
   }
@@ -627,6 +748,7 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
       required int hAlign,
       required int vAlign,
       required double lineHeight,
+      required Color textColor,
     }) {
       if (text.isEmpty) return;
 
@@ -638,7 +760,7 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
       final String family = font.isNotEmpty ? font : _shaderSettings.textFont;
 
       TextStyle baseStyle = TextStyle(
-        color: Colors.white,
+        color: textColor,
         fontSize: computedSize,
         fontWeight: toFontWeight(weight),
         height: fitToWidth
@@ -749,6 +871,7 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
       hAlign: _shaderSettings.titleHAlign,
       vAlign: _shaderSettings.titleVAlign,
       lineHeight: _shaderSettings.titleLineHeight,
+      textColor: _shaderSettings.titleColor,
     );
 
     addLine(
@@ -764,6 +887,7 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
       hAlign: _shaderSettings.subtitleHAlign,
       vAlign: _shaderSettings.subtitleVAlign,
       lineHeight: _shaderSettings.subtitleLineHeight,
+      textColor: _shaderSettings.subtitleColor,
     );
 
     addLine(
@@ -779,6 +903,7 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
       hAlign: _shaderSettings.artistHAlign,
       vAlign: _shaderSettings.artistVAlign,
       lineHeight: _shaderSettings.artistLineHeight,
+      textColor: _shaderSettings.artistColor,
     );
 
     return Stack(children: positionedLines);

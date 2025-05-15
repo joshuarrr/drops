@@ -6,6 +6,7 @@ import '../models/presets_manager.dart';
 import 'value_slider.dart';
 import 'animation_controls.dart';
 import 'aspect_panel_header.dart';
+import '../views/effect_controls.dart';
 
 class NoisePanel extends StatelessWidget {
   final ShaderSettings settings;
@@ -193,6 +194,8 @@ class NoisePanel extends StatelessWidget {
 
   static void _refreshPresets() {
     _refreshCounter++;
+    // Call the central refresh method for immediate UI update
+    EffectControls.refreshPresets();
   }
 
   static Future<bool> _deletePresetAndUpdate(
