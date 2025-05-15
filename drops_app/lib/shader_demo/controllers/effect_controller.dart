@@ -17,7 +17,9 @@ class EffectController {
     required double animationValue,
   }) {
     // If no effects are enabled, return the original child
-    if (!settings.colorEnabled && !settings.blurEnabled) {
+    if (!settings.colorEnabled &&
+        !settings.blurEnabled &&
+        !settings.noiseEnabled) {
       if (enableEffectLogs) print("EFFECTS: No effects enabled");
       return child;
     }
@@ -32,6 +34,16 @@ class EffectController {
     if (settings.colorEnabled) {
       if (enableEffectLogs) print("EFFECTS: Applying color");
       result = _applyColorEffect(
+        child: result,
+        settings: settings,
+        animationValue: animationValue,
+      );
+    }
+
+    // Apply noise effect if enabled
+    if (settings.noiseEnabled) {
+      if (enableEffectLogs) print("EFFECTS: Applying noise/waves");
+      result = _applyNoiseEffect(
         child: result,
         settings: settings,
         animationValue: animationValue,
@@ -91,6 +103,28 @@ class EffectController {
 
     // Use custom shader implementation
     return BlurEffectShader(
+      settings: settings,
+      animationValue: animationValue,
+      child: child,
+    );
+  }
+
+  // Helper method to apply noise effect using custom shader
+  static Widget _applyNoiseEffect({
+    required Widget child,
+    required ShaderSettings settings,
+    required double animationValue,
+  }) {
+    // Skip if noise settings are minimal and no animation
+    if (settings.waveAmount <= 0.0 &&
+        settings.colorIntensity <= 0.0 &&
+        !settings.noiseAnimated) {
+      if (enableEffectLogs) print("EFFECTS: Noise settings minimal, skipping");
+      return child;
+    }
+
+    // Use custom shader implementation
+    return NoiseEffectShader(
       settings: settings,
       animationValue: animationValue,
       child: child,

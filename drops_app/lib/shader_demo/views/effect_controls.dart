@@ -1,20 +1,15 @@
 import 'package:flutter/material.dart';
 import '../models/shader_effect.dart';
 import '../models/effect_settings.dart';
-import '../models/animation_options.dart';
 import '../models/presets_manager.dart';
 import '../../common/font_selector.dart';
 import '../widgets/aspect_toggle.dart';
-import '../widgets/value_slider.dart';
-import '../widgets/aspect_panel_header.dart';
-import '../widgets/alignment_selector.dart';
-import '../widgets/animation_controls.dart';
 import '../widgets/presets_bar.dart';
-import '../widgets/text_input_field.dart';
 import '../widgets/color_panel.dart';
 import '../widgets/blur_panel.dart';
 import '../widgets/image_panel.dart';
 import '../widgets/text_panel.dart';
+import '../widgets/noise_panel.dart';
 
 // Enum for identifying each text line (outside class for reuse)
 enum TextLine { title, subtitle, artist }
@@ -96,8 +91,10 @@ class EffectControls {
       child: AnimatedOpacity(
         opacity: hidden ? 0.0 : 1.0,
         duration: const Duration(milliseconds: 300),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        child: Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 16,
+          runSpacing: 8,
           children: [
             // Image toggle first for quick access
             AspectToggle(
@@ -124,6 +121,13 @@ class EffectControls {
             AspectToggle(
               aspect: ShaderAspect.text,
               isEnabled: settings.textEnabled,
+              isCurrentImageDark: isCurrentImageDark,
+              onToggled: onAspectToggled,
+              onTap: onAspectSelected,
+            ),
+            AspectToggle(
+              aspect: ShaderAspect.noise,
+              isEnabled: settings.noiseEnabled,
               isCurrentImageDark: isCurrentImageDark,
               onToggled: onAspectToggled,
               onTap: onAspectSelected,
@@ -176,6 +180,16 @@ class EffectControls {
       case ShaderAspect.text:
         return [
           TextPanel(
+            settings: settings,
+            onSettingsChanged: onSettingsChanged,
+            sliderColor: sliderColor,
+            context: context,
+          ),
+        ];
+
+      case ShaderAspect.noise:
+        return [
+          NoisePanel(
             settings: settings,
             onSettingsChanged: onSettingsChanged,
             sliderColor: sliderColor,

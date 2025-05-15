@@ -19,20 +19,29 @@ class ShaderProgramLoader {
   // Cached shader programs
   ui.FragmentProgram? _colorShaderProgram;
   ui.FragmentProgram? _blurShaderProgram;
+  ui.FragmentProgram? _noiseShaderProgram;
 
   // Get color shader program
   Future<ui.FragmentProgram> get colorShaderProgram async {
     _colorShaderProgram ??= await ui.FragmentProgram.fromAsset(
-        'assets/shaders/color_effect.frag',
-      );
+      'assets/shaders/color_effect.frag',
+    );
     return _colorShaderProgram!;
   }
 
   // Get blur shader program
   Future<ui.FragmentProgram> get blurShaderProgram async {
     _blurShaderProgram ??= await ui.FragmentProgram.fromAsset(
-        'assets/shaders/blur_effect.frag',
-      );
+      'assets/shaders/blur_effect.frag',
+    );
     return _blurShaderProgram!;
+  }
+
+  // Get noise shader program
+  Future<ui.FragmentProgram> get noiseShaderProgram async {
+    _noiseShaderProgram ??= await ui.FragmentProgram.fromAsset(
+      'assets/shaders/noise_effect.frag',
+    );
+    return _noiseShaderProgram!;
   }
 }

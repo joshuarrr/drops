@@ -12,7 +12,7 @@ import 'controllers/effect_controller.dart';
 import 'views/effect_controls.dart';
 import 'views/panel_container.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'models/animation_options.dart';
+
 
 enum ImageCategory { covers, artists }
 
@@ -189,6 +189,9 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                                     break;
                                   case ShaderAspect.text:
                                     _shaderSettings.textEnabled = enabled;
+                                    break;
+                                  case ShaderAspect.noise:
+                                    _shaderSettings.noiseEnabled = enabled;
                                     break;
                                 }
                               });

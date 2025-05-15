@@ -5,6 +5,7 @@ class ShaderSettings {
   // Enable flags for each aspect
   bool _colorEnabled;
   bool _blurEnabled;
+  bool _noiseEnabled; // New flag for noise effect
 
   // Color settings
   double _hue;
@@ -22,6 +23,13 @@ class ShaderSettings {
   double _blurOpacity; // 0-1 opacity of shatter overlay
   double _blurFacets; // number of facets (1+)
   int _blurBlendMode; // 0=normal,1=multiply,2=screen
+
+  // Noise effect settings
+  double _noiseScale; // Scale of the noise pattern
+  double _noiseSpeed; // Speed of the animation
+  double _colorIntensity; // Intensity of the color overlay
+  double _waveAmount; // Amount of wave distortion
+  bool _noiseAnimated; // Animation flag for noise effect
 
   // Animation flag for blur (shatter) effect
   bool _blurAnimated;
@@ -105,6 +113,12 @@ class ShaderSettings {
     if (enableLogging) print("SETTINGS: blurEnabled set to $value");
   }
 
+  bool get noiseEnabled => _noiseEnabled;
+  set noiseEnabled(bool value) {
+    _noiseEnabled = value;
+    if (enableLogging) print("SETTINGS: noiseEnabled set to $value");
+  }
+
   double get blurAmount => _blurAmount;
   set blurAmount(double value) {
     _blurAmount = value;
@@ -119,6 +133,45 @@ class ShaderSettings {
     if (enableLogging) {
       print("SETTINGS: blurRadius set to ${value.toStringAsFixed(3)}");
     }
+  }
+
+  // Noise effect getters and setters
+  double get noiseScale => _noiseScale;
+  set noiseScale(double value) {
+    _noiseScale = value;
+    if (enableLogging) {
+      print("SETTINGS: noiseScale set to ${value.toStringAsFixed(3)}");
+    }
+  }
+
+  double get noiseSpeed => _noiseSpeed;
+  set noiseSpeed(double value) {
+    _noiseSpeed = value;
+    if (enableLogging) {
+      print("SETTINGS: noiseSpeed set to ${value.toStringAsFixed(3)}");
+    }
+  }
+
+  double get colorIntensity => _colorIntensity;
+  set colorIntensity(double value) {
+    _colorIntensity = value;
+    if (enableLogging) {
+      print("SETTINGS: colorIntensity set to ${value.toStringAsFixed(3)}");
+    }
+  }
+
+  double get waveAmount => _waveAmount;
+  set waveAmount(double value) {
+    _waveAmount = value;
+    if (enableLogging) {
+      print("SETTINGS: waveAmount set to ${value.toStringAsFixed(3)}");
+    }
+  }
+
+  bool get noiseAnimated => _noiseAnimated;
+  set noiseAnimated(bool value) {
+    _noiseAnimated = value;
+    if (enableLogging) print("SETTINGS: noiseAnimated set to $value");
   }
 
   // Color settings with logging
@@ -374,6 +427,7 @@ class ShaderSettings {
   AnimationOptions _colorAnimOptions;
   AnimationOptions _overlayAnimOptions;
   AnimationOptions _blurAnimOptions;
+  AnimationOptions _noiseAnimOptions;
 
   AnimationOptions get colorAnimOptions => _colorAnimOptions;
   set colorAnimOptions(AnimationOptions value) {
@@ -391,6 +445,12 @@ class ShaderSettings {
   set blurAnimOptions(AnimationOptions value) {
     _blurAnimOptions = value;
     if (enableLogging) print("SETTINGS: blurAnimOptions updated");
+  }
+
+  AnimationOptions get noiseAnimOptions => _noiseAnimOptions;
+  set noiseAnimOptions(AnimationOptions value) {
+    _noiseAnimOptions = value;
+    if (enableLogging) print("SETTINGS: noiseAnimOptions updated");
   }
 
   // Text layout getters/setters
@@ -498,6 +558,8 @@ class ShaderSettings {
     // Enable flags
     bool colorEnabled = false,
     bool blurEnabled = false,
+    bool noiseEnabled = false,
+    bool textEnabled = false,
 
     // Color settings
     double hue = 0.0,
@@ -510,25 +572,32 @@ class ShaderSettings {
     // Blur settings
     double blurAmount = 0.0,
     double blurRadius = 15.0,
-
-    // Additional shatter defaults
     double blurOpacity = 1.0,
     double blurFacets = 1.0,
     int blurBlendMode = 0,
 
-    // Animation flag
-    bool blurAnimated = false,
+    // Noise settings
+    double noiseScale = 5.0,
+    double noiseSpeed = 0.5,
+    double colorIntensity = 0.3,
+    double waveAmount = 0.02,
 
-    // Color animation flag
+    // Animation flags
     bool colorAnimated = false,
-
-    // Overlay animation flag
     bool overlayAnimated = false,
+    bool blurAnimated = false,
+    bool noiseAnimated = false,
+
+    // Animation options
+    AnimationOptions? colorAnimOptions,
+    AnimationOptions? overlayAnimOptions,
+    AnimationOptions? blurAnimOptions,
+    AnimationOptions? noiseAnimOptions,
 
     // Image setting
     bool fillScreen = false,
 
-    // Text defaults
+    // Text content
     String textTitle = '',
     String textSubtitle = '',
     String textArtist = '',
@@ -539,14 +608,6 @@ class ShaderSettings {
 
     // New weight defaults
     int textWeight = 400,
-
-    // Independent animation options
-    AnimationOptions? colorAnimOptions,
-    AnimationOptions? overlayAnimOptions,
-    AnimationOptions? blurAnimOptions,
-
-    // Text enabled flag
-    bool textEnabled = false,
 
     // Per-line styling (independent font, size, position)
     String titleFont = '',
@@ -592,6 +653,7 @@ class ShaderSettings {
     double artistLineHeight = 1.2,
   }) : _colorEnabled = colorEnabled,
        _blurEnabled = blurEnabled,
+       _noiseEnabled = noiseEnabled,
        _hue = hue,
        _saturation = saturation,
        _lightness = lightness,
@@ -603,12 +665,18 @@ class ShaderSettings {
        _blurOpacity = blurOpacity,
        _blurFacets = blurFacets,
        _blurBlendMode = blurBlendMode,
-       _blurAnimated = blurAnimated,
+       _noiseScale = noiseScale,
+       _noiseSpeed = noiseSpeed,
+       _colorIntensity = colorIntensity,
+       _waveAmount = waveAmount,
        _colorAnimated = colorAnimated,
        _overlayAnimated = overlayAnimated,
+       _blurAnimated = blurAnimated,
+       _noiseAnimated = noiseAnimated,
        _colorAnimOptions = colorAnimOptions ?? AnimationOptions(),
        _overlayAnimOptions = overlayAnimOptions ?? AnimationOptions(),
        _blurAnimOptions = blurAnimOptions ?? AnimationOptions(),
+       _noiseAnimOptions = noiseAnimOptions ?? AnimationOptions(),
        _fillScreen = fillScreen,
        _textEnabled = textEnabled,
        _textTitle = textTitle,
@@ -661,6 +729,7 @@ class ShaderSettings {
     return {
       'colorEnabled': _colorEnabled,
       'blurEnabled': _blurEnabled,
+      'noiseEnabled': _noiseEnabled,
       'hue': _hue,
       'saturation': _saturation,
       'lightness': _lightness,
@@ -672,12 +741,18 @@ class ShaderSettings {
       'blurOpacity': _blurOpacity,
       'blurFacets': _blurFacets,
       'blurBlendMode': _blurBlendMode,
-      'blurAnimated': _blurAnimated,
+      'noiseScale': _noiseScale,
+      'noiseSpeed': _noiseSpeed,
+      'colorIntensity': _colorIntensity,
+      'waveAmount': _waveAmount,
       'colorAnimated': _colorAnimated,
       'overlayAnimated': _overlayAnimated,
+      'blurAnimated': _blurAnimated,
+      'noiseAnimated': _noiseAnimated,
       'colorAnimOptions': _colorAnimOptions.toMap(),
       'overlayAnimOptions': _overlayAnimOptions.toMap(),
       'blurAnimOptions': _blurAnimOptions.toMap(),
+      'noiseAnimOptions': _noiseAnimOptions.toMap(),
       'fillScreen': _fillScreen,
       'textEnabled': _textEnabled,
       'textTitle': _textTitle,
@@ -724,79 +799,89 @@ class ShaderSettings {
 
   factory ShaderSettings.fromMap(Map<String, dynamic> map) {
     return ShaderSettings(
-      colorEnabled: map['colorEnabled'] as bool? ?? false,
-      blurEnabled: map['blurEnabled'] as bool? ?? false,
-      hue: (map['hue'] as num?)?.toDouble() ?? 0.0,
-      saturation: (map['saturation'] as num?)?.toDouble() ?? 0.0,
-      lightness: (map['lightness'] as num?)?.toDouble() ?? 0.0,
-      overlayHue: (map['overlayHue'] as num?)?.toDouble() ?? 0.0,
-      overlayIntensity: (map['overlayIntensity'] as num?)?.toDouble() ?? 0.0,
-      overlayOpacity: (map['overlayOpacity'] as num?)?.toDouble() ?? 0.0,
-      blurAmount: (map['blurAmount'] as num?)?.toDouble() ?? 0.0,
-      blurRadius: (map['blurRadius'] as num?)?.toDouble() ?? 15.0,
-      blurOpacity: (map['blurOpacity'] as num?)?.toDouble() ?? 1.0,
-      blurFacets: (map['blurFacets'] as num?)?.toDouble() ?? 1.0,
-      blurBlendMode: map['blurBlendMode'] as int? ?? 0,
-      blurAnimated: map['blurAnimated'] as bool? ?? false,
-      colorAnimated: map['colorAnimated'] as bool? ?? false,
-      overlayAnimated: map['overlayAnimated'] as bool? ?? false,
-      colorAnimOptions: map.containsKey('colorAnimOptions')
+      colorEnabled: map['colorEnabled'] ?? false,
+      blurEnabled: map['blurEnabled'] ?? false,
+      noiseEnabled: map['noiseEnabled'] ?? false,
+      hue: map['hue'] ?? 0.0,
+      saturation: map['saturation'] ?? 0.0,
+      lightness: map['lightness'] ?? 0.0,
+      overlayHue: map['overlayHue'] ?? 0.0,
+      overlayIntensity: map['overlayIntensity'] ?? 0.0,
+      overlayOpacity: map['overlayOpacity'] ?? 0.0,
+      blurAmount: map['blurAmount'] ?? 0.0,
+      blurRadius: map['blurRadius'] ?? 15.0,
+      blurOpacity: map['blurOpacity'] ?? 1.0,
+      blurFacets: map['blurFacets'] ?? 1.0,
+      blurBlendMode: map['blurBlendMode'] ?? 0,
+      noiseScale: map['noiseScale'] ?? 5.0,
+      noiseSpeed: map['noiseSpeed'] ?? 0.5,
+      colorIntensity: map['colorIntensity'] ?? 0.3,
+      waveAmount: map['waveAmount'] ?? 0.02,
+      colorAnimated: map['colorAnimated'] ?? false,
+      overlayAnimated: map['overlayAnimated'] ?? false,
+      blurAnimated: map['blurAnimated'] ?? false,
+      noiseAnimated: map['noiseAnimated'] ?? false,
+      colorAnimOptions: map['colorAnimOptions'] != null
           ? AnimationOptions.fromMap(
-              Map<String, dynamic>.from(map['colorAnimOptions'] as Map),
+              Map<String, dynamic>.from(map['colorAnimOptions']),
             )
           : null,
-      overlayAnimOptions: map.containsKey('overlayAnimOptions')
+      overlayAnimOptions: map['overlayAnimOptions'] != null
           ? AnimationOptions.fromMap(
-              Map<String, dynamic>.from(map['overlayAnimOptions'] as Map),
+              Map<String, dynamic>.from(map['overlayAnimOptions']),
             )
           : null,
-      blurAnimOptions: map.containsKey('blurAnimOptions')
+      blurAnimOptions: map['blurAnimOptions'] != null
           ? AnimationOptions.fromMap(
-              Map<String, dynamic>.from(map['blurAnimOptions'] as Map),
+              Map<String, dynamic>.from(map['blurAnimOptions']),
             )
           : null,
-      fillScreen: map['fillScreen'] as bool? ?? false,
-      textEnabled: map['textEnabled'] as bool? ?? false,
-      textTitle: map['textTitle'] as String? ?? '',
-      textSubtitle: map['textSubtitle'] as String? ?? '',
-      textArtist: map['textArtist'] as String? ?? '',
-      textFont: map['textFont'] as String? ?? 'Roboto',
-      textSize: (map['textSize'] as num?)?.toDouble() ?? 0.05,
-      textPosX: (map['textPosX'] as num?)?.toDouble() ?? 0.1,
-      textPosY: (map['textPosY'] as num?)?.toDouble() ?? 0.1,
-      textWeight: (map['textWeight'] as int?) ?? 400,
-      titleFont: map['titleFont'] as String? ?? '',
-      titleSize: (map['titleSize'] as num?)?.toDouble() ?? 0.05,
-      titlePosX: (map['titlePosX'] as num?)?.toDouble() ?? 0.1,
-      titlePosY: (map['titlePosY'] as num?)?.toDouble() ?? 0.1,
-      subtitleFont: map['subtitleFont'] as String? ?? '',
-      subtitleSize: (map['subtitleSize'] as num?)?.toDouble() ?? 0.04,
-      subtitlePosX: (map['subtitlePosX'] as num?)?.toDouble() ?? 0.1,
-      subtitlePosY: (map['subtitlePosY'] as num?)?.toDouble() ?? 0.18,
-      artistFont: map['artistFont'] as String? ?? '',
-      artistSize: (map['artistSize'] as num?)?.toDouble() ?? 0.035,
-      artistPosX: (map['artistPosX'] as num?)?.toDouble() ?? 0.1,
-      artistPosY: (map['artistPosY'] as num?)?.toDouble() ?? 0.26,
-      titleWeight: (map['titleWeight'] as int?) ?? 400,
-      subtitleWeight: (map['subtitleWeight'] as int?) ?? 400,
-      artistWeight: (map['artistWeight'] as int?) ?? 400,
-      textFitToWidth: map['textFitToWidth'] as bool? ?? false,
-      textHAlign: map['textHAlign'] as int? ?? 0,
-      textVAlign: map['textVAlign'] as int? ?? 0,
-      textLineHeight: (map['textLineHeight'] as num?)?.toDouble() ?? 1.2,
-      titleFitToWidth: map['titleFitToWidth'] as bool? ?? false,
-      titleHAlign: map['titleHAlign'] as int? ?? 0,
-      titleVAlign: map['titleVAlign'] as int? ?? 0,
-      titleLineHeight: (map['titleLineHeight'] as num?)?.toDouble() ?? 1.2,
-      subtitleFitToWidth: map['subtitleFitToWidth'] as bool? ?? false,
-      subtitleHAlign: map['subtitleHAlign'] as int? ?? 0,
-      subtitleVAlign: map['subtitleVAlign'] as int? ?? 0,
-      subtitleLineHeight:
-          (map['subtitleLineHeight'] as num?)?.toDouble() ?? 1.2,
-      artistFitToWidth: map['artistFitToWidth'] as bool? ?? false,
-      artistHAlign: map['artistHAlign'] as int? ?? 0,
-      artistVAlign: map['artistVAlign'] as int? ?? 0,
-      artistLineHeight: (map['artistLineHeight'] as num?)?.toDouble() ?? 1.2,
+      noiseAnimOptions: map['noiseAnimOptions'] != null
+          ? AnimationOptions.fromMap(
+              Map<String, dynamic>.from(map['noiseAnimOptions']),
+            )
+          : null,
+      fillScreen: map['fillScreen'] ?? false,
+      textEnabled: map['textEnabled'] ?? false,
+      textTitle: map['textTitle'] ?? '',
+      textSubtitle: map['textSubtitle'] ?? '',
+      textArtist: map['textArtist'] ?? '',
+      textFont: map['textFont'] ?? 'Roboto',
+      textSize: map['textSize'] ?? 0.05,
+      textPosX: map['textPosX'] ?? 0.1,
+      textPosY: map['textPosY'] ?? 0.1,
+      textWeight: map['textWeight'] ?? 400,
+      titleFont: map['titleFont'] ?? '',
+      titleSize: map['titleSize'] ?? 0.05,
+      titlePosX: map['titlePosX'] ?? 0.1,
+      titlePosY: map['titlePosY'] ?? 0.1,
+      subtitleFont: map['subtitleFont'] ?? '',
+      subtitleSize: map['subtitleSize'] ?? 0.04,
+      subtitlePosX: map['subtitlePosX'] ?? 0.1,
+      subtitlePosY: map['subtitlePosY'] ?? 0.18,
+      artistFont: map['artistFont'] ?? '',
+      artistSize: map['artistSize'] ?? 0.035,
+      artistPosX: map['artistPosX'] ?? 0.1,
+      artistPosY: map['artistPosY'] ?? 0.26,
+      titleWeight: map['titleWeight'] ?? 400,
+      subtitleWeight: map['subtitleWeight'] ?? 400,
+      artistWeight: map['artistWeight'] ?? 400,
+      textFitToWidth: map['textFitToWidth'] ?? false,
+      textHAlign: map['textHAlign'] ?? 0,
+      textVAlign: map['textVAlign'] ?? 0,
+      textLineHeight: map['textLineHeight'] ?? 1.2,
+      titleFitToWidth: map['titleFitToWidth'] ?? false,
+      titleHAlign: map['titleHAlign'] ?? 0,
+      titleVAlign: map['titleVAlign'] ?? 0,
+      titleLineHeight: map['titleLineHeight'] ?? 1.2,
+      subtitleFitToWidth: map['subtitleFitToWidth'] ?? false,
+      subtitleHAlign: map['subtitleHAlign'] ?? 0,
+      subtitleVAlign: map['subtitleVAlign'] ?? 0,
+      subtitleLineHeight: map['subtitleLineHeight'] ?? 1.2,
+      artistFitToWidth: map['artistFitToWidth'] ?? false,
+      artistHAlign: map['artistHAlign'] ?? 0,
+      artistVAlign: map['artistVAlign'] ?? 0,
+      artistLineHeight: map['artistLineHeight'] ?? 1.2,
     );
   }
 }
