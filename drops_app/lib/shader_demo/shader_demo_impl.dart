@@ -416,24 +416,42 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Radio<ImageCategory>(
-          value: category,
-          groupValue: _imageCategory,
-          onChanged: (ImageCategory? value) {
-            if (value != null) {
-              setState(() {
-                _imageCategory = value;
-
-                // Ensure selected image belongs to category
-                final images = _getCurrentImages();
-                if (!images.contains(_selectedImage) && images.isNotEmpty) {
-                  _selectedImage = images.first;
+        Theme(
+          data: ThemeData(
+            radioTheme: RadioThemeData(
+              fillColor: MaterialStateProperty.resolveWith<Color>((
+                Set<MaterialState> states,
+              ) {
+                if (states.contains(MaterialState.selected)) {
+                  return textColor;
                 }
-              });
-              _saveShaderSettings();
-            }
-          },
-          activeColor: textColor,
+                return textColor.withOpacity(0.5);
+              }),
+              // Remove outline
+              overlayColor: MaterialStateProperty.all(Colors.transparent),
+            ),
+          ),
+          child: Radio<ImageCategory>(
+            value: category,
+            groupValue: _imageCategory,
+            onChanged: (ImageCategory? value) {
+              if (value != null) {
+                setState(() {
+                  _imageCategory = value;
+
+                  // Ensure selected image belongs to category
+                  final images = _getCurrentImages();
+                  if (!images.contains(_selectedImage) && images.isNotEmpty) {
+                    _selectedImage = images.first;
+                  }
+                });
+                _saveShaderSettings();
+              }
+            },
+            activeColor: textColor,
+            // Remove the outline
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
         ),
         Text(label, style: TextStyle(color: textColor)),
       ],
@@ -534,7 +552,7 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     List<Widget> positionedLines = [];
 
     // Local helper to map int weight (100-900) to FontWeight constant
-    FontWeight _toFontWeight(int w) {
+    FontWeight toFontWeight(int w) {
       switch (w) {
         case 100:
           return FontWeight.w100;
@@ -559,6 +577,39 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
       }
     }
 
+    // Helper to map horizontal alignment int to TextAlign
+    TextAlign getTextAlign(int align) {
+      switch (align) {
+        case 0:
+          return TextAlign.left;
+        case 1:
+          return TextAlign.center;
+        case 2:
+          return TextAlign.right;
+        default:
+          return TextAlign.left;
+      }
+    }
+
+    // Helper to compute vertical alignment position
+    double getVerticalPosition(
+      double basePosition,
+      int vAlign,
+      double textHeight,
+      double fontSize,
+    ) {
+      switch (vAlign) {
+        case 0: // Top - already set by basePosition
+          return basePosition;
+        case 1: // Middle
+          return basePosition - (fontSize / 2);
+        case 2: // Bottom
+          return basePosition - textHeight;
+        default:
+          return basePosition;
+      }
+    }
+
     void addLine({
       required String text,
       required String font,
@@ -566,8 +617,13 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
       required double posX,
       required double posY,
       required int weight,
+      required bool fitToWidth,
+      required int hAlign,
+      required int vAlign,
+      required double lineHeight,
     }) {
       if (text.isEmpty) return;
+
       // Compute appropriate text style for this line
       final double computedSize = size > 0
           ? size * screenSize.width
@@ -578,7 +634,10 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
       TextStyle baseStyle = TextStyle(
         color: Colors.white,
         fontSize: computedSize,
-        fontWeight: _toFontWeight(weight),
+        fontWeight: toFontWeight(weight),
+        height: fitToWidth
+            ? lineHeight
+            : null, // Only apply line height when text is wrapped
       );
 
       late TextStyle textStyle;
@@ -593,11 +652,74 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
         }
       }
 
+      // Define horizontal alignment and width constraints based on fitToWidth
+      final TextAlign textAlign = getTextAlign(hAlign);
+
+      // Calculate horizontal position based on alignment
+      double leftPosition = posX * screenSize.width;
+
+      // Calculate container width for text wrapping if fitToWidth is enabled
+      double? maxWidth;
+      if (fitToWidth) {
+        // Use screen width minus the left position to avoid overflow
+        maxWidth = screenSize.width - leftPosition;
+
+        // Adjust left position for center/right text alignment with fitToWidth
+        if (hAlign == 1) {
+          // Center
+          leftPosition = screenSize.width / 2;
+        } else if (hAlign == 2) {
+          // Right
+          leftPosition = screenSize.width - 20; // Small padding from right edge
+          maxWidth = leftPosition - 20; // Ensure text doesn't go to the edge
+        }
+      }
+
+      // Create a TextPainter to measure the text for vertical alignment
+      final textSpan = TextSpan(text: text, style: textStyle);
+      final textPainter = TextPainter(
+        text: textSpan,
+        textDirection: TextDirection.ltr,
+        textAlign: textAlign,
+        maxLines: fitToWidth ? null : 1,
+      );
+      textPainter.layout(maxWidth: maxWidth ?? double.infinity);
+
+      // Calculate vertical position based on alignment
+      final double topPosition = getVerticalPosition(
+        posY * screenSize.height,
+        vAlign,
+        textPainter.height,
+        computedSize,
+      );
+
+      Widget textWidget;
+      if (fitToWidth) {
+        // For fit to width, use Container with Text that can wrap
+        textWidget = Container(
+          constraints: BoxConstraints(maxWidth: maxWidth!),
+          alignment: hAlign == 1
+              ? Alignment.center
+              : (hAlign == 2 ? Alignment.centerRight : Alignment.centerLeft),
+          child: Text(
+            text,
+            style: textStyle,
+            textAlign: textAlign,
+            softWrap: true,
+            overflow: TextOverflow.visible,
+          ),
+        );
+      } else {
+        // For non-wrapping text, use simple Text widget
+        textWidget = Text(text, style: textStyle, textAlign: textAlign);
+      }
+
       positionedLines.add(
         Positioned(
-          left: posX * screenSize.width,
-          top: posY * screenSize.height,
-          child: Text(text, style: textStyle),
+          left: hAlign == 1 && fitToWidth ? 0 : leftPosition,
+          top: topPosition,
+          width: hAlign == 1 && fitToWidth ? screenSize.width : null,
+          child: textWidget,
         ),
       );
     }
@@ -611,6 +733,10 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
       weight: _shaderSettings.titleWeight > 0
           ? _shaderSettings.titleWeight
           : _shaderSettings.textWeight,
+      fitToWidth: _shaderSettings.titleFitToWidth,
+      hAlign: _shaderSettings.titleHAlign,
+      vAlign: _shaderSettings.titleVAlign,
+      lineHeight: _shaderSettings.titleLineHeight,
     );
 
     addLine(
@@ -622,6 +748,10 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
       weight: _shaderSettings.subtitleWeight > 0
           ? _shaderSettings.subtitleWeight
           : _shaderSettings.textWeight,
+      fitToWidth: _shaderSettings.subtitleFitToWidth,
+      hAlign: _shaderSettings.subtitleHAlign,
+      vAlign: _shaderSettings.subtitleVAlign,
+      lineHeight: _shaderSettings.subtitleLineHeight,
     );
 
     addLine(
@@ -633,6 +763,10 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
       weight: _shaderSettings.artistWeight > 0
           ? _shaderSettings.artistWeight
           : _shaderSettings.textWeight,
+      fitToWidth: _shaderSettings.artistFitToWidth,
+      hAlign: _shaderSettings.artistHAlign,
+      vAlign: _shaderSettings.artistVAlign,
+      lineHeight: _shaderSettings.artistLineHeight,
     );
 
     return Stack(children: positionedLines);

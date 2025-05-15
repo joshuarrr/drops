@@ -14,8 +14,6 @@ class AppTheme {
     onError: Colors.white,
     surface: Colors.grey[100]!,
     onSurface: Colors.black,
-    background: Colors.white,
-    onBackground: Colors.black,
     surfaceTint: Colors.black,
   );
 
@@ -30,8 +28,6 @@ class AppTheme {
     onError: Colors.black,
     surface: Colors.grey[900]!,
     onSurface: Colors.white,
-    background: Colors.black,
-    onBackground: Colors.white,
     surfaceTint: Colors.white,
   );
 
@@ -93,22 +89,22 @@ class AppTheme {
       floatingLabelStyle: TextStyle(color: _lightColorScheme.primary),
     ),
     switchTheme: SwitchThemeData(
-      trackColor: MaterialStateProperty.resolveWith<Color?>((states) {
-        if (states.contains(MaterialState.selected)) {
+      trackColor: WidgetStateProperty.resolveWith<Color?>((states) {
+        if (states.contains(WidgetState.selected)) {
           return _lightColorScheme.primary.withOpacity(0.5);
         }
         return null;
       }),
-      thumbColor: MaterialStateProperty.all(_lightColorScheme.primary),
+      thumbColor: WidgetStateProperty.all(_lightColorScheme.primary),
     ),
     checkboxTheme: CheckboxThemeData(
-      fillColor: MaterialStateProperty.all(_lightColorScheme.primary),
+      fillColor: WidgetStateProperty.all(_lightColorScheme.primary),
     ),
     radioTheme: RadioThemeData(
-      fillColor: MaterialStateProperty.all(_lightColorScheme.primary),
+      fillColor: WidgetStateProperty.all(_lightColorScheme.primary),
     ),
     textTheme: _buildTextTheme(_lightColorScheme),
-    dialogTheme: DialogThemeData(backgroundColor: _lightColorScheme.background),
+    dialogTheme: DialogThemeData(backgroundColor: _lightColorScheme.surface),
   );
 
   // Dark theme
@@ -169,22 +165,22 @@ class AppTheme {
       floatingLabelStyle: TextStyle(color: _darkColorScheme.primary),
     ),
     switchTheme: SwitchThemeData(
-      trackColor: MaterialStateProperty.resolveWith<Color?>((states) {
-        if (states.contains(MaterialState.selected)) {
+      trackColor: WidgetStateProperty.resolveWith<Color?>((states) {
+        if (states.contains(WidgetState.selected)) {
           return _darkColorScheme.primary.withOpacity(0.5);
         }
         return null;
       }),
-      thumbColor: MaterialStateProperty.all(_darkColorScheme.primary),
+      thumbColor: WidgetStateProperty.all(_darkColorScheme.primary),
     ),
     checkboxTheme: CheckboxThemeData(
-      fillColor: MaterialStateProperty.all(_darkColorScheme.primary),
+      fillColor: WidgetStateProperty.all(_darkColorScheme.primary),
     ),
     radioTheme: RadioThemeData(
-      fillColor: MaterialStateProperty.all(_darkColorScheme.primary),
+      fillColor: WidgetStateProperty.all(_darkColorScheme.primary),
     ),
     textTheme: _buildTextTheme(_darkColorScheme),
-    dialogTheme: DialogThemeData(backgroundColor: _darkColorScheme.background),
+    dialogTheme: DialogThemeData(backgroundColor: _darkColorScheme.surface),
   );
 
   // Helper method to build consistent text themes

@@ -1,12 +1,10 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_shaders/flutter_shaders.dart';
-import 'dart:developer' as developer;
 import 'dart:math' as math;
 
 import '../models/effect_settings.dart';
 import '../models/animation_options.dart';
-import 'shader_program_loader.dart';
 
 /// Controls debug logging for shaders
 bool enableShaderDebugLogs = false;

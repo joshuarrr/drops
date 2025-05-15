@@ -183,13 +183,18 @@ class EffectControls {
     // ---------------------------------------------------------------
 
     // Generic reset header widget reused across aspects
-    Widget _buildResetRow(VoidCallback onReset) {
+    Widget buildResetRow(VoidCallback onReset) {
       return Align(
         alignment: Alignment.centerRight,
         child: TextButton.icon(
           style: TextButton.styleFrom(
             foregroundColor: sliderColor,
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+            backgroundColor: sliderColor.withOpacity(0.1),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+              side: BorderSide(color: Colors.transparent),
+            ),
           ),
           icon: const Icon(Icons.restore, size: 18),
           label: const Text('Reset'),
@@ -199,7 +204,7 @@ class EffectControls {
     }
 
     // Reset helpers for each aspect – mutate the provided settings object
-    void _resetColor() {
+    void resetColor() {
       final defaults = ShaderSettings();
       settings
         ..colorEnabled = false
@@ -215,7 +220,7 @@ class EffectControls {
         ..overlayAnimOptions = AnimationOptions();
     }
 
-    void _resetBlur() {
+    void resetBlur() {
       final defaults = ShaderSettings();
       settings
         ..blurEnabled = false
@@ -228,11 +233,11 @@ class EffectControls {
         ..blurAnimOptions = AnimationOptions();
     }
 
-    void _resetImage() {
+    void resetImage() {
       settings.fillScreen = false;
     }
 
-    void _resetText() {
+    void resetText() {
       final defaults = ShaderSettings();
       settings
         ..textEnabled = false
@@ -258,7 +263,23 @@ class EffectControls {
         ..artistSize = defaults.artistSize
         ..artistPosX = defaults.artistPosX
         ..artistPosY = defaults.artistPosY
-        ..artistWeight = defaults.artistWeight;
+        ..artistWeight = defaults.artistWeight
+        ..textFitToWidth = defaults.textFitToWidth
+        ..textHAlign = defaults.textHAlign
+        ..textVAlign = defaults.textVAlign
+        ..textLineHeight = defaults.textLineHeight
+        ..titleFitToWidth = defaults.titleFitToWidth
+        ..titleHAlign = defaults.titleHAlign
+        ..titleVAlign = defaults.titleVAlign
+        ..titleLineHeight = defaults.titleLineHeight
+        ..subtitleFitToWidth = defaults.subtitleFitToWidth
+        ..subtitleHAlign = defaults.subtitleHAlign
+        ..subtitleVAlign = defaults.subtitleVAlign
+        ..subtitleLineHeight = defaults.subtitleLineHeight
+        ..artistFitToWidth = defaults.artistFitToWidth
+        ..artistHAlign = defaults.artistHAlign
+        ..artistVAlign = defaults.artistVAlign
+        ..artistLineHeight = defaults.artistLineHeight;
     }
 
     // Helper function to enable the effect if needed when slider changes
@@ -298,8 +319,8 @@ class EffectControls {
     switch (aspect) {
       case ShaderAspect.color:
         return [
-          _buildResetRow(() {
-            _resetColor();
+          buildResetRow(() {
+            resetColor();
             onSettingsChanged(settings);
           }),
           const SizedBox(height: 8),
@@ -374,7 +395,7 @@ class EffectControls {
               ),
               Switch(
                 value: settings.colorAnimated,
-                activeColor: sliderColor,
+                activeThumbColor: sliderColor,
                 onChanged: (value) {
                   settings.colorAnimated = value;
                   if (!settings.colorEnabled) settings.colorEnabled = true;
@@ -419,7 +440,7 @@ class EffectControls {
               ),
               Switch(
                 value: settings.overlayAnimated,
-                activeColor: sliderColor,
+                activeThumbColor: sliderColor,
                 onChanged: (value) {
                   settings.overlayAnimated = value;
                   if (!settings.colorEnabled) settings.colorEnabled = true;
@@ -454,8 +475,8 @@ class EffectControls {
 
       case ShaderAspect.blur:
         return [
-          _buildResetRow(() {
-            _resetBlur();
+          buildResetRow(() {
+            resetBlur();
             onSettingsChanged(settings);
           }),
           const SizedBox(height: 8),
@@ -497,32 +518,66 @@ class EffectControls {
             sliderColor: sliderColor,
             defaultValue: 1.0 / 150.0,
           ),
-          // Blend mode chips
-          Wrap(
-            spacing: 6,
-            children: [
-              _buildBlendChip(
-                'Normal',
-                0,
-                settings,
-                sliderColor,
-                onSettingsChanged,
-              ),
-              _buildBlendChip(
-                'Multiply',
-                1,
-                settings,
-                sliderColor,
-                onSettingsChanged,
-              ),
-              _buildBlendChip(
-                'Screen',
-                2,
-                settings,
-                sliderColor,
-                onSettingsChanged,
-              ),
-            ],
+          // For ShaderAspect.blur case, replace the Wrap widget for blend modes with a segmented button
+          Padding(
+            padding: const EdgeInsets.only(top: 8, bottom: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Blend Mode',
+                  style: TextStyle(color: sliderColor, fontSize: 14),
+                ),
+                const SizedBox(height: 8),
+                SegmentedButton<int>(
+                  segments: const [
+                    ButtonSegment<int>(
+                      value: 0,
+                      label: Text('Normal', style: TextStyle(fontSize: 13)),
+                    ),
+                    ButtonSegment<int>(
+                      value: 1,
+                      label: Text('Multiply', style: TextStyle(fontSize: 13)),
+                    ),
+                    ButtonSegment<int>(
+                      value: 2,
+                      label: Text('Screen', style: TextStyle(fontSize: 13)),
+                    ),
+                  ],
+                  selected: {settings.blurBlendMode},
+                  onSelectionChanged: (Set<int> selection) {
+                    if (selection.isNotEmpty) {
+                      settings.blurBlendMode = selection.first;
+                      if (!settings.blurEnabled) settings.blurEnabled = true;
+                      onSettingsChanged(settings);
+                    }
+                  },
+                  style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.resolveWith<Color>((
+                      Set<MaterialState> states,
+                    ) {
+                      if (states.contains(MaterialState.selected)) {
+                        return sliderColor.withOpacity(0.3);
+                      }
+                      return sliderColor.withOpacity(0.1);
+                    }),
+                    foregroundColor: MaterialStateProperty.all(sliderColor),
+                    side: MaterialStateProperty.all(
+                      BorderSide(color: Colors.transparent),
+                    ),
+                    shape: MaterialStateProperty.all(
+                      RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    visualDensity: VisualDensity.compact,
+                    padding: MaterialStateProperty.all(
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
           // Toggle animation switch moved to bottom
           Row(
@@ -534,7 +589,7 @@ class EffectControls {
               ),
               Switch(
                 value: settings.blurAnimated,
-                activeColor: sliderColor,
+                activeThumbColor: sliderColor,
                 onChanged: (value) {
                   settings.blurAnimated = value;
                   if (enableLogging) {
@@ -576,8 +631,8 @@ class EffectControls {
 
       case ShaderAspect.image:
         return [
-          _buildResetRow(() {
-            _resetImage();
+          buildResetRow(() {
+            resetImage();
             onSettingsChanged(settings);
           }),
           const SizedBox(height: 8),
@@ -635,18 +690,21 @@ class EffectControls {
                       horizontal: 8,
                       vertical: 6,
                     ),
+                    filled: true,
+                    fillColor: sliderColor.withOpacity(0.1),
                     border: OutlineInputBorder(
-                      borderSide: BorderSide(
-                        color: sliderColor.withOpacity(0.5),
-                      ),
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.transparent),
                     ),
                     enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(
-                        color: sliderColor.withOpacity(0.5),
-                      ),
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.transparent),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: sliderColor),
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(
+                        color: sliderColor.withOpacity(0.3),
+                      ),
                     ),
                   ),
                   onChanged: (txt) {
@@ -836,8 +894,116 @@ class EffectControls {
             }
           }
 
+          // -------- Fit to width helpers ---------
+          bool getCurrentFitToWidth() {
+            switch (EffectControls.selectedTextLine) {
+              case TextLine.title:
+                return settings.titleFitToWidth;
+              case TextLine.subtitle:
+                return settings.subtitleFitToWidth;
+              case TextLine.artist:
+                return settings.artistFitToWidth;
+            }
+            return false;
+          }
+
+          void setCurrentFitToWidth(bool value) {
+            switch (EffectControls.selectedTextLine) {
+              case TextLine.title:
+                settings.titleFitToWidth = value;
+                break;
+              case TextLine.subtitle:
+                settings.subtitleFitToWidth = value;
+                break;
+              case TextLine.artist:
+                settings.artistFitToWidth = value;
+                break;
+            }
+          }
+
+          // -------- Horizontal alignment helpers ---------
+          int getCurrentHAlign() {
+            switch (EffectControls.selectedTextLine) {
+              case TextLine.title:
+                return settings.titleHAlign;
+              case TextLine.subtitle:
+                return settings.subtitleHAlign;
+              case TextLine.artist:
+                return settings.artistHAlign;
+            }
+            return 0; // Default to left
+          }
+
+          void setCurrentHAlign(int value) {
+            switch (EffectControls.selectedTextLine) {
+              case TextLine.title:
+                settings.titleHAlign = value;
+                break;
+              case TextLine.subtitle:
+                settings.subtitleHAlign = value;
+                break;
+              case TextLine.artist:
+                settings.artistHAlign = value;
+                break;
+            }
+          }
+
+          // -------- Vertical alignment helpers ---------
+          int getCurrentVAlign() {
+            switch (EffectControls.selectedTextLine) {
+              case TextLine.title:
+                return settings.titleVAlign;
+              case TextLine.subtitle:
+                return settings.subtitleVAlign;
+              case TextLine.artist:
+                return settings.artistVAlign;
+            }
+            return 0; // Default to top
+          }
+
+          void setCurrentVAlign(int value) {
+            switch (EffectControls.selectedTextLine) {
+              case TextLine.title:
+                settings.titleVAlign = value;
+                break;
+              case TextLine.subtitle:
+                settings.subtitleVAlign = value;
+                break;
+              case TextLine.artist:
+                settings.artistVAlign = value;
+                break;
+            }
+          }
+
+          // -------- Line height helpers ---------
+          double getCurrentLineHeight() {
+            switch (EffectControls.selectedTextLine) {
+              case TextLine.title:
+                return settings.titleLineHeight;
+              case TextLine.subtitle:
+                return settings.subtitleLineHeight;
+              case TextLine.artist:
+                return settings.artistLineHeight;
+            }
+            return 1.2; // Default line height
+          }
+
+          void setCurrentLineHeight(double value) {
+            switch (EffectControls.selectedTextLine) {
+              case TextLine.title:
+                settings.titleLineHeight = value;
+                break;
+              case TextLine.subtitle:
+                settings.subtitleLineHeight = value;
+                break;
+              case TextLine.artist:
+                settings.artistLineHeight = value;
+                break;
+            }
+          }
+
           // Helper to convert int weight to FontWeight
-          FontWeight _toFontWeight(int weight) {
+          FontWeight toFontWeight(int weight) {
             switch (weight) {
               case 100:
                 return FontWeight.w100;
@@ -862,7 +1028,7 @@ class EffectControls {
             }
           }
 
-          int _fromFontWeight(FontWeight fw) {
+          int fromFontWeight(FontWeight fw) {
             switch (fw) {
               case FontWeight.w100:
                 return 100;
@@ -891,8 +1057,8 @@ class EffectControls {
           List<Widget> widgets = [];
 
           widgets.add(
-            _buildResetRow(() {
-              _resetText();
+            buildResetRow(() {
+              resetText();
               onSettingsChanged(settings);
             }),
           );
@@ -908,6 +1074,10 @@ class EffectControls {
                   selected: EffectControls.selectedTextLine == line,
                   selectedColor: sliderColor.withOpacity(0.3),
                   backgroundColor: sliderColor.withOpacity(0.1),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    side: BorderSide(color: Colors.transparent),
+                  ),
                   onSelected: (_) {
                     EffectControls.selectedTextLine = line;
                     onSettingsChanged(settings);
@@ -932,7 +1102,7 @@ class EffectControls {
               selectedFont: getCurrentFont().isEmpty
                   ? 'Default'
                   : getCurrentFont(),
-              selectedWeight: _toFontWeight(getCurrentWeight()),
+              selectedWeight: toFontWeight(getCurrentWeight()),
               labelText: 'Font',
               onFontSelected: (font) {
                 final selected = font == 'Default' ? '' : font;
@@ -941,7 +1111,7 @@ class EffectControls {
                 onSettingsChanged(settings);
               },
               onWeightSelected: (fw) {
-                setCurrentWeight(_fromFontWeight(fw));
+                setCurrentWeight(fromFontWeight(fw));
                 if (!settings.textEnabled) settings.textEnabled = true;
                 onSettingsChanged(settings);
               },
@@ -960,6 +1130,48 @@ class EffectControls {
             ),
           );
 
+          // Add Fit to Width checkbox
+          widgets.add(
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Fit to Width',
+                  style: TextStyle(color: sliderColor, fontSize: 14),
+                ),
+                Checkbox(
+                  value: getCurrentFitToWidth(),
+                  checkColor: Colors.black,
+                  activeColor: sliderColor,
+                  side: BorderSide(color: sliderColor),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setCurrentFitToWidth(value);
+                      if (!settings.textEnabled) settings.textEnabled = true;
+                      onSettingsChanged(settings);
+                    }
+                  },
+                ),
+              ],
+            ),
+          );
+
+          // Only show line height slider if fitToWidth is enabled
+          if (getCurrentFitToWidth()) {
+            widgets.add(
+              buildSlider(
+                label: 'Line Height',
+                value: getCurrentLineHeight() / 2.0, // Scale to 0-1 range
+                onChanged: (v) => onSliderChanged(
+                  v,
+                  (val) => setCurrentLineHeight(val * 2.0),
+                ), // Scale to 0-2 range
+                sliderColor: sliderColor,
+                defaultValue: 0.6, // Default 1.2 scaled to 0-1 range
+              ),
+            );
+          }
+
           widgets.add(
             buildSlider(
               label: 'Position X',
@@ -977,6 +1189,48 @@ class EffectControls {
               onChanged: (v) => onSliderChanged(v, setCurrentPosY),
               sliderColor: sliderColor,
               defaultValue: 0.1,
+            ),
+          );
+
+          // Add horizontal alignment controls
+          widgets.add(
+            buildAlignmentControls(
+              label: 'Horizontal Alignment',
+              currentValue: getCurrentHAlign(),
+              onChanged: (value) {
+                setCurrentHAlign(value);
+                if (!settings.textEnabled) settings.textEnabled = true;
+                onSettingsChanged(settings);
+              },
+              sliderColor: sliderColor,
+              icons: const [
+                Icons.format_align_left,
+                Icons.format_align_center,
+                Icons.format_align_right,
+              ],
+              tooltips: const ['Left Align', 'Center Align', 'Right Align'],
+            ),
+          );
+
+          widgets.add(const SizedBox(height: 16));
+
+          // Add vertical alignment controls
+          widgets.add(
+            buildAlignmentControls(
+              label: 'Vertical Alignment',
+              currentValue: getCurrentVAlign(),
+              onChanged: (value) {
+                setCurrentVAlign(value);
+                if (!settings.textEnabled) settings.textEnabled = true;
+                onSettingsChanged(settings);
+              },
+              sliderColor: sliderColor,
+              icons: const [
+                Icons.vertical_align_top,
+                Icons.vertical_align_center,
+                Icons.vertical_align_bottom,
+              ],
+              tooltips: const ['Top Align', 'Middle Align', 'Bottom Align'],
             ),
           );
 
@@ -1105,12 +1359,57 @@ class EffectControls {
       selected: settings.blurBlendMode == mode,
       selectedColor: sliderColor.withOpacity(0.3),
       backgroundColor: sliderColor.withOpacity(0.1),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(color: Colors.transparent),
+      ),
       onSelected: (selected) {
         if (selected) {
           settings.blurBlendMode = mode;
           onSettingsChanged(settings);
         }
       },
+    );
+  }
+
+  // Helper to build text alignment button group
+  static Widget buildAlignmentControls({
+    required String label,
+    required int currentValue,
+    required ValueChanged<int> onChanged,
+    required Color sliderColor,
+    required List<IconData> icons,
+    required List<String> tooltips,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: TextStyle(color: sliderColor, fontSize: 14)),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: List.generate(
+            icons.length,
+            (index) => Tooltip(
+              message: tooltips[index],
+              child: InkWell(
+                onTap: () => onChanged(index),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: currentValue == index
+                        ? sliderColor.withOpacity(0.3)
+                        : sliderColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.transparent),
+                  ),
+                  child: Icon(icons[index], color: sliderColor, size: 20),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

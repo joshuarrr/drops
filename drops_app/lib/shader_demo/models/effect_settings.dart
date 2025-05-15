@@ -67,6 +67,28 @@ class ShaderSettings {
   int _subtitleWeight;
   int _artistWeight;
 
+  // Text layout settings
+  bool _textFitToWidth; // General setting for all text
+  int _textHAlign; // 0=left, 1=center, 2=right
+  int _textVAlign; // 0=top, 1=middle, 2=bottom
+  double _textLineHeight; // Multiplier for line height (default 1.2)
+
+  // Per-line fit and alignment
+  bool _titleFitToWidth;
+  int _titleHAlign; // 0=left, 1=center, 2=right
+  int _titleVAlign; // 0=top, 1=middle, 2=bottom
+  double _titleLineHeight; // Line height multiplier
+
+  bool _subtitleFitToWidth;
+  int _subtitleHAlign;
+  int _subtitleVAlign;
+  double _subtitleLineHeight;
+
+  bool _artistFitToWidth;
+  int _artistHAlign;
+  int _artistVAlign;
+  double _artistLineHeight;
+
   // Flag to control logging
   static bool enableLogging = false;
 
@@ -86,58 +108,66 @@ class ShaderSettings {
   double get blurAmount => _blurAmount;
   set blurAmount(double value) {
     _blurAmount = value;
-    if (enableLogging)
+    if (enableLogging) {
       print("SETTINGS: blurAmount set to ${value.toStringAsFixed(3)}");
+    }
   }
 
   double get blurRadius => _blurRadius;
   set blurRadius(double value) {
     _blurRadius = value;
-    if (enableLogging)
+    if (enableLogging) {
       print("SETTINGS: blurRadius set to ${value.toStringAsFixed(3)}");
+    }
   }
 
   // Color settings with logging
   double get hue => _hue;
   set hue(double value) {
     _hue = value;
-    if (enableLogging)
+    if (enableLogging) {
       print("SETTINGS: hue set to ${value.toStringAsFixed(3)}");
+    }
   }
 
   double get saturation => _saturation;
   set saturation(double value) {
     _saturation = value;
-    if (enableLogging)
+    if (enableLogging) {
       print("SETTINGS: saturation set to ${value.toStringAsFixed(3)}");
+    }
   }
 
   double get lightness => _lightness;
   set lightness(double value) {
     _lightness = value;
-    if (enableLogging)
+    if (enableLogging) {
       print("SETTINGS: lightness set to ${value.toStringAsFixed(3)}");
+    }
   }
 
   double get overlayHue => _overlayHue;
   set overlayHue(double value) {
     _overlayHue = value;
-    if (enableLogging)
+    if (enableLogging) {
       print("SETTINGS: overlayHue set to ${value.toStringAsFixed(3)}");
+    }
   }
 
   double get overlayIntensity => _overlayIntensity;
   set overlayIntensity(double value) {
     _overlayIntensity = value;
-    if (enableLogging)
+    if (enableLogging) {
       print("SETTINGS: overlayIntensity set to ${value.toStringAsFixed(3)}");
+    }
   }
 
   double get overlayOpacity => _overlayOpacity;
   set overlayOpacity(double value) {
     _overlayOpacity = value;
-    if (enableLogging)
+    if (enableLogging) {
       print("SETTINGS: overlayOpacity set to ${value.toStringAsFixed(3)}");
+    }
   }
 
   // Blur animation toggle with logging
@@ -165,15 +195,17 @@ class ShaderSettings {
   double get blurOpacity => _blurOpacity;
   set blurOpacity(double value) {
     _blurOpacity = value;
-    if (enableLogging)
+    if (enableLogging) {
       print("SETTINGS: blurOpacity set to ${value.toStringAsFixed(3)}");
+    }
   }
 
   double get blurFacets => _blurFacets;
   set blurFacets(double value) {
     _blurFacets = value;
-    if (enableLogging)
+    if (enableLogging) {
       print("SETTINGS: blurFacets set to ${value.toStringAsFixed(3)}");
+    }
   }
 
   int get blurBlendMode => _blurBlendMode;
@@ -361,6 +393,107 @@ class ShaderSettings {
     if (enableLogging) print("SETTINGS: blurAnimOptions updated");
   }
 
+  // Text layout getters/setters
+  bool get textFitToWidth => _textFitToWidth;
+  set textFitToWidth(bool v) {
+    _textFitToWidth = v;
+    if (enableLogging) print("SETTINGS: textFitToWidth set to $v");
+  }
+
+  int get textHAlign => _textHAlign;
+  set textHAlign(int v) {
+    _textHAlign = v;
+    if (enableLogging) print("SETTINGS: textHAlign set to $v");
+  }
+
+  int get textVAlign => _textVAlign;
+  set textVAlign(int v) {
+    _textVAlign = v;
+    if (enableLogging) print("SETTINGS: textVAlign set to $v");
+  }
+
+  // Title layout
+  bool get titleFitToWidth => _titleFitToWidth;
+  set titleFitToWidth(bool v) {
+    _titleFitToWidth = v;
+    if (enableLogging) print("SETTINGS: titleFitToWidth set to $v");
+  }
+
+  int get titleHAlign => _titleHAlign;
+  set titleHAlign(int v) {
+    _titleHAlign = v;
+    if (enableLogging) print("SETTINGS: titleHAlign set to $v");
+  }
+
+  int get titleVAlign => _titleVAlign;
+  set titleVAlign(int v) {
+    _titleVAlign = v;
+    if (enableLogging) print("SETTINGS: titleVAlign set to $v");
+  }
+
+  // Subtitle layout
+  bool get subtitleFitToWidth => _subtitleFitToWidth;
+  set subtitleFitToWidth(bool v) {
+    _subtitleFitToWidth = v;
+    if (enableLogging) print("SETTINGS: subtitleFitToWidth set to $v");
+  }
+
+  int get subtitleHAlign => _subtitleHAlign;
+  set subtitleHAlign(int v) {
+    _subtitleHAlign = v;
+    if (enableLogging) print("SETTINGS: subtitleHAlign set to $v");
+  }
+
+  int get subtitleVAlign => _subtitleVAlign;
+  set subtitleVAlign(int v) {
+    _subtitleVAlign = v;
+    if (enableLogging) print("SETTINGS: subtitleVAlign set to $v");
+  }
+
+  // Artist layout
+  bool get artistFitToWidth => _artistFitToWidth;
+  set artistFitToWidth(bool v) {
+    _artistFitToWidth = v;
+    if (enableLogging) print("SETTINGS: artistFitToWidth set to $v");
+  }
+
+  int get artistHAlign => _artistHAlign;
+  set artistHAlign(int v) {
+    _artistHAlign = v;
+    if (enableLogging) print("SETTINGS: artistHAlign set to $v");
+  }
+
+  int get artistVAlign => _artistVAlign;
+  set artistVAlign(int v) {
+    _artistVAlign = v;
+    if (enableLogging) print("SETTINGS: artistVAlign set to $v");
+  }
+
+  // Line height getters/setters
+  double get textLineHeight => _textLineHeight;
+  set textLineHeight(double v) {
+    _textLineHeight = v;
+    if (enableLogging) print("SETTINGS: textLineHeight set to $v");
+  }
+
+  double get titleLineHeight => _titleLineHeight;
+  set titleLineHeight(double v) {
+    _titleLineHeight = v;
+    if (enableLogging) print("SETTINGS: titleLineHeight set to $v");
+  }
+
+  double get subtitleLineHeight => _subtitleLineHeight;
+  set subtitleLineHeight(double v) {
+    _subtitleLineHeight = v;
+    if (enableLogging) print("SETTINGS: subtitleLineHeight set to $v");
+  }
+
+  double get artistLineHeight => _artistLineHeight;
+  set artistLineHeight(double v) {
+    _artistLineHeight = v;
+    if (enableLogging) print("SETTINGS: artistLineHeight set to $v");
+  }
+
   ShaderSettings({
     // Enable flags
     bool colorEnabled = false,
@@ -435,6 +568,28 @@ class ShaderSettings {
     int titleWeight = 400,
     int subtitleWeight = 400,
     int artistWeight = 400,
+
+    // Text layout defaults
+    bool textFitToWidth = false,
+    int textHAlign = 0, // left
+    int textVAlign = 0, // top
+    double textLineHeight = 1.2,
+
+    // Per-line layout defaults
+    bool titleFitToWidth = false,
+    int titleHAlign = 0,
+    int titleVAlign = 0,
+    double titleLineHeight = 1.2,
+
+    bool subtitleFitToWidth = false,
+    int subtitleHAlign = 0,
+    int subtitleVAlign = 0,
+    double subtitleLineHeight = 1.2,
+
+    bool artistFitToWidth = false,
+    int artistHAlign = 0,
+    int artistVAlign = 0,
+    double artistLineHeight = 1.2,
   }) : _colorEnabled = colorEnabled,
        _blurEnabled = blurEnabled,
        _hue = hue,
@@ -478,7 +633,23 @@ class ShaderSettings {
        _artistFont = artistFont,
        _artistSize = artistSize,
        _artistPosX = artistPosX,
-       _artistPosY = artistPosY {
+       _artistPosY = artistPosY,
+       _textFitToWidth = textFitToWidth,
+       _textHAlign = textHAlign,
+       _textVAlign = textVAlign,
+       _textLineHeight = textLineHeight,
+       _titleFitToWidth = titleFitToWidth,
+       _titleHAlign = titleHAlign,
+       _titleVAlign = titleVAlign,
+       _titleLineHeight = titleLineHeight,
+       _subtitleFitToWidth = subtitleFitToWidth,
+       _subtitleHAlign = subtitleHAlign,
+       _subtitleVAlign = subtitleVAlign,
+       _subtitleLineHeight = subtitleLineHeight,
+       _artistFitToWidth = artistFitToWidth,
+       _artistHAlign = artistHAlign,
+       _artistVAlign = artistVAlign,
+       _artistLineHeight = artistLineHeight {
     if (enableLogging) print("SETTINGS: ShaderSettings initialized");
   }
 
@@ -532,6 +703,22 @@ class ShaderSettings {
       'titleWeight': _titleWeight,
       'subtitleWeight': _subtitleWeight,
       'artistWeight': _artistWeight,
+      'textFitToWidth': _textFitToWidth,
+      'textHAlign': _textHAlign,
+      'textVAlign': _textVAlign,
+      'textLineHeight': _textLineHeight,
+      'titleFitToWidth': _titleFitToWidth,
+      'titleHAlign': _titleHAlign,
+      'titleVAlign': _titleVAlign,
+      'titleLineHeight': _titleLineHeight,
+      'subtitleFitToWidth': _subtitleFitToWidth,
+      'subtitleHAlign': _subtitleHAlign,
+      'subtitleVAlign': _subtitleVAlign,
+      'subtitleLineHeight': _subtitleLineHeight,
+      'artistFitToWidth': _artistFitToWidth,
+      'artistHAlign': _artistHAlign,
+      'artistVAlign': _artistVAlign,
+      'artistLineHeight': _artistLineHeight,
     };
   }
 
@@ -593,6 +780,23 @@ class ShaderSettings {
       titleWeight: (map['titleWeight'] as int?) ?? 400,
       subtitleWeight: (map['subtitleWeight'] as int?) ?? 400,
       artistWeight: (map['artistWeight'] as int?) ?? 400,
+      textFitToWidth: map['textFitToWidth'] as bool? ?? false,
+      textHAlign: map['textHAlign'] as int? ?? 0,
+      textVAlign: map['textVAlign'] as int? ?? 0,
+      textLineHeight: (map['textLineHeight'] as num?)?.toDouble() ?? 1.2,
+      titleFitToWidth: map['titleFitToWidth'] as bool? ?? false,
+      titleHAlign: map['titleHAlign'] as int? ?? 0,
+      titleVAlign: map['titleVAlign'] as int? ?? 0,
+      titleLineHeight: (map['titleLineHeight'] as num?)?.toDouble() ?? 1.2,
+      subtitleFitToWidth: map['subtitleFitToWidth'] as bool? ?? false,
+      subtitleHAlign: map['subtitleHAlign'] as int? ?? 0,
+      subtitleVAlign: map['subtitleVAlign'] as int? ?? 0,
+      subtitleLineHeight:
+          (map['subtitleLineHeight'] as num?)?.toDouble() ?? 1.2,
+      artistFitToWidth: map['artistFitToWidth'] as bool? ?? false,
+      artistHAlign: map['artistHAlign'] as int? ?? 0,
+      artistVAlign: map['artistVAlign'] as int? ?? 0,
+      artistLineHeight: (map['artistLineHeight'] as num?)?.toDouble() ?? 1.2,
     );
   }
 }

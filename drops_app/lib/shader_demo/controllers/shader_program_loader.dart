@@ -22,21 +22,17 @@ class ShaderProgramLoader {
 
   // Get color shader program
   Future<ui.FragmentProgram> get colorShaderProgram async {
-    if (_colorShaderProgram == null) {
-      _colorShaderProgram = await ui.FragmentProgram.fromAsset(
+    _colorShaderProgram ??= await ui.FragmentProgram.fromAsset(
         'assets/shaders/color_effect.frag',
       );
-    }
     return _colorShaderProgram!;
   }
 
   // Get blur shader program
   Future<ui.FragmentProgram> get blurShaderProgram async {
-    if (_blurShaderProgram == null) {
-      _blurShaderProgram = await ui.FragmentProgram.fromAsset(
+    _blurShaderProgram ??= await ui.FragmentProgram.fromAsset(
         'assets/shaders/blur_effect.frag',
       );
-    }
     return _blurShaderProgram!;
   }
 }

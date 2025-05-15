@@ -71,9 +71,9 @@ class EffectController {
 
     // Use custom shader implementation
     return ColorEffectShader(
-      child: child,
       settings: settings,
       animationValue: animationValue,
+      child: child,
     );
   }
 
@@ -91,9 +91,9 @@ class EffectController {
 
     // Use custom shader implementation
     return BlurEffectShader(
-      child: child,
       settings: settings,
       animationValue: animationValue,
+      child: child,
     );
   }
 }

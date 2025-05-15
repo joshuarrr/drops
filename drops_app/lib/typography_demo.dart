@@ -98,7 +98,7 @@ class _TypographyDemoState extends State<TypographyDemo> {
                     style: _safeFontStyle(font, theme, textColor),
                   ),
                 );
-              }).toList(),
+              }),
             ],
           ),
         ),
