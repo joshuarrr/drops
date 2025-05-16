@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:google_fonts/google_fonts.dart';
+import '../theme/custom_fonts.dart';
 
 /// Utility that discovers bundled Google Font families from `AssetManifest.json`.
 ///
@@ -49,6 +50,29 @@ class FontUtils {
           .where((f) => f.isNotEmpty)
           .toSet();
 
+      // Add League fonts
+      final Set<String> leagueFonts = {
+        CustomFonts.leagueGothicFamily,
+        CustomFonts.leagueSpartanFamily,
+        CustomFonts.leagueScriptFamily,
+        CustomFonts.ostrichSansFamily,
+        CustomFonts.ostrichSansInlineFamily,
+        CustomFonts.ostrichSansRoundedFamily,
+        CustomFonts.ostrichSansDashedFamily,
+        CustomFonts.orbitronFamily,
+        CustomFonts.knewaveFamily,
+        CustomFonts.junctionFamily,
+        CustomFonts.goudyBookletterFamily,
+        CustomFonts.goudyStMFamily,
+        CustomFonts.blackoutSunriseFamily,
+        CustomFonts.blackoutMidnightFamily,
+        CustomFonts.blackoutTwoAmFamily,
+        CustomFonts.snigletFamily,
+        CustomFonts.lindenHillFamily,
+      };
+
+      families.addAll(leagueFonts);
+
       final list = families.toList()..sort();
       _cachedFamilies = list;
       return list;
@@ -93,6 +117,27 @@ class FontSelector extends StatelessWidget {
   /// Optional text label shown before the dropdown.
   final String? labelText;
 
+  // Method to check if a font is a League font
+  bool _isLeagueFont(String family) {
+    return family == CustomFonts.leagueGothicFamily ||
+        family == CustomFonts.leagueSpartanFamily ||
+        family == CustomFonts.leagueScriptFamily ||
+        family == CustomFonts.ostrichSansFamily ||
+        family == CustomFonts.ostrichSansInlineFamily ||
+        family == CustomFonts.ostrichSansRoundedFamily ||
+        family == CustomFonts.ostrichSansDashedFamily ||
+        family == CustomFonts.orbitronFamily ||
+        family == CustomFonts.knewaveFamily ||
+        family == CustomFonts.junctionFamily ||
+        family == CustomFonts.goudyBookletterFamily ||
+        family == CustomFonts.goudyStMFamily ||
+        family == CustomFonts.blackoutSunriseFamily ||
+        family == CustomFonts.blackoutMidnightFamily ||
+        family == CustomFonts.blackoutTwoAmFamily ||
+        family == CustomFonts.snigletFamily ||
+        family == CustomFonts.lindenHillFamily;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -121,13 +166,18 @@ class FontSelector extends StatelessWidget {
         items: items.map<DropdownMenuItem<String>>((String family) {
           TextStyle? previewStyle;
           if (family != 'Default') {
-            try {
-              previewStyle = GoogleFonts.getFont(
-                family,
-                textStyle: TextStyle(color: textColor),
-              );
-            } catch (_) {
+            // Handle League fonts differently from Google fonts
+            if (_isLeagueFont(family)) {
               previewStyle = TextStyle(fontFamily: family, color: textColor);
+            } else {
+              try {
+                previewStyle = GoogleFonts.getFont(
+                  family,
+                  textStyle: TextStyle(color: textColor),
+                );
+              } catch (_) {
+                previewStyle = TextStyle(fontFamily: family, color: textColor);
+              }
             }
           }
           return DropdownMenuItem<String>(
@@ -207,18 +257,29 @@ class FontSelector extends StatelessWidget {
         final weight = entry.key;
         final label = '${entry.value} (${weight.index + 1}00)';
         TextStyle preview;
-        try {
-          preview = GoogleFonts.getFont(
-            selectedFont == 'Default' ? 'Roboto' : selectedFont,
-            textStyle: TextStyle(color: textColor, fontWeight: weight),
-          );
-        } catch (_) {
+
+        // Handle League fonts differently for weight preview
+        if (selectedFont != 'Default' && _isLeagueFont(selectedFont)) {
           preview = TextStyle(
             color: textColor,
             fontWeight: weight,
-            fontFamily: selectedFont == 'Default' ? null : selectedFont,
+            fontFamily: selectedFont,
           );
+        } else {
+          try {
+            preview = GoogleFonts.getFont(
+              selectedFont == 'Default' ? 'Roboto' : selectedFont,
+              textStyle: TextStyle(color: textColor, fontWeight: weight),
+            );
+          } catch (_) {
+            preview = TextStyle(
+              color: textColor,
+              fontWeight: weight,
+              fontFamily: selectedFont == 'Default' ? null : selectedFont,
+            );
+          }
         }
+
         return DropdownMenuItem<FontWeight>(
           value: weight,
           child: Text(label, style: preview),
