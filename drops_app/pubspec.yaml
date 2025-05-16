@@ -41,6 +41,7 @@ dependencies:
   path_provider: ^2.1.2
   shared_preferences: ^2.2.2
   uuid: ^4.2.1
+  url_launcher: ^6.3.1
 
 dev_dependencies:
   flutter_test:
@@ -72,7 +73,7 @@ flutter:
     - assets/img/artists/
     - assets/google_fonts/Alumni_Sans/
     - assets/google_fonts/Averia_Serif_Libre/
-    - assets/google_fonts/Orbitron/
+    # - assets/google_fonts/Orbitron/  # Removed - using League version instead
     - assets/google_fonts/Anaheim/
     - assets/google_fonts/Danfo/
     - assets/google_fonts/Bree_Serif/
@@ -89,6 +90,7 @@ flutter:
     - assets/google_fonts/Instrument_Serif/
     - assets/google_fonts/Tektur/
     - assets/google_fonts/Asap_Condensed/
+    - assets/fonts/league/
 
   shaders:
     - assets/shaders/color_effect.frag
@@ -128,3 +130,128 @@ flutter:
     - family: Geist Mono
       fonts:
         - asset: assets/google_fonts/Geist_Mono/GeistMono[wght].ttf
+    - family: League Gothic
+      fonts:
+        - asset: assets/fonts/league/LeagueGothic-Regular.ttf
+    - family: League Spartan
+      fonts:
+        - asset: assets/fonts/league/LeagueSpartan-VF.ttf
+    - family: Ostrich Sans
+      fonts:
+        - asset: assets/fonts/league/ostrich-sans-regular.ttf
+          weight: 400
+        - asset: assets/fonts/league/ostrich-sans-bold.ttf
+          weight: 700
+        - asset: assets/fonts/league/ostrich-sans-black.ttf
+          weight: 900
+        - asset: assets/fonts/league/ostrich-sans-light.ttf
+          weight: 300
+        - asset: assets/fonts/league/OstrichSans-Medium.otf
+          weight: 500
+        - asset: assets/fonts/league/OstrichSans-Heavy.otf
+          weight: 800
+    - family: Orbitron
+      fonts:
+        - asset: assets/fonts/league/Orbitron Medium.ttf
+          weight: 500
+        - asset: assets/fonts/league/Orbitron Light.ttf
+          weight: 300
+        - asset: assets/fonts/league/Orbitron Bold.ttf
+          weight: 700
+        - asset: assets/fonts/league/Orbitron Black.ttf
+          weight: 900
+        - asset: assets/fonts/league/Orbitron Medium.otf
+          weight: 500
+        - asset: assets/fonts/league/Orbitron Light.otf
+          weight: 300
+        - asset: assets/fonts/league/Orbitron Bold.otf
+          weight: 700
+        - asset: assets/fonts/league/Orbitron Black.otf
+          weight: 900
+        - asset: assets/fonts/league/orbitron-medium-webfont.ttf
+          weight: 500
+        - asset: assets/fonts/league/orbitron-light-webfont.ttf
+          weight: 300
+        - asset: assets/fonts/league/orbitron-bold-webfont.ttf
+          weight: 700
+        - asset: assets/fonts/league/orbitron-black-webfont.ttf
+          weight: 900
+    - family: Knewave
+      fonts:
+        - asset: assets/fonts/league/knewave.ttf
+        - asset: assets/fonts/league/knewave.otf
+        - asset: assets/fonts/league/knewave-webfont.ttf
+        - asset: assets/fonts/league/knewave-outline.ttf
+          style: italic
+        - asset: assets/fonts/league/knewave-outline.otf
+          style: italic
+        - asset: assets/fonts/league/knewave-outline-webfont.ttf
+          style: italic
+    - family: Junction
+      fonts:
+        - asset: assets/fonts/league/junction-regular.ttf
+        - asset: assets/fonts/league/junction-light.ttf
+          weight: 300
+        - asset: assets/fonts/league/junction-bold.ttf
+          weight: 700
+    - family: Goudy Bookletter 1911
+      fonts:
+        - asset: assets/fonts/league/goudy_bookletter_1911-webfont.ttf
+        - asset: assets/fonts/league/GoudyBookletter1911.otf
+    - family: Blackout Sunrise
+      fonts:
+        - asset: assets/fonts/league/blackout_sunrise-webfont.ttf
+        - asset: assets/fonts/league/Blackout Sunrise.ttf
+    - family: Blackout Midnight
+      fonts:
+        - asset: assets/fonts/league/blackout_midnight-webfont.ttf
+        - asset: assets/fonts/league/Blackout Midnight.ttf
+    - family: Blackout Two AM
+      fonts:
+        - asset: assets/fonts/league/blackout_two_am-webfont.ttf
+        - asset: assets/fonts/league/Blackout Two AM.ttf
+        - asset: assets/fonts/league/Blackout 2 AM.ttf
+    - family: Sniglet
+      fonts:
+        - asset: assets/fonts/league/Sniglet-webfont.ttf
+        - asset: assets/fonts/league/Sniglet Regular.ttf
+        - asset: assets/fonts/league/Sniglet Regular.otf
+    - family: Linden Hill
+      fonts:
+        - asset: assets/fonts/league/LindenHill-webfont.ttf
+        - asset: assets/fonts/league/LindenHill-Italic-webfont.ttf
+          style: italic
+        - asset: assets/fonts/league/Linden Hill.otf
+        - asset: assets/fonts/league/Linden Hill Italic.otf
+          style: italic
+    - family: League Script
+      fonts:
+        - asset: assets/fonts/league/LeagueScriptNumberOne-webfont.ttf
+        - asset: assets/fonts/league/LeagueScriptNumberOne.otf
+    - family: Ostrich Sans Inline
+      fonts:
+        - asset: assets/fonts/league/ostrich-sans-inline-regular.ttf
+        - asset: assets/fonts/league/ostrich-sans-inline-italic.ttf
+          style: italic
+        - asset: assets/fonts/league/OstrichSansInline-Regular.otf
+        - asset: assets/fonts/league/OstrichSansInline-Italic.otf
+          style: italic
+    - family: Ostrich Sans Rounded
+      fonts:
+        - asset: assets/fonts/league/ostrich-sans-rounded.ttf
+        - asset: assets/fonts/league/OstrichSansRounded-Medium.otf
+    - family: Ostrich Sans Dashed
+      fonts:
+        - asset: assets/fonts/league/ostrich-sans-dashed.ttf
+        - asset: assets/fonts/league/OstrichSansDashed-Medium.otf
+    - family: GoudyStM
+      fonts:
+        - asset: assets/fonts/league/GoudyStM-webfont.ttf
+        - asset: assets/fonts/league/GoudyStM-Italic-webfont.ttf
+          style: italic
+        - asset: assets/fonts/league/OFLGoudyStM.otf
+        - asset: assets/fonts/league/OFLGoudyStM-Italic.otf
+          style: italic
+        - asset: assets/fonts/league/OFLGoudyStMTT.ttf
+        - asset: assets/fonts/league/OFLGoudyStMTT-Italic.ttf
+          style: italic

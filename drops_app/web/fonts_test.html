@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web Fonts Test</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .font-sample {
+      margin-bottom: 30px;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    .font-name {
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    .font-demo {
+      font-size: 32px;
+      line-height: 1.2;
+    }
+    
+    /* Font declarations */
+    @font-face { 
+      font-family: 'Lemon'; 
+      src: url('https://fontlibrary.org/assets/fonts/lemon/7d50c9c6576dc993ade0c468f3036ba3/684996e569a2f97407ef168b29f5a05f/LemonRegular.ttf') format('truetype');
+      font-weight: normal; 
+      font-style: normal;
+      font-display: swap;
+    }
+    
+    @font-face { 
+      font-family: 'League Gothic'; 
+      src: url('https://cdn.jsdelivr.net/gh/theleagueof/league-gothic@master/webfonts/leaguegothic-regular-webfont.woff') format('woff');
+      font-weight: normal; 
+      font-style: normal;
+      font-display: swap;
+    }
+    
+    @font-face { 
+      font-family: 'League Spartan'; 
+      src: url('https://cdn.jsdelivr.net/gh/theleagueof/league-spartan@master/webfonts/leaguespartan-bold-webfont.woff') format('woff');
+      font-weight: normal; 
+      font-style: normal;
+      font-display: swap;
+    }
+    
+    @font-face { 
+      font-family: 'Ostrich Sans'; 
+      src: url('https://cdn.jsdelivr.net/gh/theleagueof/ostrich-sans@master/webfonts/ostrichsans-bold-webfont.woff') format('woff');
+      font-weight: normal; 
+      font-style: normal;
+      font-display: swap;
+    }
+  </style>
+</head>
+<body>
+  <h1>Web Fonts Test</h1>
+  
+  <div class="font-sample">
+    <div class="font-name">System Font (for comparison)</div>
+    <div class="font-demo">The quick brown fox jumps over the lazy dog.</div>
+  </div>
+  
+  <div class="font-sample">
+    <div class="font-name">Lemon (FontLibrary)</div>
+    <div class="font-demo" style="font-family: 'Lemon', serif;">The quick brown fox jumps over the lazy dog.</div>
+  </div>
+  
+  <div class="font-sample">
+    <div class="font-name">League Gothic (League of Moveable Type)</div>
+    <div class="font-demo" style="font-family: 'League Gothic', sans-serif;">The quick brown fox jumps over the lazy dog.</div>
+  </div>
+  
+  <div class="font-sample">
+    <div class="font-name">League Spartan (League of Moveable Type)</div>
+    <div class="font-demo" style="font-family: 'League Spartan', sans-serif;">The quick brown fox jumps over the lazy dog.</div>
+  </div>
+  
+  <div class="font-sample">
+    <div class="font-name">Ostrich Sans (League of Moveable Type)</div>
+    <div class="font-demo" style="font-family: 'Ostrich Sans', sans-serif;">The quick brown fox jumps over the lazy dog.</div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Log when page is loaded
+      console.log('Fonts test page loaded');
+      
+      // Check if fonts are loaded
+      document.fonts.ready.then(function() {
+        console.log('All fonts have been loaded!');
+        
+        // List all loaded fonts
+        const loadedFonts = Array.from(document.fonts)
+          .filter(fontFace => fontFace.status === 'loaded')
+          .map(fontFace => fontFace.family);
+        
+        console.log('Loaded fonts:', [...new Set(loadedFonts)]);
+      });
+    });
+  </script>
+</body>
+</html> 
