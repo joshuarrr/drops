@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/effect_settings.dart';
 import '../models/shader_effect.dart';
+import 'color_picker.dart';
 
 class TextFxPanel extends StatefulWidget {
   final ShaderSettings settings;
@@ -78,8 +79,9 @@ class _TextFxPanelState extends State<TextFxPanel>
 
         // Tab content
         SizedBox(
-          height: 250, // Fixed height for the tab content
+          height: 500, // Increased height to match other panels
           child: TabBarView(
+            key: ValueKey(widget.settings.hashCode),
             controller: _tabController,
             children: [
               _buildShadowTab(),
@@ -98,17 +100,37 @@ class _TextFxPanelState extends State<TextFxPanel>
   Widget _buildPanelHeader() {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Text Effects',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: widget.sliderColor,
-            ),
+          Row(
+            children: [
+              Text(
+                'Text Effects',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: widget.sliderColor,
+                ),
+              ),
+              const Spacer(),
+            ],
           ),
-          const Spacer(),
+          const SizedBox(height: 16),
+          // Add toggle for applying shaders to text as the first control
+          _buildLabeledSwitch(
+            'Apply Shaders to Text',
+            widget.settings.textfxSettings.applyShaderEffectsToText,
+            (value) {
+              final updatedSettings = widget.settings;
+              updatedSettings.textfxSettings.applyShaderEffectsToText = value;
+              widget.onSettingsChanged(updatedSettings);
+              if (mounted) setState(() {});
+            },
+          ),
+          const SizedBox(height: 8),
+          // Add a divider to separate from other controls
+          Divider(color: widget.sliderColor.withOpacity(0.3)),
         ],
       ),
     );
@@ -118,7 +140,10 @@ class _TextFxPanelState extends State<TextFxPanel>
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Shadow toggle
             _buildLabeledSwitch(
@@ -198,11 +223,14 @@ class _TextFxPanelState extends State<TextFxPanel>
                 },
               ),
 
-              // Color picker
+              // Add extra space to accommodate the color picker expansion
               _buildColorPicker(
                 'Shadow Color',
                 widget.settings.textfxSettings.textShadowColor,
                 (color) {
+                  print(
+                    'Shadow color picker callback triggered with color: ${color.value.toRadixString(16)}',
+                  );
                   final updatedSettings = widget.settings;
                   updatedSettings.textfxSettings.textShadowColor = color;
                   widget.onSettingsChanged(updatedSettings);
@@ -219,7 +247,10 @@ class _TextFxPanelState extends State<TextFxPanel>
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Glow toggle
             _buildLabeledSwitch(
@@ -290,7 +321,10 @@ class _TextFxPanelState extends State<TextFxPanel>
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Outline toggle
             _buildLabeledSwitch(
@@ -346,7 +380,10 @@ class _TextFxPanelState extends State<TextFxPanel>
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Metal toggle
             _buildLabeledSwitch(
@@ -492,7 +529,10 @@ class _TextFxPanelState extends State<TextFxPanel>
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Glass toggle
             _buildLabeledSwitch(
@@ -578,7 +618,10 @@ class _TextFxPanelState extends State<TextFxPanel>
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Neon toggle
             _buildLabeledSwitch(
@@ -714,56 +757,30 @@ class _TextFxPanelState extends State<TextFxPanel>
     Color color,
     Function(Color) onColorChanged,
   ) {
-    return Row(
-      children: [
-        Text(label, style: TextStyle(color: widget.sliderColor)),
-        const Spacer(),
-        InkWell(
-          onTap: () {
-            _showColorPicker(color, onColorChanged);
-          },
-          child: Container(
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 2),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
+    // Create a unique key for each color picker to ensure proper rebuilding
+    print(
+      'Building ColorPicker: $label with color: ${color.value.toRadixString(16)}',
     );
-  }
+    final uniqueKey = ValueKey('${label}_${color.value}');
+    print('ColorPicker key: $uniqueKey');
 
-  void _showColorPicker(Color initialColor, Function(Color) onColorSelected) {
-    // This is a stub - in a real implementation, you would display a color picker dialog
-    // Since we don't have the actual color picker implementation here, we'll simulate it
-    // by just cycling through some preset colors
-    final List<Color> presetColors = [
-      Colors.black,
-      Colors.white,
-      Colors.red,
-      Colors.orange,
-      Colors.yellow,
-      Colors.green,
-      Colors.blue,
-      Colors.purple,
-      Colors.pink,
-    ];
+    return ColorPicker(
+      key: uniqueKey,
+      label: label,
+      currentColor: color,
+      onColorChanged: (newColor) {
+        print(
+          'Color changed: $label from ${color.value.toRadixString(16)} to ${newColor.value.toRadixString(16)}',
+        );
+        // Apply color change to the settings
+        onColorChanged(newColor);
 
-    int currentIndex = presetColors.indexOf(initialColor);
-    if (currentIndex == -1) currentIndex = 0;
-
-    // Just move to the next color in the list for demo purposes
-    int nextIndex = (currentIndex + 1) % presetColors.length;
-    onColorSelected(presetColors[nextIndex]);
+        // Force UI refresh using setState
+        setState(() {
+          print('Refreshing TextFxPanel state after color change for: $label');
+        });
+      },
+      textColor: widget.sliderColor,
+    );
   }
 }

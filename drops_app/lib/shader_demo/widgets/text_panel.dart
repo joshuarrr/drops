@@ -7,6 +7,7 @@ import 'value_slider.dart';
 import 'alignment_selector.dart';
 import 'aspect_panel_header.dart';
 import 'text_input_field.dart';
+import 'color_picker.dart';
 import 'dart:async';
 import '../views/effect_controls.dart';
 
@@ -23,139 +24,6 @@ extension TextLineExt on TextLine {
       case TextLine.artist:
         return 'Artist';
     }
-  }
-}
-
-// Simple color picker for text colors
-class TextColorPicker extends StatefulWidget {
-  final Color currentColor;
-  final Function(Color) onColorChanged;
-  final Color textColor;
-  final String label;
-
-  const TextColorPicker({
-    Key? key,
-    required this.currentColor,
-    required this.onColorChanged,
-    required this.textColor,
-    required this.label,
-  }) : super(key: key);
-
-  @override
-  State<TextColorPicker> createState() => _TextColorPickerState();
-}
-
-class _TextColorPickerState extends State<TextColorPicker> {
-  bool _isExpanded = false;
-
-  @override
-  Widget build(BuildContext context) {
-    // Pre-defined color options
-    final List<Color> colorOptions = [
-      Colors.white,
-      Colors.black,
-      Colors.red,
-      Colors.pink,
-      Colors.purple,
-      Colors.deepPurple,
-      Colors.indigo,
-      Colors.blue,
-      Colors.lightBlue,
-      Colors.cyan,
-      Colors.teal,
-      Colors.green,
-      Colors.lightGreen,
-      Colors.lime,
-      Colors.yellow,
-      Colors.amber,
-      Colors.orange,
-      Colors.deepOrange,
-      Colors.brown,
-      Colors.grey,
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            children: [
-              Text(
-                widget.label,
-                style: TextStyle(
-                  color: widget.textColor,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(width: 12),
-              GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _isExpanded = !_isExpanded;
-                  });
-                },
-                child: Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: widget.currentColor,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: widget.textColor.withOpacity(0.5),
-                      width: 1,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        if (_isExpanded)
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeInOut,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: colorOptions.map((color) {
-                    final bool isSelected =
-                        color.value == widget.currentColor.value;
-                    return GestureDetector(
-                      onTap: () {
-                        widget.onColorChanged(color);
-                        // Optionally close the palette after selection
-                        // setState(() {
-                        //   _isExpanded = false;
-                        // });
-                      },
-                      child: Container(
-                        width: 24,
-                        height: 24,
-                        decoration: BoxDecoration(
-                          color: color,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: isSelected
-                                ? widget.textColor
-                                : Colors.transparent,
-                            width: 2,
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 8),
-              ],
-            ),
-          ),
-      ],
-    );
   }
 }
 
@@ -235,7 +103,7 @@ class _TextPanelState extends State<TextPanel> {
           },
         ),
         // Add color picker
-        TextColorPicker(
+        ColorPicker(
           label: 'Text Color',
           currentColor: _getCurrentColor(),
           onColorChanged: (color) {

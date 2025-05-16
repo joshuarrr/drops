@@ -5,6 +5,9 @@ class TextFXSettings {
   // Enable flag for text effects
   bool _textfxEnabled;
 
+  // Flag to control if background shaders affect text
+  bool _applyShaderEffectsToText;
+
   // Shadow settings
   bool _textShadowEnabled; // Enable/disable text shadow
   double _textShadowBlur; // Shadow blur radius
@@ -63,6 +66,13 @@ class TextFXSettings {
   set textfxEnabled(bool value) {
     _textfxEnabled = value;
     if (enableLogging) print("SETTINGS: textfxEnabled set to $value");
+  }
+
+  bool get applyShaderEffectsToText => _applyShaderEffectsToText;
+  set applyShaderEffectsToText(bool value) {
+    _applyShaderEffectsToText = value;
+    if (enableLogging)
+      print("SETTINGS: applyShaderEffectsToText set to $value");
   }
 
   // Text effects getters and setters
@@ -271,6 +281,7 @@ class TextFXSettings {
 
   TextFXSettings({
     bool textfxEnabled = false,
+    bool applyShaderEffectsToText = false,
     bool textShadowEnabled = false,
     double textShadowBlur = 3.0,
     double textShadowOffsetX = 2.0,
@@ -301,6 +312,7 @@ class TextFXSettings {
     bool textfxAnimated = false,
     AnimationOptions? textfxAnimOptions,
   }) : _textfxEnabled = textfxEnabled,
+       _applyShaderEffectsToText = applyShaderEffectsToText,
        _textShadowEnabled = textShadowEnabled,
        _textShadowBlur = textShadowBlur,
        _textShadowOffsetX = textShadowOffsetX,
@@ -337,6 +349,7 @@ class TextFXSettings {
   Map<String, dynamic> toMap() {
     return {
       'textfxEnabled': _textfxEnabled,
+      'applyShaderEffectsToText': _applyShaderEffectsToText,
       'textShadowEnabled': _textShadowEnabled,
       'textShadowBlur': _textShadowBlur,
       'textShadowOffsetX': _textShadowOffsetX,
@@ -372,6 +385,7 @@ class TextFXSettings {
   factory TextFXSettings.fromMap(Map<String, dynamic> map) {
     return TextFXSettings(
       textfxEnabled: map['textfxEnabled'] ?? false,
+      applyShaderEffectsToText: map['applyShaderEffectsToText'] ?? false,
       textShadowEnabled: map['textShadowEnabled'] ?? false,
       textShadowBlur: map['textShadowBlur'] ?? 3.0,
       textShadowOffsetX: map['textShadowOffsetX'] ?? 2.0,

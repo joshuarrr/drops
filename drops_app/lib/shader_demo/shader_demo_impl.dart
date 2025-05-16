@@ -954,9 +954,33 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     return style;
   }
 
-  // Build positioned text overlay
+  // Build text overlay
   Widget _buildTextOverlay() {
+    final overlayStack = Stack(
+      key: ValueKey(
+        'text_overlay_stack_${_shaderSettings.textfxSettings.applyShaderEffectsToText}',
+      ),
+      children: _buildTextLines(),
+    );
+
+    if (_shaderSettings.textfxSettings.applyShaderEffectsToText) {
+      final double animationValue = _controller.value;
+      return EffectController.applyEffects(
+        child: overlayStack,
+        settings: _shaderSettings,
+        animationValue: animationValue,
+      );
+    } else {
+      return overlayStack;
+    }
+  }
+
+  // Extract the text line building logic to a separate method
+  List<Widget> _buildTextLines() {
     final Size screenSize = MediaQuery.of(context).size;
+
+    // Use the raw controller value as the base time for text animations if needed
+    final double animationValue = _controller.value;
 
     List<Widget> positionedLines = [];
 
@@ -1111,35 +1135,34 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
         computedSize,
       );
 
-      Widget textWidget;
+      // Create the base text widget with key for stability
+      Widget textWidget = Text(
+        text,
+        key: ValueKey('text_${posX}_${posY}_${text.hashCode}'),
+        style: textStyle,
+        textAlign: textAlign,
+        textDirection: TextDirection.ltr,
+        softWrap: fitToWidth,
+        overflow: fitToWidth ? TextOverflow.visible : TextOverflow.clip,
+      );
+
+      // Wrap in container if using fitToWidth
       if (fitToWidth) {
-        // For fit to width, use Container with Text that can wrap
         textWidget = Container(
           constraints: BoxConstraints(maxWidth: maxWidth!),
           alignment: hAlign == 1
               ? Alignment.center
               : (hAlign == 2 ? Alignment.centerRight : Alignment.centerLeft),
-          child: Text(
-            text,
-            style: textStyle,
-            textAlign: textAlign,
-            textDirection: TextDirection.ltr,
-            softWrap: true,
-            overflow: TextOverflow.visible,
-          ),
-        );
-      } else {
-        // For non-wrapping text, use simple Text widget
-        textWidget = Text(
-          text,
-          style: textStyle,
-          textAlign: textAlign,
-          textDirection: TextDirection.ltr,
+          child: textWidget,
         );
       }
 
+      // Final stable wrapper to isolate repaint boundaries
+      textWidget = RepaintBoundary(child: textWidget);
+
       positionedLines.add(
         Positioned(
+          key: ValueKey('pos_${posX}_${posY}_${text.hashCode}'),
           left: hAlign == 1 && fitToWidth ? 0 : leftPosition,
           top: topPosition,
           width: hAlign == 1 && fitToWidth ? screenSize.width : null,
@@ -1148,6 +1171,7 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
       );
     }
 
+    // Add each text line with its specific settings
     addLine(
       text: _shaderSettings.textLayoutSettings.textTitle,
       font: _shaderSettings.textLayoutSettings.titleFont,
@@ -1196,6 +1220,6 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
       textColor: _shaderSettings.textLayoutSettings.artistColor,
     );
 
-    return Stack(children: positionedLines);
+    return positionedLines;
   }
 }
