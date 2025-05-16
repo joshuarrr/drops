@@ -40,33 +40,45 @@ class NoisePanel extends StatelessWidget {
         ),
         ValueSlider(
           label: 'Noise Scale',
-          value: settings.noiseScale / 10.0, // Scale to 0-1 range (max 10)
-          onChanged: (value) =>
-              _onSliderChanged(value, (v) => settings.noiseScale = v * 10.0),
+          value:
+              settings.noiseSettings.noiseScale /
+              10.0, // Scale to 0-1 range (max 10)
+          onChanged: (value) => _onSliderChanged(
+            value,
+            (v) => settings.noiseSettings.noiseScale = v * 10.0,
+          ),
           sliderColor: sliderColor,
           defaultValue: 0.5,
         ),
         ValueSlider(
           label: 'Noise Speed',
-          value: settings.noiseSpeed, // Already in 0-1 range
-          onChanged: (value) =>
-              _onSliderChanged(value, (v) => settings.noiseSpeed = v),
+          value: settings.noiseSettings.noiseSpeed, // Already in 0-1 range
+          onChanged: (value) => _onSliderChanged(
+            value,
+            (v) => settings.noiseSettings.noiseSpeed = v,
+          ),
           sliderColor: sliderColor,
           defaultValue: 0.5,
         ),
         ValueSlider(
           label: 'Wave Amount',
-          value: settings.waveAmount / 0.1, // Scale to 0-1 range (max 0.1)
-          onChanged: (value) =>
-              _onSliderChanged(value, (v) => settings.waveAmount = v * 0.1),
+          value:
+              settings.noiseSettings.waveAmount /
+              0.1, // Scale to 0-1 range (max 0.1)
+          onChanged: (value) => _onSliderChanged(
+            value,
+            (v) => settings.noiseSettings.waveAmount = v * 0.1,
+          ),
           sliderColor: sliderColor,
           defaultValue: 0.2,
         ),
         ValueSlider(
           label: 'Color Intensity',
-          value: settings.colorIntensity,
-          onChanged: (value) =>
-              _onSliderChanged(value, (v) => settings.colorIntensity = v),
+          value: settings.noiseSettings.colorIntensity,
+          onChanged: (value) => _onSliderChanged(
+            value,
+            (v) => settings.noiseSettings.colorIntensity = v,
+          ),
           sliderColor: sliderColor,
           defaultValue: 0.3,
         ),
@@ -75,37 +87,40 @@ class NoisePanel extends StatelessWidget {
           children: [
             Text('Animate', style: TextStyle(color: sliderColor, fontSize: 14)),
             Switch(
-              value: settings.noiseAnimated,
+              value: settings.noiseSettings.noiseAnimated,
               activeThumbColor: sliderColor,
               onChanged: (value) {
-                settings.noiseAnimated = value;
+                settings.noiseSettings.noiseAnimated = value;
                 if (!settings.noiseEnabled) settings.noiseEnabled = true;
                 onSettingsChanged(settings);
               },
             ),
           ],
         ),
-        if (settings.noiseAnimated)
+        if (settings.noiseSettings.noiseAnimated)
           AnimationControls(
-            animationSpeed: settings.noiseAnimOptions.speed,
+            animationSpeed: settings.noiseSettings.noiseAnimOptions.speed,
             onSpeedChanged: (v) {
-              settings.noiseAnimOptions = settings.noiseAnimOptions.copyWith(
-                speed: v,
-              );
+              settings.noiseSettings.noiseAnimOptions = settings
+                  .noiseSettings
+                  .noiseAnimOptions
+                  .copyWith(speed: v);
               onSettingsChanged(settings);
             },
-            animationMode: settings.noiseAnimOptions.mode,
+            animationMode: settings.noiseSettings.noiseAnimOptions.mode,
             onModeChanged: (m) {
-              settings.noiseAnimOptions = settings.noiseAnimOptions.copyWith(
-                mode: m,
-              );
+              settings.noiseSettings.noiseAnimOptions = settings
+                  .noiseSettings
+                  .noiseAnimOptions
+                  .copyWith(mode: m);
               onSettingsChanged(settings);
             },
-            animationEasing: settings.noiseAnimOptions.easing,
+            animationEasing: settings.noiseSettings.noiseAnimOptions.easing,
             onEasingChanged: (e) {
-              settings.noiseAnimOptions = settings.noiseAnimOptions.copyWith(
-                easing: e,
-              );
+              settings.noiseSettings.noiseAnimOptions = settings
+                  .noiseSettings
+                  .noiseAnimOptions
+                  .copyWith(easing: e);
               onSettingsChanged(settings);
             },
             sliderColor: sliderColor,
@@ -126,30 +141,33 @@ class NoisePanel extends StatelessWidget {
 
   void _resetNoise() {
     final defaults = ShaderSettings();
-    settings
-      ..noiseEnabled = false
-      ..noiseScale = defaults.noiseScale
-      ..noiseSpeed = defaults.noiseSpeed
-      ..colorIntensity = defaults.colorIntensity
-      ..waveAmount = defaults.waveAmount
-      ..noiseAnimated = false
-      ..noiseAnimOptions = AnimationOptions();
+    settings.noiseEnabled = false;
+    settings.noiseSettings.noiseScale = defaults.noiseSettings.noiseScale;
+    settings.noiseSettings.noiseSpeed = defaults.noiseSettings.noiseSpeed;
+    settings.noiseSettings.colorIntensity =
+        defaults.noiseSettings.colorIntensity;
+    settings.noiseSettings.waveAmount = defaults.noiseSettings.waveAmount;
+    settings.noiseSettings.noiseAnimated = defaults.noiseSettings.noiseAnimated;
+    settings.noiseSettings.noiseAnimOptions = AnimationOptions();
 
     onSettingsChanged(settings);
   }
 
   void _applyPreset(Map<String, dynamic> presetData) {
     settings.noiseEnabled = presetData['noiseEnabled'] ?? settings.noiseEnabled;
-    settings.noiseScale = presetData['noiseScale'] ?? settings.noiseScale;
-    settings.noiseSpeed = presetData['noiseSpeed'] ?? settings.noiseSpeed;
-    settings.colorIntensity =
-        presetData['colorIntensity'] ?? settings.colorIntensity;
-    settings.waveAmount = presetData['waveAmount'] ?? settings.waveAmount;
-    settings.noiseAnimated =
-        presetData['noiseAnimated'] ?? settings.noiseAnimated;
+    settings.noiseSettings.noiseScale =
+        presetData['noiseScale'] ?? settings.noiseSettings.noiseScale;
+    settings.noiseSettings.noiseSpeed =
+        presetData['noiseSpeed'] ?? settings.noiseSettings.noiseSpeed;
+    settings.noiseSettings.colorIntensity =
+        presetData['colorIntensity'] ?? settings.noiseSettings.colorIntensity;
+    settings.noiseSettings.waveAmount =
+        presetData['waveAmount'] ?? settings.noiseSettings.waveAmount;
+    settings.noiseSettings.noiseAnimated =
+        presetData['noiseAnimated'] ?? settings.noiseSettings.noiseAnimated;
 
     if (presetData['noiseAnimOptions'] != null) {
-      settings.noiseAnimOptions = AnimationOptions.fromMap(
+      settings.noiseSettings.noiseAnimOptions = AnimationOptions.fromMap(
         Map<String, dynamic>.from(presetData['noiseAnimOptions']),
       );
     }
@@ -160,12 +178,12 @@ class NoisePanel extends StatelessWidget {
   Future<void> _savePresetForAspect(ShaderAspect aspect, String name) async {
     Map<String, dynamic> presetData = {
       'noiseEnabled': settings.noiseEnabled,
-      'noiseScale': settings.noiseScale,
-      'noiseSpeed': settings.noiseSpeed,
-      'colorIntensity': settings.colorIntensity,
-      'waveAmount': settings.waveAmount,
-      'noiseAnimated': settings.noiseAnimated,
-      'noiseAnimOptions': settings.noiseAnimOptions.toMap(),
+      'noiseScale': settings.noiseSettings.noiseScale,
+      'noiseSpeed': settings.noiseSettings.noiseSpeed,
+      'colorIntensity': settings.noiseSettings.colorIntensity,
+      'waveAmount': settings.noiseSettings.waveAmount,
+      'noiseAnimated': settings.noiseSettings.noiseAnimated,
+      'noiseAnimOptions': settings.noiseSettings.noiseAnimOptions.toMap(),
     };
 
     bool success = await PresetsManager.savePreset(aspect, name, presetData);

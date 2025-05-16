@@ -40,47 +40,57 @@ class BlurPanel extends StatelessWidget {
         ),
         ValueSlider(
           label: 'Shatter Amount',
-          value: settings.blurAmount,
-          onChanged: (value) =>
-              _onSliderChanged(value, (v) => settings.blurAmount = v),
+          value: settings.blurSettings.blurAmount,
+          onChanged: (value) => _onSliderChanged(
+            value,
+            (v) => settings.blurSettings.blurAmount = v,
+          ),
           sliderColor: sliderColor,
           defaultValue: 0.0,
         ),
         ValueSlider(
           label: 'Shatter Radius',
           value:
-              settings.blurRadius /
+              settings.blurSettings.blurRadius /
               120.0, // Scale down from max 120 to 0-1 range
-          onChanged: (value) =>
-              _onSliderChanged(value, (v) => settings.blurRadius = v * 120.0),
+          onChanged: (value) => _onSliderChanged(
+            value,
+            (v) => settings.blurSettings.blurRadius = v * 120.0,
+          ),
           sliderColor: sliderColor,
           defaultValue: 15.0 / 120.0, // Default scaled value
         ),
         ValueSlider(
           label: 'Shatter Opacity',
-          value: settings.blurOpacity,
-          onChanged: (value) =>
-              _onSliderChanged(value, (v) => settings.blurOpacity = v),
+          value: settings.blurSettings.blurOpacity,
+          onChanged: (value) => _onSliderChanged(
+            value,
+            (v) => settings.blurSettings.blurOpacity = v,
+          ),
           sliderColor: sliderColor,
           defaultValue: 1.0,
         ),
         ValueSlider(
           label: 'Intensity',
           value:
-              (settings.blurIntensity - 1.0) /
+              (settings.blurSettings.blurIntensity - 1.0) /
               2.0, // Scale from 1-3 to 0-1 range
           onChanged: (value) => _onSliderChanged(
             value,
-            (v) => settings.blurIntensity = 1.0 + v * 2.0,
+            (v) => settings.blurSettings.blurIntensity = 1.0 + v * 2.0,
           ),
           sliderColor: sliderColor,
           defaultValue: 0.0, // Default is 1.0 (middle position)
         ),
         ValueSlider(
           label: 'Contrast',
-          value: settings.blurContrast / 2.0, // Scale from 0-2 to 0-1 range
-          onChanged: (value) =>
-              _onSliderChanged(value, (v) => settings.blurContrast = v * 2.0),
+          value:
+              settings.blurSettings.blurContrast /
+              2.0, // Scale from 0-2 to 0-1 range
+          onChanged: (value) => _onSliderChanged(
+            value,
+            (v) => settings.blurSettings.blurContrast = v * 2.0,
+          ),
           sliderColor: sliderColor,
           defaultValue: 0.0,
         ),
@@ -109,10 +119,10 @@ class BlurPanel extends StatelessWidget {
                     label: Text('Screen', style: TextStyle(fontSize: 13)),
                   ),
                 ],
-                selected: {settings.blurBlendMode},
+                selected: {settings.blurSettings.blurBlendMode},
                 onSelectionChanged: (Set<int> selection) {
                   if (selection.isNotEmpty) {
-                    settings.blurBlendMode = selection.first;
+                    settings.blurSettings.blurBlendMode = selection.first;
                     if (!settings.blurEnabled) settings.blurEnabled = true;
                     onSettingsChanged(settings);
                   }
@@ -126,10 +136,10 @@ class BlurPanel extends StatelessWidget {
           children: [
             Text('Animate', style: TextStyle(color: sliderColor, fontSize: 14)),
             Switch(
-              value: settings.blurAnimated,
+              value: settings.blurSettings.blurAnimated,
               activeThumbColor: sliderColor,
               onChanged: (value) {
-                settings.blurAnimated = value;
+                settings.blurSettings.blurAnimated = value;
                 // Ensure effect is enabled when animation toggled on
                 if (!settings.blurEnabled) settings.blurEnabled = true;
                 onSettingsChanged(settings);
@@ -137,27 +147,30 @@ class BlurPanel extends StatelessWidget {
             ),
           ],
         ),
-        if (settings.blurAnimated)
+        if (settings.blurSettings.blurAnimated)
           AnimationControls(
-            animationSpeed: settings.blurAnimOptions.speed,
+            animationSpeed: settings.blurSettings.blurAnimOptions.speed,
             onSpeedChanged: (v) {
-              settings.blurAnimOptions = settings.blurAnimOptions.copyWith(
-                speed: v,
-              );
+              settings.blurSettings.blurAnimOptions = settings
+                  .blurSettings
+                  .blurAnimOptions
+                  .copyWith(speed: v);
               onSettingsChanged(settings);
             },
-            animationMode: settings.blurAnimOptions.mode,
+            animationMode: settings.blurSettings.blurAnimOptions.mode,
             onModeChanged: (m) {
-              settings.blurAnimOptions = settings.blurAnimOptions.copyWith(
-                mode: m,
-              );
+              settings.blurSettings.blurAnimOptions = settings
+                  .blurSettings
+                  .blurAnimOptions
+                  .copyWith(mode: m);
               onSettingsChanged(settings);
             },
-            animationEasing: settings.blurAnimOptions.easing,
+            animationEasing: settings.blurSettings.blurAnimOptions.easing,
             onEasingChanged: (e) {
-              settings.blurAnimOptions = settings.blurAnimOptions.copyWith(
-                easing: e,
-              );
+              settings.blurSettings.blurAnimOptions = settings
+                  .blurSettings
+                  .blurAnimOptions
+                  .copyWith(easing: e);
               onSettingsChanged(settings);
             },
             sliderColor: sliderColor,
@@ -178,34 +191,38 @@ class BlurPanel extends StatelessWidget {
 
   void _resetBlur() {
     final defaults = ShaderSettings();
-    settings
-      ..blurEnabled = false
-      ..blurAmount = defaults.blurAmount
-      ..blurRadius = defaults.blurRadius
-      ..blurOpacity = defaults.blurOpacity
-      ..blurBlendMode = defaults.blurBlendMode
-      ..blurIntensity = defaults.blurIntensity
-      ..blurContrast = defaults.blurContrast
-      ..blurAnimated = false
-      ..blurAnimOptions = AnimationOptions();
+    settings.blurEnabled = false;
+    settings.blurSettings.blurAmount = defaults.blurSettings.blurAmount;
+    settings.blurSettings.blurRadius = defaults.blurSettings.blurRadius;
+    settings.blurSettings.blurOpacity = defaults.blurSettings.blurOpacity;
+    settings.blurSettings.blurBlendMode = defaults.blurSettings.blurBlendMode;
+    settings.blurSettings.blurIntensity = defaults.blurSettings.blurIntensity;
+    settings.blurSettings.blurContrast = defaults.blurSettings.blurContrast;
+    settings.blurSettings.blurAnimated = false;
+    settings.blurSettings.blurAnimOptions = AnimationOptions();
 
     onSettingsChanged(settings);
   }
 
   void _applyPreset(Map<String, dynamic> presetData) {
     settings.blurEnabled = presetData['blurEnabled'] ?? settings.blurEnabled;
-    settings.blurAmount = presetData['blurAmount'] ?? settings.blurAmount;
-    settings.blurRadius = presetData['blurRadius'] ?? settings.blurRadius;
-    settings.blurOpacity = presetData['blurOpacity'] ?? settings.blurOpacity;
-    settings.blurBlendMode =
-        presetData['blurBlendMode'] ?? settings.blurBlendMode;
-    settings.blurIntensity =
-        presetData['blurIntensity'] ?? settings.blurIntensity;
-    settings.blurContrast = presetData['blurContrast'] ?? settings.blurContrast;
-    settings.blurAnimated = presetData['blurAnimated'] ?? settings.blurAnimated;
+    settings.blurSettings.blurAmount =
+        presetData['blurAmount'] ?? settings.blurSettings.blurAmount;
+    settings.blurSettings.blurRadius =
+        presetData['blurRadius'] ?? settings.blurSettings.blurRadius;
+    settings.blurSettings.blurOpacity =
+        presetData['blurOpacity'] ?? settings.blurSettings.blurOpacity;
+    settings.blurSettings.blurBlendMode =
+        presetData['blurBlendMode'] ?? settings.blurSettings.blurBlendMode;
+    settings.blurSettings.blurIntensity =
+        presetData['blurIntensity'] ?? settings.blurSettings.blurIntensity;
+    settings.blurSettings.blurContrast =
+        presetData['blurContrast'] ?? settings.blurSettings.blurContrast;
+    settings.blurSettings.blurAnimated =
+        presetData['blurAnimated'] ?? settings.blurSettings.blurAnimated;
 
     if (presetData['blurAnimOptions'] != null) {
-      settings.blurAnimOptions = AnimationOptions.fromMap(
+      settings.blurSettings.blurAnimOptions = AnimationOptions.fromMap(
         Map<String, dynamic>.from(presetData['blurAnimOptions']),
       );
     }
@@ -216,14 +233,14 @@ class BlurPanel extends StatelessWidget {
   Future<void> _savePresetForAspect(ShaderAspect aspect, String name) async {
     Map<String, dynamic> presetData = {
       'blurEnabled': settings.blurEnabled,
-      'blurAmount': settings.blurAmount,
-      'blurRadius': settings.blurRadius,
-      'blurOpacity': settings.blurOpacity,
-      'blurBlendMode': settings.blurBlendMode,
-      'blurIntensity': settings.blurIntensity,
-      'blurContrast': settings.blurContrast,
-      'blurAnimated': settings.blurAnimated,
-      'blurAnimOptions': settings.blurAnimOptions.toMap(),
+      'blurAmount': settings.blurSettings.blurAmount,
+      'blurRadius': settings.blurSettings.blurRadius,
+      'blurOpacity': settings.blurSettings.blurOpacity,
+      'blurBlendMode': settings.blurSettings.blurBlendMode,
+      'blurIntensity': settings.blurSettings.blurIntensity,
+      'blurContrast': settings.blurSettings.blurContrast,
+      'blurAnimated': settings.blurSettings.blurAnimated,
+      'blurAnimOptions': settings.blurSettings.blurAnimOptions.toMap(),
     };
 
     bool success = await PresetsManager.savePreset(aspect, name, presetData);

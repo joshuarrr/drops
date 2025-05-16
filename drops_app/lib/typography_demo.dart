@@ -77,18 +77,6 @@ class _TypographyDemoState extends State<TypographyDemo> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Font selector dropdown – updates _selectedFontFamily state.
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
-                child: FontSelector(
-                  selectedFont: _selectedFontFamily,
-                  labelText: 'Font Family',
-                  onFontSelected: (font) {
-                    setState(() => _selectedFontFamily = font);
-                  },
-                ),
-              ),
-              const SizedBox(height: 32),
               ..._fontFamilies.map((font) {
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 16.0),

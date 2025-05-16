@@ -31,16 +31,17 @@ class _TextFxPanelState extends State<TextFxPanel>
   void initState() {
     super.initState();
     _tabController = TabController(length: 6, vsync: this);
-    _animationEnabled = widget.settings.textfxAnimated;
+    _animationEnabled = widget.settings.textfxSettings.textfxAnimated;
   }
 
   @override
   void didUpdateWidget(TextFxPanel oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Update animation state when settings change
-    if (oldWidget.settings.textfxAnimated != widget.settings.textfxAnimated) {
+    if (oldWidget.settings.textfxSettings.textfxAnimated !=
+        widget.settings.textfxSettings.textfxAnimated) {
       setState(() {
-        _animationEnabled = widget.settings.textfxAnimated;
+        _animationEnabled = widget.settings.textfxSettings.textfxAnimated;
       });
     }
   }
@@ -108,31 +109,6 @@ class _TextFxPanelState extends State<TextFxPanel>
             ),
           ),
           const Spacer(),
-          Row(
-            children: [
-              Text(
-                'Animate',
-                style: TextStyle(fontSize: 14, color: widget.sliderColor),
-              ),
-              const SizedBox(width: 8),
-              Switch(
-                value: _animationEnabled,
-                activeColor: widget.sliderColor,
-                onChanged: (value) {
-                  setState(() {
-                    _animationEnabled = value;
-
-                    // Update settings
-                    final updatedSettings = widget.settings;
-                    updatedSettings.textfxAnimated = value;
-
-                    // Notify parent
-                    widget.onSettingsChanged(updatedSettings);
-                  });
-                },
-              ),
-            ],
-          ),
         ],
       ),
     );
@@ -147,13 +123,13 @@ class _TextFxPanelState extends State<TextFxPanel>
             // Shadow toggle
             _buildLabeledSwitch(
               'Enable Shadow',
-              widget.settings.textShadowEnabled,
+              widget.settings.textfxSettings.textShadowEnabled,
               (value) {
                 final updatedSettings = widget.settings;
-                updatedSettings.textShadowEnabled = value;
+                updatedSettings.textfxSettings.textShadowEnabled = value;
                 // Make sure text effects are enabled when enabling a specific effect
-                if (value && !updatedSettings.textfxEnabled) {
-                  updatedSettings.textfxEnabled = true;
+                if (value && !updatedSettings.textfxSettings.textfxEnabled) {
+                  updatedSettings.textfxSettings.textfxEnabled = true;
                 }
                 widget.onSettingsChanged(updatedSettings);
               },
@@ -161,18 +137,18 @@ class _TextFxPanelState extends State<TextFxPanel>
             const SizedBox(height: 16),
 
             // Shadow properties (only visible when enabled)
-            if (widget.settings.textShadowEnabled) ...[
+            if (widget.settings.textfxSettings.textShadowEnabled) ...[
               // Shadow blur
               _buildLabeledSlider(
                 'Blur',
-                widget.settings.textShadowBlur,
+                widget.settings.textfxSettings.textShadowBlur,
                 0.0,
                 20.0,
                 20,
-                '${widget.settings.textShadowBlur.toStringAsFixed(1)}',
+                '${widget.settings.textfxSettings.textShadowBlur.toStringAsFixed(1)}',
                 (value) {
                   final updatedSettings = widget.settings;
-                  updatedSettings.textShadowBlur = value;
+                  updatedSettings.textfxSettings.textShadowBlur = value;
                   widget.onSettingsChanged(updatedSettings);
                 },
               ),
@@ -180,14 +156,14 @@ class _TextFxPanelState extends State<TextFxPanel>
               // X offset
               _buildLabeledSlider(
                 'X Offset',
-                widget.settings.textShadowOffsetX,
+                widget.settings.textfxSettings.textShadowOffsetX,
                 -10.0,
                 10.0,
                 20,
-                '${widget.settings.textShadowOffsetX.toStringAsFixed(1)}',
+                '${widget.settings.textfxSettings.textShadowOffsetX.toStringAsFixed(1)}',
                 (value) {
                   final updatedSettings = widget.settings;
-                  updatedSettings.textShadowOffsetX = value;
+                  updatedSettings.textfxSettings.textShadowOffsetX = value;
                   widget.onSettingsChanged(updatedSettings);
                 },
               ),
@@ -195,14 +171,14 @@ class _TextFxPanelState extends State<TextFxPanel>
               // Y offset
               _buildLabeledSlider(
                 'Y Offset',
-                widget.settings.textShadowOffsetY,
+                widget.settings.textfxSettings.textShadowOffsetY,
                 -10.0,
                 10.0,
                 20,
-                '${widget.settings.textShadowOffsetY.toStringAsFixed(1)}',
+                '${widget.settings.textfxSettings.textShadowOffsetY.toStringAsFixed(1)}',
                 (value) {
                   final updatedSettings = widget.settings;
-                  updatedSettings.textShadowOffsetY = value;
+                  updatedSettings.textfxSettings.textShadowOffsetY = value;
                   widget.onSettingsChanged(updatedSettings);
                 },
               ),
@@ -210,14 +186,14 @@ class _TextFxPanelState extends State<TextFxPanel>
               // Opacity
               _buildLabeledSlider(
                 'Opacity',
-                widget.settings.textShadowOpacity,
+                widget.settings.textfxSettings.textShadowOpacity,
                 0.0,
                 1.0,
                 10,
-                '${(widget.settings.textShadowOpacity * 100).round()}%',
+                '${(widget.settings.textfxSettings.textShadowOpacity * 100).round()}%',
                 (value) {
                   final updatedSettings = widget.settings;
-                  updatedSettings.textShadowOpacity = value;
+                  updatedSettings.textfxSettings.textShadowOpacity = value;
                   widget.onSettingsChanged(updatedSettings);
                 },
               ),
@@ -225,10 +201,10 @@ class _TextFxPanelState extends State<TextFxPanel>
               // Color picker
               _buildColorPicker(
                 'Shadow Color',
-                widget.settings.textShadowColor,
+                widget.settings.textfxSettings.textShadowColor,
                 (color) {
                   final updatedSettings = widget.settings;
-                  updatedSettings.textShadowColor = color;
+                  updatedSettings.textfxSettings.textShadowColor = color;
                   widget.onSettingsChanged(updatedSettings);
                 },
               ),
@@ -246,32 +222,34 @@ class _TextFxPanelState extends State<TextFxPanel>
         child: Column(
           children: [
             // Glow toggle
-            _buildLabeledSwitch('Enable Glow', widget.settings.textGlowEnabled, (
-              value,
-            ) {
-              final updatedSettings = widget.settings;
-              updatedSettings.textGlowEnabled = value;
-              // Make sure text effects are enabled when enabling a specific effect
-              if (value && !updatedSettings.textfxEnabled) {
-                updatedSettings.textfxEnabled = true;
-              }
-              widget.onSettingsChanged(updatedSettings);
-            }),
+            _buildLabeledSwitch(
+              'Enable Glow',
+              widget.settings.textfxSettings.textGlowEnabled,
+              (value) {
+                final updatedSettings = widget.settings;
+                updatedSettings.textfxSettings.textGlowEnabled = value;
+                // Make sure text effects are enabled when enabling a specific effect
+                if (value && !updatedSettings.textfxSettings.textfxEnabled) {
+                  updatedSettings.textfxSettings.textfxEnabled = true;
+                }
+                widget.onSettingsChanged(updatedSettings);
+              },
+            ),
             const SizedBox(height: 16),
 
             // Glow properties (only visible when enabled)
-            if (widget.settings.textGlowEnabled) ...[
+            if (widget.settings.textfxSettings.textGlowEnabled) ...[
               // Glow blur
               _buildLabeledSlider(
                 'Glow Radius',
-                widget.settings.textGlowBlur,
+                widget.settings.textfxSettings.textGlowBlur,
                 0.0,
                 20.0,
                 20,
-                '${widget.settings.textGlowBlur.toStringAsFixed(1)}',
+                '${widget.settings.textfxSettings.textGlowBlur.toStringAsFixed(1)}',
                 (value) {
                   final updatedSettings = widget.settings;
-                  updatedSettings.textGlowBlur = value;
+                  updatedSettings.textfxSettings.textGlowBlur = value;
                   widget.onSettingsChanged(updatedSettings);
                 },
               ),
@@ -279,26 +257,28 @@ class _TextFxPanelState extends State<TextFxPanel>
               // Opacity
               _buildLabeledSlider(
                 'Opacity',
-                widget.settings.textGlowOpacity,
+                widget.settings.textfxSettings.textGlowOpacity,
                 0.0,
                 1.0,
                 10,
-                '${(widget.settings.textGlowOpacity * 100).round()}%',
+                '${(widget.settings.textfxSettings.textGlowOpacity * 100).round()}%',
                 (value) {
                   final updatedSettings = widget.settings;
-                  updatedSettings.textGlowOpacity = value;
+                  updatedSettings.textfxSettings.textGlowOpacity = value;
                   widget.onSettingsChanged(updatedSettings);
                 },
               ),
 
               // Color picker
-              _buildColorPicker('Glow Color', widget.settings.textGlowColor, (
-                color,
-              ) {
-                final updatedSettings = widget.settings;
-                updatedSettings.textGlowColor = color;
-                widget.onSettingsChanged(updatedSettings);
-              }),
+              _buildColorPicker(
+                'Glow Color',
+                widget.settings.textfxSettings.textGlowColor,
+                (color) {
+                  final updatedSettings = widget.settings;
+                  updatedSettings.textfxSettings.textGlowColor = color;
+                  widget.onSettingsChanged(updatedSettings);
+                },
+              ),
             ],
           ],
         ),
@@ -315,13 +295,13 @@ class _TextFxPanelState extends State<TextFxPanel>
             // Outline toggle
             _buildLabeledSwitch(
               'Enable Outline',
-              widget.settings.textOutlineEnabled,
+              widget.settings.textfxSettings.textOutlineEnabled,
               (value) {
                 final updatedSettings = widget.settings;
-                updatedSettings.textOutlineEnabled = value;
+                updatedSettings.textfxSettings.textOutlineEnabled = value;
                 // Make sure text effects are enabled when enabling a specific effect
-                if (value && !updatedSettings.textfxEnabled) {
-                  updatedSettings.textfxEnabled = true;
+                if (value && !updatedSettings.textfxSettings.textfxEnabled) {
+                  updatedSettings.textfxSettings.textfxEnabled = true;
                 }
                 widget.onSettingsChanged(updatedSettings);
               },
@@ -329,18 +309,18 @@ class _TextFxPanelState extends State<TextFxPanel>
             const SizedBox(height: 16),
 
             // Outline properties (only visible when enabled)
-            if (widget.settings.textOutlineEnabled) ...[
+            if (widget.settings.textfxSettings.textOutlineEnabled) ...[
               // Outline width
               _buildLabeledSlider(
                 'Width',
-                widget.settings.textOutlineWidth,
+                widget.settings.textfxSettings.textOutlineWidth,
                 0.5,
                 5.0,
                 9,
-                '${widget.settings.textOutlineWidth.toStringAsFixed(1)}',
+                '${widget.settings.textfxSettings.textOutlineWidth.toStringAsFixed(1)}',
                 (value) {
                   final updatedSettings = widget.settings;
-                  updatedSettings.textOutlineWidth = value;
+                  updatedSettings.textfxSettings.textOutlineWidth = value;
                   widget.onSettingsChanged(updatedSettings);
                 },
               ),
@@ -348,10 +328,10 @@ class _TextFxPanelState extends State<TextFxPanel>
               // Color picker
               _buildColorPicker(
                 'Outline Color',
-                widget.settings.textOutlineColor,
+                widget.settings.textfxSettings.textOutlineColor,
                 (color) {
                   final updatedSettings = widget.settings;
-                  updatedSettings.textOutlineColor = color;
+                  updatedSettings.textfxSettings.textOutlineColor = color;
                   widget.onSettingsChanged(updatedSettings);
                 },
               ),
@@ -371,13 +351,13 @@ class _TextFxPanelState extends State<TextFxPanel>
             // Metal toggle
             _buildLabeledSwitch(
               'Enable Metal Effect',
-              widget.settings.textMetalEnabled,
+              widget.settings.textfxSettings.textMetalEnabled,
               (value) {
                 final updatedSettings = widget.settings;
-                updatedSettings.textMetalEnabled = value;
+                updatedSettings.textfxSettings.textMetalEnabled = value;
                 // Make sure text effects are enabled when enabling a specific effect
-                if (value && !updatedSettings.textfxEnabled) {
-                  updatedSettings.textfxEnabled = true;
+                if (value && !updatedSettings.textfxSettings.textfxEnabled) {
+                  updatedSettings.textfxSettings.textfxEnabled = true;
                 }
                 widget.onSettingsChanged(updatedSettings);
               },
@@ -385,18 +365,18 @@ class _TextFxPanelState extends State<TextFxPanel>
             const SizedBox(height: 16),
 
             // Metal properties (only visible when enabled)
-            if (widget.settings.textMetalEnabled) ...[
+            if (widget.settings.textfxSettings.textMetalEnabled) ...[
               // Shine intensity slider
               _buildLabeledSlider(
                 'Shine Intensity',
-                widget.settings.textMetalShine,
+                widget.settings.textfxSettings.textMetalShine,
                 0.0,
                 1.0,
                 10,
-                '${(widget.settings.textMetalShine * 100).round()}%',
+                '${(widget.settings.textfxSettings.textMetalShine * 100).round()}%',
                 (value) {
                   final updatedSettings = widget.settings;
-                  updatedSettings.textMetalShine = value;
+                  updatedSettings.textfxSettings.textMetalShine = value;
                   widget.onSettingsChanged(updatedSettings);
                 },
               ),
@@ -434,10 +414,10 @@ class _TextFxPanelState extends State<TextFxPanel>
               // Base color picker
               _buildColorPicker(
                 'Base Color',
-                widget.settings.textMetalBaseColor,
+                widget.settings.textfxSettings.textMetalBaseColor,
                 (color) {
                   final updatedSettings = widget.settings;
-                  updatedSettings.textMetalBaseColor = color;
+                  updatedSettings.textfxSettings.textMetalBaseColor = color;
                   widget.onSettingsChanged(updatedSettings);
                 },
               ),
@@ -447,10 +427,10 @@ class _TextFxPanelState extends State<TextFxPanel>
               // Shine color picker
               _buildColorPicker(
                 'Shine Color',
-                widget.settings.textMetalShineColor,
+                widget.settings.textfxSettings.textMetalShineColor,
                 (color) {
                   final updatedSettings = widget.settings;
-                  updatedSettings.textMetalShineColor = color;
+                  updatedSettings.textfxSettings.textMetalShineColor = color;
                   widget.onSettingsChanged(updatedSettings);
                 },
               ),
@@ -469,9 +449,10 @@ class _TextFxPanelState extends State<TextFxPanel>
     return InkWell(
       onTap: () {
         final updatedSettings = widget.settings;
-        updatedSettings.textMetalBaseColor = baseColor;
-        updatedSettings.textMetalShineColor = shineColor;
-        updatedSettings.textMetalShine = 0.7; // Good default for presets
+        updatedSettings.textfxSettings.textMetalBaseColor = baseColor;
+        updatedSettings.textfxSettings.textMetalShineColor = shineColor;
+        updatedSettings.textfxSettings.textMetalShine =
+            0.7; // Good default for presets
         widget.onSettingsChanged(updatedSettings);
       },
       child: Container(
@@ -516,13 +497,13 @@ class _TextFxPanelState extends State<TextFxPanel>
             // Glass toggle
             _buildLabeledSwitch(
               'Enable Glass Effect',
-              widget.settings.textGlassEnabled,
+              widget.settings.textfxSettings.textGlassEnabled,
               (value) {
                 final updatedSettings = widget.settings;
-                updatedSettings.textGlassEnabled = value;
+                updatedSettings.textfxSettings.textGlassEnabled = value;
                 // Make sure text effects are enabled when enabling a specific effect
-                if (value && !updatedSettings.textfxEnabled) {
-                  updatedSettings.textfxEnabled = true;
+                if (value && !updatedSettings.textfxSettings.textfxEnabled) {
+                  updatedSettings.textfxSettings.textfxEnabled = true;
                 }
                 widget.onSettingsChanged(updatedSettings);
               },
@@ -530,18 +511,18 @@ class _TextFxPanelState extends State<TextFxPanel>
             const SizedBox(height: 16),
 
             // Glass properties (only visible when enabled)
-            if (widget.settings.textGlassEnabled) ...[
+            if (widget.settings.textfxSettings.textGlassEnabled) ...[
               // Opacity slider
               _buildLabeledSlider(
                 'Opacity',
-                widget.settings.textGlassOpacity,
+                widget.settings.textfxSettings.textGlassOpacity,
                 0.0,
                 1.0,
                 10,
-                '${(widget.settings.textGlassOpacity * 100).round()}%',
+                '${(widget.settings.textfxSettings.textGlassOpacity * 100).round()}%',
                 (value) {
                   final updatedSettings = widget.settings;
-                  updatedSettings.textGlassOpacity = value;
+                  updatedSettings.textfxSettings.textGlassOpacity = value;
                   widget.onSettingsChanged(updatedSettings);
                 },
               ),
@@ -549,14 +530,14 @@ class _TextFxPanelState extends State<TextFxPanel>
               // Blur slider
               _buildLabeledSlider(
                 'Blur Amount',
-                widget.settings.textGlassBlur,
+                widget.settings.textfxSettings.textGlassBlur,
                 0.0,
                 20.0,
                 20,
-                '${widget.settings.textGlassBlur.toStringAsFixed(1)}',
+                '${widget.settings.textfxSettings.textGlassBlur.toStringAsFixed(1)}',
                 (value) {
                   final updatedSettings = widget.settings;
-                  updatedSettings.textGlassBlur = value;
+                  updatedSettings.textfxSettings.textGlassBlur = value;
                   widget.onSettingsChanged(updatedSettings);
                 },
               ),
@@ -564,26 +545,28 @@ class _TextFxPanelState extends State<TextFxPanel>
               // Refraction slider
               _buildLabeledSlider(
                 'Refraction',
-                widget.settings.textGlassRefraction,
+                widget.settings.textfxSettings.textGlassRefraction,
                 0.0,
                 2.0,
                 20,
-                '${widget.settings.textGlassRefraction.toStringAsFixed(1)}',
+                '${widget.settings.textfxSettings.textGlassRefraction.toStringAsFixed(1)}',
                 (value) {
                   final updatedSettings = widget.settings;
-                  updatedSettings.textGlassRefraction = value;
+                  updatedSettings.textfxSettings.textGlassRefraction = value;
                   widget.onSettingsChanged(updatedSettings);
                 },
               ),
 
               // Glass color picker
-              _buildColorPicker('Tint Color', widget.settings.textGlassColor, (
-                color,
-              ) {
-                final updatedSettings = widget.settings;
-                updatedSettings.textGlassColor = color;
-                widget.onSettingsChanged(updatedSettings);
-              }),
+              _buildColorPicker(
+                'Tint Color',
+                widget.settings.textfxSettings.textGlassColor,
+                (color) {
+                  final updatedSettings = widget.settings;
+                  updatedSettings.textfxSettings.textGlassColor = color;
+                  widget.onSettingsChanged(updatedSettings);
+                },
+              ),
             ],
           ],
         ),
@@ -600,13 +583,13 @@ class _TextFxPanelState extends State<TextFxPanel>
             // Neon toggle
             _buildLabeledSwitch(
               'Enable Neon Effect',
-              widget.settings.textNeonEnabled,
+              widget.settings.textfxSettings.textNeonEnabled,
               (value) {
                 final updatedSettings = widget.settings;
-                updatedSettings.textNeonEnabled = value;
+                updatedSettings.textfxSettings.textNeonEnabled = value;
                 // Make sure text effects are enabled when enabling a specific effect
-                if (value && !updatedSettings.textfxEnabled) {
-                  updatedSettings.textfxEnabled = true;
+                if (value && !updatedSettings.textfxSettings.textfxEnabled) {
+                  updatedSettings.textfxSettings.textfxEnabled = true;
                 }
                 widget.onSettingsChanged(updatedSettings);
               },
@@ -614,18 +597,18 @@ class _TextFxPanelState extends State<TextFxPanel>
             const SizedBox(height: 16),
 
             // Neon properties (only visible when enabled)
-            if (widget.settings.textNeonEnabled) ...[
+            if (widget.settings.textfxSettings.textNeonEnabled) ...[
               // Intensity slider
               _buildLabeledSlider(
                 'Intensity',
-                widget.settings.textNeonIntensity,
+                widget.settings.textfxSettings.textNeonIntensity,
                 0.1,
                 2.0,
                 19,
-                '${widget.settings.textNeonIntensity.toStringAsFixed(1)}',
+                '${widget.settings.textfxSettings.textNeonIntensity.toStringAsFixed(1)}',
                 (value) {
                   final updatedSettings = widget.settings;
-                  updatedSettings.textNeonIntensity = value;
+                  updatedSettings.textfxSettings.textNeonIntensity = value;
                   widget.onSettingsChanged(updatedSettings);
                 },
               ),
@@ -633,36 +616,38 @@ class _TextFxPanelState extends State<TextFxPanel>
               // Width slider
               _buildLabeledSlider(
                 'Tube Width',
-                widget.settings.textNeonWidth,
+                widget.settings.textfxSettings.textNeonWidth,
                 0.005,
                 0.05,
                 9,
-                '${(widget.settings.textNeonWidth * 100).toStringAsFixed(1)}%',
+                '${(widget.settings.textfxSettings.textNeonWidth * 100).toStringAsFixed(1)}%',
                 (value) {
                   final updatedSettings = widget.settings;
-                  updatedSettings.textNeonWidth = value;
+                  updatedSettings.textfxSettings.textNeonWidth = value;
                   widget.onSettingsChanged(updatedSettings);
                 },
               ),
 
               // Neon color picker
-              _buildColorPicker('Neon Color', widget.settings.textNeonColor, (
-                color,
-              ) {
-                final updatedSettings = widget.settings;
-                updatedSettings.textNeonColor = color;
-                widget.onSettingsChanged(updatedSettings);
-              }),
+              _buildColorPicker(
+                'Neon Color',
+                widget.settings.textfxSettings.textNeonColor,
+                (color) {
+                  final updatedSettings = widget.settings;
+                  updatedSettings.textfxSettings.textNeonColor = color;
+                  widget.onSettingsChanged(updatedSettings);
+                },
+              ),
 
               const SizedBox(height: 8),
 
               // Outer glow color picker
               _buildColorPicker(
                 'Outer Glow',
-                widget.settings.textNeonOuterColor,
+                widget.settings.textfxSettings.textNeonOuterColor,
                 (color) {
                   final updatedSettings = widget.settings;
-                  updatedSettings.textNeonOuterColor = color;
+                  updatedSettings.textfxSettings.textNeonOuterColor = color;
                   widget.onSettingsChanged(updatedSettings);
                 },
               ),

@@ -56,25 +56,31 @@ class _ColorPanelState extends State<ColorPanel> {
         if (_showColorControls) ...[
           ValueSlider(
             label: 'Hue',
-            value: widget.settings.hue,
-            onChanged: (value) =>
-                _onSliderChanged(value, (v) => widget.settings.hue = v),
+            value: widget.settings.colorSettings.hue,
+            onChanged: (value) => _onSliderChanged(
+              value,
+              (v) => widget.settings.colorSettings.hue = v,
+            ),
             sliderColor: widget.sliderColor,
             defaultValue: 0.0,
           ),
           ValueSlider(
             label: 'Saturation',
-            value: widget.settings.saturation,
-            onChanged: (value) =>
-                _onSliderChanged(value, (v) => widget.settings.saturation = v),
+            value: widget.settings.colorSettings.saturation,
+            onChanged: (value) => _onSliderChanged(
+              value,
+              (v) => widget.settings.colorSettings.saturation = v,
+            ),
             sliderColor: widget.sliderColor,
             defaultValue: 0.0,
           ),
           ValueSlider(
             label: 'Lightness',
-            value: widget.settings.lightness,
-            onChanged: (value) =>
-                _onSliderChanged(value, (v) => widget.settings.lightness = v),
+            value: widget.settings.colorSettings.lightness,
+            onChanged: (value) => _onSliderChanged(
+              value,
+              (v) => widget.settings.colorSettings.lightness = v,
+            ),
             sliderColor: widget.sliderColor,
             defaultValue: 0.0,
           ),
@@ -87,10 +93,10 @@ class _ColorPanelState extends State<ColorPanel> {
                 style: TextStyle(color: widget.sliderColor, fontSize: 14),
               ),
               Switch(
-                value: widget.settings.colorAnimated,
+                value: widget.settings.colorSettings.colorAnimated,
                 activeThumbColor: widget.sliderColor,
                 onChanged: (value) {
-                  widget.settings.colorAnimated = value;
+                  widget.settings.colorSettings.colorAnimated = value;
                   if (!widget.settings.colorEnabled)
                     widget.settings.colorEnabled = true;
                   widget.onSettingsChanged(widget.settings);
@@ -98,28 +104,34 @@ class _ColorPanelState extends State<ColorPanel> {
               ),
             ],
           ),
-          if (widget.settings.colorAnimated)
+          if (widget.settings.colorSettings.colorAnimated)
             AnimationControls(
-              animationSpeed: widget.settings.colorAnimOptions.speed,
+              animationSpeed:
+                  widget.settings.colorSettings.colorAnimOptions.speed,
               onSpeedChanged: (v) {
-                widget.settings.colorAnimOptions = widget
+                widget.settings.colorSettings.colorAnimOptions = widget
                     .settings
+                    .colorSettings
                     .colorAnimOptions
                     .copyWith(speed: v);
                 widget.onSettingsChanged(widget.settings);
               },
-              animationMode: widget.settings.colorAnimOptions.mode,
+              animationMode:
+                  widget.settings.colorSettings.colorAnimOptions.mode,
               onModeChanged: (m) {
-                widget.settings.colorAnimOptions = widget
+                widget.settings.colorSettings.colorAnimOptions = widget
                     .settings
+                    .colorSettings
                     .colorAnimOptions
                     .copyWith(mode: m);
                 widget.onSettingsChanged(widget.settings);
               },
-              animationEasing: widget.settings.colorAnimOptions.easing,
+              animationEasing:
+                  widget.settings.colorSettings.colorAnimOptions.easing,
               onEasingChanged: (e) {
-                widget.settings.colorAnimOptions = widget
+                widget.settings.colorSettings.colorAnimOptions = widget
                     .settings
+                    .colorSettings
                     .colorAnimOptions
                     .copyWith(easing: e);
                 widget.onSettingsChanged(widget.settings);
@@ -139,28 +151,30 @@ class _ColorPanelState extends State<ColorPanel> {
         if (_showOverlayControls) ...[
           ValueSlider(
             label: 'Overlay Hue',
-            value: widget.settings.overlayHue,
-            onChanged: (value) =>
-                _onSliderChanged(value, (v) => widget.settings.overlayHue = v),
+            value: widget.settings.colorSettings.overlayHue,
+            onChanged: (value) => _onSliderChanged(
+              value,
+              (v) => widget.settings.colorSettings.overlayHue = v,
+            ),
             sliderColor: widget.sliderColor,
             defaultValue: 0.0,
           ),
           ValueSlider(
             label: 'Overlay Intensity',
-            value: widget.settings.overlayIntensity,
+            value: widget.settings.colorSettings.overlayIntensity,
             onChanged: (value) => _onSliderChanged(
               value,
-              (v) => widget.settings.overlayIntensity = v,
+              (v) => widget.settings.colorSettings.overlayIntensity = v,
             ),
             sliderColor: widget.sliderColor,
             defaultValue: 0.0,
           ),
           ValueSlider(
             label: 'Overlay Opacity',
-            value: widget.settings.overlayOpacity,
+            value: widget.settings.colorSettings.overlayOpacity,
             onChanged: (value) => _onSliderChanged(
               value,
-              (v) => widget.settings.overlayOpacity = v,
+              (v) => widget.settings.colorSettings.overlayOpacity = v,
             ),
             sliderColor: widget.sliderColor,
             defaultValue: 0.0,
@@ -174,10 +188,10 @@ class _ColorPanelState extends State<ColorPanel> {
                 style: TextStyle(color: widget.sliderColor, fontSize: 14),
               ),
               Switch(
-                value: widget.settings.overlayAnimated,
+                value: widget.settings.colorSettings.overlayAnimated,
                 activeThumbColor: widget.sliderColor,
                 onChanged: (value) {
-                  widget.settings.overlayAnimated = value;
+                  widget.settings.colorSettings.overlayAnimated = value;
                   if (!widget.settings.colorEnabled)
                     widget.settings.colorEnabled = true;
                   widget.onSettingsChanged(widget.settings);
@@ -185,28 +199,34 @@ class _ColorPanelState extends State<ColorPanel> {
               ),
             ],
           ),
-          if (widget.settings.overlayAnimated)
+          if (widget.settings.colorSettings.overlayAnimated)
             AnimationControls(
-              animationSpeed: widget.settings.overlayAnimOptions.speed,
+              animationSpeed:
+                  widget.settings.colorSettings.overlayAnimOptions.speed,
               onSpeedChanged: (v) {
-                widget.settings.overlayAnimOptions = widget
+                widget.settings.colorSettings.overlayAnimOptions = widget
                     .settings
+                    .colorSettings
                     .overlayAnimOptions
                     .copyWith(speed: v);
                 widget.onSettingsChanged(widget.settings);
               },
-              animationMode: widget.settings.overlayAnimOptions.mode,
+              animationMode:
+                  widget.settings.colorSettings.overlayAnimOptions.mode,
               onModeChanged: (m) {
-                widget.settings.overlayAnimOptions = widget
+                widget.settings.colorSettings.overlayAnimOptions = widget
                     .settings
+                    .colorSettings
                     .overlayAnimOptions
                     .copyWith(mode: m);
                 widget.onSettingsChanged(widget.settings);
               },
-              animationEasing: widget.settings.overlayAnimOptions.easing,
+              animationEasing:
+                  widget.settings.colorSettings.overlayAnimOptions.easing,
               onEasingChanged: (e) {
-                widget.settings.overlayAnimOptions = widget
+                widget.settings.colorSettings.overlayAnimOptions = widget
                     .settings
+                    .colorSettings
                     .overlayAnimOptions
                     .copyWith(easing: e);
                 widget.onSettingsChanged(widget.settings);
@@ -261,18 +281,21 @@ class _ColorPanelState extends State<ColorPanel> {
 
   void _resetColor() {
     final defaults = ShaderSettings();
-    widget.settings
-      ..colorEnabled = false
-      ..hue = defaults.hue
-      ..saturation = defaults.saturation
-      ..lightness = defaults.lightness
-      ..overlayHue = defaults.overlayHue
-      ..overlayIntensity = defaults.overlayIntensity
-      ..overlayOpacity = defaults.overlayOpacity
-      ..colorAnimated = false
-      ..overlayAnimated = false
-      ..colorAnimOptions = AnimationOptions()
-      ..overlayAnimOptions = AnimationOptions();
+    widget.settings.colorEnabled = false;
+    widget.settings.colorSettings.hue = defaults.colorSettings.hue;
+    widget.settings.colorSettings.saturation =
+        defaults.colorSettings.saturation;
+    widget.settings.colorSettings.lightness = defaults.colorSettings.lightness;
+    widget.settings.colorSettings.overlayHue =
+        defaults.colorSettings.overlayHue;
+    widget.settings.colorSettings.overlayIntensity =
+        defaults.colorSettings.overlayIntensity;
+    widget.settings.colorSettings.overlayOpacity =
+        defaults.colorSettings.overlayOpacity;
+    widget.settings.colorSettings.colorAnimated = false;
+    widget.settings.colorSettings.overlayAnimated = false;
+    widget.settings.colorSettings.colorAnimOptions = AnimationOptions();
+    widget.settings.colorSettings.overlayAnimOptions = AnimationOptions();
 
     widget.onSettingsChanged(widget.settings);
   }
@@ -280,32 +303,38 @@ class _ColorPanelState extends State<ColorPanel> {
   void _applyPreset(Map<String, dynamic> presetData) {
     widget.settings.colorEnabled =
         presetData['colorEnabled'] ?? widget.settings.colorEnabled;
-    widget.settings.hue = presetData['hue'] ?? widget.settings.hue;
-    widget.settings.saturation =
-        presetData['saturation'] ?? widget.settings.saturation;
-    widget.settings.lightness =
-        presetData['lightness'] ?? widget.settings.lightness;
-    widget.settings.overlayHue =
-        presetData['overlayHue'] ?? widget.settings.overlayHue;
-    widget.settings.overlayIntensity =
-        presetData['overlayIntensity'] ?? widget.settings.overlayIntensity;
-    widget.settings.overlayOpacity =
-        presetData['overlayOpacity'] ?? widget.settings.overlayOpacity;
-    widget.settings.colorAnimated =
-        presetData['colorAnimated'] ?? widget.settings.colorAnimated;
-    widget.settings.overlayAnimated =
-        presetData['overlayAnimated'] ?? widget.settings.overlayAnimated;
+    widget.settings.colorSettings.hue =
+        presetData['hue'] ?? widget.settings.colorSettings.hue;
+    widget.settings.colorSettings.saturation =
+        presetData['saturation'] ?? widget.settings.colorSettings.saturation;
+    widget.settings.colorSettings.lightness =
+        presetData['lightness'] ?? widget.settings.colorSettings.lightness;
+    widget.settings.colorSettings.overlayHue =
+        presetData['overlayHue'] ?? widget.settings.colorSettings.overlayHue;
+    widget.settings.colorSettings.overlayIntensity =
+        presetData['overlayIntensity'] ??
+        widget.settings.colorSettings.overlayIntensity;
+    widget.settings.colorSettings.overlayOpacity =
+        presetData['overlayOpacity'] ??
+        widget.settings.colorSettings.overlayOpacity;
+    widget.settings.colorSettings.colorAnimated =
+        presetData['colorAnimated'] ??
+        widget.settings.colorSettings.colorAnimated;
+    widget.settings.colorSettings.overlayAnimated =
+        presetData['overlayAnimated'] ??
+        widget.settings.colorSettings.overlayAnimated;
 
     if (presetData['colorAnimOptions'] != null) {
-      widget.settings.colorAnimOptions = AnimationOptions.fromMap(
+      widget.settings.colorSettings.colorAnimOptions = AnimationOptions.fromMap(
         Map<String, dynamic>.from(presetData['colorAnimOptions']),
       );
     }
 
     if (presetData['overlayAnimOptions'] != null) {
-      widget.settings.overlayAnimOptions = AnimationOptions.fromMap(
-        Map<String, dynamic>.from(presetData['overlayAnimOptions']),
-      );
+      widget.settings.colorSettings.overlayAnimOptions =
+          AnimationOptions.fromMap(
+            Map<String, dynamic>.from(presetData['overlayAnimOptions']),
+          );
     }
 
     widget.onSettingsChanged(widget.settings);
@@ -314,16 +343,18 @@ class _ColorPanelState extends State<ColorPanel> {
   Future<void> _savePresetForAspect(ShaderAspect aspect, String name) async {
     Map<String, dynamic> presetData = {
       'colorEnabled': widget.settings.colorEnabled,
-      'hue': widget.settings.hue,
-      'saturation': widget.settings.saturation,
-      'lightness': widget.settings.lightness,
-      'overlayHue': widget.settings.overlayHue,
-      'overlayIntensity': widget.settings.overlayIntensity,
-      'overlayOpacity': widget.settings.overlayOpacity,
-      'colorAnimated': widget.settings.colorAnimated,
-      'overlayAnimated': widget.settings.overlayAnimated,
-      'colorAnimOptions': widget.settings.colorAnimOptions.toMap(),
-      'overlayAnimOptions': widget.settings.overlayAnimOptions.toMap(),
+      'hue': widget.settings.colorSettings.hue,
+      'saturation': widget.settings.colorSettings.saturation,
+      'lightness': widget.settings.colorSettings.lightness,
+      'overlayHue': widget.settings.colorSettings.overlayHue,
+      'overlayIntensity': widget.settings.colorSettings.overlayIntensity,
+      'overlayOpacity': widget.settings.colorSettings.overlayOpacity,
+      'colorAnimated': widget.settings.colorSettings.colorAnimated,
+      'overlayAnimated': widget.settings.colorSettings.overlayAnimated,
+      'colorAnimOptions': widget.settings.colorSettings.colorAnimOptions
+          .toMap(),
+      'overlayAnimOptions': widget.settings.colorSettings.overlayAnimOptions
+          .toMap(),
     };
 
     // These methods need to be implemented to work with the global preset system

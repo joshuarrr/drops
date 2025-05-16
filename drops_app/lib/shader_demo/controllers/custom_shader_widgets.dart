@@ -29,8 +29,9 @@ class ColorEffectShader extends StatelessWidget {
     }
 
     // Convenience aliases so the helper functions are easily accessible.
-    final AnimationOptions colorOpts = settings.colorAnimOptions;
-    final AnimationOptions overlayOpts = settings.overlayAnimOptions;
+    final AnimationOptions colorOpts = settings.colorSettings.colorAnimOptions;
+    final AnimationOptions overlayOpts =
+        settings.colorSettings.overlayAnimOptions;
 
     // Pre-compute animated values for HSL and Overlay independently.
     final double hslAnimValue = _computeAnimatedValue(
@@ -54,11 +55,11 @@ class ColorEffectShader extends StatelessWidget {
           shader.setImageSampler(0, image);
 
           // Compute animated values when requested
-          double hue = settings.hue;
-          double saturation = settings.saturation;
-          double lightness = settings.lightness;
+          double hue = settings.colorSettings.hue;
+          double saturation = settings.colorSettings.saturation;
+          double lightness = settings.colorSettings.lightness;
 
-          if (settings.colorAnimated) {
+          if (settings.colorSettings.colorAnimated) {
             // Animate hue through the full color wheel [0,1)
             hue = (hue + hslAnimValue) % 1.0;
 
@@ -69,11 +70,11 @@ class ColorEffectShader extends StatelessWidget {
           }
 
           // Determine overlay values (may animate independently)
-          double overlayHue = settings.overlayHue;
-          double overlayIntensity = settings.overlayIntensity;
-          double overlayOpacity = settings.overlayOpacity;
+          double overlayHue = settings.colorSettings.overlayHue;
+          double overlayIntensity = settings.colorSettings.overlayIntensity;
+          double overlayOpacity = settings.colorSettings.overlayOpacity;
 
-          if (settings.overlayAnimated) {
+          if (settings.colorSettings.overlayAnimated) {
             overlayHue = (overlayHue + overlayAnimValue) % 1.0;
             // Subtle breathing effect on intensity & opacity
             final double pulse = math.sin(overlayAnimValue * 2 * math.pi);
@@ -199,7 +200,7 @@ class BlurEffectShader extends StatelessWidget {
   Widget build(BuildContext context) {
     if (enableShaderDebugLogs) {
       print(
-        "SHATTER_SHADER: Building widget with amount=${settings.blurAmount.toStringAsFixed(2)} (animated: ${settings.blurAnimated})",
+        "SHATTER_SHADER: Building widget with amount=${settings.blurSettings.blurAmount.toStringAsFixed(2)} (animated: ${settings.blurSettings.blurAnimated})",
       );
     }
 
@@ -215,20 +216,21 @@ class BlurEffectShader extends StatelessWidget {
           shader.setImageSampler(0, image);
 
           // Compute animated amount if enabled
-          double amount = settings.blurAmount;
-          if (settings.blurAnimated) {
+          double amount = settings.blurSettings.blurAmount;
+          if (settings.blurSettings.blurAnimated) {
             // Compute animated progress based on per-blur animation options.
 
             // Reuse helper to obtain a 0-1 value taking speed/mode/easing into account.
             final double animValue = _computeAnimatedValue(
-              settings.blurAnimOptions,
+              settings.blurSettings.blurAnimOptions,
               animationValue,
             );
 
             // Map to a smooth pulse (same visual as before) for pulse mode or
             // directly use the randomised value for the alternative mode.
             final double intensity =
-                settings.blurAnimOptions.mode == AnimationMode.pulse
+                settings.blurSettings.blurAnimOptions.mode ==
+                    AnimationMode.pulse
                 ? (0.5 + 0.5 * math.sin(animValue * 2 * math.pi))
                 : animValue;
 
@@ -237,13 +239,13 @@ class BlurEffectShader extends StatelessWidget {
 
           // Set uniforms after the texture sampler
           shader.setFloat(0, amount);
-          shader.setFloat(1, settings.blurRadius);
+          shader.setFloat(1, settings.blurSettings.blurRadius);
           shader.setFloat(2, image.width.toDouble());
           shader.setFloat(3, image.height.toDouble());
-          shader.setFloat(4, settings.blurOpacity);
-          shader.setFloat(5, settings.blurBlendMode.toDouble());
-          shader.setFloat(6, settings.blurIntensity);
-          shader.setFloat(7, settings.blurContrast);
+          shader.setFloat(4, settings.blurSettings.blurOpacity);
+          shader.setFloat(5, settings.blurSettings.blurBlendMode.toDouble());
+          shader.setFloat(6, settings.blurSettings.blurIntensity);
+          shader.setFloat(7, settings.blurSettings.blurContrast);
 
           // Draw with the shader, ensuring it covers the full area
           canvas.drawRect(Offset.zero & size, Paint()..shader = shader);
@@ -341,7 +343,7 @@ class NoiseEffectShader extends StatelessWidget {
   Widget build(BuildContext context) {
     if (enableShaderDebugLogs) {
       print(
-        "NOISE_SHADER: Building widget with scale=${settings.noiseScale.toStringAsFixed(2)}, wave=${settings.waveAmount.toStringAsFixed(3)} (animated: ${settings.noiseAnimated})",
+        "NOISE_SHADER: Building widget with scale=${settings.noiseSettings.noiseScale.toStringAsFixed(2)}, wave=${settings.noiseSettings.waveAmount.toStringAsFixed(3)} (animated: ${settings.noiseSettings.noiseAnimated})",
       );
     }
 
@@ -358,16 +360,18 @@ class NoiseEffectShader extends StatelessWidget {
 
           // When noiseAnimated is false, we still send the noise speed
           // but we don't send an animated time value
-          double timeValue = settings.noiseAnimated ? animationValue : 0.0;
+          double timeValue = settings.noiseSettings.noiseAnimated
+              ? animationValue
+              : 0.0;
 
           // The noise speed to use, which can be 0 even when animated
-          double noiseSpeed = settings.noiseSpeed;
+          double noiseSpeed = settings.noiseSettings.noiseSpeed;
 
           // Compute animation values if animation is enabled
-          if (settings.noiseAnimated) {
+          if (settings.noiseSettings.noiseAnimated) {
             // Compute animated progress based on noise animation options
             final double animValue = _computeAnimatedValue(
-              settings.noiseAnimOptions,
+              settings.noiseSettings.noiseAnimOptions,
               animationValue,
             );
 
@@ -375,10 +379,12 @@ class NoiseEffectShader extends StatelessWidget {
             timeValue = animValue;
 
             // Scale the noise speed based on animation options
-            if (settings.noiseAnimOptions.mode == AnimationMode.pulse) {
+            if (settings.noiseSettings.noiseAnimOptions.mode ==
+                AnimationMode.pulse) {
               // Add a breathing effect to the speed in pulse mode
               final double pulse = math.sin(animValue * 2 * math.pi);
-              noiseSpeed = settings.noiseSpeed * (0.5 + 0.5 * pulse);
+              noiseSpeed =
+                  settings.noiseSettings.noiseSpeed * (0.5 + 0.5 * pulse);
             }
           }
 
@@ -388,13 +394,19 @@ class NoiseEffectShader extends StatelessWidget {
             1,
             size.width / size.height,
           ); // Resolution aspect ratio
-          shader.setFloat(2, settings.noiseScale); // Noise scale
+          shader.setFloat(2, settings.noiseSettings.noiseScale); // Noise scale
           shader.setFloat(3, noiseSpeed); // Noise speed
-          shader.setFloat(4, settings.colorIntensity); // Color intensity
-          shader.setFloat(5, settings.waveAmount); // Wave distortion amount
+          shader.setFloat(
+            4,
+            settings.noiseSettings.colorIntensity,
+          ); // Color intensity
+          shader.setFloat(
+            5,
+            settings.noiseSettings.waveAmount,
+          ); // Wave distortion amount
           shader.setFloat(
             6,
-            settings.noiseAnimated ? 1.0 : 0.0,
+            settings.noiseSettings.noiseAnimated ? 1.0 : 0.0,
           ); // Animation flag
 
           // Draw with the shader, ensuring it covers the full area

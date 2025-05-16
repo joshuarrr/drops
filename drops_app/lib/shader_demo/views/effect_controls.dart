@@ -121,7 +121,7 @@ class EffectControls {
             ),
             AspectToggle(
               aspect: ShaderAspect.text,
-              isEnabled: settings.textEnabled,
+              isEnabled: settings.textLayoutSettings.textEnabled,
               isCurrentImageDark: isCurrentImageDark,
               onToggled: onAspectToggled,
               onTap: onAspectSelected,
@@ -135,7 +135,7 @@ class EffectControls {
             ),
             AspectToggle(
               aspect: ShaderAspect.textfx,
-              isEnabled: settings.textfxEnabled,
+              isEnabled: settings.textfxSettings.textfxEnabled,
               isCurrentImageDark: isCurrentImageDark,
               onToggled: onAspectToggled,
               onTap: onAspectSelected,

@@ -304,10 +304,10 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
         // Compose text overlay if enabled
         List<Widget> stackChildren = [SizedBox.expand(child: effectsWidget)];
 
-        if (_shaderSettings.textEnabled &&
-            (_shaderSettings.textTitle.isNotEmpty ||
-                _shaderSettings.textSubtitle.isNotEmpty ||
-                _shaderSettings.textArtist.isNotEmpty)) {
+        if (_shaderSettings.textLayoutSettings.textEnabled &&
+            (_shaderSettings.textLayoutSettings.textTitle.isNotEmpty ||
+                _shaderSettings.textLayoutSettings.textSubtitle.isNotEmpty ||
+                _shaderSettings.textLayoutSettings.textArtist.isNotEmpty)) {
           stackChildren.add(_buildTextOverlay());
         }
 
@@ -337,7 +337,7 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
               : Image.asset(
                   _selectedImage,
                   alignment: Alignment.center,
-                  fit: _shaderSettings.fillScreen
+                  fit: _shaderSettings.textLayoutSettings.fillScreen
                       ? BoxFit.cover
                       : BoxFit.contain,
                   width: double.infinity,
@@ -690,7 +690,7 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
 
   // Add method to apply text effects to text styles
   TextStyle _applyTextEffects(TextStyle baseStyle) {
-    if (!_shaderSettings.textfxEnabled) {
+    if (!_shaderSettings.textfxSettings.textfxEnabled) {
       return baseStyle;
     }
 
@@ -698,43 +698,45 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     List<Shadow> shadows = [];
 
     // Apply shadow if enabled
-    if (_shaderSettings.textShadowEnabled) {
+    if (_shaderSettings.textfxSettings.textShadowEnabled) {
       shadows.add(
         Shadow(
-          blurRadius: _shaderSettings.textShadowBlur,
-          color: _shaderSettings.textShadowColor.withOpacity(
-            _shaderSettings.textShadowOpacity,
+          blurRadius: _shaderSettings.textfxSettings.textShadowBlur,
+          color: _shaderSettings.textfxSettings.textShadowColor.withOpacity(
+            _shaderSettings.textfxSettings.textShadowOpacity,
           ),
           offset: Offset(
-            _shaderSettings.textShadowOffsetX,
-            _shaderSettings.textShadowOffsetY,
+            _shaderSettings.textfxSettings.textShadowOffsetX,
+            _shaderSettings.textfxSettings.textShadowOffsetY,
           ),
         ),
       );
     }
 
     // Apply glow if enabled (multiple shadows with decreasing opacity)
-    if (_shaderSettings.textGlowEnabled) {
+    if (_shaderSettings.textfxSettings.textGlowEnabled) {
       // Create a glow effect with multiple shadows
       final int steps = 5;
       for (int i = 0; i < steps; i++) {
         double intensity = 1.0 - (i / steps);
         shadows.add(
           Shadow(
-            color: _shaderSettings.textGlowColor.withOpacity(
-              _shaderSettings.textGlowOpacity * intensity,
+            color: _shaderSettings.textfxSettings.textGlowColor.withOpacity(
+              _shaderSettings.textfxSettings.textGlowOpacity * intensity,
             ),
-            blurRadius: _shaderSettings.textGlowBlur * (i + 1) / steps,
+            blurRadius:
+                _shaderSettings.textfxSettings.textGlowBlur * (i + 1) / steps,
           ),
         );
       }
     }
 
     // Apply outline if enabled
-    if (_shaderSettings.textOutlineEnabled) {
+    if (_shaderSettings.textfxSettings.textOutlineEnabled) {
       // Simulate outline with shadows in 8 directions
-      final double offset = _shaderSettings.textOutlineWidth;
-      final Color outlineColor = _shaderSettings.textOutlineColor;
+      final double offset = _shaderSettings.textfxSettings.textOutlineWidth;
+      final Color outlineColor =
+          _shaderSettings.textfxSettings.textOutlineColor;
 
       // Create outline using multiple shadows
       // First do the corners
@@ -753,11 +755,11 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     }
 
     // Apply metal effect if enabled
-    if (_shaderSettings.textMetalEnabled) {
+    if (_shaderSettings.textfxSettings.textMetalEnabled) {
       // Create metallic effect with linear gradient foreground
-      final baseColor = _shaderSettings.textMetalBaseColor;
-      final shineColor = _shaderSettings.textMetalShineColor;
-      final shine = _shaderSettings.textMetalShine;
+      final baseColor = _shaderSettings.textfxSettings.textMetalBaseColor;
+      final shineColor = _shaderSettings.textfxSettings.textMetalShineColor;
+      final shine = _shaderSettings.textfxSettings.textMetalShine;
 
       // Helper function to darken a color
       Color darken(Color color, int percent) {
@@ -879,11 +881,11 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     }
 
     // Apply glass effect if enabled
-    if (_shaderSettings.textGlassEnabled) {
-      final glassColor = _shaderSettings.textGlassColor;
-      final opacity = _shaderSettings.textGlassOpacity;
-      final blur = _shaderSettings.textGlassBlur;
-      final refraction = _shaderSettings.textGlassRefraction;
+    if (_shaderSettings.textfxSettings.textGlassEnabled) {
+      final glassColor = _shaderSettings.textfxSettings.textGlassColor;
+      final opacity = _shaderSettings.textfxSettings.textGlassOpacity;
+      final blur = _shaderSettings.textfxSettings.textGlassBlur;
+      final refraction = _shaderSettings.textfxSettings.textGlassRefraction;
 
       // Add a series of very soft, offset shadows to simulate refraction
       for (int i = 0; i < 8; i++) {
@@ -909,11 +911,11 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     }
 
     // Apply neon effect if enabled
-    if (_shaderSettings.textNeonEnabled) {
-      final neonColor = _shaderSettings.textNeonColor;
-      final outerColor = _shaderSettings.textNeonOuterColor;
-      final intensity = _shaderSettings.textNeonIntensity;
-      final width = _shaderSettings.textNeonWidth;
+    if (_shaderSettings.textfxSettings.textNeonEnabled) {
+      final neonColor = _shaderSettings.textfxSettings.textNeonColor;
+      final outerColor = _shaderSettings.textfxSettings.textNeonOuterColor;
+      final intensity = _shaderSettings.textfxSettings.textNeonIntensity;
+      final width = _shaderSettings.textfxSettings.textNeonWidth;
 
       // Inner glow - several tightly packed shadows
       final int innerSteps = 3;
@@ -959,7 +961,7 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     List<Widget> positionedLines = [];
 
     // Check if we need to reverse text direction
-    bool shouldReverseText = false;
+    bool shouldReverseText = true;
 
     // Local helper to map int weight (100-900) to FontWeight constant
     FontWeight toFontWeight(int w) {
@@ -997,7 +999,7 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
         case 2:
           return TextAlign.right;
         default:
-          return TextAlign.left;
+          return TextAlign.center;
       }
     }
 
@@ -1038,9 +1040,11 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
       // Compute appropriate text style for this line
       final double computedSize = size > 0
           ? size * screenSize.width
-          : _shaderSettings.textSize * screenSize.width;
+          : _shaderSettings.textLayoutSettings.textSize * screenSize.width;
 
-      final String family = font.isNotEmpty ? font : _shaderSettings.textFont;
+      final String family = font.isNotEmpty
+          ? font
+          : _shaderSettings.textLayoutSettings.textFont;
 
       TextStyle baseStyle = TextStyle(
         color: textColor,
@@ -1145,51 +1149,51 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     }
 
     addLine(
-      text: _shaderSettings.textTitle,
-      font: _shaderSettings.titleFont,
-      size: _shaderSettings.titleSize,
-      posX: _shaderSettings.titlePosX,
-      posY: _shaderSettings.titlePosY,
-      weight: _shaderSettings.titleWeight > 0
-          ? _shaderSettings.titleWeight
-          : _shaderSettings.textWeight,
-      fitToWidth: _shaderSettings.titleFitToWidth,
-      hAlign: _shaderSettings.titleHAlign,
-      vAlign: _shaderSettings.titleVAlign,
-      lineHeight: _shaderSettings.titleLineHeight,
-      textColor: _shaderSettings.titleColor,
+      text: _shaderSettings.textLayoutSettings.textTitle,
+      font: _shaderSettings.textLayoutSettings.titleFont,
+      size: _shaderSettings.textLayoutSettings.titleSize,
+      posX: _shaderSettings.textLayoutSettings.titlePosX,
+      posY: _shaderSettings.textLayoutSettings.titlePosY,
+      weight: _shaderSettings.textLayoutSettings.titleWeight > 0
+          ? _shaderSettings.textLayoutSettings.titleWeight
+          : _shaderSettings.textLayoutSettings.textWeight,
+      fitToWidth: _shaderSettings.textLayoutSettings.titleFitToWidth,
+      hAlign: _shaderSettings.textLayoutSettings.titleHAlign,
+      vAlign: _shaderSettings.textLayoutSettings.titleVAlign,
+      lineHeight: _shaderSettings.textLayoutSettings.titleLineHeight,
+      textColor: _shaderSettings.textLayoutSettings.titleColor,
     );
 
     addLine(
-      text: _shaderSettings.textSubtitle,
-      font: _shaderSettings.subtitleFont,
-      size: _shaderSettings.subtitleSize,
-      posX: _shaderSettings.subtitlePosX,
-      posY: _shaderSettings.subtitlePosY,
-      weight: _shaderSettings.subtitleWeight > 0
-          ? _shaderSettings.subtitleWeight
-          : _shaderSettings.textWeight,
-      fitToWidth: _shaderSettings.subtitleFitToWidth,
-      hAlign: _shaderSettings.subtitleHAlign,
-      vAlign: _shaderSettings.subtitleVAlign,
-      lineHeight: _shaderSettings.subtitleLineHeight,
-      textColor: _shaderSettings.subtitleColor,
+      text: _shaderSettings.textLayoutSettings.textSubtitle,
+      font: _shaderSettings.textLayoutSettings.subtitleFont,
+      size: _shaderSettings.textLayoutSettings.subtitleSize,
+      posX: _shaderSettings.textLayoutSettings.subtitlePosX,
+      posY: _shaderSettings.textLayoutSettings.subtitlePosY,
+      weight: _shaderSettings.textLayoutSettings.subtitleWeight > 0
+          ? _shaderSettings.textLayoutSettings.subtitleWeight
+          : _shaderSettings.textLayoutSettings.textWeight,
+      fitToWidth: _shaderSettings.textLayoutSettings.subtitleFitToWidth,
+      hAlign: _shaderSettings.textLayoutSettings.subtitleHAlign,
+      vAlign: _shaderSettings.textLayoutSettings.subtitleVAlign,
+      lineHeight: _shaderSettings.textLayoutSettings.subtitleLineHeight,
+      textColor: _shaderSettings.textLayoutSettings.subtitleColor,
     );
 
     addLine(
-      text: _shaderSettings.textArtist,
-      font: _shaderSettings.artistFont,
-      size: _shaderSettings.artistSize,
-      posX: _shaderSettings.artistPosX,
-      posY: _shaderSettings.artistPosY,
-      weight: _shaderSettings.artistWeight > 0
-          ? _shaderSettings.artistWeight
-          : _shaderSettings.textWeight,
-      fitToWidth: _shaderSettings.artistFitToWidth,
-      hAlign: _shaderSettings.artistHAlign,
-      vAlign: _shaderSettings.artistVAlign,
-      lineHeight: _shaderSettings.artistLineHeight,
-      textColor: _shaderSettings.artistColor,
+      text: _shaderSettings.textLayoutSettings.textArtist,
+      font: _shaderSettings.textLayoutSettings.artistFont,
+      size: _shaderSettings.textLayoutSettings.artistSize,
+      posX: _shaderSettings.textLayoutSettings.artistPosX,
+      posY: _shaderSettings.textLayoutSettings.artistPosY,
+      weight: _shaderSettings.textLayoutSettings.artistWeight > 0
+          ? _shaderSettings.textLayoutSettings.artistWeight
+          : _shaderSettings.textLayoutSettings.textWeight,
+      fitToWidth: _shaderSettings.textLayoutSettings.artistFitToWidth,
+      hAlign: _shaderSettings.textLayoutSettings.artistHAlign,
+      vAlign: _shaderSettings.textLayoutSettings.artistVAlign,
+      lineHeight: _shaderSettings.textLayoutSettings.artistLineHeight,
+      textColor: _shaderSettings.textLayoutSettings.artistColor,
     );
 
     return Stack(children: positionedLines);

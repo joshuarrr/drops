@@ -71,12 +71,14 @@ class EffectController {
   }) {
     // Skip if all color settings are zero *and* no animation requested
     bool allZero =
-        settings.hue == 0.0 &&
-        settings.saturation == 0.0 &&
-        settings.lightness == 0.0 &&
-        settings.overlayOpacity == 0.0;
+        settings.colorSettings.hue == 0.0 &&
+        settings.colorSettings.saturation == 0.0 &&
+        settings.colorSettings.lightness == 0.0 &&
+        settings.colorSettings.overlayOpacity == 0.0;
 
-    if (allZero && !settings.colorAnimated && !settings.overlayAnimated) {
+    if (allZero &&
+        !settings.colorSettings.colorAnimated &&
+        !settings.colorSettings.overlayAnimated) {
       if (enableEffectLogs) print("EFFECTS: Color settings zero, skipping");
       return child;
     }
@@ -96,7 +98,8 @@ class EffectController {
     required double animationValue,
   }) {
     // Skip if blur amount is zero
-    if (settings.blurAmount <= 0.0 && !settings.blurAnimated) {
+    if (settings.blurSettings.blurAmount <= 0.0 &&
+        !settings.blurSettings.blurAnimated) {
       if (enableEffectLogs) print("EFFECTS: Blur amount zero, skipping");
       return child;
     }
@@ -116,9 +119,9 @@ class EffectController {
     required double animationValue,
   }) {
     // Skip if noise settings are minimal and no animation
-    if (settings.waveAmount <= 0.0 &&
-        settings.colorIntensity <= 0.0 &&
-        !settings.noiseAnimated) {
+    if (settings.noiseSettings.waveAmount <= 0.0 &&
+        settings.noiseSettings.colorIntensity <= 0.0 &&
+        !settings.noiseSettings.noiseAnimated) {
       if (enableEffectLogs) print("EFFECTS: Noise settings minimal, skipping");
       return child;
     }

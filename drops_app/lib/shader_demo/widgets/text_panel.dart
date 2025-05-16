@@ -228,9 +228,9 @@ class _TextPanelState extends State<TextPanel> {
           onChanged: _setCurrentText,
           textColor: widget.sliderColor,
           enableLogging: false,
-          isTextEnabled: () => widget.settings.textEnabled,
+          isTextEnabled: () => widget.settings.textLayoutSettings.textEnabled,
           enableText: () {
-            widget.settings.textEnabled = true;
+            widget.settings.textLayoutSettings.textEnabled = true;
             widget.onSettingsChanged(widget.settings);
           },
         ),
@@ -240,8 +240,8 @@ class _TextPanelState extends State<TextPanel> {
           currentColor: _getCurrentColor(),
           onColorChanged: (color) {
             _setCurrentColor(color);
-            if (!widget.settings.textEnabled) {
-              widget.settings.textEnabled = true;
+            if (!widget.settings.textLayoutSettings.textEnabled) {
+              widget.settings.textLayoutSettings.textEnabled = true;
             }
             widget.onSettingsChanged(widget.settings);
           },
@@ -257,14 +257,14 @@ class _TextPanelState extends State<TextPanel> {
           onFontSelected: (font) {
             final selected = font == 'Default' ? '' : font;
             _setCurrentFont(selected);
-            if (!widget.settings.textEnabled)
-              widget.settings.textEnabled = true;
+            if (!widget.settings.textLayoutSettings.textEnabled)
+              widget.settings.textLayoutSettings.textEnabled = true;
             widget.onSettingsChanged(widget.settings);
           },
           onWeightSelected: (fw) {
             _setCurrentWeight(_fromFontWeight(fw));
-            if (!widget.settings.textEnabled)
-              widget.settings.textEnabled = true;
+            if (!widget.settings.textLayoutSettings.textEnabled)
+              widget.settings.textLayoutSettings.textEnabled = true;
             widget.onSettingsChanged(widget.settings);
           },
         ),
@@ -292,8 +292,8 @@ class _TextPanelState extends State<TextPanel> {
               onChanged: (value) {
                 if (value != null) {
                   _setCurrentFitToWidth(value);
-                  if (!widget.settings.textEnabled)
-                    widget.settings.textEnabled = true;
+                  if (!widget.settings.textLayoutSettings.textEnabled)
+                    widget.settings.textLayoutSettings.textEnabled = true;
                   widget.onSettingsChanged(widget.settings);
                 }
               },
@@ -332,8 +332,8 @@ class _TextPanelState extends State<TextPanel> {
           currentValue: _getCurrentHAlign(),
           onChanged: (value) {
             _setCurrentHAlign(value);
-            if (!widget.settings.textEnabled)
-              widget.settings.textEnabled = true;
+            if (!widget.settings.textLayoutSettings.textEnabled)
+              widget.settings.textLayoutSettings.textEnabled = true;
             widget.onSettingsChanged(widget.settings);
           },
           sliderColor: widget.sliderColor,
@@ -351,8 +351,8 @@ class _TextPanelState extends State<TextPanel> {
           currentValue: _getCurrentVAlign(),
           onChanged: (value) {
             _setCurrentVAlign(value);
-            if (!widget.settings.textEnabled)
-              widget.settings.textEnabled = true;
+            if (!widget.settings.textLayoutSettings.textEnabled)
+              widget.settings.textLayoutSettings.textEnabled = true;
             widget.onSettingsChanged(widget.settings);
           },
           sliderColor: widget.sliderColor,
@@ -369,7 +369,8 @@ class _TextPanelState extends State<TextPanel> {
 
   void _onSliderChanged(double value, Function(double) setter) {
     // Enable the corresponding effect if it's not already enabled
-    if (!widget.settings.textEnabled) widget.settings.textEnabled = true;
+    if (!widget.settings.textLayoutSettings.textEnabled)
+      widget.settings.textLayoutSettings.textEnabled = true;
 
     // Update the setting value
     setter(value);
@@ -382,13 +383,13 @@ class _TextPanelState extends State<TextPanel> {
     String rawText = "";
     switch (selectedTextLine) {
       case TextLine.title:
-        rawText = widget.settings.textTitle;
+        rawText = widget.settings.textLayoutSettings.textTitle;
         break;
       case TextLine.subtitle:
-        rawText = widget.settings.textSubtitle;
+        rawText = widget.settings.textLayoutSettings.textSubtitle;
         break;
       case TextLine.artist:
-        rawText = widget.settings.textArtist;
+        rawText = widget.settings.textLayoutSettings.textArtist;
         break;
     }
 
@@ -400,13 +401,13 @@ class _TextPanelState extends State<TextPanel> {
     // Store the text directly without reversing
     switch (selectedTextLine) {
       case TextLine.title:
-        widget.settings.textTitle = v;
+        widget.settings.textLayoutSettings.textTitle = v;
         break;
       case TextLine.subtitle:
-        widget.settings.textSubtitle = v;
+        widget.settings.textLayoutSettings.textSubtitle = v;
         break;
       case TextLine.artist:
-        widget.settings.textArtist = v;
+        widget.settings.textLayoutSettings.textArtist = v;
         break;
     }
   }
@@ -414,31 +415,31 @@ class _TextPanelState extends State<TextPanel> {
   String _getCurrentFont() {
     switch (selectedTextLine) {
       case TextLine.title:
-        return widget.settings.titleFont.isNotEmpty
-            ? widget.settings.titleFont
-            : widget.settings.textFont;
+        return widget.settings.textLayoutSettings.titleFont.isNotEmpty
+            ? widget.settings.textLayoutSettings.titleFont
+            : widget.settings.textLayoutSettings.textFont;
       case TextLine.subtitle:
-        return widget.settings.subtitleFont.isNotEmpty
-            ? widget.settings.subtitleFont
-            : widget.settings.textFont;
+        return widget.settings.textLayoutSettings.subtitleFont.isNotEmpty
+            ? widget.settings.textLayoutSettings.subtitleFont
+            : widget.settings.textLayoutSettings.textFont;
       case TextLine.artist:
-        return widget.settings.artistFont.isNotEmpty
-            ? widget.settings.artistFont
-            : widget.settings.textFont;
+        return widget.settings.textLayoutSettings.artistFont.isNotEmpty
+            ? widget.settings.textLayoutSettings.artistFont
+            : widget.settings.textLayoutSettings.textFont;
     }
-    return widget.settings.textFont;
+    return widget.settings.textLayoutSettings.textFont;
   }
 
   void _setCurrentFont(String f) {
     switch (selectedTextLine) {
       case TextLine.title:
-        widget.settings.titleFont = f;
+        widget.settings.textLayoutSettings.titleFont = f;
         break;
       case TextLine.subtitle:
-        widget.settings.subtitleFont = f;
+        widget.settings.textLayoutSettings.subtitleFont = f;
         break;
       case TextLine.artist:
-        widget.settings.artistFont = f;
+        widget.settings.textLayoutSettings.artistFont = f;
         break;
     }
   }
@@ -446,31 +447,31 @@ class _TextPanelState extends State<TextPanel> {
   double _getCurrentSize() {
     switch (selectedTextLine) {
       case TextLine.title:
-        return widget.settings.titleSize > 0
-            ? widget.settings.titleSize
-            : widget.settings.textSize;
+        return widget.settings.textLayoutSettings.titleSize > 0
+            ? widget.settings.textLayoutSettings.titleSize
+            : widget.settings.textLayoutSettings.textSize;
       case TextLine.subtitle:
-        return widget.settings.subtitleSize > 0
-            ? widget.settings.subtitleSize
-            : widget.settings.textSize;
+        return widget.settings.textLayoutSettings.subtitleSize > 0
+            ? widget.settings.textLayoutSettings.subtitleSize
+            : widget.settings.textLayoutSettings.textSize;
       case TextLine.artist:
-        return widget.settings.artistSize > 0
-            ? widget.settings.artistSize
-            : widget.settings.textSize;
+        return widget.settings.textLayoutSettings.artistSize > 0
+            ? widget.settings.textLayoutSettings.artistSize
+            : widget.settings.textLayoutSettings.textSize;
     }
-    return widget.settings.textSize;
+    return widget.settings.textLayoutSettings.textSize;
   }
 
   void _setCurrentSize(double v) {
     switch (selectedTextLine) {
       case TextLine.title:
-        widget.settings.titleSize = v;
+        widget.settings.textLayoutSettings.titleSize = v;
         break;
       case TextLine.subtitle:
-        widget.settings.subtitleSize = v;
+        widget.settings.textLayoutSettings.subtitleSize = v;
         break;
       case TextLine.artist:
-        widget.settings.artistSize = v;
+        widget.settings.textLayoutSettings.artistSize = v;
         break;
     }
   }
@@ -478,11 +479,11 @@ class _TextPanelState extends State<TextPanel> {
   double _getCurrentPosX() {
     switch (selectedTextLine) {
       case TextLine.title:
-        return widget.settings.titlePosX;
+        return widget.settings.textLayoutSettings.titlePosX;
       case TextLine.subtitle:
-        return widget.settings.subtitlePosX;
+        return widget.settings.textLayoutSettings.subtitlePosX;
       case TextLine.artist:
-        return widget.settings.artistPosX;
+        return widget.settings.textLayoutSettings.artistPosX;
     }
     return 0.0;
   }
@@ -490,13 +491,13 @@ class _TextPanelState extends State<TextPanel> {
   void _setCurrentPosX(double v) {
     switch (selectedTextLine) {
       case TextLine.title:
-        widget.settings.titlePosX = v;
+        widget.settings.textLayoutSettings.titlePosX = v;
         break;
       case TextLine.subtitle:
-        widget.settings.subtitlePosX = v;
+        widget.settings.textLayoutSettings.subtitlePosX = v;
         break;
       case TextLine.artist:
-        widget.settings.artistPosX = v;
+        widget.settings.textLayoutSettings.artistPosX = v;
         break;
     }
   }
@@ -504,11 +505,11 @@ class _TextPanelState extends State<TextPanel> {
   double _getCurrentPosY() {
     switch (selectedTextLine) {
       case TextLine.title:
-        return widget.settings.titlePosY;
+        return widget.settings.textLayoutSettings.titlePosY;
       case TextLine.subtitle:
-        return widget.settings.subtitlePosY;
+        return widget.settings.textLayoutSettings.subtitlePosY;
       case TextLine.artist:
-        return widget.settings.artistPosY;
+        return widget.settings.textLayoutSettings.artistPosY;
     }
     return 0.0;
   }
@@ -516,13 +517,13 @@ class _TextPanelState extends State<TextPanel> {
   void _setCurrentPosY(double v) {
     switch (selectedTextLine) {
       case TextLine.title:
-        widget.settings.titlePosY = v;
+        widget.settings.textLayoutSettings.titlePosY = v;
         break;
       case TextLine.subtitle:
-        widget.settings.subtitlePosY = v;
+        widget.settings.textLayoutSettings.subtitlePosY = v;
         break;
       case TextLine.artist:
-        widget.settings.artistPosY = v;
+        widget.settings.textLayoutSettings.artistPosY = v;
         break;
     }
   }
@@ -531,31 +532,31 @@ class _TextPanelState extends State<TextPanel> {
   int _getCurrentWeight() {
     switch (selectedTextLine) {
       case TextLine.title:
-        return widget.settings.titleWeight > 0
-            ? widget.settings.titleWeight
-            : widget.settings.textWeight;
+        return widget.settings.textLayoutSettings.titleWeight > 0
+            ? widget.settings.textLayoutSettings.titleWeight
+            : widget.settings.textLayoutSettings.textWeight;
       case TextLine.subtitle:
-        return widget.settings.subtitleWeight > 0
-            ? widget.settings.subtitleWeight
-            : widget.settings.textWeight;
+        return widget.settings.textLayoutSettings.subtitleWeight > 0
+            ? widget.settings.textLayoutSettings.subtitleWeight
+            : widget.settings.textLayoutSettings.textWeight;
       case TextLine.artist:
-        return widget.settings.artistWeight > 0
-            ? widget.settings.artistWeight
-            : widget.settings.textWeight;
+        return widget.settings.textLayoutSettings.artistWeight > 0
+            ? widget.settings.textLayoutSettings.artistWeight
+            : widget.settings.textLayoutSettings.textWeight;
     }
-    return widget.settings.textWeight;
+    return widget.settings.textLayoutSettings.textWeight;
   }
 
   void _setCurrentWeight(int w) {
     switch (selectedTextLine) {
       case TextLine.title:
-        widget.settings.titleWeight = w;
+        widget.settings.textLayoutSettings.titleWeight = w;
         break;
       case TextLine.subtitle:
-        widget.settings.subtitleWeight = w;
+        widget.settings.textLayoutSettings.subtitleWeight = w;
         break;
       case TextLine.artist:
-        widget.settings.artistWeight = w;
+        widget.settings.textLayoutSettings.artistWeight = w;
         break;
     }
   }
@@ -564,11 +565,11 @@ class _TextPanelState extends State<TextPanel> {
   bool _getCurrentFitToWidth() {
     switch (selectedTextLine) {
       case TextLine.title:
-        return widget.settings.titleFitToWidth;
+        return widget.settings.textLayoutSettings.titleFitToWidth;
       case TextLine.subtitle:
-        return widget.settings.subtitleFitToWidth;
+        return widget.settings.textLayoutSettings.subtitleFitToWidth;
       case TextLine.artist:
-        return widget.settings.artistFitToWidth;
+        return widget.settings.textLayoutSettings.artistFitToWidth;
     }
     return false;
   }
@@ -576,13 +577,13 @@ class _TextPanelState extends State<TextPanel> {
   void _setCurrentFitToWidth(bool value) {
     switch (selectedTextLine) {
       case TextLine.title:
-        widget.settings.titleFitToWidth = value;
+        widget.settings.textLayoutSettings.titleFitToWidth = value;
         break;
       case TextLine.subtitle:
-        widget.settings.subtitleFitToWidth = value;
+        widget.settings.textLayoutSettings.subtitleFitToWidth = value;
         break;
       case TextLine.artist:
-        widget.settings.artistFitToWidth = value;
+        widget.settings.textLayoutSettings.artistFitToWidth = value;
         break;
     }
   }
@@ -591,11 +592,11 @@ class _TextPanelState extends State<TextPanel> {
   int _getCurrentHAlign() {
     switch (selectedTextLine) {
       case TextLine.title:
-        return widget.settings.titleHAlign;
+        return widget.settings.textLayoutSettings.titleHAlign;
       case TextLine.subtitle:
-        return widget.settings.subtitleHAlign;
+        return widget.settings.textLayoutSettings.subtitleHAlign;
       case TextLine.artist:
-        return widget.settings.artistHAlign;
+        return widget.settings.textLayoutSettings.artistHAlign;
     }
     return 0; // Default to left
   }
@@ -603,13 +604,13 @@ class _TextPanelState extends State<TextPanel> {
   void _setCurrentHAlign(int value) {
     switch (selectedTextLine) {
       case TextLine.title:
-        widget.settings.titleHAlign = value;
+        widget.settings.textLayoutSettings.titleHAlign = value;
         break;
       case TextLine.subtitle:
-        widget.settings.subtitleHAlign = value;
+        widget.settings.textLayoutSettings.subtitleHAlign = value;
         break;
       case TextLine.artist:
-        widget.settings.artistHAlign = value;
+        widget.settings.textLayoutSettings.artistHAlign = value;
         break;
     }
   }
@@ -618,11 +619,11 @@ class _TextPanelState extends State<TextPanel> {
   int _getCurrentVAlign() {
     switch (selectedTextLine) {
       case TextLine.title:
-        return widget.settings.titleVAlign;
+        return widget.settings.textLayoutSettings.titleVAlign;
       case TextLine.subtitle:
-        return widget.settings.subtitleVAlign;
+        return widget.settings.textLayoutSettings.subtitleVAlign;
       case TextLine.artist:
-        return widget.settings.artistVAlign;
+        return widget.settings.textLayoutSettings.artistVAlign;
     }
     return 0; // Default to top
   }
@@ -630,13 +631,13 @@ class _TextPanelState extends State<TextPanel> {
   void _setCurrentVAlign(int value) {
     switch (selectedTextLine) {
       case TextLine.title:
-        widget.settings.titleVAlign = value;
+        widget.settings.textLayoutSettings.titleVAlign = value;
         break;
       case TextLine.subtitle:
-        widget.settings.subtitleVAlign = value;
+        widget.settings.textLayoutSettings.subtitleVAlign = value;
         break;
       case TextLine.artist:
-        widget.settings.artistVAlign = value;
+        widget.settings.textLayoutSettings.artistVAlign = value;
         break;
     }
   }
@@ -645,11 +646,11 @@ class _TextPanelState extends State<TextPanel> {
   double _getCurrentLineHeight() {
     switch (selectedTextLine) {
       case TextLine.title:
-        return widget.settings.titleLineHeight;
+        return widget.settings.textLayoutSettings.titleLineHeight;
       case TextLine.subtitle:
-        return widget.settings.subtitleLineHeight;
+        return widget.settings.textLayoutSettings.subtitleLineHeight;
       case TextLine.artist:
-        return widget.settings.artistLineHeight;
+        return widget.settings.textLayoutSettings.artistLineHeight;
     }
     return 1.2; // Default line height
   }
@@ -657,13 +658,13 @@ class _TextPanelState extends State<TextPanel> {
   void _setCurrentLineHeight(double value) {
     switch (selectedTextLine) {
       case TextLine.title:
-        widget.settings.titleLineHeight = value;
+        widget.settings.textLayoutSettings.titleLineHeight = value;
         break;
       case TextLine.subtitle:
-        widget.settings.subtitleLineHeight = value;
+        widget.settings.textLayoutSettings.subtitleLineHeight = value;
         break;
       case TextLine.artist:
-        widget.settings.artistLineHeight = value;
+        widget.settings.textLayoutSettings.artistLineHeight = value;
         break;
     }
   }
@@ -723,193 +724,292 @@ class _TextPanelState extends State<TextPanel> {
     final defaults = ShaderSettings();
     // Create a copy of the current settings and reset only text properties
     final resetSettings = ShaderSettings.fromMap(widget.settings.toMap())
-      ..textEnabled = false
-      ..textTitle = defaults.textTitle
-      ..textSubtitle = defaults.textSubtitle
-      ..textArtist = defaults.textArtist
-      ..textFont = defaults.textFont
-      ..textSize = defaults.textSize
-      ..textPosX = defaults.textPosX
-      ..textPosY = defaults.textPosY
-      ..textWeight = defaults.textWeight
-      ..textColor = defaults.textColor
-      ..titleFont = defaults.titleFont
-      ..titleSize = defaults.titleSize
-      ..titlePosX = defaults.titlePosX
-      ..titlePosY = defaults.titlePosY
-      ..titleWeight = defaults.titleWeight
-      ..titleColor = defaults.titleColor
-      ..subtitleFont = defaults.subtitleFont
-      ..subtitleSize = defaults.subtitleSize
-      ..subtitlePosX = defaults.subtitlePosX
-      ..subtitlePosY = defaults.subtitlePosY
-      ..subtitleWeight = defaults.subtitleWeight
-      ..subtitleColor = defaults.subtitleColor
-      ..artistFont = defaults.artistFont
-      ..artistSize = defaults.artistSize
-      ..artistPosX = defaults.artistPosX
-      ..artistPosY = defaults.artistPosY
-      ..artistWeight = defaults.artistWeight
-      ..artistColor = defaults.artistColor
-      ..textFitToWidth = defaults.textFitToWidth
-      ..textHAlign = defaults.textHAlign
-      ..textVAlign = defaults.textVAlign
-      ..textLineHeight = defaults.textLineHeight
-      ..titleFitToWidth = defaults.titleFitToWidth
-      ..titleHAlign = defaults.titleHAlign
-      ..titleVAlign = defaults.titleVAlign
-      ..titleLineHeight = defaults.titleLineHeight
-      ..subtitleFitToWidth = defaults.subtitleFitToWidth
-      ..subtitleHAlign = defaults.subtitleHAlign
-      ..subtitleVAlign = defaults.subtitleVAlign
-      ..subtitleLineHeight = defaults.subtitleLineHeight
-      ..artistFitToWidth = defaults.artistFitToWidth
-      ..artistHAlign = defaults.artistHAlign
-      ..artistVAlign = defaults.artistVAlign
-      ..artistLineHeight = defaults.artistLineHeight;
+      ..textLayoutSettings.textEnabled = false
+      ..textLayoutSettings.textTitle = defaults.textLayoutSettings.textTitle
+      ..textLayoutSettings.textSubtitle =
+          defaults.textLayoutSettings.textSubtitle
+      ..textLayoutSettings.textArtist = defaults.textLayoutSettings.textArtist
+      ..textLayoutSettings.textFont = defaults.textLayoutSettings.textFont
+      ..textLayoutSettings.textSize = defaults.textLayoutSettings.textSize
+      ..textLayoutSettings.textPosX = defaults.textLayoutSettings.textPosX
+      ..textLayoutSettings.textPosY = defaults.textLayoutSettings.textPosY
+      ..textLayoutSettings.textWeight = defaults.textLayoutSettings.textWeight
+      ..textLayoutSettings.textColor = defaults.textLayoutSettings.textColor
+      ..textLayoutSettings.titleFont = defaults.textLayoutSettings.titleFont
+      ..textLayoutSettings.titleSize = defaults.textLayoutSettings.titleSize
+      ..textLayoutSettings.titlePosX = defaults.textLayoutSettings.titlePosX
+      ..textLayoutSettings.titlePosY = defaults.textLayoutSettings.titlePosY
+      ..textLayoutSettings.titleWeight = defaults.textLayoutSettings.titleWeight
+      ..textLayoutSettings.titleColor = defaults.textLayoutSettings.titleColor
+      ..textLayoutSettings.subtitleFont =
+          defaults.textLayoutSettings.subtitleFont
+      ..textLayoutSettings.subtitleSize =
+          defaults.textLayoutSettings.subtitleSize
+      ..textLayoutSettings.subtitlePosX =
+          defaults.textLayoutSettings.subtitlePosX
+      ..textLayoutSettings.subtitlePosY =
+          defaults.textLayoutSettings.subtitlePosY
+      ..textLayoutSettings.subtitleWeight =
+          defaults.textLayoutSettings.subtitleWeight
+      ..textLayoutSettings.subtitleColor =
+          defaults.textLayoutSettings.subtitleColor
+      ..textLayoutSettings.artistFont = defaults.textLayoutSettings.artistFont
+      ..textLayoutSettings.artistSize = defaults.textLayoutSettings.artistSize
+      ..textLayoutSettings.artistPosX = defaults.textLayoutSettings.artistPosX
+      ..textLayoutSettings.artistPosY = defaults.textLayoutSettings.artistPosY
+      ..textLayoutSettings.artistWeight =
+          defaults.textLayoutSettings.artistWeight
+      ..textLayoutSettings.artistColor = defaults.textLayoutSettings.artistColor
+      ..textLayoutSettings.textFitToWidth =
+          defaults.textLayoutSettings.textFitToWidth
+      ..textLayoutSettings.textHAlign = defaults.textLayoutSettings.textHAlign
+      ..textLayoutSettings.textVAlign = defaults.textLayoutSettings.textVAlign
+      ..textLayoutSettings.textLineHeight =
+          defaults.textLayoutSettings.textLineHeight
+      ..textLayoutSettings.titleFitToWidth =
+          defaults.textLayoutSettings.titleFitToWidth
+      ..textLayoutSettings.titleHAlign = defaults.textLayoutSettings.titleHAlign
+      ..textLayoutSettings.titleVAlign = defaults.textLayoutSettings.titleVAlign
+      ..textLayoutSettings.titleLineHeight =
+          defaults.textLayoutSettings.titleLineHeight
+      ..textLayoutSettings.subtitleFitToWidth =
+          defaults.textLayoutSettings.subtitleFitToWidth
+      ..textLayoutSettings.subtitleHAlign =
+          defaults.textLayoutSettings.subtitleHAlign
+      ..textLayoutSettings.subtitleVAlign =
+          defaults.textLayoutSettings.subtitleVAlign
+      ..textLayoutSettings.subtitleLineHeight =
+          defaults.textLayoutSettings.subtitleLineHeight
+      ..textLayoutSettings.artistFitToWidth =
+          defaults.textLayoutSettings.artistFitToWidth
+      ..textLayoutSettings.artistHAlign =
+          defaults.textLayoutSettings.artistHAlign
+      ..textLayoutSettings.artistVAlign =
+          defaults.textLayoutSettings.artistVAlign
+      ..textLayoutSettings.artistLineHeight =
+          defaults.textLayoutSettings.artistLineHeight;
 
     // Update the original settings object with the reset values
-    widget.settings.textEnabled = resetSettings.textEnabled;
-    widget.settings.textTitle = resetSettings.textTitle;
-    widget.settings.textSubtitle = resetSettings.textSubtitle;
-    widget.settings.textArtist = resetSettings.textArtist;
-    widget.settings.textFont = resetSettings.textFont;
-    widget.settings.textSize = resetSettings.textSize;
-    widget.settings.textPosX = resetSettings.textPosX;
-    widget.settings.textPosY = resetSettings.textPosY;
-    widget.settings.textWeight = resetSettings.textWeight;
-    widget.settings.textColor = resetSettings.textColor;
-    widget.settings.titleFont = resetSettings.titleFont;
-    widget.settings.titleSize = resetSettings.titleSize;
-    widget.settings.titlePosX = resetSettings.titlePosX;
-    widget.settings.titlePosY = resetSettings.titlePosY;
-    widget.settings.titleWeight = resetSettings.titleWeight;
-    widget.settings.titleColor = resetSettings.titleColor;
-    widget.settings.subtitleFont = resetSettings.subtitleFont;
-    widget.settings.subtitleSize = resetSettings.subtitleSize;
-    widget.settings.subtitlePosX = resetSettings.subtitlePosX;
-    widget.settings.subtitlePosY = resetSettings.subtitlePosY;
-    widget.settings.subtitleWeight = resetSettings.subtitleWeight;
-    widget.settings.subtitleColor = resetSettings.subtitleColor;
-    widget.settings.artistFont = resetSettings.artistFont;
-    widget.settings.artistSize = resetSettings.artistSize;
-    widget.settings.artistPosX = resetSettings.artistPosX;
-    widget.settings.artistPosY = resetSettings.artistPosY;
-    widget.settings.artistWeight = resetSettings.artistWeight;
-    widget.settings.artistColor = resetSettings.artistColor;
-    widget.settings.textFitToWidth = resetSettings.textFitToWidth;
-    widget.settings.textHAlign = resetSettings.textHAlign;
-    widget.settings.textVAlign = resetSettings.textVAlign;
-    widget.settings.textLineHeight = resetSettings.textLineHeight;
-    widget.settings.titleFitToWidth = resetSettings.titleFitToWidth;
-    widget.settings.titleHAlign = resetSettings.titleHAlign;
-    widget.settings.titleVAlign = resetSettings.titleVAlign;
-    widget.settings.titleLineHeight = resetSettings.titleLineHeight;
-    widget.settings.subtitleFitToWidth = resetSettings.subtitleFitToWidth;
-    widget.settings.subtitleHAlign = resetSettings.subtitleHAlign;
-    widget.settings.subtitleVAlign = resetSettings.subtitleVAlign;
-    widget.settings.subtitleLineHeight = resetSettings.subtitleLineHeight;
-    widget.settings.artistFitToWidth = resetSettings.artistFitToWidth;
-    widget.settings.artistHAlign = resetSettings.artistHAlign;
-    widget.settings.artistVAlign = resetSettings.artistVAlign;
-    widget.settings.artistLineHeight = resetSettings.artistLineHeight;
+    widget.settings.textLayoutSettings.textEnabled =
+        resetSettings.textLayoutSettings.textEnabled;
+    widget.settings.textLayoutSettings.textTitle =
+        resetSettings.textLayoutSettings.textTitle;
+    widget.settings.textLayoutSettings.textSubtitle =
+        resetSettings.textLayoutSettings.textSubtitle;
+    widget.settings.textLayoutSettings.textArtist =
+        resetSettings.textLayoutSettings.textArtist;
+    widget.settings.textLayoutSettings.textFont =
+        resetSettings.textLayoutSettings.textFont;
+    widget.settings.textLayoutSettings.textSize =
+        resetSettings.textLayoutSettings.textSize;
+    widget.settings.textLayoutSettings.textPosX =
+        resetSettings.textLayoutSettings.textPosX;
+    widget.settings.textLayoutSettings.textPosY =
+        resetSettings.textLayoutSettings.textPosY;
+    widget.settings.textLayoutSettings.textWeight =
+        resetSettings.textLayoutSettings.textWeight;
+    widget.settings.textLayoutSettings.textColor =
+        resetSettings.textLayoutSettings.textColor;
+    widget.settings.textLayoutSettings.titleFont =
+        resetSettings.textLayoutSettings.titleFont;
+    widget.settings.textLayoutSettings.titleSize =
+        resetSettings.textLayoutSettings.titleSize;
+    widget.settings.textLayoutSettings.titlePosX =
+        resetSettings.textLayoutSettings.titlePosX;
+    widget.settings.textLayoutSettings.titlePosY =
+        resetSettings.textLayoutSettings.titlePosY;
+    widget.settings.textLayoutSettings.titleWeight =
+        resetSettings.textLayoutSettings.titleWeight;
+    widget.settings.textLayoutSettings.titleColor =
+        resetSettings.textLayoutSettings.titleColor;
+    widget.settings.textLayoutSettings.subtitleFont =
+        resetSettings.textLayoutSettings.subtitleFont;
+    widget.settings.textLayoutSettings.subtitleSize =
+        resetSettings.textLayoutSettings.subtitleSize;
+    widget.settings.textLayoutSettings.subtitlePosX =
+        resetSettings.textLayoutSettings.subtitlePosX;
+    widget.settings.textLayoutSettings.subtitlePosY =
+        resetSettings.textLayoutSettings.subtitlePosY;
+    widget.settings.textLayoutSettings.subtitleWeight =
+        resetSettings.textLayoutSettings.subtitleWeight;
+    widget.settings.textLayoutSettings.subtitleColor =
+        resetSettings.textLayoutSettings.subtitleColor;
+    widget.settings.textLayoutSettings.artistFont =
+        resetSettings.textLayoutSettings.artistFont;
+    widget.settings.textLayoutSettings.artistSize =
+        resetSettings.textLayoutSettings.artistSize;
+    widget.settings.textLayoutSettings.artistPosX =
+        resetSettings.textLayoutSettings.artistPosX;
+    widget.settings.textLayoutSettings.artistPosY =
+        resetSettings.textLayoutSettings.artistPosY;
+    widget.settings.textLayoutSettings.artistWeight =
+        resetSettings.textLayoutSettings.artistWeight;
+    widget.settings.textLayoutSettings.artistColor =
+        resetSettings.textLayoutSettings.artistColor;
+    widget.settings.textLayoutSettings.textFitToWidth =
+        resetSettings.textLayoutSettings.textFitToWidth;
+    widget.settings.textLayoutSettings.textHAlign =
+        resetSettings.textLayoutSettings.textHAlign;
+    widget.settings.textLayoutSettings.textVAlign =
+        resetSettings.textLayoutSettings.textVAlign;
+    widget.settings.textLayoutSettings.textLineHeight =
+        resetSettings.textLayoutSettings.textLineHeight;
+    widget.settings.textLayoutSettings.titleFitToWidth =
+        resetSettings.textLayoutSettings.titleFitToWidth;
+    widget.settings.textLayoutSettings.titleHAlign =
+        resetSettings.textLayoutSettings.titleHAlign;
+    widget.settings.textLayoutSettings.titleVAlign =
+        resetSettings.textLayoutSettings.titleVAlign;
+    widget.settings.textLayoutSettings.titleLineHeight =
+        resetSettings.textLayoutSettings.titleLineHeight;
+    widget.settings.textLayoutSettings.subtitleFitToWidth =
+        resetSettings.textLayoutSettings.subtitleFitToWidth;
+    widget.settings.textLayoutSettings.subtitleHAlign =
+        resetSettings.textLayoutSettings.subtitleHAlign;
+    widget.settings.textLayoutSettings.subtitleVAlign =
+        resetSettings.textLayoutSettings.subtitleVAlign;
+    widget.settings.textLayoutSettings.subtitleLineHeight =
+        resetSettings.textLayoutSettings.subtitleLineHeight;
+    widget.settings.textLayoutSettings.artistFitToWidth =
+        resetSettings.textLayoutSettings.artistFitToWidth;
+    widget.settings.textLayoutSettings.artistHAlign =
+        resetSettings.textLayoutSettings.artistHAlign;
+    widget.settings.textLayoutSettings.artistVAlign =
+        resetSettings.textLayoutSettings.artistVAlign;
+    widget.settings.textLayoutSettings.artistLineHeight =
+        resetSettings.textLayoutSettings.artistLineHeight;
 
     widget.onSettingsChanged(widget.settings);
   }
 
   void _applyPreset(Map<String, dynamic> presetData) {
-    widget.settings.textEnabled =
-        presetData['textEnabled'] ?? widget.settings.textEnabled;
-    widget.settings.textTitle =
-        presetData['textTitle'] ?? widget.settings.textTitle;
-    widget.settings.textSubtitle =
-        presetData['textSubtitle'] ?? widget.settings.textSubtitle;
-    widget.settings.textArtist =
-        presetData['textArtist'] ?? widget.settings.textArtist;
-    widget.settings.textFont =
-        presetData['textFont'] ?? widget.settings.textFont;
-    widget.settings.textSize =
-        presetData['textSize'] ?? widget.settings.textSize;
-    widget.settings.textPosX =
-        presetData['textPosX'] ?? widget.settings.textPosX;
-    widget.settings.textPosY =
-        presetData['textPosY'] ?? widget.settings.textPosY;
-    widget.settings.textWeight =
-        presetData['textWeight'] ?? widget.settings.textWeight;
-    widget.settings.textColor = presetData['textColor'] != null
+    widget.settings.textLayoutSettings.textEnabled =
+        presetData['textEnabled'] ??
+        widget.settings.textLayoutSettings.textEnabled;
+    widget.settings.textLayoutSettings.textTitle =
+        presetData['textTitle'] ?? widget.settings.textLayoutSettings.textTitle;
+    widget.settings.textLayoutSettings.textSubtitle =
+        presetData['textSubtitle'] ??
+        widget.settings.textLayoutSettings.textSubtitle;
+    widget.settings.textLayoutSettings.textArtist =
+        presetData['textArtist'] ??
+        widget.settings.textLayoutSettings.textArtist;
+    widget.settings.textLayoutSettings.textFont =
+        presetData['textFont'] ?? widget.settings.textLayoutSettings.textFont;
+    widget.settings.textLayoutSettings.textSize =
+        presetData['textSize'] ?? widget.settings.textLayoutSettings.textSize;
+    widget.settings.textLayoutSettings.textPosX =
+        presetData['textPosX'] ?? widget.settings.textLayoutSettings.textPosX;
+    widget.settings.textLayoutSettings.textPosY =
+        presetData['textPosY'] ?? widget.settings.textLayoutSettings.textPosY;
+    widget.settings.textLayoutSettings.textWeight =
+        presetData['textWeight'] ??
+        widget.settings.textLayoutSettings.textWeight;
+    widget.settings.textLayoutSettings.textColor =
+        presetData['textColor'] != null
         ? Color(presetData['textColor'])
-        : widget.settings.textColor;
-    widget.settings.titleFont =
-        presetData['titleFont'] ?? widget.settings.titleFont;
-    widget.settings.titleSize =
-        presetData['titleSize'] ?? widget.settings.titleSize;
-    widget.settings.titlePosX =
-        presetData['titlePosX'] ?? widget.settings.titlePosX;
-    widget.settings.titlePosY =
-        presetData['titlePosY'] ?? widget.settings.titlePosY;
-    widget.settings.titleWeight =
-        presetData['titleWeight'] ?? widget.settings.titleWeight;
-    widget.settings.titleColor = presetData['titleColor'] != null
+        : widget.settings.textLayoutSettings.textColor;
+    widget.settings.textLayoutSettings.titleFont =
+        presetData['titleFont'] ?? widget.settings.textLayoutSettings.titleFont;
+    widget.settings.textLayoutSettings.titleSize =
+        presetData['titleSize'] ?? widget.settings.textLayoutSettings.titleSize;
+    widget.settings.textLayoutSettings.titlePosX =
+        presetData['titlePosX'] ?? widget.settings.textLayoutSettings.titlePosX;
+    widget.settings.textLayoutSettings.titlePosY =
+        presetData['titlePosY'] ?? widget.settings.textLayoutSettings.titlePosY;
+    widget.settings.textLayoutSettings.titleWeight =
+        presetData['titleWeight'] ??
+        widget.settings.textLayoutSettings.titleWeight;
+    widget.settings.textLayoutSettings.titleColor =
+        presetData['titleColor'] != null
         ? Color(presetData['titleColor'])
-        : widget.settings.titleColor;
-    widget.settings.subtitleFont =
-        presetData['subtitleFont'] ?? widget.settings.subtitleFont;
-    widget.settings.subtitleSize =
-        presetData['subtitleSize'] ?? widget.settings.subtitleSize;
-    widget.settings.subtitlePosX =
-        presetData['subtitlePosX'] ?? widget.settings.subtitlePosX;
-    widget.settings.subtitlePosY =
-        presetData['subtitlePosY'] ?? widget.settings.subtitlePosY;
-    widget.settings.subtitleWeight =
-        presetData['subtitleWeight'] ?? widget.settings.subtitleWeight;
-    widget.settings.subtitleColor = presetData['subtitleColor'] != null
+        : widget.settings.textLayoutSettings.titleColor;
+    widget.settings.textLayoutSettings.subtitleFont =
+        presetData['subtitleFont'] ??
+        widget.settings.textLayoutSettings.subtitleFont;
+    widget.settings.textLayoutSettings.subtitleSize =
+        presetData['subtitleSize'] ??
+        widget.settings.textLayoutSettings.subtitleSize;
+    widget.settings.textLayoutSettings.subtitlePosX =
+        presetData['subtitlePosX'] ??
+        widget.settings.textLayoutSettings.subtitlePosX;
+    widget.settings.textLayoutSettings.subtitlePosY =
+        presetData['subtitlePosY'] ??
+        widget.settings.textLayoutSettings.subtitlePosY;
+    widget.settings.textLayoutSettings.subtitleWeight =
+        presetData['subtitleWeight'] ??
+        widget.settings.textLayoutSettings.subtitleWeight;
+    widget.settings.textLayoutSettings.subtitleColor =
+        presetData['subtitleColor'] != null
         ? Color(presetData['subtitleColor'])
-        : widget.settings.subtitleColor;
-    widget.settings.artistFont =
-        presetData['artistFont'] ?? widget.settings.artistFont;
-    widget.settings.artistSize =
-        presetData['artistSize'] ?? widget.settings.artistSize;
-    widget.settings.artistPosX =
-        presetData['artistPosX'] ?? widget.settings.artistPosX;
-    widget.settings.artistPosY =
-        presetData['artistPosY'] ?? widget.settings.artistPosY;
-    widget.settings.artistWeight =
-        presetData['artistWeight'] ?? widget.settings.artistWeight;
-    widget.settings.artistColor = presetData['artistColor'] != null
+        : widget.settings.textLayoutSettings.subtitleColor;
+    widget.settings.textLayoutSettings.artistFont =
+        presetData['artistFont'] ??
+        widget.settings.textLayoutSettings.artistFont;
+    widget.settings.textLayoutSettings.artistSize =
+        presetData['artistSize'] ??
+        widget.settings.textLayoutSettings.artistSize;
+    widget.settings.textLayoutSettings.artistPosX =
+        presetData['artistPosX'] ??
+        widget.settings.textLayoutSettings.artistPosX;
+    widget.settings.textLayoutSettings.artistPosY =
+        presetData['artistPosY'] ??
+        widget.settings.textLayoutSettings.artistPosY;
+    widget.settings.textLayoutSettings.artistWeight =
+        presetData['artistWeight'] ??
+        widget.settings.textLayoutSettings.artistWeight;
+    widget.settings.textLayoutSettings.artistColor =
+        presetData['artistColor'] != null
         ? Color(presetData['artistColor'])
-        : widget.settings.artistColor;
-    widget.settings.textFitToWidth =
-        presetData['textFitToWidth'] ?? widget.settings.textFitToWidth;
-    widget.settings.textHAlign =
-        presetData['textHAlign'] ?? widget.settings.textHAlign;
-    widget.settings.textVAlign =
-        presetData['textVAlign'] ?? widget.settings.textVAlign;
-    widget.settings.textLineHeight =
-        presetData['textLineHeight'] ?? widget.settings.textLineHeight;
-    widget.settings.titleFitToWidth =
-        presetData['titleFitToWidth'] ?? widget.settings.titleFitToWidth;
-    widget.settings.titleHAlign =
-        presetData['titleHAlign'] ?? widget.settings.titleHAlign;
-    widget.settings.titleVAlign =
-        presetData['titleVAlign'] ?? widget.settings.titleVAlign;
-    widget.settings.titleLineHeight =
-        presetData['titleLineHeight'] ?? widget.settings.titleLineHeight;
-    widget.settings.subtitleFitToWidth =
-        presetData['subtitleFitToWidth'] ?? widget.settings.subtitleFitToWidth;
-    widget.settings.subtitleHAlign =
-        presetData['subtitleHAlign'] ?? widget.settings.subtitleHAlign;
-    widget.settings.subtitleVAlign =
-        presetData['subtitleVAlign'] ?? widget.settings.subtitleVAlign;
-    widget.settings.subtitleLineHeight =
-        presetData['subtitleLineHeight'] ?? widget.settings.subtitleLineHeight;
-    widget.settings.artistFitToWidth =
-        presetData['artistFitToWidth'] ?? widget.settings.artistFitToWidth;
-    widget.settings.artistHAlign =
-        presetData['artistHAlign'] ?? widget.settings.artistHAlign;
-    widget.settings.artistVAlign =
-        presetData['artistVAlign'] ?? widget.settings.artistVAlign;
-    widget.settings.artistLineHeight =
-        presetData['artistLineHeight'] ?? widget.settings.artistLineHeight;
+        : widget.settings.textLayoutSettings.artistColor;
+    widget.settings.textLayoutSettings.textFitToWidth =
+        presetData['textFitToWidth'] ??
+        widget.settings.textLayoutSettings.textFitToWidth;
+    widget.settings.textLayoutSettings.textHAlign =
+        presetData['textHAlign'] ??
+        widget.settings.textLayoutSettings.textHAlign;
+    widget.settings.textLayoutSettings.textVAlign =
+        presetData['textVAlign'] ??
+        widget.settings.textLayoutSettings.textVAlign;
+    widget.settings.textLayoutSettings.textLineHeight =
+        presetData['textLineHeight'] ??
+        widget.settings.textLayoutSettings.textLineHeight;
+    widget.settings.textLayoutSettings.titleFitToWidth =
+        presetData['titleFitToWidth'] ??
+        widget.settings.textLayoutSettings.titleFitToWidth;
+    widget.settings.textLayoutSettings.titleHAlign =
+        presetData['titleHAlign'] ??
+        widget.settings.textLayoutSettings.titleHAlign;
+    widget.settings.textLayoutSettings.titleVAlign =
+        presetData['titleVAlign'] ??
+        widget.settings.textLayoutSettings.titleVAlign;
+    widget.settings.textLayoutSettings.titleLineHeight =
+        presetData['titleLineHeight'] ??
+        widget.settings.textLayoutSettings.titleLineHeight;
+    widget.settings.textLayoutSettings.subtitleFitToWidth =
+        presetData['subtitleFitToWidth'] ??
+        widget.settings.textLayoutSettings.subtitleFitToWidth;
+    widget.settings.textLayoutSettings.subtitleHAlign =
+        presetData['subtitleHAlign'] ??
+        widget.settings.textLayoutSettings.subtitleHAlign;
+    widget.settings.textLayoutSettings.subtitleVAlign =
+        presetData['subtitleVAlign'] ??
+        widget.settings.textLayoutSettings.subtitleVAlign;
+    widget.settings.textLayoutSettings.subtitleLineHeight =
+        presetData['subtitleLineHeight'] ??
+        widget.settings.textLayoutSettings.subtitleLineHeight;
+    widget.settings.textLayoutSettings.artistFitToWidth =
+        presetData['artistFitToWidth'] ??
+        widget.settings.textLayoutSettings.artistFitToWidth;
+    widget.settings.textLayoutSettings.artistHAlign =
+        presetData['artistHAlign'] ??
+        widget.settings.textLayoutSettings.artistHAlign;
+    widget.settings.textLayoutSettings.artistVAlign =
+        presetData['artistVAlign'] ??
+        widget.settings.textLayoutSettings.artistVAlign;
+    widget.settings.textLayoutSettings.artistLineHeight =
+        presetData['artistLineHeight'] ??
+        widget.settings.textLayoutSettings.artistLineHeight;
 
     // If preset has a selected text line, switch to it
     if (presetData['selectedTextLine'] != null) {
@@ -931,51 +1031,53 @@ class _TextPanelState extends State<TextPanel> {
     // Get current text line settings
     String textLine = selectedTextLine.toString();
     Map<String, dynamic> presetData = {
-      'textEnabled': widget.settings.textEnabled,
+      'textEnabled': widget.settings.textLayoutSettings.textEnabled,
       'selectedTextLine': textLine,
-      'textTitle': widget.settings.textTitle,
-      'textSubtitle': widget.settings.textSubtitle,
-      'textArtist': widget.settings.textArtist,
-      'textFont': widget.settings.textFont,
-      'textSize': widget.settings.textSize,
-      'textPosX': widget.settings.textPosX,
-      'textPosY': widget.settings.textPosY,
-      'textWeight': widget.settings.textWeight,
-      'textColor': widget.settings.textColor.value,
-      'titleFont': widget.settings.titleFont,
-      'titleSize': widget.settings.titleSize,
-      'titlePosX': widget.settings.titlePosX,
-      'titlePosY': widget.settings.titlePosY,
-      'titleWeight': widget.settings.titleWeight,
-      'titleColor': widget.settings.titleColor.value,
-      'subtitleFont': widget.settings.subtitleFont,
-      'subtitleSize': widget.settings.subtitleSize,
-      'subtitlePosX': widget.settings.subtitlePosX,
-      'subtitlePosY': widget.settings.subtitlePosY,
-      'subtitleWeight': widget.settings.subtitleWeight,
-      'subtitleColor': widget.settings.subtitleColor.value,
-      'artistFont': widget.settings.artistFont,
-      'artistSize': widget.settings.artistSize,
-      'artistPosX': widget.settings.artistPosX,
-      'artistPosY': widget.settings.artistPosY,
-      'artistWeight': widget.settings.artistWeight,
-      'artistColor': widget.settings.artistColor.value,
-      'textFitToWidth': widget.settings.textFitToWidth,
-      'textHAlign': widget.settings.textHAlign,
-      'textVAlign': widget.settings.textVAlign,
-      'textLineHeight': widget.settings.textLineHeight,
-      'titleFitToWidth': widget.settings.titleFitToWidth,
-      'titleHAlign': widget.settings.titleHAlign,
-      'titleVAlign': widget.settings.titleVAlign,
-      'titleLineHeight': widget.settings.titleLineHeight,
-      'subtitleFitToWidth': widget.settings.subtitleFitToWidth,
-      'subtitleHAlign': widget.settings.subtitleHAlign,
-      'subtitleVAlign': widget.settings.subtitleVAlign,
-      'subtitleLineHeight': widget.settings.subtitleLineHeight,
-      'artistFitToWidth': widget.settings.artistFitToWidth,
-      'artistHAlign': widget.settings.artistHAlign,
-      'artistVAlign': widget.settings.artistVAlign,
-      'artistLineHeight': widget.settings.artistLineHeight,
+      'textTitle': widget.settings.textLayoutSettings.textTitle,
+      'textSubtitle': widget.settings.textLayoutSettings.textSubtitle,
+      'textArtist': widget.settings.textLayoutSettings.textArtist,
+      'textFont': widget.settings.textLayoutSettings.textFont,
+      'textSize': widget.settings.textLayoutSettings.textSize,
+      'textPosX': widget.settings.textLayoutSettings.textPosX,
+      'textPosY': widget.settings.textLayoutSettings.textPosY,
+      'textWeight': widget.settings.textLayoutSettings.textWeight,
+      'textColor': widget.settings.textLayoutSettings.textColor.value,
+      'titleFont': widget.settings.textLayoutSettings.titleFont,
+      'titleSize': widget.settings.textLayoutSettings.titleSize,
+      'titlePosX': widget.settings.textLayoutSettings.titlePosX,
+      'titlePosY': widget.settings.textLayoutSettings.titlePosY,
+      'titleWeight': widget.settings.textLayoutSettings.titleWeight,
+      'titleColor': widget.settings.textLayoutSettings.titleColor.value,
+      'subtitleFont': widget.settings.textLayoutSettings.subtitleFont,
+      'subtitleSize': widget.settings.textLayoutSettings.subtitleSize,
+      'subtitlePosX': widget.settings.textLayoutSettings.subtitlePosX,
+      'subtitlePosY': widget.settings.textLayoutSettings.subtitlePosY,
+      'subtitleWeight': widget.settings.textLayoutSettings.subtitleWeight,
+      'subtitleColor': widget.settings.textLayoutSettings.subtitleColor.value,
+      'artistFont': widget.settings.textLayoutSettings.artistFont,
+      'artistSize': widget.settings.textLayoutSettings.artistSize,
+      'artistPosX': widget.settings.textLayoutSettings.artistPosX,
+      'artistPosY': widget.settings.textLayoutSettings.artistPosY,
+      'artistWeight': widget.settings.textLayoutSettings.artistWeight,
+      'artistColor': widget.settings.textLayoutSettings.artistColor.value,
+      'textFitToWidth': widget.settings.textLayoutSettings.textFitToWidth,
+      'textHAlign': widget.settings.textLayoutSettings.textHAlign,
+      'textVAlign': widget.settings.textLayoutSettings.textVAlign,
+      'textLineHeight': widget.settings.textLayoutSettings.textLineHeight,
+      'titleFitToWidth': widget.settings.textLayoutSettings.titleFitToWidth,
+      'titleHAlign': widget.settings.textLayoutSettings.titleHAlign,
+      'titleVAlign': widget.settings.textLayoutSettings.titleVAlign,
+      'titleLineHeight': widget.settings.textLayoutSettings.titleLineHeight,
+      'subtitleFitToWidth':
+          widget.settings.textLayoutSettings.subtitleFitToWidth,
+      'subtitleHAlign': widget.settings.textLayoutSettings.subtitleHAlign,
+      'subtitleVAlign': widget.settings.textLayoutSettings.subtitleVAlign,
+      'subtitleLineHeight':
+          widget.settings.textLayoutSettings.subtitleLineHeight,
+      'artistFitToWidth': widget.settings.textLayoutSettings.artistFitToWidth,
+      'artistHAlign': widget.settings.textLayoutSettings.artistHAlign,
+      'artistVAlign': widget.settings.textLayoutSettings.artistVAlign,
+      'artistLineHeight': widget.settings.textLayoutSettings.artistLineHeight,
     };
 
     bool success = await PresetsManager.savePreset(aspect, name, presetData);
@@ -1023,24 +1125,24 @@ class _TextPanelState extends State<TextPanel> {
   Color _getCurrentColor() {
     switch (selectedTextLine) {
       case TextLine.title:
-        return widget.settings.titleColor;
+        return widget.settings.textLayoutSettings.titleColor;
       case TextLine.subtitle:
-        return widget.settings.subtitleColor;
+        return widget.settings.textLayoutSettings.subtitleColor;
       case TextLine.artist:
-        return widget.settings.artistColor;
+        return widget.settings.textLayoutSettings.artistColor;
     }
   }
 
   void _setCurrentColor(Color color) {
     switch (selectedTextLine) {
       case TextLine.title:
-        widget.settings.titleColor = color;
+        widget.settings.textLayoutSettings.titleColor = color;
         break;
       case TextLine.subtitle:
-        widget.settings.subtitleColor = color;
+        widget.settings.textLayoutSettings.subtitleColor = color;
         break;
       case TextLine.artist:
-        widget.settings.artistColor = color;
+        widget.settings.textLayoutSettings.artistColor = color;
         break;
     }
   }

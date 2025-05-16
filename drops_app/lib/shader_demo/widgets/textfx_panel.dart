@@ -35,16 +35,17 @@ class _TextFxPanelState extends State<TextFxPanel>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    _animationEnabled = widget.settings.textfxAnimated;
+    _animationEnabled = widget.settings.textfxSettings.textfxAnimated;
   }
 
   @override
   void didUpdateWidget(TextFxPanel oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Update animation state when settings change
-    if (oldWidget.settings.textfxAnimated != widget.settings.textfxAnimated) {
+    if (oldWidget.settings.textfxSettings.textfxAnimated !=
+        widget.settings.textfxSettings.textfxAnimated) {
       setState(() {
-        _animationEnabled = widget.settings.textfxAnimated;
+        _animationEnabled = widget.settings.textfxSettings.textfxAnimated;
       });
     }
   }
@@ -62,7 +63,7 @@ class _TextFxPanelState extends State<TextFxPanel>
         // Panel header with animation toggle
         PanelHeader(
           title: 'Text Effects',
-          showAnimToggle: true,
+          showAnimToggle: false,
           animationEnabled: _animationEnabled,
           onAnimationToggled: (value) {
             setState(() {
@@ -70,7 +71,7 @@ class _TextFxPanelState extends State<TextFxPanel>
 
               // Create a new settings object with the updated animation flag
               final updatedSettings = widget.settings;
-              updatedSettings.textfxAnimated = value;
+              updatedSettings.textfxSettings.textfxAnimated = value;
 
               // Notify parent of the change
               widget.onSettingsChanged(updatedSettings);
@@ -111,29 +112,33 @@ class _TextFxPanelState extends State<TextFxPanel>
           // Shadow toggle
           LabeledSwitch(
             label: 'Enable Shadow',
-            value: widget.settings.textShadowEnabled,
+            value: widget.settings.textfxSettings.textShadowEnabled,
             onChanged: (value) {
               final updatedSettings = widget.settings;
-              updatedSettings.textShadowEnabled = value;
+              updatedSettings.textfxSettings.textShadowEnabled = value;
+              // Make sure text effects are enabled when enabling a specific effect
+              if (value && !updatedSettings.textfxSettings.textfxEnabled) {
+                updatedSettings.textfxSettings.textfxEnabled = true;
+              }
               widget.onSettingsChanged(updatedSettings);
             },
           ),
           const SizedBox(height: 16),
 
           // Shadow properties (only visible when enabled)
-          if (widget.settings.textShadowEnabled) ...[
+          if (widget.settings.textfxSettings.textShadowEnabled) ...[
             // Shadow blur
             LabeledSlider(
               label: 'Blur',
-              value: widget.settings.textShadowBlur,
+              value: widget.settings.textfxSettings.textShadowBlur,
               min: 0.0,
               max: 20.0,
               divisions: 20,
               displayValue:
-                  '${widget.settings.textShadowBlur.toStringAsFixed(1)}',
+                  '${widget.settings.textfxSettings.textShadowBlur.toStringAsFixed(1)}',
               onChanged: (value) {
                 final updatedSettings = widget.settings;
-                updatedSettings.textShadowBlur = value;
+                updatedSettings.textfxSettings.textShadowBlur = value;
                 widget.onSettingsChanged(updatedSettings);
               },
               activeColor: widget.sliderColor,
@@ -142,15 +147,15 @@ class _TextFxPanelState extends State<TextFxPanel>
             // X offset
             LabeledSlider(
               label: 'X Offset',
-              value: widget.settings.textShadowOffsetX,
+              value: widget.settings.textfxSettings.textShadowOffsetX,
               min: -10.0,
               max: 10.0,
               divisions: 20,
               displayValue:
-                  '${widget.settings.textShadowOffsetX.toStringAsFixed(1)}',
+                  '${widget.settings.textfxSettings.textShadowOffsetX.toStringAsFixed(1)}',
               onChanged: (value) {
                 final updatedSettings = widget.settings;
-                updatedSettings.textShadowOffsetX = value;
+                updatedSettings.textfxSettings.textShadowOffsetX = value;
                 widget.onSettingsChanged(updatedSettings);
               },
               activeColor: widget.sliderColor,
@@ -159,15 +164,15 @@ class _TextFxPanelState extends State<TextFxPanel>
             // Y offset
             LabeledSlider(
               label: 'Y Offset',
-              value: widget.settings.textShadowOffsetY,
+              value: widget.settings.textfxSettings.textShadowOffsetY,
               min: -10.0,
               max: 10.0,
               divisions: 20,
               displayValue:
-                  '${widget.settings.textShadowOffsetY.toStringAsFixed(1)}',
+                  '${widget.settings.textfxSettings.textShadowOffsetY.toStringAsFixed(1)}',
               onChanged: (value) {
                 final updatedSettings = widget.settings;
-                updatedSettings.textShadowOffsetY = value;
+                updatedSettings.textfxSettings.textShadowOffsetY = value;
                 widget.onSettingsChanged(updatedSettings);
               },
               activeColor: widget.sliderColor,
@@ -176,15 +181,15 @@ class _TextFxPanelState extends State<TextFxPanel>
             // Opacity
             LabeledSlider(
               label: 'Opacity',
-              value: widget.settings.textShadowOpacity,
+              value: widget.settings.textfxSettings.textShadowOpacity,
               min: 0.0,
               max: 1.0,
               divisions: 10,
               displayValue:
-                  '${(widget.settings.textShadowOpacity * 100).round()}%',
+                  '${(widget.settings.textfxSettings.textShadowOpacity * 100).round()}%',
               onChanged: (value) {
                 final updatedSettings = widget.settings;
-                updatedSettings.textShadowOpacity = value;
+                updatedSettings.textfxSettings.textShadowOpacity = value;
                 widget.onSettingsChanged(updatedSettings);
               },
               activeColor: widget.sliderColor,
@@ -199,10 +204,10 @@ class _TextFxPanelState extends State<TextFxPanel>
                 ),
                 const Spacer(),
                 ColorPickerButton(
-                  color: widget.settings.textShadowColor,
+                  color: widget.settings.textfxSettings.textShadowColor,
                   onColorChanged: (color) {
                     final updatedSettings = widget.settings;
-                    updatedSettings.textShadowColor = color;
+                    updatedSettings.textfxSettings.textShadowColor = color;
                     widget.onSettingsChanged(updatedSettings);
                   },
                 ),
@@ -217,73 +222,82 @@ class _TextFxPanelState extends State<TextFxPanel>
   Widget _buildGlowTab() {
     return Padding(
       padding: const EdgeInsets.all(16.0),
-      child: Column(
-        children: [
-          // Glow toggle
-          LabeledSwitch(
-            label: 'Enable Glow',
-            value: widget.settings.textGlowEnabled,
-            onChanged: (value) {
-              final updatedSettings = widget.settings;
-              updatedSettings.textGlowEnabled = value;
-              widget.onSettingsChanged(updatedSettings);
-            },
-          ),
-          const SizedBox(height: 16),
-
-          // Glow properties (only visible when enabled)
-          if (widget.settings.textGlowEnabled) ...[
-            // Glow blur
-            LabeledSlider(
-              label: 'Glow Radius',
-              value: widget.settings.textGlowBlur,
-              min: 0.0,
-              max: 20.0,
-              divisions: 20,
-              displayValue:
-                  '${widget.settings.textGlowBlur.toStringAsFixed(1)}',
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Glow toggle
+            LabeledSwitch(
+              label: 'Enable Glow',
+              value: widget.settings.textfxSettings.textGlowEnabled,
               onChanged: (value) {
                 final updatedSettings = widget.settings;
-                updatedSettings.textGlowBlur = value;
+                updatedSettings.textfxSettings.textGlowEnabled = value;
+                // Make sure text effects are enabled when enabling a specific effect
+                if (value && !updatedSettings.textfxSettings.textfxEnabled) {
+                  updatedSettings.textfxSettings.textfxEnabled = true;
+                }
                 widget.onSettingsChanged(updatedSettings);
               },
-              activeColor: widget.sliderColor,
             ),
+            const SizedBox(height: 16),
 
-            // Opacity
-            LabeledSlider(
-              label: 'Opacity',
-              value: widget.settings.textGlowOpacity,
-              min: 0.0,
-              max: 1.0,
-              divisions: 10,
-              displayValue:
-                  '${(widget.settings.textGlowOpacity * 100).round()}%',
-              onChanged: (value) {
-                final updatedSettings = widget.settings;
-                updatedSettings.textGlowOpacity = value;
-                widget.onSettingsChanged(updatedSettings);
-              },
-              activeColor: widget.sliderColor,
-            ),
+            // Glow properties (only visible when enabled)
+            if (widget.settings.textfxSettings.textGlowEnabled) ...[
+              // Glow blur
+              LabeledSlider(
+                label: 'Glow Radius',
+                value: widget.settings.textfxSettings.textGlowBlur,
+                min: 0.0,
+                max: 50.0,
+                divisions: 50,
+                displayValue:
+                    '${widget.settings.textfxSettings.textGlowBlur.toStringAsFixed(1)}',
+                onChanged: (value) {
+                  final updatedSettings = widget.settings;
+                  updatedSettings.textfxSettings.textGlowBlur = value;
+                  widget.onSettingsChanged(updatedSettings);
+                },
+                activeColor: widget.sliderColor,
+              ),
 
-            // Color picker
-            Row(
-              children: [
-                Text('Glow Color', style: TextStyle(color: widget.sliderColor)),
-                const Spacer(),
-                ColorPickerButton(
-                  color: widget.settings.textGlowColor,
-                  onColorChanged: (color) {
-                    final updatedSettings = widget.settings;
-                    updatedSettings.textGlowColor = color;
-                    widget.onSettingsChanged(updatedSettings);
-                  },
-                ),
-              ],
-            ),
+              // Opacity
+              LabeledSlider(
+                label: 'Opacity',
+                value: widget.settings.textfxSettings.textGlowOpacity,
+                min: 0.0,
+                max: 1.0,
+                divisions: 10,
+                displayValue:
+                    '${(widget.settings.textfxSettings.textGlowOpacity * 100).round()}%',
+                onChanged: (value) {
+                  final updatedSettings = widget.settings;
+                  updatedSettings.textfxSettings.textGlowOpacity = value;
+                  widget.onSettingsChanged(updatedSettings);
+                },
+                activeColor: widget.sliderColor,
+              ),
+
+              // Color picker
+              Row(
+                children: [
+                  Text(
+                    'Glow Color',
+                    style: TextStyle(color: widget.sliderColor),
+                  ),
+                  const Spacer(),
+                  ColorPickerButton(
+                    color: widget.settings.textfxSettings.textGlowColor,
+                    onColorChanged: (color) {
+                      final updatedSettings = widget.settings;
+                      updatedSettings.textfxSettings.textGlowColor = color;
+                      widget.onSettingsChanged(updatedSettings);
+                    },
+                  ),
+                ],
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -296,29 +310,33 @@ class _TextFxPanelState extends State<TextFxPanel>
           // Outline toggle
           LabeledSwitch(
             label: 'Enable Outline',
-            value: widget.settings.textOutlineEnabled,
+            value: widget.settings.textfxSettings.textOutlineEnabled,
             onChanged: (value) {
               final updatedSettings = widget.settings;
-              updatedSettings.textOutlineEnabled = value;
+              updatedSettings.textfxSettings.textOutlineEnabled = value;
+              // Make sure text effects are enabled when enabling a specific effect
+              if (value && !updatedSettings.textfxSettings.textfxEnabled) {
+                updatedSettings.textfxSettings.textfxEnabled = true;
+              }
               widget.onSettingsChanged(updatedSettings);
             },
           ),
           const SizedBox(height: 16),
 
           // Outline properties (only visible when enabled)
-          if (widget.settings.textOutlineEnabled) ...[
+          if (widget.settings.textfxSettings.textOutlineEnabled) ...[
             // Outline width
             LabeledSlider(
               label: 'Width',
-              value: widget.settings.textOutlineWidth,
+              value: widget.settings.textfxSettings.textOutlineWidth,
               min: 0.5,
-              max: 5.0,
-              divisions: 9,
+              max: 15.0,
+              divisions: 29,
               displayValue:
-                  '${widget.settings.textOutlineWidth.toStringAsFixed(1)}',
+                  '${widget.settings.textfxSettings.textOutlineWidth.toStringAsFixed(1)}',
               onChanged: (value) {
                 final updatedSettings = widget.settings;
-                updatedSettings.textOutlineWidth = value;
+                updatedSettings.textfxSettings.textOutlineWidth = value;
                 widget.onSettingsChanged(updatedSettings);
               },
               activeColor: widget.sliderColor,
@@ -333,10 +351,10 @@ class _TextFxPanelState extends State<TextFxPanel>
                 ),
                 const Spacer(),
                 ColorPickerButton(
-                  color: widget.settings.textOutlineColor,
+                  color: widget.settings.textfxSettings.textOutlineColor,
                   onColorChanged: (color) {
                     final updatedSettings = widget.settings;
-                    updatedSettings.textOutlineColor = color;
+                    updatedSettings.textfxSettings.textOutlineColor = color;
                     widget.onSettingsChanged(updatedSettings);
                   },
                 ),
