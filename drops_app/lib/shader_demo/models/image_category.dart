@@ -1,0 +1,1 @@
+enum ImageCategory { covers, artists }

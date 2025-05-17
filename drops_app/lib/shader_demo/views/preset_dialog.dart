@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/shader_preset.dart';
 import '../controllers/preset_controller.dart';
+import '../models/effect_settings.dart';
 
 /// Dialog for saving a new preset
 class SavePresetDialog extends StatefulWidget {
@@ -139,10 +140,24 @@ class _PresetsDialogState extends State<PresetsDialog> {
 
     final presets = await PresetController.getAllPresets();
 
+    // Sort presets by created date (newest first)
+    presets.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
     setState(() {
       _presets = presets;
       _isLoading = false;
     });
+  }
+
+  void _handlePresetLoad(ShaderPreset preset) {
+    // First create a clean deep copy of the preset settings to avoid reference issues
+    final cleanSettings = ShaderSettings.fromMap(preset.settings.toMap());
+
+    // Now call the onLoad callback with the clean settings
+    widget.onLoad(preset.copyWith(settings: cleanSettings));
+
+    // Close the dialog
+    Navigator.pop(context);
   }
 
   @override
@@ -201,7 +216,7 @@ class _PresetsDialogState extends State<PresetsDialog> {
                     padding: const EdgeInsets.only(bottom: 20),
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
-                      childAspectRatio: 0.85,
+                      childAspectRatio: 0.75,
                       crossAxisSpacing: 16,
                       mainAxisSpacing: 16,
                     ),
@@ -221,10 +236,7 @@ class _PresetsDialogState extends State<PresetsDialog> {
 
   Widget _buildPresetItem(ShaderPreset preset) {
     return InkWell(
-      onTap: () {
-        widget.onLoad(preset);
-        Navigator.pop(context);
-      },
+      onTap: () => _handlePresetLoad(preset),
       borderRadius: BorderRadius.circular(12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -232,19 +244,26 @@ class _PresetsDialogState extends State<PresetsDialog> {
           Expanded(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: Container(
-                color: Colors.black,
-                child: preset.thumbnailData != null
-                    ? Image.memory(
-                        preset.thumbnailData!,
-                        fit: BoxFit.cover,
-                        alignment: Alignment.center,
-                      )
-                    : Image.asset(
-                        preset.imagePath,
-                        fit: BoxFit.cover,
-                        alignment: Alignment.center,
-                      ),
+              child: AspectRatio(
+                aspectRatio: 0.75,
+                child: Stack(
+                  children: [
+                    Container(color: Colors.black),
+                    Positioned.fill(
+                      child: preset.thumbnailData != null
+                          ? Image.memory(
+                              preset.thumbnailData!,
+                              fit: BoxFit.cover,
+                              alignment: Alignment.center,
+                            )
+                          : Image.asset(
+                              preset.imagePath,
+                              fit: BoxFit.cover,
+                              alignment: Alignment.center,
+                            ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

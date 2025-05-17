@@ -158,8 +158,14 @@ class PresetController {
       // Wait a frame to ensure all animations and shader effects are properly rendered
       await Future.delayed(const Duration(milliseconds: 100));
 
-      // Use a higher pixelRatio for better quality thumbnails
-      // Changed from 0.8 to 1.5 for higher quality that captures all shader effects
+      // Get the size of the boundary to maintain the correct aspect ratio
+      final Size boundarySize = boundary.size;
+
+      // Calculate device aspect ratio
+      final double aspectRatio = boundarySize.width / boundarySize.height;
+
+      // Use a higher pixelRatio for better quality thumbnails but don't distort the aspect ratio
+      // For screenshot purposes, we use a moderate pixelRatio of 1.5 to balance quality and size
       final ui.Image image = await boundary.toImage(pixelRatio: 1.5);
       final ByteData? byteData = await image.toByteData(
         format: ui.ImageByteFormat.png,
@@ -189,7 +195,7 @@ class PresetController {
         width: size,
         height: size,
         alignment: Alignment.center,
-        child: Image.memory(preset.thumbnailData!, fit: BoxFit.contain),
+        child: Image.memory(preset.thumbnailData!, fit: BoxFit.cover),
       );
     }
 
@@ -199,7 +205,7 @@ class PresetController {
       width: size,
       height: size,
       alignment: Alignment.center,
-      child: Image.asset(preset.imagePath, fit: BoxFit.contain),
+      child: Image.asset(preset.imagePath, fit: BoxFit.cover),
     );
   }
 }

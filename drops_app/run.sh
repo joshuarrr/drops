@@ -19,6 +19,7 @@
 #   -q, --quiet         Run in quiet mode (simulator stays in background until loaded)
 #   -d, --debug         Enable debug mode with verbose logging and shader diagnostics
 #   -s, --shader-debug  Enable shader diagnostics only (without verbose Flutter logs)
+#   -l, --logs          Enable developer logs mode (shows debugPrint/dart:developer logs only)
 #   -i, --iphone        Specify iPhone model (15, 16, SE3, 16Pro, 16Max)
 #   -l, --list          List available simulator devices
 #   -h, --help          Show this help message
@@ -40,6 +41,7 @@
 QUIET_MODE=false
 DEBUG_MODE=false
 SHADER_DEBUG_MODE=false
+LOGS_MODE=false
 SELECTED_DEVICE=""
 
 # Function to get device ID based on model name
@@ -111,6 +113,7 @@ while [[ "$#" -gt 0 ]]; do
         -q|--quiet) QUIET_MODE=true ;;
         -d|--debug) DEBUG_MODE=true ;;
         -s|--shader-debug) SHADER_DEBUG_MODE=true ;;
+        -l|--logs) LOGS_MODE=true ;;
         -i|--iphone) 
             SELECTED_DEVICE="$2"
             shift
@@ -122,6 +125,7 @@ while [[ "$#" -gt 0 ]]; do
             echo "  -q, --quiet              Run in quiet mode (simulator stays in background until loaded)"
             echo "  -d, --debug              Enable debug mode with verbose logging and shader diagnostics"
             echo "  -s, --shader-debug       Enable shader diagnostics only (without verbose Flutter logs)"
+            echo "  -l, --logs               Enable developer logs mode (shows debugPrint/dart:developer logs)"
             echo "  -i, --iphone <model>     Specify iPhone model (16Pro, 16Max, 16, 16Plus, SE3)"
             echo "  -l, --list               List available simulator devices"
             echo "  -h, --help               Show this help message"
@@ -131,6 +135,7 @@ while [[ "$#" -gt 0 ]]; do
             echo "  ./run.sh -i 16Max -q             Run on iPhone 16 Pro Max in quiet mode"
             echo "  ./run.sh -i SE3 -d               Run on iPhone SE 3rd gen with debug logs"
             echo "  ./run.sh -s                      Run with shader debug only (less verbose)"
+            echo "  ./run.sh -l                      Run showing developer logs only"
             exit 0
             ;;
         *) echo "Unknown parameter: $1"; exit 1 ;;
@@ -238,6 +243,12 @@ elif [ "$SHADER_DEBUG_MODE" = true ]; then
     echo "Shader debug mode enabled: Only shader diagnostics activated"
     # Only enable shader debugging without verbose Flutter logs
     export ENABLE_SHADER_DEBUG=true
+elif [ "$LOGS_MODE" = true ]; then
+    echo "Developer logs mode enabled: Showing debug and developer logs only"
+    # Set environment variables to show developer logs
+    export DART_VM_OPTIONS="-DLOG_LEVEL=ALL"
+    # Increase print buffer to ensure logs aren't truncated
+    export FLUTTER_CMD="$FLUTTER_CMD --dart-define=flutter.debugprint.maxlen=9999999"
 fi
 
 # Run the Flutter app and monitor for app loading completion
@@ -247,8 +258,8 @@ if [ "$QUIET_MODE" = true ]; then
     TEMP_OUTPUT=$(mktemp)
     
     # Run Flutter in background and capture output
-    if [ "$DEBUG_MODE" = true ]; then
-        # With debug mode, show all output to terminal
+    if [ "$DEBUG_MODE" = true ] || [ "$LOGS_MODE" = true ]; then
+        # With debug/logs mode, show all output to terminal
         eval "$FLUTTER_CMD" 2>&1 | tee "$TEMP_OUTPUT" &
     else
         eval "$FLUTTER_CMD" 2>&1 | tee "$TEMP_OUTPUT" &

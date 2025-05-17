@@ -104,6 +104,9 @@ class _TextPanelState extends State<TextPanel> {
         ),
         // Add color picker
         ColorPicker(
+          key: ValueKey(
+            'text_color_${selectedTextLine.toString()}_${_getCurrentColor().value}',
+          ),
           label: 'Text Color',
           currentColor: _getCurrentColor(),
           onColorChanged: (color) {
@@ -1012,6 +1015,34 @@ class _TextPanelState extends State<TextPanel> {
       case TextLine.artist:
         widget.settings.textLayoutSettings.artistColor = color;
         break;
+    }
+    // Ensure text color changes don't affect color overlay
+    _ensureTextChangesOnly(widget.settings);
+  }
+
+  // Helper to ensure text color changes don't inadvertently affect color overlay
+  void _ensureTextChangesOnly(ShaderSettings settings) {
+    // When using color pickers in Text panel, make sure we don't accidentally
+    // enable the color overlay effect. We check if color settings were previously
+    // disabled, and preserve that state to avoid unintended overlay effects.
+    if (!settings.colorEnabled) {
+      // If color effect was disabled, ensure it stays that way
+      settings.colorEnabled = false;
+    } else {
+      // If color was enabled, we need to make sure the overlay settings don't
+      // get inadvertently triggered by color changes in text effects
+
+      // Store the current state of overlay settings
+      final bool wasOverlayActive =
+          settings.colorSettings.overlayOpacity > 0 &&
+          settings.colorSettings.overlayIntensity > 0;
+
+      // If overlay wasn't already active, ensure it stays inactive
+      if (!wasOverlayActive) {
+        // Set overlay intensity/opacity to 0 to prevent inadvertent overlay effects
+        settings.colorSettings.overlayOpacity = 0.0;
+        settings.colorSettings.overlayIntensity = 0.0;
+      }
     }
   }
 }

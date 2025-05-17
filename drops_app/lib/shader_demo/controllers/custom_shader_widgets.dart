@@ -2,30 +2,63 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_shaders/flutter_shaders.dart';
 import 'dart:math' as math;
+import 'dart:developer' as developer;
 
 import '../models/effect_settings.dart';
 import '../models/animation_options.dart';
 
 /// Controls debug logging for shaders
-bool enableShaderDebugLogs = false;
+bool enableShaderDebugLogs = true;
 
 /// Custom color effect shader widget
 class ColorEffectShader extends StatelessWidget {
   final Widget child;
   final ShaderSettings settings;
   final double animationValue;
+  final bool preserveTransparency;
+  final String _logTag = 'ColorEffectShader';
+
+  // Custom log function that uses both dart:developer and debugPrint for visibility
+  void _log(String message) {
+    if (!enableShaderDebugLogs) return;
+    developer.log(message, name: _logTag);
+    debugPrint('[$_logTag] $message');
+  }
+
+  // Reduces verbosity by only logging when values are non-zero or changed
+  bool _shouldLogColorSettings() {
+    // Only log if some values are non-zero
+    return settings.colorSettings.hue != 0.0 ||
+        settings.colorSettings.saturation != 0.0 ||
+        settings.colorSettings.lightness != 0.0 ||
+        settings.colorSettings.overlayIntensity != 0.0 ||
+        settings.colorSettings.overlayOpacity != 0.0;
+  }
 
   const ColorEffectShader({
     super.key,
     required this.child,
     required this.settings,
     required this.animationValue, // This is the shared base time (0-1)
+    this.preserveTransparency = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (enableShaderDebugLogs) {
-      print("COLOR_SHADER: Building widget");
+    // Only log when there are non-zero values or preserveTransparency is true
+    if (_shouldLogColorSettings() || preserveTransparency) {
+      _log(
+        "Building ColorEffectShader with preserveTransparency=$preserveTransparency",
+      );
+
+      if (_shouldLogColorSettings()) {
+        _log(
+          "Color settings - hue: ${settings.colorSettings.hue.toStringAsFixed(2)}, sat: ${settings.colorSettings.saturation.toStringAsFixed(2)}, light: ${settings.colorSettings.lightness.toStringAsFixed(2)}",
+        );
+        _log(
+          "Overlay - hue: ${settings.colorSettings.overlayHue.toStringAsFixed(2)}, intensity: ${settings.colorSettings.overlayIntensity.toStringAsFixed(2)}, opacity: ${settings.colorSettings.overlayOpacity.toStringAsFixed(2)}",
+        );
+      }
     }
 
     // Convenience aliases so the helper functions are easily accessible.
@@ -82,6 +115,18 @@ class ColorEffectShader extends StatelessWidget {
             overlayOpacity = (overlayOpacity + 0.3 * pulse).clamp(0.0, 1.0);
           }
 
+          // If preserveTransparency is enabled, we need to avoid applying color overlays
+          if (preserveTransparency) {
+            if (overlayIntensity > 0 || overlayOpacity > 0) {
+              _log(
+                "preserveTransparency enabled - zeroing overlay intensity and opacity",
+              );
+            }
+            // IMPORTANT FIX: Setting these to 0 prevents the solid background effect
+            overlayIntensity = 0.0;
+            overlayOpacity = 0.0;
+          }
+
           // Set uniforms after the texture sampler
           shader.setFloat(0, animationValue);
           shader.setFloat(1, hue);
@@ -96,7 +141,7 @@ class ColorEffectShader extends StatelessWidget {
           // Draw with the shader, ensuring it covers the full area
           canvas.drawRect(Offset.zero & size, Paint()..shader = shader);
         } catch (e) {
-          print("COLOR_SHADER ERROR: $e");
+          _log("ERROR: $e");
           // Fall back to drawing the original image
           canvas.drawImageRect(
             image,
@@ -188,12 +233,14 @@ class BlurEffectShader extends StatelessWidget {
   final Widget child;
   final ShaderSettings settings;
   final double animationValue;
+  final bool preserveTransparency;
 
   const BlurEffectShader({
     super.key,
     required this.child,
     required this.settings,
     required this.animationValue,
+    this.preserveTransparency = false,
   });
 
   @override
@@ -237,12 +284,19 @@ class BlurEffectShader extends StatelessWidget {
             amount = amount * intensity;
           }
 
+          // If preserveTransparency is enabled, adjust blur settings
+          double opacity = settings.blurSettings.blurOpacity;
+          if (preserveTransparency) {
+            opacity =
+                opacity * 0.5; // Reduce opacity to preserve original content
+          }
+
           // Set uniforms after the texture sampler
           shader.setFloat(0, amount);
           shader.setFloat(1, settings.blurSettings.blurRadius);
           shader.setFloat(2, image.width.toDouble());
           shader.setFloat(3, image.height.toDouble());
-          shader.setFloat(4, settings.blurSettings.blurOpacity);
+          shader.setFloat(4, opacity);
           shader.setFloat(5, settings.blurSettings.blurBlendMode.toDouble());
           shader.setFloat(6, settings.blurSettings.blurIntensity);
           shader.setFloat(7, settings.blurSettings.blurContrast);
@@ -331,12 +385,14 @@ class NoiseEffectShader extends StatelessWidget {
   final Widget child;
   final ShaderSettings settings;
   final double animationValue;
+  final bool preserveTransparency;
 
   const NoiseEffectShader({
     super.key,
     required this.child,
     required this.settings,
     required this.animationValue,
+    this.preserveTransparency = false,
   });
 
   @override
@@ -388,6 +444,15 @@ class NoiseEffectShader extends StatelessWidget {
             }
           }
 
+          // If preserveTransparency is enabled, adjust noise settings
+          double colorIntensity = settings.noiseSettings.colorIntensity;
+          double waveAmount = settings.noiseSettings.waveAmount;
+
+          if (preserveTransparency) {
+            colorIntensity = colorIntensity * 0.3; // Reduce color intensity
+            waveAmount = waveAmount * 0.5; // Reduce wave distortion
+          }
+
           // Set uniforms after the texture sampler
           shader.setFloat(0, timeValue); // Time
           shader.setFloat(
@@ -396,14 +461,8 @@ class NoiseEffectShader extends StatelessWidget {
           ); // Resolution aspect ratio
           shader.setFloat(2, settings.noiseSettings.noiseScale); // Noise scale
           shader.setFloat(3, noiseSpeed); // Noise speed
-          shader.setFloat(
-            4,
-            settings.noiseSettings.colorIntensity,
-          ); // Color intensity
-          shader.setFloat(
-            5,
-            settings.noiseSettings.waveAmount,
-          ); // Wave distortion amount
+          shader.setFloat(4, colorIntensity); // Color intensity
+          shader.setFloat(5, waveAmount); // Wave distortion amount
           shader.setFloat(
             6,
             settings.noiseSettings.noiseAnimated ? 1.0 : 0.0,

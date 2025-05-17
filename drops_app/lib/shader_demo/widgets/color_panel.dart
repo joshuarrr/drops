@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
+import 'dart:developer' as developer;
 import '../models/shader_effect.dart';
 import '../models/effect_settings.dart';
 import '../models/animation_options.dart';
@@ -30,9 +31,27 @@ class ColorPanel extends StatefulWidget {
 class _ColorPanelState extends State<ColorPanel> {
   bool _showColorControls = true;
   bool _showOverlayControls = true;
+  final String _logTag = 'ColorPanel';
+
+  // Custom log function that uses both dart:developer and debugPrint
+  void _log(String message) {
+    developer.log(message, name: _logTag);
+    debugPrint('[$_logTag] $message');
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _log('ColorPanel initialized - DEBUG TEST');
+  }
 
   @override
   Widget build(BuildContext context) {
+    // Immediate test log to verify logging is working on each build
+    _log(
+      'ColorPanel building - Overlay controls: $_showOverlayControls, Color controls: $_showColorControls',
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -51,7 +70,12 @@ class _ColorPanelState extends State<ColorPanel> {
         _buildSectionHeader(
           'Color Adjustments',
           _showColorControls,
-          () => setState(() => _showColorControls = !_showColorControls),
+          () => setState(() {
+            _showColorControls = !_showColorControls;
+            _log(
+              'Color adjustments section ${_showColorControls ? 'expanded' : 'collapsed'}',
+            );
+          }),
         ),
         if (_showColorControls) ...[
           ValueSlider(
@@ -60,6 +84,8 @@ class _ColorPanelState extends State<ColorPanel> {
             onChanged: (value) => _onSliderChanged(
               value,
               (v) => widget.settings.colorSettings.hue = v,
+              isOverlay: false,
+              propertyName: 'Hue',
             ),
             sliderColor: widget.sliderColor,
             defaultValue: 0.0,
@@ -70,6 +96,8 @@ class _ColorPanelState extends State<ColorPanel> {
             onChanged: (value) => _onSliderChanged(
               value,
               (v) => widget.settings.colorSettings.saturation = v,
+              isOverlay: false,
+              propertyName: 'Saturation',
             ),
             sliderColor: widget.sliderColor,
             defaultValue: 0.0,
@@ -80,6 +108,8 @@ class _ColorPanelState extends State<ColorPanel> {
             onChanged: (value) => _onSliderChanged(
               value,
               (v) => widget.settings.colorSettings.lightness = v,
+              isOverlay: false,
+              propertyName: 'Lightness',
             ),
             sliderColor: widget.sliderColor,
             defaultValue: 0.0,
@@ -100,6 +130,7 @@ class _ColorPanelState extends State<ColorPanel> {
                   if (!widget.settings.colorEnabled)
                     widget.settings.colorEnabled = true;
                   widget.onSettingsChanged(widget.settings);
+                  _log('HSL animation toggled: ${value ? 'ON' : 'OFF'}');
                 },
               ),
             ],
@@ -115,6 +146,7 @@ class _ColorPanelState extends State<ColorPanel> {
                     .colorAnimOptions
                     .copyWith(speed: v);
                 widget.onSettingsChanged(widget.settings);
+                _log('HSL animation speed changed: $v');
               },
               animationMode:
                   widget.settings.colorSettings.colorAnimOptions.mode,
@@ -125,6 +157,7 @@ class _ColorPanelState extends State<ColorPanel> {
                     .colorAnimOptions
                     .copyWith(mode: m);
                 widget.onSettingsChanged(widget.settings);
+                _log('HSL animation mode changed: ${m.toString()}');
               },
               animationEasing:
                   widget.settings.colorSettings.colorAnimOptions.easing,
@@ -135,6 +168,7 @@ class _ColorPanelState extends State<ColorPanel> {
                     .colorAnimOptions
                     .copyWith(easing: e);
                 widget.onSettingsChanged(widget.settings);
+                _log('HSL animation easing changed: ${e.toString()}');
               },
               sliderColor: widget.sliderColor,
             ),
@@ -146,7 +180,12 @@ class _ColorPanelState extends State<ColorPanel> {
         _buildSectionHeader(
           'Overlay Controls',
           _showOverlayControls,
-          () => setState(() => _showOverlayControls = !_showOverlayControls),
+          () => setState(() {
+            _showOverlayControls = !_showOverlayControls;
+            _log(
+              'Overlay controls section ${_showOverlayControls ? 'expanded' : 'collapsed'}',
+            );
+          }),
         ),
         if (_showOverlayControls) ...[
           ValueSlider(
@@ -155,6 +194,8 @@ class _ColorPanelState extends State<ColorPanel> {
             onChanged: (value) => _onSliderChanged(
               value,
               (v) => widget.settings.colorSettings.overlayHue = v,
+              isOverlay: true,
+              propertyName: 'Overlay Hue',
             ),
             sliderColor: widget.sliderColor,
             defaultValue: 0.0,
@@ -165,6 +206,8 @@ class _ColorPanelState extends State<ColorPanel> {
             onChanged: (value) => _onSliderChanged(
               value,
               (v) => widget.settings.colorSettings.overlayIntensity = v,
+              isOverlay: true,
+              propertyName: 'Overlay Intensity',
             ),
             sliderColor: widget.sliderColor,
             defaultValue: 0.0,
@@ -175,6 +218,8 @@ class _ColorPanelState extends State<ColorPanel> {
             onChanged: (value) => _onSliderChanged(
               value,
               (v) => widget.settings.colorSettings.overlayOpacity = v,
+              isOverlay: true,
+              propertyName: 'Overlay Opacity',
             ),
             sliderColor: widget.sliderColor,
             defaultValue: 0.0,
@@ -195,6 +240,7 @@ class _ColorPanelState extends State<ColorPanel> {
                   if (!widget.settings.colorEnabled)
                     widget.settings.colorEnabled = true;
                   widget.onSettingsChanged(widget.settings);
+                  _log('Overlay animation toggled: ${value ? 'ON' : 'OFF'}');
                 },
               ),
             ],
@@ -210,6 +256,7 @@ class _ColorPanelState extends State<ColorPanel> {
                     .overlayAnimOptions
                     .copyWith(speed: v);
                 widget.onSettingsChanged(widget.settings);
+                _log('Overlay animation speed changed: $v');
               },
               animationMode:
                   widget.settings.colorSettings.overlayAnimOptions.mode,
@@ -220,6 +267,7 @@ class _ColorPanelState extends State<ColorPanel> {
                     .overlayAnimOptions
                     .copyWith(mode: m);
                 widget.onSettingsChanged(widget.settings);
+                _log('Overlay animation mode changed: ${m.toString()}');
               },
               animationEasing:
                   widget.settings.colorSettings.overlayAnimOptions.easing,
@@ -230,6 +278,7 @@ class _ColorPanelState extends State<ColorPanel> {
                     .overlayAnimOptions
                     .copyWith(easing: e);
                 widget.onSettingsChanged(widget.settings);
+                _log('Overlay animation easing changed: ${e.toString()}');
               },
               sliderColor: widget.sliderColor,
             ),
@@ -269,12 +318,47 @@ class _ColorPanelState extends State<ColorPanel> {
     );
   }
 
-  void _onSliderChanged(double value, Function(double) setter) {
+  void _onSliderChanged(
+    double value,
+    Function(double) setter, {
+    bool isOverlay = false,
+    required String propertyName,
+  }) {
     // Enable the corresponding effect if it's not already enabled
     if (!widget.settings.colorEnabled) widget.settings.colorEnabled = true;
 
     // Update the setting value
     setter(value);
+
+    // Log the change
+    _log('$propertyName changed to: $value');
+
+    // For overlay controls, make sure either both intensity and opacity are non-zero,
+    // or both are zero to prevent unintended overlay effects
+    if (isOverlay) {
+      // If changing overlay hue but intensity or opacity is zero,
+      // we don't enable overlay effect implicitly
+      if (widget.settings.colorSettings.overlayIntensity <= 0.0 ||
+          widget.settings.colorSettings.overlayOpacity <= 0.0) {
+        _log(
+          'Overlay effects might not be visible (Intensity: ${widget.settings.colorSettings.overlayIntensity}, Opacity: ${widget.settings.colorSettings.overlayOpacity})',
+        );
+      }
+    } else {
+      // For non-overlay controls, ensure we don't unintentionally set overlay values
+      // This ensures that changing color settings doesn't create an overlay effect
+      if (widget.settings.colorSettings.overlayIntensity > 0.0 &&
+          widget.settings.colorSettings.overlayOpacity > 0.0 &&
+          widget.settings.colorEnabled) {
+        // Only if we're in a color section but not an overlay section
+        // No need to reset overlay values here - they should only be changed
+        // when explicitly adjusted in the overlay controls
+        _log(
+          'Color adjustment with active overlay (Intensity: ${widget.settings.colorSettings.overlayIntensity}, Opacity: ${widget.settings.colorSettings.overlayOpacity})',
+        );
+      }
+    }
+
     // Notify the parent widget
     widget.onSettingsChanged(widget.settings);
   }
@@ -297,10 +381,13 @@ class _ColorPanelState extends State<ColorPanel> {
     widget.settings.colorSettings.colorAnimOptions = AnimationOptions();
     widget.settings.colorSettings.overlayAnimOptions = AnimationOptions();
 
+    _log('Color settings reset to defaults');
     widget.onSettingsChanged(widget.settings);
   }
 
   void _applyPreset(Map<String, dynamic> presetData) {
+    _log('Applying color preset: ${presetData.toString()}');
+
     widget.settings.colorEnabled =
         presetData['colorEnabled'] ?? widget.settings.colorEnabled;
     widget.settings.colorSettings.hue =
@@ -337,10 +424,13 @@ class _ColorPanelState extends State<ColorPanel> {
           );
     }
 
+    _log('Color preset applied successfully');
     widget.onSettingsChanged(widget.settings);
   }
 
   Future<void> _savePresetForAspect(ShaderAspect aspect, String name) async {
+    _log('Saving color preset: $name for aspect $aspect');
+
     Map<String, dynamic> presetData = {
       'colorEnabled': widget.settings.colorEnabled,
       'hue': widget.settings.colorSettings.hue,
@@ -361,10 +451,13 @@ class _ColorPanelState extends State<ColorPanel> {
     bool success = await PresetsManager.savePreset(aspect, name, presetData);
 
     if (success) {
+      _log('Color preset saved successfully: $name');
       // Update cached presets
       _cachedPresets[aspect] = await PresetsManager.getPresetsForAspect(aspect);
       // Force refresh of the UI to show the new preset immediately
       _refreshPresets();
+    } else {
+      _log('Failed to save color preset: $name');
     }
   }
 
@@ -375,16 +468,21 @@ class _ColorPanelState extends State<ColorPanel> {
   static Future<Map<String, dynamic>> _loadPresetsForAspect(
     ShaderAspect aspect,
   ) async {
+    debugPrint('[ColorPanel] Loading presets for aspect: $aspect');
     // Delegate to EffectControls
     // This will need to be implemented to connect with the global preset system
     if (!_cachedPresets.containsKey(aspect)) {
       _cachedPresets[aspect] = await PresetsManager.getPresetsForAspect(aspect);
+      debugPrint(
+        '[ColorPanel] Loaded ${_cachedPresets[aspect]?.length ?? 0} presets for $aspect',
+      );
     }
     return _cachedPresets[aspect] ?? {};
   }
 
   static void _refreshPresets() {
     _refreshCounter++;
+    debugPrint('[ColorPanel] Refreshing presets, counter: $_refreshCounter');
     // Call the central refresh method for immediate UI update
     EffectControls.refreshPresets();
   }
@@ -393,9 +491,13 @@ class _ColorPanelState extends State<ColorPanel> {
     ShaderAspect aspect,
     String name,
   ) async {
+    debugPrint('[ColorPanel] Deleting preset: $name for aspect $aspect');
     final success = await PresetsManager.deletePreset(aspect, name);
     if (success) {
+      debugPrint('[ColorPanel] Successfully deleted preset: $name');
       _cachedPresets[aspect] = await PresetsManager.getPresetsForAspect(aspect);
+    } else {
+      debugPrint('[ColorPanel] Failed to delete preset: $name');
     }
     return success;
   }

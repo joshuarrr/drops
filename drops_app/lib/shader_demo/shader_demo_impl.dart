@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:developer' as developer;
 
 import '../common/app_scaffold.dart';
 import 'models/shader_effect.dart';
@@ -15,6 +16,28 @@ import 'views/effect_controls.dart';
 import 'views/panel_container.dart';
 import 'views/preset_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+// Set true to enable additional debug logging
+bool _enableDebugLogging = true;
+
+// Add this helper function to reduce logging verbosity
+// Reduces verbosity by only logging color settings that aren't all zeros
+bool _shouldLogColorSettings(ShaderSettings settings) {
+  // Skip logging if everything is zero
+  return !(settings.colorSettings.hue == 0.0 &&
+      settings.colorSettings.saturation == 0.0 &&
+      settings.colorSettings.lightness == 0.0 &&
+      settings.colorSettings.overlayIntensity == 0.0 &&
+      settings.colorSettings.overlayOpacity == 0.0);
+}
+
+// Custom log function with more concise formatting
+void _log(String message) {
+  if (!_enableDebugLogging) return;
+  final String tag = 'ShaderDemo';
+  developer.log(message, name: tag);
+  debugPrint('[$tag] $message');
+}
 
 enum ImageCategory { covers, artists }
 
@@ -29,6 +52,9 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     with SingleTickerProviderStateMixin {
   bool _showControls = true;
   late AnimationController _controller;
+
+  // Track if this is the first time building the text overlay for logging purposes
+  bool _firstTextOverlayBuild = true;
 
   // Currently selected aspect for editing (does not affect which effects are applied)
   ShaderAspect _selectedAspect = ShaderAspect.color;
@@ -311,9 +337,15 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
           stackChildren.add(_buildTextOverlay());
         }
 
+        // Use Container with explicit width and height to ensure full-screen capture
         return Container(
           color: Colors.black,
-          child: Stack(fit: StackFit.expand, children: stackChildren),
+          width: MediaQuery.of(context).size.width,
+          height: MediaQuery.of(context).size.height,
+          child: Center(
+            // Add Center widget to ensure content is perfectly centered
+            child: Stack(fit: StackFit.expand, children: stackChildren),
+          ),
         );
       },
     );
@@ -326,6 +358,7 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
         // Get the screen dimensions
         final screenWidth = constraints.maxWidth;
         final screenHeight = constraints.maxHeight;
+        final deviceAspectRatio = screenWidth / screenHeight;
 
         return Container(
           color: Colors.black,
@@ -334,14 +367,17 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
           alignment: Alignment.center,
           child: _selectedImage.isEmpty
               ? const SizedBox.shrink()
-              : Image.asset(
-                  _selectedImage,
-                  alignment: Alignment.center,
-                  fit: _shaderSettings.textLayoutSettings.fillScreen
-                      ? BoxFit.cover
-                      : BoxFit.contain,
-                  width: double.infinity,
-                  height: double.infinity,
+              : Center(
+                  // Add Center widget to ensure proper alignment
+                  child: Image.asset(
+                    _selectedImage,
+                    alignment: Alignment.center,
+                    fit: _shaderSettings.textLayoutSettings.fillScreen
+                        ? BoxFit.cover
+                        : BoxFit.contain,
+                    width: double.infinity,
+                    height: double.infinity,
+                  ),
                 ),
         );
       },
@@ -446,6 +482,7 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
       barrierColor: Colors.black.withOpacity(0.5),
       builder: (context) => PresetsDialog(
         onLoad: (preset) {
+          // Force a rebuild with new settings
           setState(() {
             // Apply all settings from the preset
             _shaderSettings = preset.settings;
@@ -457,7 +494,22 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
             } else if (_selectedImage.contains('/artists/')) {
               _imageCategory = ImageCategory.artists;
             }
+
+            // Trigger aspect controls to reflect loaded settings - first ensure controls are visible
+            _showControls = true;
+
+            // If aspect sliders are open, maintain current aspect but refresh its state
+            if (_showAspectSliders) {
+              // No change to _selectedAspect here, just keep what the user was looking at
+            } else {
+              // If no sliders were open, default to color aspect as that's most visually obvious
+              _selectedAspect = ShaderAspect.color;
+            }
           });
+
+          // Force controller to restart animation to ensure effects are visible
+          _controller.reset();
+          _controller.repeat();
 
           // Save changes to persistent storage
           _saveShaderSettings();
@@ -956,6 +1008,20 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
 
   // Build text overlay
   Widget _buildTextOverlay() {
+    // Only log if we have non-zero color settings or this is the first time
+    if (_firstTextOverlayBuild || _shouldLogColorSettings(_shaderSettings)) {
+      _log(
+        "Building text overlay - Apply shaders to text: ${_shaderSettings.textfxSettings.applyShaderEffectsToText}",
+      );
+
+      if (_shouldLogColorSettings(_shaderSettings)) {
+        _log(
+          "Color settings - hue: ${_shaderSettings.colorSettings.hue.toStringAsFixed(2)}, sat: ${_shaderSettings.colorSettings.saturation.toStringAsFixed(2)}, light: ${_shaderSettings.colorSettings.lightness.toStringAsFixed(2)}, overlay: [${_shaderSettings.colorSettings.overlayHue.toStringAsFixed(2)}, i=${_shaderSettings.colorSettings.overlayIntensity.toStringAsFixed(2)}, o=${_shaderSettings.colorSettings.overlayOpacity.toStringAsFixed(2)}]",
+        );
+      }
+      _firstTextOverlayBuild = false;
+    }
+
     final overlayStack = Stack(
       key: ValueKey(
         'text_overlay_stack_${_shaderSettings.textfxSettings.applyShaderEffectsToText}',
@@ -965,13 +1031,20 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
 
     if (_shaderSettings.textfxSettings.applyShaderEffectsToText) {
       final double animationValue = _controller.value;
-      return EffectController.applyEffects(
-        child: overlayStack,
-        settings: _shaderSettings,
-        animationValue: animationValue,
+      return Container(
+        color: Colors.transparent, // Ensure the container is transparent
+        child: EffectController.applyEffects(
+          child: overlayStack,
+          settings: _shaderSettings,
+          animationValue: animationValue,
+          preserveTransparency: true, // Add parameter to preserve transparency
+        ),
       );
     } else {
-      return overlayStack;
+      return Container(
+        color: Colors.transparent, // Ensure the container is transparent
+        child: overlayStack,
+      );
     }
   }
 
@@ -985,7 +1058,7 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     List<Widget> positionedLines = [];
 
     // Check if we need to reverse text direction
-    bool shouldReverseText = true;
+    // bool shouldReverseText = true;
 
     // Local helper to map int weight (100-900) to FontWeight constant
     FontWeight toFontWeight(int w) {
