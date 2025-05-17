@@ -16,6 +16,28 @@ class SavePresetDialog extends StatefulWidget {
 class _SavePresetDialogState extends State<SavePresetDialog> {
   final TextEditingController _nameController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  bool _isLoading = true;
+  bool _hasUserEditedName = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAutomaticName();
+  }
+
+  Future<void> _loadAutomaticName() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    // Generate an automatic name
+    final autoName = await PresetController.generateAutomaticPresetName();
+
+    setState(() {
+      _nameController.text = autoName;
+      _isLoading = false;
+    });
+  }
 
   @override
   void dispose() {
@@ -48,62 +70,91 @@ class _SavePresetDialogState extends State<SavePresetDialog> {
                   ],
                 ),
                 padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Save Preset',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    Form(
-                      key: _formKey,
-                      child: TextFormField(
-                        controller: _nameController,
-                        decoration: InputDecoration(
-                          labelText: 'Preset Name',
-                          hintText: 'Enter a name for your preset',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                child: _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Save Preset',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                          filled: true,
-                          fillColor: theme.colorScheme.surface,
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter a name';
-                          }
-                          return null;
-                        },
-                        autofocus: true,
+                          const SizedBox(height: 24),
+                          Form(
+                            key: _formKey,
+                            child: TextFormField(
+                              controller: _nameController,
+                              decoration: InputDecoration(
+                                labelText: 'Preset Name',
+                                hintText: 'Enter a name for your preset',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                filled: true,
+                                fillColor: theme.colorScheme.surface,
+                                labelStyle: TextStyle(color: Colors.white70),
+                                hintStyle: TextStyle(color: Colors.white70),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: Colors.white,
+                                    width: 2,
+                                  ),
+                                ),
+                              ),
+                              style: TextStyle(color: Colors.white),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter a name';
+                                }
+                                return null;
+                              },
+                              autofocus: true,
+                              onChanged: (text) {
+                                setState(() {
+                                  _hasUserEditedName = true;
+                                });
+                              },
+                              onTap: () {
+                                if (!_hasUserEditedName) {
+                                  // Auto-select all text when first clicked
+                                  _nameController.selection = TextSelection(
+                                    baseOffset: 0,
+                                    extentOffset: _nameController.text.length,
+                                  );
+                                  setState(() {
+                                    _hasUserEditedName = true;
+                                  });
+                                }
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text('Cancel'),
+                              ),
+                              const SizedBox(width: 12),
+                              FilledButton(
+                                onPressed: () {
+                                  if (_formKey.currentState!.validate()) {
+                                    widget.onSave(_nameController.text);
+                                    Navigator.pop(context);
+                                  }
+                                },
+                                child: const Text('Save'),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 24),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('Cancel'),
-                        ),
-                        const SizedBox(width: 12),
-                        FilledButton(
-                          onPressed: () {
-                            if (_formKey.currentState!.validate()) {
-                              widget.onSave(_nameController.text);
-                              Navigator.pop(context);
-                            }
-                          },
-                          child: const Text('Save'),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
               ),
             ],
           ),

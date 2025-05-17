@@ -63,7 +63,21 @@
 //    preset.  Because the PNG already contains all shader layers, the preview
 //    is an accurate WYSIWYG snapshot and requires no additional shader work.
 //
-// 4. Lifecycle Notes
+// 4. Automatic Preset Naming
+// -------------------------
+//  • Implementation: The `PresetController` includes a method
+//    `generateAutomaticPresetName()` that analyzes existing presets and generates
+//    sequential names like "Preset 1", "Preset 2", etc.
+//  
+//  • Naming Logic: The system analyzes existing presets to find available numbers,
+//    detecting gaps in the sequence. If "Preset 1" and "Preset 3" exist, the next
+//    automatic name would be "Preset 2" rather than "Preset 4".
+//
+//  • User Interface: The `SavePresetDialog` includes a checkbox to toggle between
+//    manual naming and automatic naming. When automatic naming is enabled, the
+//    text field is pre-populated and disabled.
+//
+// 5. Lifecycle Notes
 // ------------------
 //  • Saving a preset *always* refreshes the SharedPreferences blob *and* shows
 //    a SnackBar via the outer scaffold.
