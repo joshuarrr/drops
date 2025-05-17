@@ -36,12 +36,15 @@ class TextOverlay extends StatelessWidget {
       // Wrap in a transparent container to ensure background transparency is preserved
       return Container(
         color: Colors.transparent,
-        child: EffectController.applyEffects(
-          child: overlayStack,
-          settings: settings,
-          animationValue: animationValue,
-          isTextContent: true,
-          preserveTransparency: true, // Add flag to preserve transparency
+        // Use RepaintBoundary to limit rebuilds and repaints
+        child: RepaintBoundary(
+          child: EffectController.applyEffects(
+            child: overlayStack,
+            settings: settings,
+            animationValue: animationValue,
+            isTextContent: true,
+            preserveTransparency: true,
+          ),
         ),
       );
     }

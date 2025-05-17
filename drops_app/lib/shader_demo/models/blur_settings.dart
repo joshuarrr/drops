@@ -1,3 +1,4 @@
+// shatter effect
 import 'animation_options.dart';
 
 class BlurSettings {

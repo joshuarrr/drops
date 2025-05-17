@@ -18,6 +18,9 @@ class ColorEffectShader extends StatelessWidget {
   final bool preserveTransparency;
   final String _logTag = 'ColorEffectShader';
 
+  // Add static map to track last logged values to avoid repeating identical logs
+  static final Map<String, Map<String, dynamic>> _lastLoggedValues = {};
+
   // Custom log function that uses both dart:developer and debugPrint for visibility
   void _log(String message) {
     if (!enableShaderDebugLogs) return;
@@ -28,11 +31,50 @@ class ColorEffectShader extends StatelessWidget {
   // Reduces verbosity by only logging when values are non-zero or changed
   bool _shouldLogColorSettings() {
     // Only log if some values are non-zero
-    return settings.colorSettings.hue != 0.0 ||
-        settings.colorSettings.saturation != 0.0 ||
-        settings.colorSettings.lightness != 0.0 ||
-        settings.colorSettings.overlayIntensity != 0.0 ||
-        settings.colorSettings.overlayOpacity != 0.0;
+    const double threshold = 0.01;
+
+    // For color effect, only log if saturation or lightness is significant
+    bool hasColorEffect =
+        settings.colorSettings.saturation.abs() > threshold ||
+        settings.colorSettings.lightness.abs() > threshold;
+
+    // For overlay, only log when both intensity and opacity are non-zero
+    bool hasOverlayEffect =
+        settings.colorSettings.overlayIntensity > threshold &&
+        settings.colorSettings.overlayOpacity > threshold;
+
+    // Track instance ID to compare with previous values
+    final String instanceId = preserveTransparency ? 'text' : 'background';
+    final Map<String, dynamic> currentValues = {
+      'hue': settings.colorSettings.hue,
+      'saturation': settings.colorSettings.saturation,
+      'lightness': settings.colorSettings.lightness,
+      'overlayIntensity': settings.colorSettings.overlayIntensity,
+      'overlayOpacity': settings.colorSettings.overlayOpacity,
+    };
+
+    // Check if values changed
+    bool changed = false;
+    if (_lastLoggedValues.containsKey(instanceId)) {
+      final prevValues = _lastLoggedValues[instanceId]!;
+      changed =
+          (prevValues['hue'] != currentValues['hue']) ||
+          (prevValues['saturation'] != currentValues['saturation']) ||
+          (prevValues['lightness'] != currentValues['lightness']) ||
+          (prevValues['overlayIntensity'] !=
+              currentValues['overlayIntensity']) ||
+          (prevValues['overlayOpacity'] != currentValues['overlayOpacity']);
+    } else {
+      // First time seeing this instance
+      changed = true;
+    }
+
+    // Update values for next time
+    if (changed && (hasColorEffect || hasOverlayEffect)) {
+      _lastLoggedValues[instanceId] = currentValues;
+    }
+
+    return changed && (hasColorEffect || hasOverlayEffect);
   }
 
   const ColorEffectShader({
@@ -45,20 +87,16 @@ class ColorEffectShader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Only log when there are non-zero values or preserveTransparency is true
-    if (_shouldLogColorSettings() || preserveTransparency) {
+    // Only log when there are non-zero values or values have changed
+    if (_shouldLogColorSettings()) {
       _log(
-        "Building ColorEffectShader with preserveTransparency=$preserveTransparency",
+        "Building ColorEffectShader (${preserveTransparency ? 'text' : 'background'}) with " +
+            "hsl=[${settings.colorSettings.hue.toStringAsFixed(2)}, " +
+            "${settings.colorSettings.saturation.toStringAsFixed(2)}, " +
+            "${settings.colorSettings.lightness.toStringAsFixed(2)}], " +
+            "overlay=[${settings.colorSettings.overlayIntensity.toStringAsFixed(2)}, " +
+            "${settings.colorSettings.overlayOpacity.toStringAsFixed(2)}]",
       );
-
-      if (_shouldLogColorSettings()) {
-        _log(
-          "Color settings - hue: ${settings.colorSettings.hue.toStringAsFixed(2)}, sat: ${settings.colorSettings.saturation.toStringAsFixed(2)}, light: ${settings.colorSettings.lightness.toStringAsFixed(2)}",
-        );
-        _log(
-          "Overlay - hue: ${settings.colorSettings.overlayHue.toStringAsFixed(2)}, intensity: ${settings.colorSettings.overlayIntensity.toStringAsFixed(2)}, opacity: ${settings.colorSettings.overlayOpacity.toStringAsFixed(2)}",
-        );
-      }
     }
 
     // Convenience aliases so the helper functions are easily accessible.
@@ -234,6 +272,7 @@ class BlurEffectShader extends StatelessWidget {
   final ShaderSettings settings;
   final double animationValue;
   final bool preserveTransparency;
+  final bool isTextContent;
 
   const BlurEffectShader({
     super.key,
@@ -241,6 +280,7 @@ class BlurEffectShader extends StatelessWidget {
     required this.settings,
     required this.animationValue,
     this.preserveTransparency = false,
+    this.isTextContent = false,
   });
 
   @override
@@ -284,11 +324,20 @@ class BlurEffectShader extends StatelessWidget {
             amount = amount * intensity;
           }
 
-          // If preserveTransparency is enabled, adjust blur settings
+          // If preserveTransparency is enabled or this is text content, adjust blur settings
           double opacity = settings.blurSettings.blurOpacity;
-          if (preserveTransparency) {
-            opacity =
-                opacity * 0.5; // Reduce opacity to preserve original content
+          double intensity = settings.blurSettings.blurIntensity;
+          double contrast = settings.blurSettings.blurContrast;
+
+          // Preserve transparency: avoid introducing a solid backdrop, but let
+          // the blur (shatter) characteristics shine through on the glyphs.
+          // With the transparent-fallback fix in the GLSL shader, we no longer
+          // need to severely dampen the effect for text.  Keep the original
+          // parameters and only make a mild reduction when *only*
+          // preserveTransparency is requested (i.e. non-text overlays).
+
+          if (!isTextContent && preserveTransparency) {
+            opacity = opacity * 0.6; // Slight reduction for safety
           }
 
           // Set uniforms after the texture sampler
@@ -298,8 +347,8 @@ class BlurEffectShader extends StatelessWidget {
           shader.setFloat(3, image.height.toDouble());
           shader.setFloat(4, opacity);
           shader.setFloat(5, settings.blurSettings.blurBlendMode.toDouble());
-          shader.setFloat(6, settings.blurSettings.blurIntensity);
-          shader.setFloat(7, settings.blurSettings.blurContrast);
+          shader.setFloat(6, intensity); // Use adjusted intensity
+          shader.setFloat(7, contrast); // Use adjusted contrast
 
           // Draw with the shader, ensuring it covers the full area
           canvas.drawRect(Offset.zero & size, Paint()..shader = shader);
@@ -386,6 +435,7 @@ class NoiseEffectShader extends StatelessWidget {
   final ShaderSettings settings;
   final double animationValue;
   final bool preserveTransparency;
+  final bool isTextContent;
 
   const NoiseEffectShader({
     super.key,
@@ -393,6 +443,7 @@ class NoiseEffectShader extends StatelessWidget {
     required this.settings,
     required this.animationValue,
     this.preserveTransparency = false,
+    this.isTextContent = false,
   });
 
   @override
@@ -444,11 +495,27 @@ class NoiseEffectShader extends StatelessWidget {
             }
           }
 
-          // If preserveTransparency is enabled, adjust noise settings
+          // If preserveTransparency is enabled or this is text content, adjust noise settings
           double colorIntensity = settings.noiseSettings.colorIntensity;
           double waveAmount = settings.noiseSettings.waveAmount;
 
-          if (preserveTransparency) {
+          // CRITICAL FIX: Special handling for text content
+          if (isTextContent) {
+            // For text content, dramatically reduce settings that cause background problems
+            colorIntensity =
+                colorIntensity * 0.1; // Much more reduction for text
+            waveAmount =
+                waveAmount *
+                0.1; // Dramatically reduce wave distortion for text
+
+            if (enableShaderDebugLogs) {
+              print(
+                "NOISE_SHADER: Reducing effects for text content - original colorIntensity=$colorIntensity, waveAmount=$waveAmount",
+              );
+            }
+          }
+          // Less aggressive adjustments for general transparency preservation
+          else if (preserveTransparency) {
             colorIntensity = colorIntensity * 0.3; // Reduce color intensity
             waveAmount = waveAmount * 0.5; // Reduce wave distortion
           }
@@ -544,4 +611,28 @@ class NoiseEffectShader extends StatelessWidget {
 
     return _applyEasing(opts.easing, modeValue);
   }
+}
+
+// Helper method to apply blur effect using custom shader
+Widget _applyBlurEffect({
+  required Widget child,
+  required ShaderSettings settings,
+  required double animationValue,
+  bool preserveTransparency = false,
+  bool isTextContent = false,
+}) {
+  // Skip if blur amount is zero
+  if (settings.blurSettings.blurAmount <= 0.0 &&
+      !settings.blurSettings.blurAnimated) {
+    return child;
+  }
+
+  // Use custom shader implementation
+  return BlurEffectShader(
+    settings: settings,
+    animationValue: animationValue,
+    child: child,
+    preserveTransparency: preserveTransparency,
+    isTextContent: isTextContent,
+  );
 }

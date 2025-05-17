@@ -77,9 +77,11 @@ void main() {
     // Sample the texture
     vec4 color = texture(uTexture, uv);
     
-    // If texture sampling failed, use a default color to make it obvious
+    // If the sampled texel is fully transparent (e.g. text layer background),
+    // keep it transparent instead of showing a debug color. This prevents
+    // pink artifacts when the shader is applied only to text.
     if (color.a == 0.0) {
-        fragColor = vec4(1.0, 0.0, 1.0, 1.0); // Bright magenta for debugging
+        fragColor = vec4(0.0, 0.0, 0.0, 0.0);
         return;
     }
     

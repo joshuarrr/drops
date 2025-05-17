@@ -11,6 +11,9 @@ import 'custom_shader_widgets.dart';
 bool enableEffectLogs = true;
 const String _logTag = 'EffectController';
 
+// Caches for tracking previous values to avoid repeating logs
+Map<String, String> _lastLoggedValues = {};
+
 // Helper for logging consistently
 void _log(String message) {
   if (!enableEffectLogs) return;
@@ -18,32 +21,121 @@ void _log(String message) {
   debugPrint('[$_logTag] $message');
 }
 
+// Log only if message is different from the last time this key was logged
+void _logOnce(String key, String message) {
+  if (!enableEffectLogs) return;
+
+  // Add a hash of the message to prevent repeating identical content with different keys
+  final String messageHash = message.hashCode.toString();
+  final String cacheKey = "$key-$messageHash";
+
+  if (_lastLoggedValues[cacheKey] != message) {
+    _log(message);
+    _lastLoggedValues[cacheKey] = message;
+
+    // Keep cache from growing indefinitely
+    if (_lastLoggedValues.length > 100) {
+      // Remove oldest entries when cache gets too large
+      final oldestKeys = _lastLoggedValues.keys.take(20).toList();
+      for (final oldKey in oldestKeys) {
+        _lastLoggedValues.remove(oldKey);
+      }
+    }
+  }
+}
+
+// Helper to format color settings consistently for logging
+String _formatColorSettings(ShaderSettings settings) {
+  return "Color settings - hue: ${settings.colorSettings.hue.toStringAsFixed(2)}, " +
+      "sat: ${settings.colorSettings.saturation.toStringAsFixed(2)}, " +
+      "light: ${settings.colorSettings.lightness.toStringAsFixed(2)}, " +
+      "overlay: [${settings.colorSettings.overlayHue.toStringAsFixed(2)}, " +
+      "i=${settings.colorSettings.overlayIntensity.toStringAsFixed(2)}, " +
+      "o=${settings.colorSettings.overlayOpacity.toStringAsFixed(2)}]";
+}
+
 // Reduces verbosity by only logging color settings that aren't all zeros
 bool _shouldLogColorSettings(ShaderSettings settings) {
-  // Skip logging if everything is zero
-  return !(settings.colorSettings.hue == 0.0 &&
-      settings.colorSettings.saturation == 0.0 &&
-      settings.colorSettings.lightness == 0.0 &&
-      settings.colorSettings.overlayIntensity == 0.0 &&
-      settings.colorSettings.overlayOpacity == 0.0);
+  // Skip logging if everything is minimal/zero
+  const double threshold =
+      0.01; // Small threshold to avoid floating point issues
+
+  // Only log if we have significant color effect settings
+  // For hue, only consider it significant if saturation or lightness is also non-zero
+  bool hasColorEffect =
+      (settings.colorSettings.saturation.abs() > threshold ||
+      settings.colorSettings.lightness.abs() > threshold);
+
+  // For overlay, only log when both intensity and opacity are non-zero
+  bool hasOverlayEffect =
+      (settings.colorSettings.overlayIntensity > threshold &&
+      settings.colorSettings.overlayOpacity > threshold);
+
+  return hasColorEffect || hasOverlayEffect;
 }
 
 class EffectController {
+  // Cache for memoizing effect results
+  static final Map<String, Widget> _effectCache = {};
+
+  // Generate a unique cache key for a settings configuration
+  static String _generateCacheKey(
+    ShaderSettings settings,
+    double animationValue,
+    bool preserveTransparency,
+    bool isTextContent,
+  ) {
+    // Create a compact representation of critical settings
+    return [
+      isTextContent ? 'text' : 'bg',
+      preserveTransparency ? 'trans' : 'opaque',
+      settings.colorEnabled ? 'c1' : 'c0',
+      settings.blurEnabled ? 'b1' : 'b0',
+      settings.noiseEnabled ? 'n1' : 'n0',
+      // Only include animation value if anything is animated
+      if (settings.colorSettings.colorAnimated ||
+          settings.blurSettings.blurAnimated ||
+          settings.noiseSettings.noiseAnimated)
+        animationValue.toStringAsFixed(2),
+      // Hash of settings values for color if enabled
+      if (settings.colorEnabled)
+        '${settings.colorSettings.hue.toStringAsFixed(2)}_${settings.colorSettings.saturation.toStringAsFixed(2)}_${settings.colorSettings.lightness.toStringAsFixed(2)}_${settings.colorSettings.overlayIntensity.toStringAsFixed(2)}_${settings.colorSettings.overlayOpacity.toStringAsFixed(2)}',
+      // Hash of settings values for blur if enabled
+      if (settings.blurEnabled)
+        '${settings.blurSettings.blurAmount.toStringAsFixed(2)}_${settings.blurSettings.blurRadius.toStringAsFixed(2)}_${settings.blurSettings.blurOpacity.toStringAsFixed(2)}',
+      // Hash of settings values for noise if enabled
+      if (settings.noiseEnabled)
+        '${settings.noiseSettings.waveAmount.toStringAsFixed(2)}_${settings.noiseSettings.colorIntensity.toStringAsFixed(2)}',
+    ].join('|');
+  }
+
   // Apply all enabled effects to a widget
   static Widget applyEffects({
     required Widget child,
     required ShaderSettings settings,
     required double animationValue,
     bool preserveTransparency = false,
+    bool isTextContent = false, // Add parameter to identify text content
   }) {
-    // Log key settings at point of application, but only if there are meaningful values
+    // Generate log message first before deciding whether to show it
+    String logMessage = "";
+
     if (_shouldLogColorSettings(settings)) {
-      _log(
-        "applyEffects called with preserveTransparency=$preserveTransparency, color=${settings.colorEnabled}",
-      );
-      _log(
-        "Color settings - hue: ${settings.colorSettings.hue.toStringAsFixed(2)}, sat: ${settings.colorSettings.saturation.toStringAsFixed(2)}, light: ${settings.colorSettings.lightness.toStringAsFixed(2)}, overlay: [${settings.colorSettings.overlayHue.toStringAsFixed(2)}, i=${settings.colorSettings.overlayIntensity.toStringAsFixed(2)}, o=${settings.colorSettings.overlayOpacity.toStringAsFixed(2)}]",
-      );
+      logMessage =
+          "applyEffects: mode=${isTextContent ? 'text' : 'background'}, preserveTransparency=$preserveTransparency, " +
+          "color=${settings.colorEnabled}, " +
+          _formatColorSettings(settings);
+    } else if (settings.colorEnabled) {
+      // Simple log for zero-value color effects
+      logMessage =
+          "applyEffects called with preserveTransparency=$preserveTransparency, color=${settings.colorEnabled}";
+    }
+
+    // Only log if the message is different from previous logs with same parameters
+    if (logMessage.isNotEmpty) {
+      String cacheKey =
+          "${isTextContent ? 'text' : 'bg'}-$preserveTransparency";
+      _logOnce(cacheKey, logMessage);
     }
 
     // If no effects are enabled, return the original child
@@ -53,6 +145,67 @@ class EffectController {
       return child;
     }
 
+    // For animated effects, we need to recompute every frame.
+    // For static effects, we can memoize results.
+    bool isAnimated =
+        (settings.colorSettings.colorAnimated && settings.colorEnabled) ||
+        (settings.blurSettings.blurAnimated && settings.blurEnabled) ||
+        (settings.noiseSettings.noiseAnimated && settings.noiseEnabled);
+
+    // If not animated, check cache for existing widget
+    if (!isAnimated) {
+      final cacheKey = _generateCacheKey(
+        settings,
+        animationValue,
+        preserveTransparency,
+        isTextContent,
+      );
+
+      if (_effectCache.containsKey(cacheKey)) {
+        // Use cached widget to avoid rebuilding
+        return _effectCache[cacheKey]!;
+      }
+
+      // Build and cache widget
+      Widget result = _buildEffectsWidget(
+        child: child,
+        settings: settings,
+        animationValue: animationValue,
+        preserveTransparency: preserveTransparency,
+        isTextContent: isTextContent,
+      );
+
+      // Only cache if we have less than 30 items to avoid memory issues
+      if (_effectCache.length < 30) {
+        _effectCache[cacheKey] = result;
+      } else {
+        // Clear cache occasionally to prevent memory leaks
+        if (_effectCache.length > 50) {
+          _effectCache.clear();
+        }
+      }
+
+      return result;
+    }
+
+    // For animated effects, don't cache
+    return _buildEffectsWidget(
+      child: child,
+      settings: settings,
+      animationValue: animationValue,
+      preserveTransparency: preserveTransparency,
+      isTextContent: isTextContent,
+    );
+  }
+
+  // Internal method to build the effects widget without caching logic
+  static Widget _buildEffectsWidget({
+    required Widget child,
+    required ShaderSettings settings,
+    required double animationValue,
+    required bool preserveTransparency,
+    required bool isTextContent,
+  }) {
     // Start with the original child
     Widget result = child;
 
@@ -66,6 +219,7 @@ class EffectController {
         settings: settings,
         animationValue: animationValue,
         preserveTransparency: preserveTransparency,
+        isTextContent: isTextContent,
       );
     }
 
@@ -76,6 +230,7 @@ class EffectController {
         settings: settings,
         animationValue: animationValue,
         preserveTransparency: preserveTransparency,
+        isTextContent: isTextContent,
       );
     }
 
@@ -86,6 +241,7 @@ class EffectController {
         settings: settings,
         animationValue: animationValue,
         preserveTransparency: preserveTransparency,
+        isTextContent: isTextContent,
       );
     }
 
@@ -98,6 +254,7 @@ class EffectController {
     required ShaderSettings settings,
     required double animationValue,
     bool preserveTransparency = false,
+    bool isTextContent = false,
   }) {
     // Skip if all color settings are zero *and* no animation requested
     bool allZero =
@@ -112,19 +269,25 @@ class EffectController {
       return child;
     }
 
-    // CRITICAL: Clone the settings so we don't modify the original if preserveTransparency is used
-    if (preserveTransparency) {
-      // Log only if there's actual overlay data that would be changed
+    // CRITICAL: Clone the settings so we don't modify the original for text content or when preserveTransparency is used
+    if (preserveTransparency || isTextContent) {
+      // Only log if we'd be changing meaningful values
       if (settings.colorSettings.overlayIntensity > 0 ||
           settings.colorSettings.overlayOpacity > 0) {
-        _log(
-          "Creating cloned settings for text overlay - zeroing overlay (original values: intensity=${settings.colorSettings.overlayIntensity.toStringAsFixed(2)}, opacity=${settings.colorSettings.overlayOpacity.toStringAsFixed(2)})",
-        );
+        String logMessage =
+            "Creating cloned settings for ${isTextContent ? 'text' : 'transparent'} content - " +
+            "zeroing overlay (original values: intensity=${settings.colorSettings.overlayIntensity.toStringAsFixed(2)}, " +
+            "opacity=${settings.colorSettings.overlayOpacity.toStringAsFixed(2)})";
+
+        String cacheKey =
+            "clone-${isTextContent ? 'text' : 'transp'}-${settings.colorSettings.overlayIntensity.toStringAsFixed(2)}-${settings.colorSettings.overlayOpacity.toStringAsFixed(2)}";
+        _logOnce(cacheKey, logMessage);
       }
 
       var clonedSettings = ShaderSettings.fromMap(settings.toMap());
 
-      // When applying to text, we want color adjustments but no solid background overlay
+      // When applying to text or when transparency preservation is needed,
+      // we want color adjustments but no solid background overlay
       clonedSettings.colorSettings.overlayIntensity = 0.0;
       clonedSettings.colorSettings.overlayOpacity = 0.0;
 
@@ -133,7 +296,8 @@ class EffectController {
         settings: clonedSettings,
         animationValue: animationValue,
         child: child,
-        preserveTransparency: preserveTransparency,
+        preserveTransparency:
+            true, // Always preserve transparency for text/transparent content
       );
     } else {
       // Use custom shader implementation with original settings
@@ -152,6 +316,7 @@ class EffectController {
     required ShaderSettings settings,
     required double animationValue,
     bool preserveTransparency = false,
+    bool isTextContent = false,
   }) {
     // Skip if blur amount is zero
     if (settings.blurSettings.blurAmount <= 0.0 &&
@@ -165,6 +330,7 @@ class EffectController {
       animationValue: animationValue,
       child: child,
       preserveTransparency: preserveTransparency,
+      isTextContent: isTextContent,
     );
   }
 
@@ -174,6 +340,7 @@ class EffectController {
     required ShaderSettings settings,
     required double animationValue,
     bool preserveTransparency = false,
+    bool isTextContent = false,
   }) {
     // Skip if noise settings are minimal and no animation
     if (settings.noiseSettings.waveAmount <= 0.0 &&
@@ -188,6 +355,7 @@ class EffectController {
       animationValue: animationValue,
       child: child,
       preserveTransparency: preserveTransparency,
+      isTextContent: isTextContent,
     );
   }
 }

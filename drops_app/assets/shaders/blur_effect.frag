@@ -103,11 +103,13 @@ void main() {
     // Sample base texture
     vec4 directSample = texture(uTexture, uv);
     
-    // If texture sampling failed completely, show a bright color
-    if (directSample.a == 0.0) {
-        fragColor = vec4(1.0, 0.0, 0.0, 1.0); // Bright red for debugging
-        return;
-    }
+    // We no longer early-return on fully-transparent texels so that the blur
+    // can bleed colour beyond the glyph edges when the shader is applied to
+    // a text-only layer.  Keeping the branch commented for reference:
+    // if (directSample.a == 0.0) {
+    //     fragColor = vec4(0.0, 0.0, 0.0, 0.0);
+    //     return;
+    // }
     
     // If effect opacity is zero or amount nearly zero, return original
     if (uOpacity <= 0.01 || uBlurAmount <= 0.01) {

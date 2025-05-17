@@ -31,9 +31,33 @@ bool _shouldLogColorSettings(ShaderSettings settings) {
       settings.colorSettings.overlayOpacity == 0.0);
 }
 
-// Custom log function with more concise formatting
+// Custom log function with more concise formatting and log deduplication
+Map<String, String> _lastLogMessages = {};
+
 void _log(String message) {
   if (!_enableDebugLogging) return;
+
+  // Generate a hash key for this message
+  String messageKey = message.hashCode.toString();
+
+  // Skip logging if we've already logged this exact message
+  if (_lastLogMessages[messageKey] == message) {
+    return;
+  }
+
+  // Update cache with this message
+  _lastLogMessages[messageKey] = message;
+
+  // Keep cache size reasonable
+  if (_lastLogMessages.length > 100) {
+    // Remove oldest 20 entries
+    final oldestKeys = _lastLogMessages.keys.take(20).toList();
+    for (final key in oldestKeys) {
+      _lastLogMessages.remove(key);
+    }
+  }
+
+  // Actually log the message
   final String tag = 'ShaderDemo';
   developer.log(message, name: tag);
   debugPrint('[$tag] $message');
@@ -103,6 +127,16 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     final double eased = Curves.easeInOut.transform(frac);
     return ui.lerpDouble(r0, r1, eased)!;
   }
+
+  // Add variables to track previous settings for logging
+  String _lastLoggedColorSettings = '';
+  String _lastLoggedTextShaderState = '';
+
+  // Add memoization variables for the text overlay
+  Widget? _cachedTextOverlay;
+  ShaderSettings? _lastTextOverlaySettings;
+  double? _lastTextOverlayAnimValue;
+  final _textOverlayMemoKey = GlobalKey();
 
   @override
   void initState() {
@@ -314,17 +348,21 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
   Widget _buildShaderEffect() {
     return AnimatedBuilder(
       animation: _controller,
-      builder: (context, child) {
+      // Use a child parameter to avoid rebuilding static parts of the tree
+      child: _buildCenteredImage(),
+      builder: (context, baseImage) {
         // Use the raw controller value as the base time; individual effects
         // now derive their own animation curves (speed/mode/easing).
         final double animationValue = _controller.value;
 
         // Apply all enabled effects using the shared base time
-        Widget baseImage = _buildCenteredImage();
-        Widget effectsWidget = EffectController.applyEffects(
-          child: baseImage,
-          settings: _shaderSettings,
-          animationValue: animationValue,
+        // Wrap in RepaintBoundary to prevent excessive rebuilds
+        Widget effectsWidget = RepaintBoundary(
+          child: EffectController.applyEffects(
+            child: baseImage!,
+            settings: _shaderSettings,
+            animationValue: animationValue,
+          ),
         );
 
         // Compose text overlay if enabled
@@ -1008,44 +1046,152 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
 
   // Build text overlay
   Widget _buildTextOverlay() {
-    // Only log if we have non-zero color settings or this is the first time
-    if (_firstTextOverlayBuild || _shouldLogColorSettings(_shaderSettings)) {
-      _log(
-        "Building text overlay - Apply shaders to text: ${_shaderSettings.textfxSettings.applyShaderEffectsToText}",
-      );
+    // Generate log messages but only actually log them if they've changed
+    if (_shouldLogColorSettings(_shaderSettings)) {
+      // Create color settings log message
+      final String colorSettingsLog =
+          "Color settings - hue: ${_shaderSettings.colorSettings.hue.toStringAsFixed(2)}, " +
+          "sat: ${_shaderSettings.colorSettings.saturation.toStringAsFixed(2)}, " +
+          "light: ${_shaderSettings.colorSettings.lightness.toStringAsFixed(2)}, " +
+          "overlay: [${_shaderSettings.colorSettings.overlayHue.toStringAsFixed(2)}, " +
+          "i=${_shaderSettings.colorSettings.overlayIntensity.toStringAsFixed(2)}, " +
+          "o=${_shaderSettings.colorSettings.overlayOpacity.toStringAsFixed(2)}]";
 
-      if (_shouldLogColorSettings(_shaderSettings)) {
-        _log(
-          "Color settings - hue: ${_shaderSettings.colorSettings.hue.toStringAsFixed(2)}, sat: ${_shaderSettings.colorSettings.saturation.toStringAsFixed(2)}, light: ${_shaderSettings.colorSettings.lightness.toStringAsFixed(2)}, overlay: [${_shaderSettings.colorSettings.overlayHue.toStringAsFixed(2)}, i=${_shaderSettings.colorSettings.overlayIntensity.toStringAsFixed(2)}, o=${_shaderSettings.colorSettings.overlayOpacity.toStringAsFixed(2)}]",
-        );
+      // Only log if it changed from last time
+      if (_lastLoggedColorSettings != colorSettingsLog) {
+        _log(colorSettingsLog);
+        _lastLoggedColorSettings = colorSettingsLog;
       }
+    }
+
+    // Create text shader state log message
+    final String textShaderState =
+        "Building text overlay - Apply shaders to text: ${_shaderSettings.textfxSettings.applyShaderEffectsToText}";
+
+    // Only log if it changed from last time or it's the first build
+    if (_firstTextOverlayBuild ||
+        _lastLoggedTextShaderState != textShaderState) {
+      _log(textShaderState);
+      _lastLoggedTextShaderState = textShaderState;
       _firstTextOverlayBuild = false;
     }
 
+    // Get current animation value
+    final double animationValue = _controller.value;
+
+    // Check if settings or animation value have changed significantly enough to rebuild
+    bool settingsChanged =
+        _lastTextOverlaySettings == null ||
+        !_areTextSettingsEqual(_shaderSettings, _lastTextOverlaySettings!);
+
+    // If using animated effects on text, we need to check animation value
+    bool animationChanged =
+        _shaderSettings.textfxSettings.applyShaderEffectsToText &&
+        (_lastTextOverlayAnimValue == null ||
+            // Only consider animation changes if using animated effects
+            ((_shaderSettings.colorSettings.colorAnimated &&
+                        _shaderSettings.colorEnabled) ||
+                    (_shaderSettings.blurSettings.blurAnimated &&
+                        _shaderSettings.blurEnabled) ||
+                    (_shaderSettings.noiseSettings.noiseAnimated &&
+                        _shaderSettings.noiseEnabled)) &&
+                // Check for significant change in animation value (avoid rebuilds for tiny changes)
+                (_lastTextOverlayAnimValue! - animationValue).abs() > 0.01);
+
+    // Return cached overlay if available and nothing significant changed
+    if (_cachedTextOverlay != null && !settingsChanged && !animationChanged) {
+      return _cachedTextOverlay!;
+    }
+
+    // Build from scratch if needed
     final overlayStack = Stack(
-      key: ValueKey(
-        'text_overlay_stack_${_shaderSettings.textfxSettings.applyShaderEffectsToText}',
-      ),
+      key: _textOverlayMemoKey,
       children: _buildTextLines(),
     );
 
+    // Create and cache the result
+    Widget result;
     if (_shaderSettings.textfxSettings.applyShaderEffectsToText) {
-      final double animationValue = _controller.value;
-      return Container(
+      result = Container(
         color: Colors.transparent, // Ensure the container is transparent
-        child: EffectController.applyEffects(
-          child: overlayStack,
-          settings: _shaderSettings,
-          animationValue: animationValue,
-          preserveTransparency: true, // Add parameter to preserve transparency
+        child: RepaintBoundary(
+          child: EffectController.applyEffects(
+            child: overlayStack,
+            settings: _shaderSettings,
+            animationValue: animationValue,
+            isTextContent: true, // Explicitly identify this as text content
+            preserveTransparency: true, // Always preserve transparency for text
+          ),
         ),
       );
     } else {
-      return Container(
+      result = Container(
         color: Colors.transparent, // Ensure the container is transparent
         child: overlayStack,
       );
     }
+
+    // Update cache
+    _cachedTextOverlay = result;
+    _lastTextOverlaySettings = ShaderSettings.fromMap(_shaderSettings.toMap());
+    _lastTextOverlayAnimValue = animationValue;
+
+    return result;
+  }
+
+  // Helper to check if text-related settings have changed
+  bool _areTextSettingsEqual(ShaderSettings a, ShaderSettings b) {
+    // Check main text toggles
+    if (a.textLayoutSettings.textEnabled != b.textLayoutSettings.textEnabled ||
+        a.textfxSettings.textfxEnabled != b.textfxSettings.textfxEnabled ||
+        a.textfxSettings.applyShaderEffectsToText !=
+            b.textfxSettings.applyShaderEffectsToText) {
+      return false;
+    }
+
+    // Check text content
+    if (a.textLayoutSettings.textTitle != b.textLayoutSettings.textTitle ||
+        a.textLayoutSettings.textSubtitle !=
+            b.textLayoutSettings.textSubtitle ||
+        a.textLayoutSettings.textArtist != b.textLayoutSettings.textArtist) {
+      return false;
+    }
+
+    // If we're applying shader effects to text, we need to check those settings as well
+    if (a.textfxSettings.applyShaderEffectsToText) {
+      // Check shader settings that affect text
+      if (a.colorEnabled != b.colorEnabled ||
+          a.blurEnabled != b.blurEnabled ||
+          a.noiseEnabled != b.noiseEnabled) {
+        return false;
+      }
+
+      // Only check detailed settings for enabled effects
+      if (a.colorEnabled) {
+        if (a.colorSettings.hue != b.colorSettings.hue ||
+            a.colorSettings.saturation != b.colorSettings.saturation ||
+            a.colorSettings.lightness != b.colorSettings.lightness) {
+          return false;
+        }
+      }
+
+      if (a.blurEnabled) {
+        if (a.blurSettings.blurAmount != b.blurSettings.blurAmount ||
+            a.blurSettings.blurRadius != b.blurSettings.blurRadius) {
+          return false;
+        }
+      }
+
+      if (a.noiseEnabled) {
+        if (a.noiseSettings.waveAmount != b.noiseSettings.waveAmount ||
+            a.noiseSettings.colorIntensity != b.noiseSettings.colorIntensity) {
+          return false;
+        }
+      }
+    }
+
+    // All relevant settings are equal
+    return true;
   }
 
   // Extract the text line building logic to a separate method
