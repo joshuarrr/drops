@@ -329,6 +329,22 @@ class BlurEffectShader extends StatelessWidget {
           double intensity = settings.blurSettings.blurIntensity;
           double contrast = settings.blurSettings.blurContrast;
 
+          // Performance tweak: reduce blur radius for text-only layers to
+          // minimise the number of kernel samples.  A 40-50 % cut keeps most
+          // of the shatter look but greatly improves frame rate.
+          double effectiveRadius = settings.blurSettings.blurRadius;
+
+          if (isTextContent) {
+            effectiveRadius = effectiveRadius * 0.6; // 40% reduction
+            if (enableShaderDebugLogs) {
+              print(
+                "SHATTER_SHADER: Reducing radius for text content from ${settings.blurSettings.blurRadius} to $effectiveRadius",
+              );
+            }
+          } else {
+            effectiveRadius = settings.blurSettings.blurRadius;
+          }
+
           // Preserve transparency: avoid introducing a solid backdrop, but let
           // the blur (shatter) characteristics shine through on the glyphs.
           // With the transparent-fallback fix in the GLSL shader, we no longer
@@ -342,7 +358,7 @@ class BlurEffectShader extends StatelessWidget {
 
           // Set uniforms after the texture sampler
           shader.setFloat(0, amount);
-          shader.setFloat(1, settings.blurSettings.blurRadius);
+          shader.setFloat(1, effectiveRadius);
           shader.setFloat(2, image.width.toDouble());
           shader.setFloat(3, image.height.toDouble());
           shader.setFloat(4, opacity);

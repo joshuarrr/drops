@@ -1,0 +1,75 @@
+// Shader Presets – Storage, Thumbnail Generation & Display Workflow
+// ================================================================
+// This document gives a high-level overview of how presets are persisted, how
+// thumbnail images are generated, and how both are surfaced in the UI.
+//
+// 1. Persistent Storage – `models/presets_manager.dart`
+// ----------------------------------------------------
+//  • KEY: All presets live under one SharedPreferences key: `shader_presets`.
+//  • STRUCTURE (JSON):
+//      {
+//        "ShaderAspect.color": {
+//          "My Preset Name": <settings-map>,
+//          ...
+//        },
+//        "ShaderAspect.blur": { ... },
+//        ...
+//      }
+//    Each aspect holds a string→dynamic map where the value is the *exact* map
+//    previously returned by `ShaderSettings.toMap()`.
+//
+//  • API:
+//      – savePreset(aspect, name, settings)
+//            → Loads the existing blob, injects/overwrites the entry and
+//              writes the JSON back.
+//      – getPresetsForAspect(aspect)
+//            → Returns *just* the map for the requested aspect, already cast
+//              to `Map<String, dynamic>` (safe helpers ensure correct types).
+//      – deletePreset(aspect, name)
+//            → Removes the entry; cleans up the JSON; persists.
+//
+//  • TYPE-SAFETY HELPERS:
+//      _convertToStringDynamicMap / _convertListElements guarantee that any
+//      nested dynamic JSON is converted to `Map<String,dynamic>` so the rest
+//      of the code can rely on strong types.
+//
+// 2. Thumbnail Generation – `shader_demo_impl.dart`
+// -------------------------------------------------
+//  • A `GlobalKey _previewKey` wraps the *entire* shader stack inside a
+//    `RepaintBoundary`. That guarantees we can obtain a rasterised image that
+//    already contains every enabled effect (color, blur, noise, text, …).
+//
+//  • When the user taps "Save Preset" the `SavePresetDialog` triggers
+//        PresetController.savePreset(..., previewKey: _previewKey)
+//    (see `controllers/preset_controller.dart`).
+//    The controller calls `RenderRepaintBoundary.toImage()` on that key to get
+//    a `ui.Image`, then encodes it to PNG bytes and stores it alongside the
+//    serialized ShaderSettings in its own SharedPreferences payload.  This is
+//    *not* done inside `PresetsManager` to keep rendering concerns separate
+//    from persistence.
+//
+// 3. Displaying Presets – `widgets/presets_bar.dart` & dialogs
+// -----------------------------------------------------------
+//  • Fetching:  Each `PresetsBar` instance requests
+//        loadPresets(aspect) → PresetsManager.getPresetsForAspect()
+//    via the injected callback so the UI stays decoupled from storage.
+//
+//  • UI Layout:  – Horizontal, scrollable chips showing preset names.
+//                – Long-press opens a delete-confirmation dialog (which calls
+//                  deletePreset → refreshPresets to rebuild the bar).
+//
+//  • Thumbnail Usage:  Larger preview grids (e.g. `PresetsDialog`) display the
+//    captured PNG bytes in `Image.memory` widgets so users can visually pick a
+//    preset.  Because the PNG already contains all shader layers, the preview
+//    is an accurate WYSIWYG snapshot and requires no additional shader work.
+//
+// 4. Lifecycle Notes
+// ------------------
+//  • Saving a preset *always* refreshes the SharedPreferences blob *and* shows
+//    a SnackBar via the outer scaffold.
+//  • Loading a preset updates `_shaderSettings`, `_selectedImage`, category
+//    radio buttons and restarts the animation controller so motion effects are
+//    immediately visible.
+//
+// ---------------------------------------------------------------
+//  Last updated: 2025-05-17

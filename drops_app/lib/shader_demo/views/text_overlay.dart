@@ -30,21 +30,44 @@ class TextOverlay extends StatelessWidget {
       children: _buildTextLines(context),
     );
 
+    // Performance: render text at lower resolution while applying heavy
+    // shaders (blur / shatter) and scale it back up.  This dramatically
+    // reduces the number of pixels processed each frame.
+    const double _scale = 0.6; // 60 % resolution → ~65 % fewer pixels
+
     // Only apply shader effects to text if the toggle is enabled AND text effects are enabled
     if (settings.textfxSettings.applyShaderEffectsToText &&
         settings.textfxSettings.textfxEnabled) {
       // Wrap in a transparent container to ensure background transparency is preserved
+      // 1. Down-scale before sending into the shader.
+      final Widget scaledDown = Transform.scale(
+        scale: _scale,
+        alignment: Alignment.topLeft,
+        child: overlayStack,
+      );
+
+      // 2. Clone settings and disable blur animation for text to enable
+      //    caching of the expensive shatter pass (huge perf win).
+      final ShaderSettings textSettings = ShaderSettings.fromMap(
+        settings.toMap(),
+      )..blurSettings.blurAnimated = false; // static blur for text
+
+      final Widget processed = EffectController.applyEffects(
+        child: scaledDown,
+        settings: textSettings,
+        animationValue:
+            animationValue, // still pass base time, ignored when not animated
+        isTextContent: true,
+        preserveTransparency: true,
+      );
+
+      // 3. Scale the processed result back up to full size.
       return Container(
         color: Colors.transparent,
-        // Use RepaintBoundary to limit rebuilds and repaints
-        child: RepaintBoundary(
-          child: EffectController.applyEffects(
-            child: overlayStack,
-            settings: settings,
-            animationValue: animationValue,
-            isTextContent: true,
-            preserveTransparency: true,
-          ),
+        child: Transform.scale(
+          scale: 1 / _scale,
+          alignment: Alignment.topLeft,
+          child: RepaintBoundary(child: processed),
         ),
       );
     }

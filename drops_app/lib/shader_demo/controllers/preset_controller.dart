@@ -158,15 +158,17 @@ class PresetController {
       // Wait a frame to ensure all animations and shader effects are properly rendered
       await Future.delayed(const Duration(milliseconds: 100));
 
-      // Get the size of the boundary to maintain the correct aspect ratio
-      final Size boundarySize = boundary.size;
+      // Instead of using an arbitrary fractional pixelRatio (which can lead to
+      // cropped output on some iOS devices – see Flutter issue #131738), use
+      // the device‐native devicePixelRatio. This keeps the raster size an
+      // integer multiple of the logical size and eliminates the top-left crop
+      // bug observed on iOS simulators.
 
-      // Calculate device aspect ratio
-      final double aspectRatio = boundarySize.width / boundarySize.height;
+      final double dpr = ui.window.devicePixelRatio;
 
-      // Use a higher pixelRatio for better quality thumbnails but don't distort the aspect ratio
-      // For screenshot purposes, we use a moderate pixelRatio of 1.5 to balance quality and size
-      final ui.Image image = await boundary.toImage(pixelRatio: 1.5);
+      // Capture the repaint boundary at the device pixel ratio so the whole
+      // screen is included without artefacts.
+      final ui.Image image = await boundary.toImage(pixelRatio: dpr);
       final ByteData? byteData = await image.toByteData(
         format: ui.ImageByteFormat.png,
       );

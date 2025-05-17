@@ -216,7 +216,7 @@ class _PresetsDialogState extends State<PresetsDialog> {
                     padding: const EdgeInsets.only(bottom: 20),
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
-                      childAspectRatio: 0.75,
+                      childAspectRatio: size.width / size.height,
                       crossAxisSpacing: 16,
                       mainAxisSpacing: 16,
                     ),
@@ -244,27 +244,17 @@ class _PresetsDialogState extends State<PresetsDialog> {
           Expanded(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: AspectRatio(
-                aspectRatio: 0.75,
-                child: Stack(
-                  children: [
-                    Container(color: Colors.black),
-                    Positioned.fill(
-                      child: preset.thumbnailData != null
-                          ? Image.memory(
-                              preset.thumbnailData!,
-                              fit: BoxFit.cover,
-                              alignment: Alignment.center,
-                            )
-                          : Image.asset(
-                              preset.imagePath,
-                              fit: BoxFit.cover,
-                              alignment: Alignment.center,
-                            ),
+              child: preset.thumbnailData != null
+                  ? Image.memory(
+                      preset.thumbnailData!,
+                      fit: BoxFit.cover,
+                      alignment: Alignment.center,
+                    )
+                  : Image.asset(
+                      preset.imagePath,
+                      fit: BoxFit.cover,
+                      alignment: Alignment.center,
                     ),
-                  ],
-                ),
-              ),
             ),
           ),
           const SizedBox(height: 8),
