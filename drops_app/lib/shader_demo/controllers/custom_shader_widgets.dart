@@ -6,6 +6,7 @@ import 'dart:developer' as developer;
 
 import '../models/effect_settings.dart';
 import '../models/animation_options.dart';
+import '../utils/animation_utils.dart';
 
 /// Controls debug logging for shaders
 bool enableShaderDebugLogs = true;
@@ -105,11 +106,11 @@ class ColorEffectShader extends StatelessWidget {
         settings.colorSettings.overlayAnimOptions;
 
     // Pre-compute animated values for HSL and Overlay independently.
-    final double hslAnimValue = _computeAnimatedValue(
+    final double hslAnimValue = ShaderAnimationUtils.computeAnimatedValue(
       colorOpts,
       animationValue,
     );
-    final double overlayAnimValue = _computeAnimatedValue(
+    final double overlayAnimValue = ShaderAnimationUtils.computeAnimatedValue(
       overlayOpts,
       animationValue,
     );
@@ -197,73 +198,7 @@ class ColorEffectShader extends StatelessWidget {
     }, child: child);
   }
 
-  // ---------------------------------------------------------------------------
-  // Helper functions
-  // ---------------------------------------------------------------------------
-
-  // Animation duration bounds – keep in sync with the values in the demo.
-  static const int _minDurationMs = 30000; // slowest
-  static const int _maxDurationMs = 300; // fastest
-
-  // Simple hash function for repeatable pseudo-random numbers.
-  double _hash(double x) {
-    return (math.sin(x * 12.9898) * 43758.5453).abs() % 1;
-  }
-
-  // Smoothly varying random value in [0,1) for a given time ‑ matches the
-  // implementation used in the main demo widget.
-  double _smoothRandom(double t, {int segments = 8}) {
-    final double scaled = t * segments;
-    final double idx0 = scaled.floorToDouble();
-    final double idx1 = idx0 + 1.0;
-    final double frac = scaled - idx0;
-
-    final double r0 = _hash(idx0);
-    final double r1 = _hash(idx1);
-
-    // Ease in/out for softer transitions.
-    final double eased = Curves.easeInOut.transform(frac);
-    return ui.lerpDouble(r0, r1, eased)!;
-  }
-
-  double _applyEasing(AnimationEasing easing, double t) {
-    switch (easing) {
-      case AnimationEasing.easeIn:
-        return Curves.easeIn.transform(t);
-      case AnimationEasing.easeOut:
-        return Curves.easeOut.transform(t);
-      case AnimationEasing.easeInOut:
-        return Curves.easeInOut.transform(t);
-      case AnimationEasing.linear:
-      default:
-        return t;
-    }
-  }
-
-  // Compute the animated value (0-1) for the given options using the shared
-  // base time coming from the AnimationController.
-  double _computeAnimatedValue(AnimationOptions opts, double baseTime) {
-    // Map the normalised speed to a duration (same mapping as in the demo).
-    final double durationMs = ui.lerpDouble(
-      _minDurationMs.toDouble(),
-      _maxDurationMs.toDouble(),
-      opts.speed,
-    )!;
-
-    // Translate duration back into a speed factor relative to the slowest.
-    final double speedFactor = _minDurationMs / durationMs;
-
-    // Scale time – keep it in [0,1).
-    final double scaledTime = (baseTime * speedFactor) % 1.0;
-
-    // Apply animation mode.
-    final double modeValue = opts.mode == AnimationMode.pulse
-        ? scaledTime
-        : _smoothRandom(scaledTime);
-
-    // Apply easing and return.
-    return _applyEasing(opts.easing, modeValue);
-  }
+  // Note: Animation helper functions have been moved to ShaderAnimationUtils
 }
 
 /// Custom blur effect shader widget
@@ -308,7 +243,7 @@ class BlurEffectShader extends StatelessWidget {
             // Compute animated progress based on per-blur animation options.
 
             // Reuse helper to obtain a 0-1 value taking speed/mode/easing into account.
-            final double animValue = _computeAnimatedValue(
+            final double animValue = ShaderAnimationUtils.computeAnimatedValue(
               settings.blurSettings.blurAnimOptions,
               animationValue,
             );
@@ -341,8 +276,6 @@ class BlurEffectShader extends StatelessWidget {
                 "SHATTER_SHADER: Reducing radius for text content from ${settings.blurSettings.blurRadius} to $effectiveRadius",
               );
             }
-          } else {
-            effectiveRadius = settings.blurSettings.blurRadius;
           }
 
           // Preserve transparency: avoid introducing a solid backdrop, but let
@@ -387,62 +320,7 @@ class BlurEffectShader extends StatelessWidget {
     }, child: child);
   }
 
-  // ---------------------------------------------------------------------------
-  // Helper functions (duplicated from ColorEffectShader for now; could be
-  // refactored into a shared utility if needed).
-  // ---------------------------------------------------------------------------
-
-  // Animation duration bounds – keep in sync with the demo.
-  static const int _minDurationMs = 30000;
-  static const int _maxDurationMs = 300;
-
-  double _hash(double x) {
-    return (math.sin(x * 12.9898) * 43758.5453).abs() % 1;
-  }
-
-  double _smoothRandom(double t, {int segments = 8}) {
-    final double scaled = t * segments;
-    final double idx0 = scaled.floorToDouble();
-    final double idx1 = idx0 + 1.0;
-    final double frac = scaled - idx0;
-
-    final double r0 = _hash(idx0);
-    final double r1 = _hash(idx1);
-
-    final double eased = Curves.easeInOut.transform(frac);
-    return ui.lerpDouble(r0, r1, eased)!;
-  }
-
-  double _applyEasing(AnimationEasing easing, double t) {
-    switch (easing) {
-      case AnimationEasing.easeIn:
-        return Curves.easeIn.transform(t);
-      case AnimationEasing.easeOut:
-        return Curves.easeOut.transform(t);
-      case AnimationEasing.easeInOut:
-        return Curves.easeInOut.transform(t);
-      case AnimationEasing.linear:
-      default:
-        return t;
-    }
-  }
-
-  double _computeAnimatedValue(AnimationOptions opts, double baseTime) {
-    final double durationMs = ui.lerpDouble(
-      _minDurationMs.toDouble(),
-      _maxDurationMs.toDouble(),
-      opts.speed,
-    )!;
-
-    final double speedFactor = _minDurationMs / durationMs;
-    final double scaledTime = (baseTime * speedFactor) % 1.0;
-
-    final double modeValue = opts.mode == AnimationMode.pulse
-        ? scaledTime
-        : _smoothRandom(scaledTime);
-
-    return _applyEasing(opts.easing, modeValue);
-  }
+  // Note: Animation helper functions have been moved to ShaderAnimationUtils
 }
 
 /// Custom noise effect shader widget
@@ -493,7 +371,7 @@ class NoiseEffectShader extends StatelessWidget {
           // Compute animation values if animation is enabled
           if (settings.noiseSettings.noiseAnimated) {
             // Compute animated progress based on noise animation options
-            final double animValue = _computeAnimatedValue(
+            final double animValue = ShaderAnimationUtils.computeAnimatedValue(
               settings.noiseSettings.noiseAnimOptions,
               animationValue,
             );
@@ -572,61 +450,7 @@ class NoiseEffectShader extends StatelessWidget {
     }, child: child);
   }
 
-  // ---------------------------------------------------------------------------
-  // Helper functions (similar to other shader widgets)
-  // ---------------------------------------------------------------------------
-
-  // Animation duration bounds – keep in sync with the demo.
-  static const int _minDurationMs = 30000;
-  static const int _maxDurationMs = 300;
-
-  double _hash(double x) {
-    return (math.sin(x * 12.9898) * 43758.5453).abs() % 1;
-  }
-
-  double _smoothRandom(double t, {int segments = 8}) {
-    final double scaled = t * segments;
-    final double idx0 = scaled.floorToDouble();
-    final double idx1 = idx0 + 1.0;
-    final double frac = scaled - idx0;
-
-    final double r0 = _hash(idx0);
-    final double r1 = _hash(idx1);
-
-    final double eased = Curves.easeInOut.transform(frac);
-    return ui.lerpDouble(r0, r1, eased)!;
-  }
-
-  double _applyEasing(AnimationEasing easing, double t) {
-    switch (easing) {
-      case AnimationEasing.easeIn:
-        return Curves.easeIn.transform(t);
-      case AnimationEasing.easeOut:
-        return Curves.easeOut.transform(t);
-      case AnimationEasing.easeInOut:
-        return Curves.easeInOut.transform(t);
-      case AnimationEasing.linear:
-      default:
-        return t;
-    }
-  }
-
-  double _computeAnimatedValue(AnimationOptions opts, double baseTime) {
-    final double durationMs = ui.lerpDouble(
-      _minDurationMs.toDouble(),
-      _maxDurationMs.toDouble(),
-      opts.speed,
-    )!;
-
-    final double speedFactor = _minDurationMs / durationMs;
-    final double scaledTime = (baseTime * speedFactor) % 1.0;
-
-    final double modeValue = opts.mode == AnimationMode.pulse
-        ? scaledTime
-        : _smoothRandom(scaledTime);
-
-    return _applyEasing(opts.easing, modeValue);
-  }
+  // Note: Animation helper functions have been moved to ShaderAnimationUtils
 }
 
 // Helper method to apply blur effect using custom shader

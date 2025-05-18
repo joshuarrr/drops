@@ -308,8 +308,10 @@ class TextOverlay extends StatelessWidget {
 
   TextStyle _applyTextEffects(TextStyle base) {
     final fx = settings.textfxSettings;
+    // If text effects are not enabled, return the base style unmodified
     if (!fx.textfxEnabled) return base;
 
+    // Continue with normal text effects application
     TextStyle style = base;
     List<Shadow> shadows = [];
 

@@ -6,6 +6,8 @@ import 'dart:ui' as ui;
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:developer' as developer;
 
+import 'utils/animation_utils.dart';
+
 import '../common/app_scaffold.dart';
 import 'models/shader_effect.dart';
 import 'models/effect_settings.dart';
@@ -100,32 +102,23 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
   // Key for capturing the shader effect for thumbnails
   final GlobalKey _previewKey = GlobalKey();
 
-  // Animation duration bounds (shared baseline for internal timing)
-  static const int _minDurationMs = 30000; // slowest
-  static const int _maxDurationMs = 300; // fastest
+  // Animation duration bounds (from ShaderAnimationUtils)
+  static const int _minDurationMs =
+      ShaderAnimationUtils.minDurationMs; // slowest
+  static const int _maxDurationMs =
+      ShaderAnimationUtils.maxDurationMs; // fastest
 
   // Persistent storage key
   static const String _kShaderSettingsKey = 'shader_demo_settings';
 
-  // Hashing utility for deterministic pseudo-random per segment
+  // Use the shared utilities in ShaderAnimationUtils for these functions
   double _hash(double x) {
-    // Based on https://stackoverflow.com/a/17479300 (simple hash)
-    return (sin(x * 12.9898) * 43758.5453).abs() % 1;
+    return ShaderAnimationUtils.hash(x);
   }
 
   // Returns a smoothly varying random value in \[0,1) given normalized time t (0-1)
   double _smoothRandom(double t, {int segments = 8}) {
-    final double scaled = t * segments;
-    final double idx0 = scaled.floorToDouble();
-    final double idx1 = idx0 + 1.0;
-    final double frac = scaled - idx0;
-
-    final double r0 = _hash(idx0);
-    final double r1 = _hash(idx1);
-
-    // Smooth interpolation using easeInOut for softer transitions
-    final double eased = Curves.easeInOut.transform(frac);
-    return ui.lerpDouble(r0, r1, eased)!;
+    return ShaderAnimationUtils.smoothRandom(t, segments: segments);
   }
 
   // Add variables to track previous settings for logging
@@ -1087,6 +1080,7 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     // If using animated effects on text, we need to check animation value
     bool animationChanged =
         _shaderSettings.textfxSettings.applyShaderEffectsToText &&
+        _shaderSettings.textfxSettings.textfxEnabled &&
         (_lastTextOverlayAnimValue == null ||
             // Only consider animation changes if using animated effects
             ((_shaderSettings.colorSettings.colorAnimated &&
@@ -1111,7 +1105,9 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
 
     // Create and cache the result
     Widget result;
-    if (_shaderSettings.textfxSettings.applyShaderEffectsToText) {
+    // Apply shader effects only if both flags are enabled - otherwise just show regular text
+    if (_shaderSettings.textfxSettings.applyShaderEffectsToText &&
+        _shaderSettings.textfxSettings.textfxEnabled) {
       result = Container(
         color: Colors.transparent, // Ensure the container is transparent
         child: RepaintBoundary(

@@ -98,14 +98,14 @@ When effects are animated:
 
 The current implementation has several areas that could be improved:
 
-1. **Code Duplication**: The `_computeAnimatedValue()`, `_applyEasing()`, and `_smoothRandom()` functions are duplicated across shader effect classes. These should be refactored into a shared utility class.
+<!-- 1. **Code Duplication**: The `_computeAnimatedValue()`, `_applyEasing()`, and `_smoothRandom()` functions are duplicated across shader effect classes. These should be refactored into a shared utility class. ✅ *Refactored into ShaderAnimationUtils class* -->
 
 2. **Performance**: 
    - For text content, blur radius is reduced by 40% to improve frame rate, but this is an ad-hoc optimization
    - Text overlay applies a 60% downscaling before shader effects and scales back up after, which could cause quality issues
 
 3. **Inconsistent Special Cases**:
-   - `BlurEffectShader` has a bug where it sets `effectiveRadius` twice for text content - once with a 40% reduction and then overrides it with the original value
+   - `BlurEffectShader` has a bug where it sets `effectiveRadius` twice for text content - once with a 40% reduction and then overrides it with the original value ✅ *Fixed in refactoring*
    - Different shader types handle `preserveTransparency` and `isTextContent` cases differently
 
 4. **Error Handling**:
@@ -113,8 +113,8 @@ The current implementation has several areas that could be improved:
    - Error messages aren't user-friendly
 
 5. **Animation Consistency**:
-   - The animation constants (`_minDurationMs` and `_maxDurationMs`) are duplicated in multiple places with comments to "keep in sync with the demo"
-   - Each shader has its own implementation of animation helpers with subtle differences
+   - The animation constants (`_minDurationMs` and `_maxDurationMs`) are duplicated in multiple places with comments to "keep in sync with the demo" ✅ *Centralized in ShaderAnimationUtils*
+   - Each shader has its own implementation of animation helpers with subtle differences ✅ *Unified implementation in ShaderAnimationUtils*
 
 6. **Memory Management**:
    - The current implementation doesn't dispose of shader resources properly
@@ -124,154 +124,36 @@ The current implementation has several areas that could be improved:
    - Debug logs are controlled by different flags across components
    - Performance impact of logging isn't considered in production builds 
 
-# Code duplication next steps
+## Implementation Updates
 
-## Refactoring Plan: Animation Utilities
+### Refactored Animation Utilities
 
-After analyzing the code, I found that the animation helper functions (`_computeAnimatedValue()`, `_applyEasing()`, and `_smoothRandom()`) are duplicated across all three shader effect classes (`ColorEffectShader`, `BlurEffectShader`, and `NoiseEffectShader`). Here's a detailed plan to refactor this code:
+The animation utility functions have been successfully refactored to address the code duplication and consistency issues noted above:
 
-### 1. Create a New Utility Class
+1. **New Utility Class**: Created a new `ShaderAnimationUtils` class in `drops_app/lib/shader_demo/utils/animation_utils.dart` that centralizes all animation-related functionality:
+   - `hash()`: Deterministic pseudo-random number generator 
+   - `smoothRandom()`: Creates smoothly varying random values for transitions
+   - `applyEasing()`: Applies easing curves to animation values
+   - `computeAnimatedValue()`: Calculates animation progression based on options
 
-Create a new file `drops_app/lib/shader_demo/utils/animation_utils.dart`:
+2. **Centralized Constants**: Animation duration bounds (`minDurationMs` and `maxDurationMs`) are now defined in one place.
 
-```dart
-import 'dart:ui' as ui;
-import 'package:flutter/material.dart';
-import 'dart:math' as math;
-import '../models/animation_options.dart';
+3. **Shader Widget Updates**: All three shader effect classes have been updated to use the shared utilities:
+   - `ColorEffectShader`
+   - `BlurEffectShader`
+   - `NoiseEffectShader`
 
-/// Utility class for shader animation calculations
-class ShaderAnimationUtils {
-  // Animation duration bounds - centralized for consistency
-  static const int minDurationMs = 30000; // slowest
-  static const int maxDurationMs = 300; // fastest
+4. **Bug Fixes**: Fixed the `BlurEffectShader` bug where `effectiveRadius` was being overwritten for text content.
 
-  // Simple hash function for repeatable pseudo-random numbers
-  static double hash(double x) {
-    return (math.sin(x * 12.9898) * 43758.5453).abs() % 1;
-  }
-
-  // Smoothly varying random value in [0,1) for a given time
-  static double smoothRandom(double t, {int segments = 8}) {
-    final double scaled = t * segments;
-    final double idx0 = scaled.floorToDouble();
-    final double idx1 = idx0 + 1.0;
-    final double frac = scaled - idx0;
-
-    final double r0 = hash(idx0);
-    final double r1 = hash(idx1);
-
-    // Smooth interpolation using easeInOut for softer transitions
-    final double eased = Curves.easeInOut.transform(frac);
-    return ui.lerpDouble(r0, r1, eased)!;
-  }
-
-  // Apply easing curve to a normalized time value
-  static double applyEasing(AnimationEasing easing, double t) {
-    switch (easing) {
-      case AnimationEasing.easeIn:
-        return Curves.easeIn.transform(t);
-      case AnimationEasing.easeOut:
-        return Curves.easeOut.transform(t);
-      case AnimationEasing.easeInOut:
-        return Curves.easeInOut.transform(t);
-      case AnimationEasing.linear:
-      default:
-        return t;
-    }
-  }
-
-  // Compute the animated value (0-1) for the given options using the shared base time
-  static double computeAnimatedValue(AnimationOptions opts, double baseTime) {
-    // Map the normalized speed to a duration
-    final double durationMs = ui.lerpDouble(
-      minDurationMs.toDouble(),
-      maxDurationMs.toDouble(),
-      opts.speed,
-    )!;
-
-    // Translate duration back into a speed factor relative to the slowest
-    final double speedFactor = minDurationMs / durationMs;
-
-    // Scale time – keep it in [0,1)
-    final double scaledTime = (baseTime * speedFactor) % 1.0;
-
-    // Apply animation mode
-    final double modeValue = opts.mode == AnimationMode.pulse
-        ? scaledTime
-        : smoothRandom(scaledTime);
-
-    // Apply easing and return
-    return applyEasing(opts.easing, modeValue);
-  }
-}
-```
-
-### 2. Update Each Shader Widget Class
-
-Modify `drops_app/lib/shader_demo/controllers/custom_shader_widgets.dart` to:
-
-1. Import the new utility class
-2. Remove the duplicated helper functions
-3. Replace calls to the helper functions with calls to the utility class methods
-
-For example, in `ColorEffectShader`:
-
-```dart
-import '../utils/animation_utils.dart';
-
-// Remove the existing helper functions:
-// - _hash
-// - _smoothRandom
-// - _applyEasing 
-// - _computeAnimatedValue
-
-// Replace calls like:
-final double hslAnimValue = _computeAnimatedValue(colorOpts, animationValue);
-
-// With:
-final double hslAnimValue = ShaderAnimationUtils.computeAnimatedValue(colorOpts, animationValue);
-```
-
-And make similar changes to `BlurEffectShader` and `NoiseEffectShader`.
-
-### 3. Update the Main Demo Implementation 
-
-Update `drops_app/lib/shader_demo/shader_demo_impl.dart` to use the shared utilities instead of its local implementations. This ensures that the same animation calculations are used throughout the app.
-
-### 4. Fix the Regression Bug in BlurEffectShader
-
-While refactoring, fix the bug in the BlurEffectShader where `effectiveRadius` is set twice:
-
-```dart
-if (isTextContent) {
-  effectiveRadius = effectiveRadius * 0.6; // 40% reduction
-  if (enableShaderDebugLogs) {
-    print(
-      "SHATTER_SHADER: Reducing radius for text content from ${settings.blurSettings.blurRadius} to $effectiveRadius",
-    );
-  }
-} else {
-  effectiveRadius = settings.blurSettings.blurRadius; // This overwrites the reduction!
-}
-```
-
-Replace with:
-
-```dart
-if (isTextContent) {
-  effectiveRadius = effectiveRadius * 0.6; // 40% reduction
-  if (enableShaderDebugLogs) {
-    print(
-      "SHATTER_SHADER: Reducing radius for text content from ${settings.blurSettings.blurRadius} to $effectiveRadius",
-    );
-  }
-}
-```
+5. **Comprehensive Tests**: Added two test files to ensure correctness:
+   - `shader_animation_utils_test.dart`: Verifies the behavior of the utility functions
+   - `shader_animation_comparison_test.dart`: Confirms that refactored functions produce identical results to the original implementation
 
 
-After this refactoring, consider:
+### Next Steps
 
-1. Centralizing other duplicated code, like error handling and logging in shader effects
-2. Creating a base class for shader effects to reduce boilerplate
-3. Standardizing the handling of `preserveTransparency` and `isTextContent` flags across all shader types
+Future improvements could include:
+
+1. Creating a base shader effect class to further reduce duplicated boilerplate
+2. Standardizing error handling and logging across shader implementations
+3. Implementing consistent handling of special flags like `preserveTransparency` and `isTextContent`
