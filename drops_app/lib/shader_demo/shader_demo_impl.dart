@@ -419,6 +419,17 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
         final screenHeight = constraints.maxHeight;
         final deviceAspectRatio = screenWidth / screenHeight;
 
+        // Use the margin setting from textLayoutSettings when in Fit mode
+        final bool isFitMode = !_shaderSettings.textLayoutSettings.fillScreen;
+
+        // HACK: Force margin to 30.0 for testing
+        final double margin = isFitMode ? 30.0 : 0.0;
+
+        // Debug print to verify the margin value
+        debugPrint(
+          'Image margin: $margin, isFitMode: $isFitMode, fillScreen: ${_shaderSettings.textLayoutSettings.fillScreen}',
+        );
+
         return Container(
           color: Colors.black,
           width: screenWidth,
@@ -428,14 +439,20 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
               ? const SizedBox.shrink()
               : Center(
                   // Add Center widget to ensure proper alignment
-                  child: Image.asset(
-                    _selectedImage,
-                    alignment: Alignment.center,
-                    fit: _shaderSettings.textLayoutSettings.fillScreen
-                        ? BoxFit.cover
-                        : BoxFit.contain,
-                    width: double.infinity,
-                    height: double.infinity,
+                  child: Padding(
+                    // Make sure Padding is always applied when in Fit mode with explicit EdgeInsets.all
+                    padding: isFitMode
+                        ? EdgeInsets.all(margin)
+                        : EdgeInsets.zero,
+                    child: Image.asset(
+                      _selectedImage,
+                      alignment: Alignment.center,
+                      fit: _shaderSettings.textLayoutSettings.fillScreen
+                          ? BoxFit.cover
+                          : BoxFit.contain,
+                      width: double.infinity,
+                      height: double.infinity,
+                    ),
                   ),
                 ),
         );

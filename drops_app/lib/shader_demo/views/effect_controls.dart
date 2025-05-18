@@ -137,7 +137,7 @@ class EffectControls {
               isEnabled: true,
               isCurrentImageDark: isCurrentImageDark,
               onToggled: (aspect, enabled) {
-                _log('Image aspect toggled: $enabled');
+                _log('Image aspect toggled: $enabled', level: LogLevel.debug);
                 onAspectToggled(aspect, enabled);
               },
               onTap: onAspectSelected,
@@ -148,7 +148,7 @@ class EffectControls {
               isEnabled: settings.textLayoutSettings.textEnabled,
               isCurrentImageDark: isCurrentImageDark,
               onToggled: (aspect, enabled) {
-                _log('Text aspect toggled: $enabled');
+                _log('Text aspect toggled: $enabled', level: LogLevel.debug);
                 onAspectToggled(aspect, enabled);
               },
               onTap: onAspectSelected,
@@ -159,7 +159,7 @@ class EffectControls {
               isEnabled: settings.textfxSettings.textfxEnabled,
               isCurrentImageDark: isCurrentImageDark,
               onToggled: (aspect, enabled) {
-                _log('TextFx aspect toggled: $enabled');
+                _log('TextFx aspect toggled: $enabled', level: LogLevel.debug);
                 onAspectToggled(aspect, enabled);
               },
               onTap: onAspectSelected,
@@ -169,7 +169,7 @@ class EffectControls {
               isEnabled: settings.colorEnabled,
               isCurrentImageDark: isCurrentImageDark,
               onToggled: (aspect, enabled) {
-                _log('Color aspect toggled: $enabled');
+                _log('Color aspect toggled: $enabled', level: LogLevel.debug);
                 onAspectToggled(aspect, enabled);
               },
               onTap: onAspectSelected,
@@ -179,7 +179,7 @@ class EffectControls {
               isEnabled: settings.blurEnabled,
               isCurrentImageDark: isCurrentImageDark,
               onToggled: (aspect, enabled) {
-                _log('Blur aspect toggled: $enabled');
+                _log('Blur aspect toggled: $enabled', level: LogLevel.debug);
                 onAspectToggled(aspect, enabled);
               },
               onTap: onAspectSelected,
@@ -189,7 +189,7 @@ class EffectControls {
               isEnabled: settings.noiseEnabled,
               isCurrentImageDark: isCurrentImageDark,
               onToggled: (aspect, enabled) {
-                _log('Noise aspect toggled: $enabled');
+                _log('Noise aspect toggled: $enabled', level: LogLevel.debug);
                 onAspectToggled(aspect, enabled);
               },
               onTap: onAspectSelected,
@@ -199,7 +199,7 @@ class EffectControls {
               isEnabled: settings.rainSettings.rainEnabled,
               isCurrentImageDark: isCurrentImageDark,
               onToggled: (aspect, enabled) {
-                _log('Rain aspect toggled: $enabled');
+                _log('Rain aspect toggled: $enabled', level: LogLevel.debug);
                 onAspectToggled(aspect, enabled);
               },
               onTap: onAspectSelected,
@@ -209,7 +209,10 @@ class EffectControls {
               isEnabled: settings.chromaticEnabled,
               isCurrentImageDark: isCurrentImageDark,
               onToggled: (aspect, enabled) {
-                _log('Chromatic aspect toggled: $enabled');
+                _log(
+                  'Chromatic aspect toggled: $enabled',
+                  level: LogLevel.debug,
+                );
                 onAspectToggled(aspect, enabled);
               },
               onTap: onAspectSelected,

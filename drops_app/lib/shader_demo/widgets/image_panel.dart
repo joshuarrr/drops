@@ -141,6 +141,7 @@ class ImagePanel extends StatelessWidget {
   void _resetImage() {
     settings.fillScreen = false;
     settings.textLayoutSettings.applyShaderEffectsToImage = false;
+    settings.textLayoutSettings.fitScreenMargin = 30.0;
     onSettingsChanged(settings);
   }
 
@@ -149,6 +150,8 @@ class ImagePanel extends StatelessWidget {
     settings.textLayoutSettings.applyShaderEffectsToImage =
         presetData['applyShaderEffectsToImage'] ??
         settings.textLayoutSettings.applyShaderEffectsToImage;
+    settings.textLayoutSettings.fitScreenMargin =
+        presetData['fitScreenMargin'] ?? 30.0;
     onSettingsChanged(settings);
   }
 
@@ -157,6 +160,7 @@ class ImagePanel extends StatelessWidget {
       'fillScreen': settings.fillScreen,
       'applyShaderEffectsToImage':
           settings.textLayoutSettings.applyShaderEffectsToImage,
+      'fitScreenMargin': settings.textLayoutSettings.fitScreenMargin,
     };
 
     bool success = await PresetsManager.savePreset(aspect, name, presetData);
