@@ -8,30 +8,67 @@ import '../models/shader_effect.dart';
 import 'custom_shader_widgets.dart';
 
 /// Controls logging for effect application
-bool enableEffectLogs = true;
-const String _logTag = 'EffectController';
+enum LogLevel { debug, info, warning, error }
 
-// Caches for tracking previous values to avoid repeating logs
-Map<String, String> _lastLoggedValues = {};
+class EffectLogger {
+  static LogLevel currentLevel = LogLevel.info;
+  static bool enableEffectLogs = true;
+  static const String _logTag = 'EffectController';
 
-// Helper for logging consistently
-void _log(String message) {
-  if (!enableEffectLogs) return;
-  developer.log(message, name: _logTag);
-  debugPrint('[$_logTag] $message');
-}
+  // Caches for tracking previous values to avoid repeating logs
+  static Map<String, String> _lastLoggedValues = {};
+  static Map<String, DateTime> _lastLoggedTimes = {};
+  static const _throttleMs = 500; // Throttle identical logs by 500ms
 
-// Log only if message is different from the last time this key was logged
-void _logOnce(String key, String message) {
-  if (!enableEffectLogs) return;
+  // Helper for logging consistently
+  static void log(String message, {LogLevel level = LogLevel.info}) {
+    if (!enableEffectLogs || level.index < currentLevel.index) return;
 
-  // Add a hash of the message to prevent repeating identical content with different keys
-  final String messageHash = message.hashCode.toString();
-  final String cacheKey = "$key-$messageHash";
+    // Format message with level prefix
+    final prefix = level == LogLevel.debug
+        ? "[DEBUG]"
+        : level == LogLevel.warning
+        ? "[WARN]"
+        : level == LogLevel.error
+        ? "[ERROR]"
+        : "";
 
-  if (_lastLoggedValues[cacheKey] != message) {
-    _log(message);
+    final formattedMessage = prefix.isEmpty ? message : "$prefix $message";
+
+    developer.log(formattedMessage, name: _logTag);
+
+    // Only print to console for higher level logs
+    if (level.index >= LogLevel.info.index) {
+      debugPrint('[$_logTag] $formattedMessage');
+    }
+  }
+
+  // Log only if message is different from the last time this key was logged
+  // and not logged too frequently
+  static void logOnce(
+    String key,
+    String message, {
+    LogLevel level = LogLevel.info,
+  }) {
+    if (!enableEffectLogs || level.index < currentLevel.index) return;
+
+    // Add a hash of the message to prevent repeating identical content with different keys
+    final String messageHash = message.hashCode.toString();
+    final String cacheKey = "$key-$messageHash";
+    final now = DateTime.now();
+
+    // Skip if the same message was logged recently
+    if (_lastLoggedValues[cacheKey] == message) {
+      final lastTime = _lastLoggedTimes[cacheKey];
+      if (lastTime != null &&
+          now.difference(lastTime).inMilliseconds < _throttleMs) {
+        return; // Skip this log due to throttling
+      }
+    }
+
+    log(message, level: level);
     _lastLoggedValues[cacheKey] = message;
+    _lastLoggedTimes[cacheKey] = now;
 
     // Keep cache from growing indefinitely
     if (_lastLoggedValues.length > 100) {
@@ -39,6 +76,7 @@ void _logOnce(String key, String message) {
       final oldestKeys = _lastLoggedValues.keys.take(20).toList();
       for (final oldKey in oldestKeys) {
         _lastLoggedValues.remove(oldKey);
+        _lastLoggedTimes.remove(oldKey);
       }
     }
   }
@@ -46,7 +84,7 @@ void _logOnce(String key, String message) {
 
 // Helper to format color settings consistently for logging
 String _formatColorSettings(ShaderSettings settings) {
-  return "Color settings - hue: ${settings.colorSettings.hue.toStringAsFixed(2)}, " +
+  return "hue: ${settings.colorSettings.hue.toStringAsFixed(2)}, " +
       "sat: ${settings.colorSettings.saturation.toStringAsFixed(2)}, " +
       "light: ${settings.colorSettings.lightness.toStringAsFixed(2)}, " +
       "overlay: [${settings.colorSettings.overlayHue.toStringAsFixed(2)}, " +
@@ -125,17 +163,13 @@ class EffectController {
           "applyEffects: mode=${isTextContent ? 'text' : 'background'}, preserveTransparency=$preserveTransparency, " +
           "color=${settings.colorEnabled}, " +
           _formatColorSettings(settings);
-    } else if (settings.colorEnabled) {
-      // Simple log for zero-value color effects
-      logMessage =
-          "applyEffects called with preserveTransparency=$preserveTransparency, color=${settings.colorEnabled}";
-    }
 
-    // Only log if the message is different from previous logs with same parameters
-    if (logMessage.isNotEmpty) {
-      String cacheKey =
-          "${isTextContent ? 'text' : 'bg'}-$preserveTransparency";
-      _logOnce(cacheKey, logMessage);
+      // Only log if the message is different from previous logs with same parameters
+      if (logMessage.isNotEmpty) {
+        String cacheKey =
+            "${isTextContent ? 'text' : 'bg'}-$preserveTransparency";
+        EffectLogger.logOnce(cacheKey, logMessage, level: LogLevel.debug);
+      }
     }
 
     // If no effects are enabled, return the original child
@@ -281,7 +315,7 @@ class EffectController {
 
         String cacheKey =
             "clone-${isTextContent ? 'text' : 'transp'}-${settings.colorSettings.overlayIntensity.toStringAsFixed(2)}-${settings.colorSettings.overlayOpacity.toStringAsFixed(2)}";
-        _logOnce(cacheKey, logMessage);
+        EffectLogger.logOnce(cacheKey, logMessage, level: LogLevel.debug);
       }
 
       var clonedSettings = ShaderSettings.fromMap(settings.toMap());

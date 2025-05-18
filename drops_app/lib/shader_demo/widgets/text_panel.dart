@@ -12,7 +12,7 @@ import 'dart:async';
 import '../views/effect_controls.dart';
 
 // Enum for identifying each text line (outside class for reuse)
-enum TextLine { title, subtitle, artist }
+enum TextLine { title, subtitle, artist, lyrics }
 
 extension TextLineExt on TextLine {
   String get label {
@@ -23,6 +23,8 @@ extension TextLineExt on TextLine {
         return 'Subtitle';
       case TextLine.artist:
         return 'Artist';
+      case TextLine.lyrics:
+        return 'Lyrics';
     }
   }
 }
@@ -101,6 +103,8 @@ class _TextPanelState extends State<TextPanel> {
             widget.settings.textLayoutSettings.textEnabled = true;
             widget.onSettingsChanged(widget.settings);
           },
+          multiline: selectedTextLine == TextLine.lyrics,
+          maxLines: 8,
         ),
         // Add color picker
         ColorPicker(
@@ -111,10 +115,6 @@ class _TextPanelState extends State<TextPanel> {
           currentColor: _getCurrentColor(),
           onColorChanged: (color) {
             _setCurrentColor(color);
-            if (!widget.settings.textLayoutSettings.textEnabled) {
-              widget.settings.textLayoutSettings.textEnabled = true;
-            }
-            widget.onSettingsChanged(widget.settings);
           },
           textColor: widget.sliderColor,
         ),
@@ -245,6 +245,10 @@ class _TextPanelState extends State<TextPanel> {
 
     // Update the setting value
     setter(value);
+
+    // Ensure the cache is invalidated for immediate visual feedback
+    widget.settings.textLayoutSettings.textEnabled = true;
+
     // Notify the parent widget
     widget.onSettingsChanged(widget.settings);
   }
@@ -261,6 +265,9 @@ class _TextPanelState extends State<TextPanel> {
         break;
       case TextLine.artist:
         rawText = widget.settings.textLayoutSettings.textArtist;
+        break;
+      case TextLine.lyrics:
+        rawText = widget.settings.textLayoutSettings.textLyrics;
         break;
     }
 
@@ -280,6 +287,9 @@ class _TextPanelState extends State<TextPanel> {
       case TextLine.artist:
         widget.settings.textLayoutSettings.textArtist = v;
         break;
+      case TextLine.lyrics:
+        widget.settings.textLayoutSettings.textLyrics = v;
+        break;
     }
   }
 
@@ -297,6 +307,10 @@ class _TextPanelState extends State<TextPanel> {
         return widget.settings.textLayoutSettings.artistFont.isNotEmpty
             ? widget.settings.textLayoutSettings.artistFont
             : widget.settings.textLayoutSettings.textFont;
+      case TextLine.lyrics:
+        return widget.settings.textLayoutSettings.lyricsFont.isNotEmpty
+            ? widget.settings.textLayoutSettings.lyricsFont
+            : widget.settings.textLayoutSettings.textFont;
     }
     return widget.settings.textLayoutSettings.textFont;
   }
@@ -311,6 +325,10 @@ class _TextPanelState extends State<TextPanel> {
         break;
       case TextLine.artist:
         widget.settings.textLayoutSettings.artistFont = f;
+        break;
+      case TextLine.lyrics:
+        widget.settings.textLayoutSettings.lyricsFont = f;
+        widget.onSettingsChanged(widget.settings);
         break;
     }
   }
@@ -329,6 +347,10 @@ class _TextPanelState extends State<TextPanel> {
         return widget.settings.textLayoutSettings.artistSize > 0
             ? widget.settings.textLayoutSettings.artistSize
             : widget.settings.textLayoutSettings.textSize;
+      case TextLine.lyrics:
+        return widget.settings.textLayoutSettings.lyricsSize > 0
+            ? widget.settings.textLayoutSettings.lyricsSize
+            : widget.settings.textLayoutSettings.textSize;
     }
     return widget.settings.textLayoutSettings.textSize;
   }
@@ -344,6 +366,9 @@ class _TextPanelState extends State<TextPanel> {
       case TextLine.artist:
         widget.settings.textLayoutSettings.artistSize = v;
         break;
+      case TextLine.lyrics:
+        widget.settings.textLayoutSettings.lyricsSize = v;
+        break;
     }
   }
 
@@ -355,6 +380,8 @@ class _TextPanelState extends State<TextPanel> {
         return widget.settings.textLayoutSettings.subtitlePosX;
       case TextLine.artist:
         return widget.settings.textLayoutSettings.artistPosX;
+      case TextLine.lyrics:
+        return widget.settings.textLayoutSettings.lyricsPosX;
     }
     return 0.0;
   }
@@ -370,6 +397,9 @@ class _TextPanelState extends State<TextPanel> {
       case TextLine.artist:
         widget.settings.textLayoutSettings.artistPosX = v;
         break;
+      case TextLine.lyrics:
+        widget.settings.textLayoutSettings.lyricsPosX = v;
+        break;
     }
   }
 
@@ -381,6 +411,8 @@ class _TextPanelState extends State<TextPanel> {
         return widget.settings.textLayoutSettings.subtitlePosY;
       case TextLine.artist:
         return widget.settings.textLayoutSettings.artistPosY;
+      case TextLine.lyrics:
+        return widget.settings.textLayoutSettings.lyricsPosY;
     }
     return 0.0;
   }
@@ -395,6 +427,9 @@ class _TextPanelState extends State<TextPanel> {
         break;
       case TextLine.artist:
         widget.settings.textLayoutSettings.artistPosY = v;
+        break;
+      case TextLine.lyrics:
+        widget.settings.textLayoutSettings.lyricsPosY = v;
         break;
     }
   }
@@ -414,6 +449,10 @@ class _TextPanelState extends State<TextPanel> {
         return widget.settings.textLayoutSettings.artistWeight > 0
             ? widget.settings.textLayoutSettings.artistWeight
             : widget.settings.textLayoutSettings.textWeight;
+      case TextLine.lyrics:
+        return widget.settings.textLayoutSettings.lyricsWeight > 0
+            ? widget.settings.textLayoutSettings.lyricsWeight
+            : widget.settings.textLayoutSettings.textWeight;
     }
     return widget.settings.textLayoutSettings.textWeight;
   }
@@ -429,6 +468,9 @@ class _TextPanelState extends State<TextPanel> {
       case TextLine.artist:
         widget.settings.textLayoutSettings.artistWeight = w;
         break;
+      case TextLine.lyrics:
+        widget.settings.textLayoutSettings.lyricsWeight = w;
+        break;
     }
   }
 
@@ -441,6 +483,8 @@ class _TextPanelState extends State<TextPanel> {
         return widget.settings.textLayoutSettings.subtitleFitToWidth;
       case TextLine.artist:
         return widget.settings.textLayoutSettings.artistFitToWidth;
+      case TextLine.lyrics:
+        return widget.settings.textLayoutSettings.lyricsFitToWidth;
     }
     return false;
   }
@@ -456,6 +500,9 @@ class _TextPanelState extends State<TextPanel> {
       case TextLine.artist:
         widget.settings.textLayoutSettings.artistFitToWidth = value;
         break;
+      case TextLine.lyrics:
+        widget.settings.textLayoutSettings.lyricsFitToWidth = value;
+        break;
     }
   }
 
@@ -468,6 +515,8 @@ class _TextPanelState extends State<TextPanel> {
         return widget.settings.textLayoutSettings.subtitleHAlign;
       case TextLine.artist:
         return widget.settings.textLayoutSettings.artistHAlign;
+      case TextLine.lyrics:
+        return widget.settings.textLayoutSettings.lyricsHAlign;
     }
     return 0; // Default to left
   }
@@ -483,6 +532,9 @@ class _TextPanelState extends State<TextPanel> {
       case TextLine.artist:
         widget.settings.textLayoutSettings.artistHAlign = value;
         break;
+      case TextLine.lyrics:
+        widget.settings.textLayoutSettings.lyricsHAlign = value;
+        break;
     }
   }
 
@@ -495,6 +547,8 @@ class _TextPanelState extends State<TextPanel> {
         return widget.settings.textLayoutSettings.subtitleVAlign;
       case TextLine.artist:
         return widget.settings.textLayoutSettings.artistVAlign;
+      case TextLine.lyrics:
+        return widget.settings.textLayoutSettings.lyricsVAlign;
     }
     return 0; // Default to top
   }
@@ -510,6 +564,9 @@ class _TextPanelState extends State<TextPanel> {
       case TextLine.artist:
         widget.settings.textLayoutSettings.artistVAlign = value;
         break;
+      case TextLine.lyrics:
+        widget.settings.textLayoutSettings.lyricsVAlign = value;
+        break;
     }
   }
 
@@ -522,6 +579,8 @@ class _TextPanelState extends State<TextPanel> {
         return widget.settings.textLayoutSettings.subtitleLineHeight;
       case TextLine.artist:
         return widget.settings.textLayoutSettings.artistLineHeight;
+      case TextLine.lyrics:
+        return widget.settings.textLayoutSettings.lyricsLineHeight;
     }
     return 1.2; // Default line height
   }
@@ -536,6 +595,9 @@ class _TextPanelState extends State<TextPanel> {
         break;
       case TextLine.artist:
         widget.settings.textLayoutSettings.artistLineHeight = value;
+        break;
+      case TextLine.lyrics:
+        widget.settings.textLayoutSettings.lyricsLineHeight = value;
         break;
     }
   }
@@ -600,6 +662,7 @@ class _TextPanelState extends State<TextPanel> {
       ..textLayoutSettings.textSubtitle =
           defaults.textLayoutSettings.textSubtitle
       ..textLayoutSettings.textArtist = defaults.textLayoutSettings.textArtist
+      ..textLayoutSettings.textLyrics = defaults.textLayoutSettings.textLyrics
       ..textLayoutSettings.textFont = defaults.textLayoutSettings.textFont
       ..textLayoutSettings.textSize = defaults.textLayoutSettings.textSize
       ..textLayoutSettings.textPosX = defaults.textLayoutSettings.textPosX
@@ -631,6 +694,13 @@ class _TextPanelState extends State<TextPanel> {
       ..textLayoutSettings.artistWeight =
           defaults.textLayoutSettings.artistWeight
       ..textLayoutSettings.artistColor = defaults.textLayoutSettings.artistColor
+      ..textLayoutSettings.lyricsFont = defaults.textLayoutSettings.lyricsFont
+      ..textLayoutSettings.lyricsSize = defaults.textLayoutSettings.lyricsSize
+      ..textLayoutSettings.lyricsPosX = defaults.textLayoutSettings.lyricsPosX
+      ..textLayoutSettings.lyricsPosY = defaults.textLayoutSettings.lyricsPosY
+      ..textLayoutSettings.lyricsWeight =
+          defaults.textLayoutSettings.lyricsWeight
+      ..textLayoutSettings.lyricsColor = defaults.textLayoutSettings.lyricsColor
       ..textLayoutSettings.textFitToWidth =
           defaults.textLayoutSettings.textFitToWidth
       ..textLayoutSettings.textHAlign = defaults.textLayoutSettings.textHAlign
@@ -658,7 +728,15 @@ class _TextPanelState extends State<TextPanel> {
       ..textLayoutSettings.artistVAlign =
           defaults.textLayoutSettings.artistVAlign
       ..textLayoutSettings.artistLineHeight =
-          defaults.textLayoutSettings.artistLineHeight;
+          defaults.textLayoutSettings.artistLineHeight
+      ..textLayoutSettings.lyricsFitToWidth =
+          defaults.textLayoutSettings.lyricsFitToWidth
+      ..textLayoutSettings.lyricsHAlign =
+          defaults.textLayoutSettings.lyricsHAlign
+      ..textLayoutSettings.lyricsVAlign =
+          defaults.textLayoutSettings.lyricsVAlign
+      ..textLayoutSettings.lyricsLineHeight =
+          defaults.textLayoutSettings.lyricsLineHeight;
 
     // Update the original settings object with the reset values
     widget.settings.textLayoutSettings.textEnabled =
@@ -669,6 +747,8 @@ class _TextPanelState extends State<TextPanel> {
         resetSettings.textLayoutSettings.textSubtitle;
     widget.settings.textLayoutSettings.textArtist =
         resetSettings.textLayoutSettings.textArtist;
+    widget.settings.textLayoutSettings.textLyrics =
+        resetSettings.textLayoutSettings.textLyrics;
     widget.settings.textLayoutSettings.textFont =
         resetSettings.textLayoutSettings.textFont;
     widget.settings.textLayoutSettings.textSize =
@@ -717,6 +797,18 @@ class _TextPanelState extends State<TextPanel> {
         resetSettings.textLayoutSettings.artistWeight;
     widget.settings.textLayoutSettings.artistColor =
         resetSettings.textLayoutSettings.artistColor;
+    widget.settings.textLayoutSettings.lyricsFont =
+        resetSettings.textLayoutSettings.lyricsFont;
+    widget.settings.textLayoutSettings.lyricsSize =
+        resetSettings.textLayoutSettings.lyricsSize;
+    widget.settings.textLayoutSettings.lyricsPosX =
+        resetSettings.textLayoutSettings.lyricsPosX;
+    widget.settings.textLayoutSettings.lyricsPosY =
+        resetSettings.textLayoutSettings.lyricsPosY;
+    widget.settings.textLayoutSettings.lyricsWeight =
+        resetSettings.textLayoutSettings.lyricsWeight;
+    widget.settings.textLayoutSettings.lyricsColor =
+        resetSettings.textLayoutSettings.lyricsColor;
     widget.settings.textLayoutSettings.textFitToWidth =
         resetSettings.textLayoutSettings.textFitToWidth;
     widget.settings.textLayoutSettings.textHAlign =
@@ -749,6 +841,14 @@ class _TextPanelState extends State<TextPanel> {
         resetSettings.textLayoutSettings.artistVAlign;
     widget.settings.textLayoutSettings.artistLineHeight =
         resetSettings.textLayoutSettings.artistLineHeight;
+    widget.settings.textLayoutSettings.lyricsFitToWidth =
+        resetSettings.textLayoutSettings.lyricsFitToWidth;
+    widget.settings.textLayoutSettings.lyricsHAlign =
+        resetSettings.textLayoutSettings.lyricsHAlign;
+    widget.settings.textLayoutSettings.lyricsVAlign =
+        resetSettings.textLayoutSettings.lyricsVAlign;
+    widget.settings.textLayoutSettings.lyricsLineHeight =
+        resetSettings.textLayoutSettings.lyricsLineHeight;
 
     widget.onSettingsChanged(widget.settings);
   }
@@ -765,6 +865,9 @@ class _TextPanelState extends State<TextPanel> {
     widget.settings.textLayoutSettings.textArtist =
         presetData['textArtist'] ??
         widget.settings.textLayoutSettings.textArtist;
+    widget.settings.textLayoutSettings.textLyrics =
+        presetData['textLyrics'] ??
+        widget.settings.textLayoutSettings.textLyrics;
     widget.settings.textLayoutSettings.textFont =
         presetData['textFont'] ?? widget.settings.textLayoutSettings.textFont;
     widget.settings.textLayoutSettings.textSize =
@@ -833,6 +936,25 @@ class _TextPanelState extends State<TextPanel> {
         presetData['artistColor'] != null
         ? Color(presetData['artistColor'])
         : widget.settings.textLayoutSettings.artistColor;
+    widget.settings.textLayoutSettings.lyricsFont =
+        presetData['lyricsFont'] ??
+        widget.settings.textLayoutSettings.lyricsFont;
+    widget.settings.textLayoutSettings.lyricsSize =
+        presetData['lyricsSize'] ??
+        widget.settings.textLayoutSettings.lyricsSize;
+    widget.settings.textLayoutSettings.lyricsPosX =
+        presetData['lyricsPosX'] ??
+        widget.settings.textLayoutSettings.lyricsPosX;
+    widget.settings.textLayoutSettings.lyricsPosY =
+        presetData['lyricsPosY'] ??
+        widget.settings.textLayoutSettings.lyricsPosY;
+    widget.settings.textLayoutSettings.lyricsWeight =
+        presetData['lyricsWeight'] ??
+        widget.settings.textLayoutSettings.lyricsWeight;
+    widget.settings.textLayoutSettings.lyricsColor =
+        presetData['lyricsColor'] != null
+        ? Color(presetData['lyricsColor'])
+        : widget.settings.textLayoutSettings.lyricsColor;
     widget.settings.textLayoutSettings.textFitToWidth =
         presetData['textFitToWidth'] ??
         widget.settings.textLayoutSettings.textFitToWidth;
@@ -881,6 +1003,18 @@ class _TextPanelState extends State<TextPanel> {
     widget.settings.textLayoutSettings.artistLineHeight =
         presetData['artistLineHeight'] ??
         widget.settings.textLayoutSettings.artistLineHeight;
+    widget.settings.textLayoutSettings.lyricsFitToWidth =
+        presetData['lyricsFitToWidth'] ??
+        widget.settings.textLayoutSettings.lyricsFitToWidth;
+    widget.settings.textLayoutSettings.lyricsHAlign =
+        presetData['lyricsHAlign'] ??
+        widget.settings.textLayoutSettings.lyricsHAlign;
+    widget.settings.textLayoutSettings.lyricsVAlign =
+        presetData['lyricsVAlign'] ??
+        widget.settings.textLayoutSettings.lyricsVAlign;
+    widget.settings.textLayoutSettings.lyricsLineHeight =
+        presetData['lyricsLineHeight'] ??
+        widget.settings.textLayoutSettings.lyricsLineHeight;
 
     // If preset has a selected text line, switch to it
     if (presetData['selectedTextLine'] != null) {
@@ -1001,6 +1135,8 @@ class _TextPanelState extends State<TextPanel> {
         return widget.settings.textLayoutSettings.subtitleColor;
       case TextLine.artist:
         return widget.settings.textLayoutSettings.artistColor;
+      case TextLine.lyrics:
+        return widget.settings.textLayoutSettings.lyricsColor;
     }
   }
 
@@ -1015,7 +1151,14 @@ class _TextPanelState extends State<TextPanel> {
       case TextLine.artist:
         widget.settings.textLayoutSettings.artistColor = color;
         break;
+      case TextLine.lyrics:
+        widget.settings.textLayoutSettings.lyricsColor = color;
+        break;
     }
+    // Ensure text is enabled and changes are propagated
+    widget.settings.textLayoutSettings.textEnabled = true;
+    widget.onSettingsChanged(widget.settings);
+
     // Ensure text color changes don't affect color overlay
     _ensureTextChangesOnly(widget.settings);
   }

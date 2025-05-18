@@ -9,6 +9,8 @@ class TextInputField extends StatelessWidget {
   final bool enableLogging;
   final bool Function()? isTextEnabled;
   final Function()? enableText;
+  final bool multiline;
+  final int maxLines;
 
   const TextInputField({
     super.key,
@@ -19,6 +21,8 @@ class TextInputField extends StatelessWidget {
     this.enableLogging = false,
     this.isTextEnabled,
     this.enableText,
+    this.multiline = false,
+    this.maxLines = 5,
   });
 
   @override
@@ -45,12 +49,15 @@ class TextInputField extends StatelessWidget {
             style: TextStyle(color: textColor),
             textDirection: TextDirection.ltr,
             textAlign: TextAlign.left,
-            keyboardType: TextInputType.text,
+            keyboardType: multiline
+                ? TextInputType.multiline
+                : TextInputType.text,
+            maxLines: multiline ? maxLines : 1,
             decoration: InputDecoration(
               isDense: true,
-              contentPadding: const EdgeInsets.symmetric(
+              contentPadding: EdgeInsets.symmetric(
                 horizontal: 8,
-                vertical: 6,
+                vertical: multiline ? 10 : 6,
               ),
               filled: false,
               border: InputBorder.none,

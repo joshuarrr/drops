@@ -12,6 +12,7 @@ import '../widgets/image_panel.dart';
 import '../widgets/text_panel.dart';
 import '../widgets/noise_panel.dart';
 import '../widgets/text_fx_panel.dart';
+import '../controllers/effect_controller.dart';
 
 // Enum for identifying each text line (outside class for reuse)
 enum TextLine { title, subtitle, artist }
@@ -35,10 +36,16 @@ class EffectControls {
   static const String _logTag = 'EffectControls';
 
   // Custom log function that uses both dart:developer and debugPrint for visibility
-  static void _log(String message) {
+  static void _log(String message, {LogLevel level = LogLevel.info}) {
     if (!enableLogging) return;
-    developer.log(message, name: _logTag);
-    debugPrint('[$_logTag] $message');
+
+    if (level == LogLevel.debug &&
+        EffectLogger.currentLevel.index > LogLevel.debug.index) {
+      return; // Skip debug logs if we're at a higher level
+    }
+
+    // Use the new logger
+    EffectLogger.log(message, level: level);
   }
 
   // Selected text line for editing (shared across rebuilds)
@@ -57,7 +64,7 @@ class EffectControls {
   static Future<Map<String, dynamic>> loadPresetsForAspect(
     ShaderAspect aspect,
   ) async {
-    _log('Loading presets for aspect: $aspect');
+    _log('Loading presets for aspect: $aspect', level: LogLevel.debug);
     if (!cachedPresets.containsKey(aspect)) {
       cachedPresets[aspect] = await PresetsManager.getPresetsForAspect(aspect);
       _log('Loaded ${cachedPresets[aspect]?.length ?? 0} presets for $aspect');
@@ -68,7 +75,10 @@ class EffectControls {
   // Force a refresh of preset bars
   static void refreshPresets() {
     presetsRefreshCounter++;
-    _log('Refreshing presets, counter: $presetsRefreshCounter');
+    _log(
+      'Refreshing presets, counter: $presetsRefreshCounter',
+      level: LogLevel.debug,
+    );
   }
 
   // Delete a preset from storage, update the in-memory cache, and report success
@@ -82,7 +92,7 @@ class EffectControls {
       _log('Successfully deleted preset: $name');
       cachedPresets[aspect] = await PresetsManager.getPresetsForAspect(aspect);
     } else {
-      _log('Failed to delete preset: $name');
+      _log('Failed to delete preset: $name', level: LogLevel.warning);
     }
     return success;
   }
@@ -102,7 +112,8 @@ class EffectControls {
     required bool hidden,
   }) {
     _log(
-      'Building aspect toggle bar. Color enabled: ${settings.colorEnabled}, TextFX enabled: ${settings.textfxSettings.textfxEnabled}, Apply shaders to text: ${settings.textfxSettings.applyShaderEffectsToText}',
+      'Building aspect toggle bar. Color enabled: ${settings.colorEnabled}, TextFX enabled: ${settings.textfxSettings.textfxEnabled}',
+      level: LogLevel.debug,
     );
 
     return AnimatedSlide(
@@ -184,6 +195,9 @@ class EffectControls {
     );
   }
 
+  // Track the last-built aspect to avoid redundant log messages
+  static ShaderAspect? _lastBuiltAspect;
+
   // Build sliders for a specific aspect with proper grouping
   static List<Widget> buildSlidersForAspect({
     required ShaderAspect aspect,
@@ -192,15 +206,26 @@ class EffectControls {
     required Color sliderColor,
     required BuildContext context,
   }) {
-    _log('Building sliders for aspect: $aspect');
+    // Only log if building for a different aspect than last time
+    if (_lastBuiltAspect != aspect) {
+      _log('Building sliders for aspect: $aspect', level: LogLevel.debug);
+      _lastBuiltAspect = aspect;
+    }
 
-    // Log color settings state when building any panel
+    // Log color settings state when building any panel, but only at debug level
     _log(
-      'Current color overlay state - Enabled: ${settings.colorEnabled}, Hue: ${settings.colorSettings.hue}, Saturation: ${settings.colorSettings.saturation}, Lightness: ${settings.colorSettings.lightness}',
+      'Current color overlay state - Enabled: ${settings.colorEnabled}, Hue: ${settings.colorSettings.hue.toStringAsFixed(2)}, Saturation: ${settings.colorSettings.saturation.toStringAsFixed(2)}',
+      level: LogLevel.debug,
     );
-    _log(
-      'Overlay settings - Hue: ${settings.colorSettings.overlayHue}, Intensity: ${settings.colorSettings.overlayIntensity}, Opacity: ${settings.colorSettings.overlayOpacity}',
-    );
+
+    // Only log overlay settings if they have non-zero values
+    if (settings.colorSettings.overlayIntensity > 0 ||
+        settings.colorSettings.overlayOpacity > 0) {
+      _log(
+        'Overlay settings - Hue: ${settings.colorSettings.overlayHue.toStringAsFixed(2)}, Intensity: ${settings.colorSettings.overlayIntensity.toStringAsFixed(2)}, Opacity: ${settings.colorSettings.overlayOpacity.toStringAsFixed(2)}',
+        level: LogLevel.debug,
+      );
+    }
 
     switch (aspect) {
       case ShaderAspect.color:
@@ -209,8 +234,17 @@ class EffectControls {
             settings: settings,
             onSettingsChanged: (updatedSettings) {
               _log(
-                'Color panel settings changed - Color enabled: ${updatedSettings.colorEnabled}, Overlay intensity: ${updatedSettings.colorSettings.overlayIntensity}, Overlay opacity: ${updatedSettings.colorSettings.overlayOpacity}',
+                'Color panel settings changed - Color enabled: ${updatedSettings.colorEnabled}',
+                level: LogLevel.debug,
               );
+              // Only log overlay settings if they're meaningful
+              if (updatedSettings.colorSettings.overlayIntensity > 0 ||
+                  updatedSettings.colorSettings.overlayOpacity > 0) {
+                _log(
+                  'Overlay intensity: ${updatedSettings.colorSettings.overlayIntensity.toStringAsFixed(2)}, Overlay opacity: ${updatedSettings.colorSettings.overlayOpacity.toStringAsFixed(2)}',
+                  level: LogLevel.debug,
+                );
+              }
               onSettingsChanged(updatedSettings);
             },
             sliderColor: sliderColor,
@@ -245,6 +279,7 @@ class EffectControls {
             onSettingsChanged: (updatedSettings) {
               _log(
                 'Text panel settings changed - Text enabled: ${updatedSettings.textLayoutSettings.textEnabled}',
+                level: LogLevel.debug,
               );
               onSettingsChanged(updatedSettings);
             },
@@ -269,11 +304,8 @@ class EffectControls {
             settings: settings,
             onSettingsChanged: (updatedSettings) {
               _log(
-                'TextFx panel settings changed - TextFx enabled: ${updatedSettings.textfxSettings.textfxEnabled}, Apply shaders to text: ${updatedSettings.textfxSettings.applyShaderEffectsToText}',
-              );
-              // Log color state to diagnose overlay issue
-              _log(
-                'After TextFx change - Color enabled: ${updatedSettings.colorEnabled}, Overlay intensity: ${updatedSettings.colorSettings.overlayIntensity}, Overlay opacity: ${updatedSettings.colorSettings.overlayOpacity}',
+                'TextFx panel settings changed - TextFx enabled: ${updatedSettings.textfxSettings.textfxEnabled}, Apply shaders: ${updatedSettings.textfxSettings.applyShaderEffectsToText}',
+                level: LogLevel.debug,
               );
               onSettingsChanged(updatedSettings);
             },
@@ -327,6 +359,7 @@ class EffectControls {
       onPresetSelected: (presetData) {
         _log(
           'Preset selected for $aspect: ${presetData.toString().substring(0, min(100, presetData.toString().length))}...',
+          level: LogLevel.debug,
         );
         onPresetSelected(presetData);
       },

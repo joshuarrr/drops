@@ -299,6 +299,23 @@ class TextOverlay extends StatelessWidget {
       color: settings.textLayoutSettings.artistColor,
     );
 
+    // Lyrics
+    addLine(
+      text: settings.textLayoutSettings.textLyrics,
+      font: settings.textLayoutSettings.lyricsFont,
+      size: settings.textLayoutSettings.lyricsSize,
+      posX: settings.textLayoutSettings.lyricsPosX,
+      posY: settings.textLayoutSettings.lyricsPosY,
+      weight: settings.textLayoutSettings.lyricsWeight > 0
+          ? settings.textLayoutSettings.lyricsWeight
+          : settings.textLayoutSettings.textWeight,
+      fitToWidth: settings.textLayoutSettings.lyricsFitToWidth,
+      hAlign: settings.textLayoutSettings.lyricsHAlign,
+      vAlign: settings.textLayoutSettings.lyricsVAlign,
+      lineHeight: settings.textLayoutSettings.lyricsLineHeight,
+      color: settings.textLayoutSettings.lyricsColor,
+    );
+
     return positionedLines;
   }
 

@@ -7,12 +7,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'dart:developer' as developer;
 
 import 'utils/animation_utils.dart';
+import 'controllers/effect_controller.dart';
 
 import '../common/app_scaffold.dart';
 import 'models/shader_effect.dart';
 import 'models/effect_settings.dart';
 import 'models/shader_preset.dart';
-import 'controllers/effect_controller.dart';
 import 'controllers/preset_controller.dart';
 import 'views/effect_controls.dart';
 import 'views/panel_container.dart';
@@ -22,33 +22,31 @@ import 'package:shared_preferences/shared_preferences.dart';
 // Set true to enable additional debug logging
 bool _enableDebugLogging = true;
 
-// Add this helper function to reduce logging verbosity
-// Reduces verbosity by only logging color settings that aren't all zeros
-bool _shouldLogColorSettings(ShaderSettings settings) {
-  // Skip logging if everything is zero
-  return !(settings.colorSettings.hue == 0.0 &&
-      settings.colorSettings.saturation == 0.0 &&
-      settings.colorSettings.lightness == 0.0 &&
-      settings.colorSettings.overlayIntensity == 0.0 &&
-      settings.colorSettings.overlayOpacity == 0.0);
-}
-
 // Custom log function with more concise formatting and log deduplication
 Map<String, String> _lastLogMessages = {};
+Map<String, DateTime> _lastLoggedTimes = {};
+const _throttleMs = 1000; // Throttle identical logs by 1 second
 
-void _log(String message) {
-  if (!_enableDebugLogging) return;
+void _log(String message, {LogLevel level = LogLevel.info}) {
+  if (!_enableDebugLogging || level.index < EffectLogger.currentLevel.index)
+    return;
 
   // Generate a hash key for this message
   String messageKey = message.hashCode.toString();
 
-  // Skip logging if we've already logged this exact message
+  // Skip logging if we've already logged this exact message recently
+  final now = DateTime.now();
   if (_lastLogMessages[messageKey] == message) {
-    return;
+    final lastTime = _lastLoggedTimes[messageKey];
+    if (lastTime != null &&
+        now.difference(lastTime).inMilliseconds < _throttleMs) {
+      return; // Skip this log due to throttling
+    }
   }
 
   // Update cache with this message
   _lastLogMessages[messageKey] = message;
+  _lastLoggedTimes[messageKey] = now;
 
   // Keep cache size reasonable
   if (_lastLogMessages.length > 100) {
@@ -56,13 +54,29 @@ void _log(String message) {
     final oldestKeys = _lastLogMessages.keys.take(20).toList();
     for (final key in oldestKeys) {
       _lastLogMessages.remove(key);
+      _lastLoggedTimes.remove(key);
     }
   }
 
+  // Format message with level prefix
+  final prefix = level == LogLevel.debug
+      ? "[DEBUG]"
+      : level == LogLevel.warning
+      ? "[WARN]"
+      : level == LogLevel.error
+      ? "[ERROR]"
+      : "";
+
+  final formattedMessage = prefix.isEmpty ? message : "$prefix $message";
+
   // Actually log the message
   final String tag = 'ShaderDemo';
-  developer.log(message, name: tag);
-  debugPrint('[$tag] $message');
+  developer.log(formattedMessage, name: tag);
+
+  // Only print debug logs to console if explicitly enabled
+  if (level.index >= LogLevel.info.index) {
+    debugPrint('[$tag] $formattedMessage');
+  }
 }
 
 enum ImageCategory { covers, artists }
@@ -1072,8 +1086,22 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     // Get current animation value
     final double animationValue = _controller.value;
 
+    // Always force a rebuild if this is the first time or if we don't have cached settings
+    bool forceRebuild = _lastTextOverlaySettings == null;
+
+    // Check if any text settings changed, and if so, force a rebuild by invalidating the cache
+    if (_lastTextOverlaySettings != null && !forceRebuild) {
+      // Check if any text-related settings have changed
+      if (!_areTextSettingsEqual(_shaderSettings, _lastTextOverlaySettings!)) {
+        _log("Text settings changed, forcing rebuild of text overlay");
+        _cachedTextOverlay = null;
+        forceRebuild = true;
+      }
+    }
+
     // Check if settings or animation value have changed significantly enough to rebuild
     bool settingsChanged =
+        forceRebuild ||
         _lastTextOverlaySettings == null ||
         !_areTextSettingsEqual(_shaderSettings, _lastTextOverlaySettings!);
 
@@ -1149,7 +1177,105 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     if (a.textLayoutSettings.textTitle != b.textLayoutSettings.textTitle ||
         a.textLayoutSettings.textSubtitle !=
             b.textLayoutSettings.textSubtitle ||
-        a.textLayoutSettings.textArtist != b.textLayoutSettings.textArtist) {
+        a.textLayoutSettings.textArtist != b.textLayoutSettings.textArtist ||
+        a.textLayoutSettings.textLyrics != b.textLayoutSettings.textLyrics) {
+      return false;
+    }
+
+    // Check text styling for all text lines
+    // Title
+    if (a.textLayoutSettings.titleFont != b.textLayoutSettings.titleFont ||
+        a.textLayoutSettings.titleSize != b.textLayoutSettings.titleSize ||
+        a.textLayoutSettings.titleWeight != b.textLayoutSettings.titleWeight ||
+        a.textLayoutSettings.titleColor.value !=
+            b.textLayoutSettings.titleColor.value ||
+        a.textLayoutSettings.titlePosX != b.textLayoutSettings.titlePosX ||
+        a.textLayoutSettings.titlePosY != b.textLayoutSettings.titlePosY ||
+        a.textLayoutSettings.titleFitToWidth !=
+            b.textLayoutSettings.titleFitToWidth ||
+        a.textLayoutSettings.titleHAlign != b.textLayoutSettings.titleHAlign ||
+        a.textLayoutSettings.titleVAlign != b.textLayoutSettings.titleVAlign ||
+        a.textLayoutSettings.titleLineHeight !=
+            b.textLayoutSettings.titleLineHeight) {
+      return false;
+    }
+
+    // Subtitle
+    if (a.textLayoutSettings.subtitleFont !=
+            b.textLayoutSettings.subtitleFont ||
+        a.textLayoutSettings.subtitleSize !=
+            b.textLayoutSettings.subtitleSize ||
+        a.textLayoutSettings.subtitleWeight !=
+            b.textLayoutSettings.subtitleWeight ||
+        a.textLayoutSettings.subtitleColor.value !=
+            b.textLayoutSettings.subtitleColor.value ||
+        a.textLayoutSettings.subtitlePosX !=
+            b.textLayoutSettings.subtitlePosX ||
+        a.textLayoutSettings.subtitlePosY !=
+            b.textLayoutSettings.subtitlePosY ||
+        a.textLayoutSettings.subtitleFitToWidth !=
+            b.textLayoutSettings.subtitleFitToWidth ||
+        a.textLayoutSettings.subtitleHAlign !=
+            b.textLayoutSettings.subtitleHAlign ||
+        a.textLayoutSettings.subtitleVAlign !=
+            b.textLayoutSettings.subtitleVAlign ||
+        a.textLayoutSettings.subtitleLineHeight !=
+            b.textLayoutSettings.subtitleLineHeight) {
+      return false;
+    }
+
+    // Artist
+    if (a.textLayoutSettings.artistFont != b.textLayoutSettings.artistFont ||
+        a.textLayoutSettings.artistSize != b.textLayoutSettings.artistSize ||
+        a.textLayoutSettings.artistWeight !=
+            b.textLayoutSettings.artistWeight ||
+        a.textLayoutSettings.artistColor.value !=
+            b.textLayoutSettings.artistColor.value ||
+        a.textLayoutSettings.artistPosX != b.textLayoutSettings.artistPosX ||
+        a.textLayoutSettings.artistPosY != b.textLayoutSettings.artistPosY ||
+        a.textLayoutSettings.artistFitToWidth !=
+            b.textLayoutSettings.artistFitToWidth ||
+        a.textLayoutSettings.artistHAlign !=
+            b.textLayoutSettings.artistHAlign ||
+        a.textLayoutSettings.artistVAlign !=
+            b.textLayoutSettings.artistVAlign ||
+        a.textLayoutSettings.artistLineHeight !=
+            b.textLayoutSettings.artistLineHeight) {
+      return false;
+    }
+
+    // Lyrics
+    if (a.textLayoutSettings.lyricsFont != b.textLayoutSettings.lyricsFont ||
+        a.textLayoutSettings.lyricsSize != b.textLayoutSettings.lyricsSize ||
+        a.textLayoutSettings.lyricsWeight !=
+            b.textLayoutSettings.lyricsWeight ||
+        a.textLayoutSettings.lyricsColor.value !=
+            b.textLayoutSettings.lyricsColor.value ||
+        a.textLayoutSettings.lyricsPosX != b.textLayoutSettings.lyricsPosX ||
+        a.textLayoutSettings.lyricsPosY != b.textLayoutSettings.lyricsPosY ||
+        a.textLayoutSettings.lyricsFitToWidth !=
+            b.textLayoutSettings.lyricsFitToWidth ||
+        a.textLayoutSettings.lyricsHAlign !=
+            b.textLayoutSettings.lyricsHAlign ||
+        a.textLayoutSettings.lyricsVAlign !=
+            b.textLayoutSettings.lyricsVAlign ||
+        a.textLayoutSettings.lyricsLineHeight !=
+            b.textLayoutSettings.lyricsLineHeight) {
+      return false;
+    }
+
+    // Check general text settings
+    if (a.textLayoutSettings.textFont != b.textLayoutSettings.textFont ||
+        a.textLayoutSettings.textSize != b.textLayoutSettings.textSize ||
+        a.textLayoutSettings.textWeight != b.textLayoutSettings.textWeight ||
+        a.textLayoutSettings.textColor.value !=
+            b.textLayoutSettings.textColor.value ||
+        a.textLayoutSettings.textFitToWidth !=
+            b.textLayoutSettings.textFitToWidth ||
+        a.textLayoutSettings.textHAlign != b.textLayoutSettings.textHAlign ||
+        a.textLayoutSettings.textVAlign != b.textLayoutSettings.textVAlign ||
+        a.textLayoutSettings.textLineHeight !=
+            b.textLayoutSettings.textLineHeight) {
       return false;
     }
 
@@ -1435,6 +1561,33 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
       textColor: _shaderSettings.textLayoutSettings.artistColor,
     );
 
+    // Add Lyrics
+    addLine(
+      text: _shaderSettings.textLayoutSettings.textLyrics,
+      font: _shaderSettings.textLayoutSettings.lyricsFont,
+      size: _shaderSettings.textLayoutSettings.lyricsSize,
+      posX: _shaderSettings.textLayoutSettings.lyricsPosX,
+      posY: _shaderSettings.textLayoutSettings.lyricsPosY,
+      weight: _shaderSettings.textLayoutSettings.lyricsWeight > 0
+          ? _shaderSettings.textLayoutSettings.lyricsWeight
+          : _shaderSettings.textLayoutSettings.textWeight,
+      fitToWidth: _shaderSettings.textLayoutSettings.lyricsFitToWidth,
+      hAlign: _shaderSettings.textLayoutSettings.lyricsHAlign,
+      vAlign: _shaderSettings.textLayoutSettings.lyricsVAlign,
+      lineHeight: _shaderSettings.textLayoutSettings.lyricsLineHeight,
+      textColor: _shaderSettings.textLayoutSettings.lyricsColor,
+    );
+
     return positionedLines;
+  }
+
+  // Reduces verbosity by only logging color settings that aren't all zeros
+  bool _shouldLogColorSettings(ShaderSettings settings) {
+    // Skip logging if everything is zero
+    return !(settings.colorSettings.hue == 0.0 &&
+        settings.colorSettings.saturation == 0.0 &&
+        settings.colorSettings.lightness == 0.0 &&
+        settings.colorSettings.overlayIntensity == 0.0 &&
+        settings.colorSettings.overlayOpacity == 0.0);
   }
 }

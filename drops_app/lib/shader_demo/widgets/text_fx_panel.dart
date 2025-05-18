@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:developer' as developer;
 import '../models/effect_settings.dart';
 import '../models/shader_effect.dart';
+import '../controllers/effect_controller.dart';
 import 'color_picker.dart';
 
 class TextFxPanel extends StatefulWidget {
@@ -31,9 +32,19 @@ class _TextFxPanelState extends State<TextFxPanel>
   bool _animationEnabled = false;
 
   // Custom log function that uses both dart:developer and debugPrint for visibility
-  void _log(String message) {
+  void _log(String message, {LogLevel level = LogLevel.info}) {
+    // Skip debug logs if we're running at a higher log level
+    if (level == LogLevel.debug &&
+        EffectLogger.currentLevel.index > LogLevel.debug.index) {
+      return;
+    }
+
     developer.log(message, name: _logTag);
-    debugPrint('[$_logTag] $message');
+
+    // Only print to console for info level and above
+    if (level.index >= LogLevel.info.index) {
+      debugPrint('[$_logTag] $message');
+    }
   }
 
   @override
@@ -42,10 +53,8 @@ class _TextFxPanelState extends State<TextFxPanel>
     _tabController = TabController(length: 6, vsync: this);
     _animationEnabled = widget.settings.textfxSettings.textfxAnimated;
     _log(
-      'TextFxPanel initialized - TextFx enabled: ${widget.settings.textfxSettings.textfxEnabled}, Apply shaders to text: ${widget.settings.textfxSettings.applyShaderEffectsToText}',
-    );
-    _log(
-      'Color state at init - Color enabled: ${widget.settings.colorEnabled}, Overlay intensity: ${widget.settings.colorSettings.overlayIntensity}, Overlay opacity: ${widget.settings.colorSettings.overlayOpacity}',
+      'TextFxPanel initialized - TextFx enabled: ${widget.settings.textfxSettings.textfxEnabled}',
+      level: LogLevel.debug,
     );
   }
 
@@ -58,9 +67,6 @@ class _TextFxPanelState extends State<TextFxPanel>
         widget.settings.textfxSettings.applyShaderEffectsToText) {
       _log(
         'Apply Shaders to Text changed from ${oldWidget.settings.textfxSettings.applyShaderEffectsToText} to ${widget.settings.textfxSettings.applyShaderEffectsToText}',
-      );
-      _log(
-        'Color state after change - Color enabled: ${widget.settings.colorEnabled}, Overlay intensity: ${widget.settings.colorSettings.overlayIntensity}, Overlay opacity: ${widget.settings.colorSettings.overlayOpacity}',
       );
     }
 
@@ -81,12 +87,7 @@ class _TextFxPanelState extends State<TextFxPanel>
 
   @override
   Widget build(BuildContext context) {
-    _log(
-      'Building TextFxPanel - Apply shaders to text: ${widget.settings.textfxSettings.applyShaderEffectsToText}',
-    );
-    _log(
-      'Current color state - Color enabled: ${widget.settings.colorEnabled}, Overlay intensity: ${widget.settings.colorSettings.overlayIntensity}, Overlay opacity: ${widget.settings.colorSettings.overlayOpacity}',
-    );
+    _log('Building TextFxPanel', level: LogLevel.debug);
 
     return Column(
       children: [
@@ -156,9 +157,6 @@ class _TextFxPanelState extends State<TextFxPanel>
             widget.settings.textfxSettings.applyShaderEffectsToText,
             (value) {
               _log('Apply Shaders to Text toggle changed to: $value');
-              _log(
-                'Color state BEFORE toggle - Color enabled: ${widget.settings.colorEnabled}, Overlay intensity: ${widget.settings.colorSettings.overlayIntensity}, Overlay opacity: ${widget.settings.colorSettings.overlayOpacity}',
-              );
 
               final updatedSettings = widget.settings;
               updatedSettings.textfxSettings.applyShaderEffectsToText = value;
@@ -176,27 +174,25 @@ class _TextFxPanelState extends State<TextFxPanel>
               // Check if color settings changed unexpectedly after the callback
               if (mounted) {
                 setState(() {
-                  // Display current state for diagnostics
-                  _log(
-                    'Color state AFTER toggle - Color enabled: ${widget.settings.colorEnabled}, Overlay intensity: ${widget.settings.colorSettings.overlayIntensity}, Overlay opacity: ${widget.settings.colorSettings.overlayOpacity}',
-                  );
-
                   // Check if settings changed unexpectedly
                   if (colorEnabledBefore != widget.settings.colorEnabled) {
                     _log(
                       'WARNING: Color enabled changed unexpectedly: $colorEnabledBefore -> ${widget.settings.colorEnabled}',
+                      level: LogLevel.warning,
                     );
                   }
                   if (overlayIntensityBefore !=
                       widget.settings.colorSettings.overlayIntensity) {
                     _log(
                       'WARNING: Overlay intensity changed unexpectedly: $overlayIntensityBefore -> ${widget.settings.colorSettings.overlayIntensity}',
+                      level: LogLevel.warning,
                     );
                   }
                   if (overlayOpacityBefore !=
                       widget.settings.colorSettings.overlayOpacity) {
                     _log(
                       'WARNING: Overlay opacity changed unexpectedly: $overlayOpacityBefore -> ${widget.settings.colorSettings.overlayOpacity}',
+                      level: LogLevel.warning,
                     );
                   }
                 });
@@ -304,9 +300,7 @@ class _TextFxPanelState extends State<TextFxPanel>
                 'Shadow Color',
                 widget.settings.textfxSettings.textShadowColor,
                 (color) {
-                  _log(
-                    'Shadow color changed to: 0x${color.value.toRadixString(16).padLeft(8, '0')}',
-                  );
+                  _log('Shadow color changed', level: LogLevel.debug);
                   final updatedSettings = widget.settings;
                   updatedSettings.textfxSettings.textShadowColor = color;
                   // Ensure this change only affects text effects, not color overlay
@@ -384,9 +378,7 @@ class _TextFxPanelState extends State<TextFxPanel>
                 'Glow Color',
                 widget.settings.textfxSettings.textGlowColor,
                 (color) {
-                  _log(
-                    'Glow color changed to: 0x${color.value.toRadixString(16).padLeft(8, '0')}',
-                  );
+                  _log('Glow color changed', level: LogLevel.debug);
                   final updatedSettings = widget.settings;
                   updatedSettings.textfxSettings.textGlowColor = color;
                   // Ensure this change only affects text effects, not color overlay
@@ -400,6 +392,155 @@ class _TextFxPanelState extends State<TextFxPanel>
       ),
     );
   }
+
+  // Cache for tracking slider value changes to reduce logs
+  final Map<String, double> _sliderValues = {};
+
+  Widget _buildLabeledSlider(
+    String label,
+    double value,
+    double min,
+    double max,
+    int divisions,
+    String displayValue,
+    Function(double) onChanged,
+  ) {
+    // Generate a unique key for this slider
+    final String sliderKey = '$label-${widget.settings.hashCode}';
+
+    // Only log significant changes
+    final logChange = (double newValue) {
+      final hasChanged =
+          !_sliderValues.containsKey(sliderKey) ||
+          (_sliderValues[sliderKey]! - newValue).abs() > 0.05;
+
+      if (hasChanged) {
+        _log(
+          '$label slider changed to: ${newValue.toStringAsFixed(2)}',
+          level: LogLevel.debug,
+        );
+        _sliderValues[sliderKey] = newValue;
+      }
+
+      onChanged(newValue);
+    };
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(label, style: TextStyle(color: widget.sliderColor)),
+            const Spacer(),
+            Text(displayValue, style: TextStyle(color: widget.sliderColor)),
+          ],
+        ),
+        Slider(
+          value: value,
+          min: min,
+          max: max,
+          divisions: divisions,
+          activeColor: widget.sliderColor,
+          onChanged: logChange,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLabeledSwitch(
+    String label,
+    bool value,
+    Function(bool) onChanged,
+  ) {
+    return Row(
+      children: [
+        Text(label, style: TextStyle(color: widget.sliderColor)),
+        const Spacer(),
+        Switch(
+          value: value,
+          activeColor: widget.sliderColor,
+          onChanged: onChanged,
+        ),
+      ],
+    );
+  }
+
+  // Keep track of last color for each color picker to reduce logs
+  final Map<String, Color> _lastColors = {};
+
+  Widget _buildColorPicker(
+    String label,
+    Color color,
+    Function(Color) onColorChanged,
+  ) {
+    // Create a unique key for each color picker to ensure proper rebuilding
+    final uniqueKey = ValueKey('${label}_${color.value}');
+
+    // Check if color has significantly changed to log
+    final bool isNewColor =
+        !_lastColors.containsKey(label) || _lastColors[label] != color;
+    if (isNewColor) {
+      _log(
+        '$label color: 0x${color.value.toRadixString(16).padLeft(8, '0')}',
+        level: LogLevel.debug,
+      );
+      _lastColors[label] = color;
+    }
+
+    return ColorPicker(
+      key: uniqueKey,
+      label: label,
+      currentColor: color,
+      onColorChanged: (newColor) {
+        _log('$label color changed', level: LogLevel.debug);
+
+        // Apply color change to the settings
+        onColorChanged(newColor);
+
+        // Save the new color to avoid redundant logs
+        _lastColors[label] = newColor;
+      },
+      textColor: widget.sliderColor,
+    );
+  }
+
+  // Helper to ensure text FX changes don't inadvertently affect color overlay
+  void _ensureTextFxChangesOnly(ShaderSettings settings) {
+    // When using color pickers in TextFx panel, make sure we don't accidentally
+    // enable the color overlay effect. We check if color settings were previously
+    // disabled, and preserve that state to avoid unintended overlay effects.
+    if (!settings.colorEnabled) {
+      // If color effect was disabled, ensure it stays that way
+      settings.colorEnabled = false;
+      _log('Keeping color effects disabled', level: LogLevel.debug);
+    } else {
+      // If color was enabled, we need to make sure the overlay settings don't
+      // get inadvertently triggered by color changes in text effects
+
+      // Store the current state of overlay settings
+      final bool wasOverlayActive =
+          settings.colorSettings.overlayOpacity > 0 &&
+          settings.colorSettings.overlayIntensity > 0;
+
+      // If overlay wasn't already active, ensure it stays inactive
+      if (!wasOverlayActive) {
+        _log('Preserving inactive overlay state', level: LogLevel.debug);
+        // Set overlay intensity/opacity to 0 to prevent inadvertent overlay effects
+        // This is especially important when switching between tabs
+        settings.colorSettings.overlayOpacity = 0.0;
+        settings.colorSettings.overlayIntensity = 0.0;
+      } else {
+        _log(
+          'Overlay was already active, leaving settings as is',
+          level: LogLevel.debug,
+        );
+      }
+    }
+  }
+
+  // The rest of the tab building methods (outlineTab, metalTab, glassTab, neonTab)
+  // follow the same pattern and should be changed similarly.
+  // For brevity, I'm only showing the shadow and glow tabs as examples.
 
   Widget _buildOutlineTab() {
     return Padding(
@@ -449,9 +590,7 @@ class _TextFxPanelState extends State<TextFxPanel>
                 'Outline Color',
                 widget.settings.textfxSettings.textOutlineColor,
                 (color) {
-                  _log(
-                    'Outline color changed to: 0x${color.value.toRadixString(16).padLeft(8, '0')}',
-                  );
+                  _log('Outline color changed', level: LogLevel.debug);
                   final updatedSettings = widget.settings;
                   updatedSettings.textfxSettings.textOutlineColor = color;
                   // Ensure this change only affects text effects, not color overlay
@@ -544,9 +683,7 @@ class _TextFxPanelState extends State<TextFxPanel>
                 'Base Color',
                 widget.settings.textfxSettings.textMetalBaseColor,
                 (color) {
-                  _log(
-                    'Metal base color changed to: 0x${color.value.toRadixString(16).padLeft(8, '0')}',
-                  );
+                  _log('Metal base color changed', level: LogLevel.debug);
                   final updatedSettings = widget.settings;
                   updatedSettings.textfxSettings.textMetalBaseColor = color;
                   // Ensure this change only affects text effects, not color overlay
@@ -562,9 +699,7 @@ class _TextFxPanelState extends State<TextFxPanel>
                 'Shine Color',
                 widget.settings.textfxSettings.textMetalShineColor,
                 (color) {
-                  _log(
-                    'Metal shine color changed to: 0x${color.value.toRadixString(16).padLeft(8, '0')}',
-                  );
+                  _log('Metal shine color changed', level: LogLevel.debug);
                   final updatedSettings = widget.settings;
                   updatedSettings.textfxSettings.textMetalShineColor = color;
                   // Ensure this change only affects text effects, not color overlay
@@ -586,9 +721,7 @@ class _TextFxPanelState extends State<TextFxPanel>
   ) {
     return InkWell(
       onTap: () {
-        _log(
-          'Metal preset selected: $label, base: 0x${baseColor.value.toRadixString(16).padLeft(8, '0')}, shine: 0x${shineColor.value.toRadixString(16).padLeft(8, '0')}',
-        );
+        _log('Metal preset selected: $label', level: LogLevel.debug);
         final updatedSettings = widget.settings;
         updatedSettings.textfxSettings.textMetalBaseColor = baseColor;
         updatedSettings.textfxSettings.textMetalShineColor = shineColor;
@@ -709,9 +842,7 @@ class _TextFxPanelState extends State<TextFxPanel>
                 'Tint Color',
                 widget.settings.textfxSettings.textGlassColor,
                 (color) {
-                  _log(
-                    'Glass tint color changed to: 0x${color.value.toRadixString(16).padLeft(8, '0')}',
-                  );
+                  _log('Glass tint color changed', level: LogLevel.debug);
                   final updatedSettings = widget.settings;
                   updatedSettings.textfxSettings.textGlassColor = color;
                   // Ensure this change only affects text effects, not color overlay
@@ -789,9 +920,7 @@ class _TextFxPanelState extends State<TextFxPanel>
                 'Neon Color',
                 widget.settings.textfxSettings.textNeonColor,
                 (color) {
-                  _log(
-                    'Neon color changed to: 0x${color.value.toRadixString(16).padLeft(8, '0')}',
-                  );
+                  _log('Neon color changed', level: LogLevel.debug);
                   final updatedSettings = widget.settings;
                   updatedSettings.textfxSettings.textNeonColor = color;
                   // Ensure this change only affects text effects, not color overlay
@@ -807,9 +936,7 @@ class _TextFxPanelState extends State<TextFxPanel>
                 'Outer Glow',
                 widget.settings.textfxSettings.textNeonOuterColor,
                 (color) {
-                  _log(
-                    'Neon outer glow color changed to: 0x${color.value.toRadixString(16).padLeft(8, '0')}',
-                  );
+                  _log('Neon outer glow color changed', level: LogLevel.debug);
                   final updatedSettings = widget.settings;
                   updatedSettings.textfxSettings.textNeonOuterColor = color;
                   // Ensure this change only affects text effects, not color overlay
@@ -821,138 +948,6 @@ class _TextFxPanelState extends State<TextFxPanel>
           ],
         ),
       ),
-    );
-  }
-
-  // Helper to ensure text FX changes don't inadvertently affect color overlay
-  void _ensureTextFxChangesOnly(ShaderSettings settings) {
-    _log(
-      '_ensureTextFxChangesOnly - Before: Color enabled: ${settings.colorEnabled}, Overlay intensity: ${settings.colorSettings.overlayIntensity}, Overlay opacity: ${settings.colorSettings.overlayOpacity}',
-    );
-
-    // When using color pickers in TextFx panel, make sure we don't accidentally
-    // enable the color overlay effect. We check if color settings were previously
-    // disabled, and preserve that state to avoid unintended overlay effects.
-    if (!settings.colorEnabled) {
-      // If color effect was disabled, ensure it stays that way
-      settings.colorEnabled = false;
-      _log('Keeping color effects disabled');
-    } else {
-      // If color was enabled, we need to make sure the overlay settings don't
-      // get inadvertently triggered by color changes in text effects
-
-      // Store the current state of overlay settings
-      final bool wasOverlayActive =
-          settings.colorSettings.overlayOpacity > 0 &&
-          settings.colorSettings.overlayIntensity > 0;
-
-      // If overlay wasn't already active, ensure it stays inactive
-      if (!wasOverlayActive) {
-        _log(
-          'Preserving inactive overlay state - Setting overlay intensity/opacity to 0',
-        );
-        // Set overlay intensity/opacity to 0 to prevent inadvertent overlay effects
-        // This is especially important when switching between tabs
-        settings.colorSettings.overlayOpacity = 0.0;
-        settings.colorSettings.overlayIntensity = 0.0;
-      } else {
-        _log('Overlay was already active, leaving settings as is');
-      }
-    }
-    _log(
-      '_ensureTextFxChangesOnly - After: Color enabled: ${settings.colorEnabled}, Overlay intensity: ${settings.colorSettings.overlayIntensity}, Overlay opacity: ${settings.colorSettings.overlayOpacity}',
-    );
-  }
-
-  // Helper widgets to simplify the code
-
-  Widget _buildLabeledSlider(
-    String label,
-    double value,
-    double min,
-    double max,
-    int divisions,
-    String displayValue,
-    Function(double) onChanged,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Text(label, style: TextStyle(color: widget.sliderColor)),
-            const Spacer(),
-            Text(displayValue, style: TextStyle(color: widget.sliderColor)),
-          ],
-        ),
-        Slider(
-          value: value,
-          min: min,
-          max: max,
-          divisions: divisions,
-          activeColor: widget.sliderColor,
-          onChanged: onChanged,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLabeledSwitch(
-    String label,
-    bool value,
-    Function(bool) onChanged,
-  ) {
-    return Row(
-      children: [
-        Text(label, style: TextStyle(color: widget.sliderColor)),
-        const Spacer(),
-        Switch(
-          value: value,
-          activeColor: widget.sliderColor,
-          onChanged: onChanged,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildColorPicker(
-    String label,
-    Color color,
-    Function(Color) onColorChanged,
-  ) {
-    // Create a unique key for each color picker to ensure proper rebuilding
-    final uniqueKey = ValueKey('${label}_${color.value}');
-    _log(
-      'Building ColorPicker: $label with color: 0x${color.value.toRadixString(16).padLeft(8, '0')}',
-    );
-
-    return ColorPicker(
-      key: uniqueKey,
-      label: label,
-      currentColor: color,
-      onColorChanged: (newColor) {
-        _log(
-          'Color changed: $label from 0x${color.value.toRadixString(16).padLeft(8, '0')} to 0x${newColor.value.toRadixString(16).padLeft(8, '0')}',
-        );
-
-        // Check existing overlay state before applying color change
-        _log(
-          'Color state BEFORE color change - Color enabled: ${widget.settings.colorEnabled}, Overlay intensity: ${widget.settings.colorSettings.overlayIntensity}, Overlay opacity: ${widget.settings.colorSettings.overlayOpacity}',
-        );
-
-        // Apply color change to the settings
-        onColorChanged(newColor);
-
-        // Force UI refresh using setState
-        setState(() {
-          _log('Refreshing TextFxPanel state after color change for: $label');
-          // Check if overlay settings were modified by the color change
-          _log(
-            'Color state AFTER color change - Color enabled: ${widget.settings.colorEnabled}, Overlay intensity: ${widget.settings.colorSettings.overlayIntensity}, Overlay opacity: ${widget.settings.colorSettings.overlayOpacity}',
-          );
-        });
-      },
-      textColor: widget.sliderColor,
     );
   }
 }

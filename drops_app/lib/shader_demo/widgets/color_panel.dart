@@ -5,6 +5,7 @@ import '../models/shader_effect.dart';
 import '../models/effect_settings.dart';
 import '../models/animation_options.dart';
 import '../models/presets_manager.dart';
+import '../controllers/effect_controller.dart';
 import 'value_slider.dart';
 import 'animation_controls.dart';
 import 'aspect_panel_header.dart';
@@ -34,23 +35,31 @@ class _ColorPanelState extends State<ColorPanel> {
   final String _logTag = 'ColorPanel';
 
   // Custom log function that uses both dart:developer and debugPrint
-  void _log(String message) {
+  void _log(String message, {LogLevel level = LogLevel.info}) {
+    // Use the shared logger with our tag
+    if (level == LogLevel.debug &&
+        EffectLogger.currentLevel.index > LogLevel.debug.index) {
+      return; // Skip debug logs based on current level
+    }
+
     developer.log(message, name: _logTag);
-    debugPrint('[$_logTag] $message');
+
+    // Only print to console for info level and above
+    if (level.index >= LogLevel.info.index) {
+      debugPrint('[$_logTag] $message');
+    }
   }
 
   @override
   void initState() {
     super.initState();
-    _log('ColorPanel initialized - DEBUG TEST');
+    _log('ColorPanel initialized', level: LogLevel.debug);
   }
 
   @override
   Widget build(BuildContext context) {
-    // Immediate test log to verify logging is working on each build
-    _log(
-      'ColorPanel building - Overlay controls: $_showOverlayControls, Color controls: $_showColorControls',
-    );
+    // Only log builds at debug level
+    _log('Building ColorPanel', level: LogLevel.debug);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -74,6 +83,7 @@ class _ColorPanelState extends State<ColorPanel> {
             _showColorControls = !_showColorControls;
             _log(
               'Color adjustments section ${_showColorControls ? 'expanded' : 'collapsed'}',
+              level: LogLevel.debug,
             );
           }),
         ),
@@ -146,7 +156,7 @@ class _ColorPanelState extends State<ColorPanel> {
                     .colorAnimOptions
                     .copyWith(speed: v);
                 widget.onSettingsChanged(widget.settings);
-                _log('HSL animation speed changed: $v');
+                _log('HSL animation speed changed: $v', level: LogLevel.debug);
               },
               animationMode:
                   widget.settings.colorSettings.colorAnimOptions.mode,
@@ -157,7 +167,10 @@ class _ColorPanelState extends State<ColorPanel> {
                     .colorAnimOptions
                     .copyWith(mode: m);
                 widget.onSettingsChanged(widget.settings);
-                _log('HSL animation mode changed: ${m.toString()}');
+                _log(
+                  'HSL animation mode changed: ${m.toString()}',
+                  level: LogLevel.debug,
+                );
               },
               animationEasing:
                   widget.settings.colorSettings.colorAnimOptions.easing,
@@ -168,7 +181,10 @@ class _ColorPanelState extends State<ColorPanel> {
                     .colorAnimOptions
                     .copyWith(easing: e);
                 widget.onSettingsChanged(widget.settings);
-                _log('HSL animation easing changed: ${e.toString()}');
+                _log(
+                  'HSL animation easing changed: ${e.toString()}',
+                  level: LogLevel.debug,
+                );
               },
               sliderColor: widget.sliderColor,
             ),
@@ -184,6 +200,7 @@ class _ColorPanelState extends State<ColorPanel> {
             _showOverlayControls = !_showOverlayControls;
             _log(
               'Overlay controls section ${_showOverlayControls ? 'expanded' : 'collapsed'}',
+              level: LogLevel.debug,
             );
           }),
         ),
@@ -256,7 +273,10 @@ class _ColorPanelState extends State<ColorPanel> {
                     .overlayAnimOptions
                     .copyWith(speed: v);
                 widget.onSettingsChanged(widget.settings);
-                _log('Overlay animation speed changed: $v');
+                _log(
+                  'Overlay animation speed changed: $v',
+                  level: LogLevel.debug,
+                );
               },
               animationMode:
                   widget.settings.colorSettings.overlayAnimOptions.mode,
@@ -267,7 +287,10 @@ class _ColorPanelState extends State<ColorPanel> {
                     .overlayAnimOptions
                     .copyWith(mode: m);
                 widget.onSettingsChanged(widget.settings);
-                _log('Overlay animation mode changed: ${m.toString()}');
+                _log(
+                  'Overlay animation mode changed: ${m.toString()}',
+                  level: LogLevel.debug,
+                );
               },
               animationEasing:
                   widget.settings.colorSettings.overlayAnimOptions.easing,
@@ -278,7 +301,10 @@ class _ColorPanelState extends State<ColorPanel> {
                     .overlayAnimOptions
                     .copyWith(easing: e);
                 widget.onSettingsChanged(widget.settings);
-                _log('Overlay animation easing changed: ${e.toString()}');
+                _log(
+                  'Overlay animation easing changed: ${e.toString()}',
+                  level: LogLevel.debug,
+                );
               },
               sliderColor: widget.sliderColor,
             ),
@@ -318,6 +344,9 @@ class _ColorPanelState extends State<ColorPanel> {
     );
   }
 
+  // Cache previous slider values to avoid redundant logs
+  final Map<String, double> _lastSliderValues = {};
+
   void _onSliderChanged(
     double value,
     Function(double) setter, {
@@ -327,11 +356,23 @@ class _ColorPanelState extends State<ColorPanel> {
     // Enable the corresponding effect if it's not already enabled
     if (!widget.settings.colorEnabled) widget.settings.colorEnabled = true;
 
+    // Check if value has changed significantly enough to log
+    final String cacheKey = propertyName;
+    final bool shouldLog =
+        !_lastSliderValues.containsKey(cacheKey) ||
+        (_lastSliderValues[cacheKey]! - value).abs() > 0.05;
+
     // Update the setting value
     setter(value);
 
-    // Log the change
-    _log('$propertyName changed to: $value');
+    // Log the change if significant
+    if (shouldLog) {
+      _log(
+        '$propertyName changed to: ${value.toStringAsFixed(2)}',
+        level: LogLevel.debug,
+      );
+      _lastSliderValues[cacheKey] = value;
+    }
 
     // For overlay controls, make sure either both intensity and opacity are non-zero,
     // or both are zero to prevent unintended overlay effects
@@ -341,7 +382,8 @@ class _ColorPanelState extends State<ColorPanel> {
       if (widget.settings.colorSettings.overlayIntensity <= 0.0 ||
           widget.settings.colorSettings.overlayOpacity <= 0.0) {
         _log(
-          'Overlay effects might not be visible (Intensity: ${widget.settings.colorSettings.overlayIntensity}, Opacity: ${widget.settings.colorSettings.overlayOpacity})',
+          'Overlay effects might not be visible (Intensity: ${widget.settings.colorSettings.overlayIntensity.toStringAsFixed(2)}, Opacity: ${widget.settings.colorSettings.overlayOpacity.toStringAsFixed(2)})',
+          level: LogLevel.debug,
         );
       }
     } else {
@@ -354,7 +396,8 @@ class _ColorPanelState extends State<ColorPanel> {
         // No need to reset overlay values here - they should only be changed
         // when explicitly adjusted in the overlay controls
         _log(
-          'Color adjustment with active overlay (Intensity: ${widget.settings.colorSettings.overlayIntensity}, Opacity: ${widget.settings.colorSettings.overlayOpacity})',
+          'Color adjustment with active overlay (Intensity: ${widget.settings.colorSettings.overlayIntensity.toStringAsFixed(2)}, Opacity: ${widget.settings.colorSettings.overlayOpacity.toStringAsFixed(2)})',
+          level: LogLevel.debug,
         );
       }
     }
@@ -386,7 +429,7 @@ class _ColorPanelState extends State<ColorPanel> {
   }
 
   void _applyPreset(Map<String, dynamic> presetData) {
-    _log('Applying color preset: ${presetData.toString()}');
+    _log('Applying color preset', level: LogLevel.debug);
 
     widget.settings.colorEnabled =
         presetData['colorEnabled'] ?? widget.settings.colorEnabled;
@@ -429,7 +472,7 @@ class _ColorPanelState extends State<ColorPanel> {
   }
 
   Future<void> _savePresetForAspect(ShaderAspect aspect, String name) async {
-    _log('Saving color preset: $name for aspect $aspect');
+    _log('Saving color preset: $name');
 
     Map<String, dynamic> presetData = {
       'colorEnabled': widget.settings.colorEnabled,
@@ -457,7 +500,7 @@ class _ColorPanelState extends State<ColorPanel> {
       // Force refresh of the UI to show the new preset immediately
       _refreshPresets();
     } else {
-      _log('Failed to save color preset: $name');
+      _log('Failed to save color preset: $name', level: LogLevel.warning);
     }
   }
 

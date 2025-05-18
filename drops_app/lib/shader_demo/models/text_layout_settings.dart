@@ -11,6 +11,7 @@ class TextLayoutSettings {
   String _textTitle;
   String _textSubtitle;
   String _textArtist;
+  String _textLyrics = '';
 
   // Main text settings
   String _textFont;
@@ -42,6 +43,13 @@ class TextLayoutSettings {
   Color _artistColor;
   int _artistWeight;
 
+  String _lyricsFont = '';
+  double _lyricsSize = 0.03;
+  double _lyricsPosX = 0.1;
+  double _lyricsPosY = 0.34;
+  Color _lyricsColor = Colors.white;
+  int _lyricsWeight = 400;
+
   // Text layout settings
   bool _textFitToWidth; // General setting for all text
   int _textHAlign; // 0=left, 1=center, 2=right
@@ -63,6 +71,11 @@ class TextLayoutSettings {
   int _artistHAlign;
   int _artistVAlign;
   double _artistLineHeight;
+
+  bool _lyricsFitToWidth = true;
+  int _lyricsHAlign = 0;
+  int _lyricsVAlign = 0;
+  double _lyricsLineHeight = 1.2;
 
   // Flag to control logging
   static bool enableLogging = false;
@@ -102,6 +115,12 @@ class TextLayoutSettings {
   set textArtist(String value) {
     _textArtist = value;
     if (enableLogging) print("SETTINGS: textArtist set to $value");
+  }
+
+  String get textLyrics => _textLyrics;
+  set textLyrics(String value) {
+    _textLyrics = value;
+    if (enableLogging) print("SETTINGS: textLyrics set to $value");
   }
 
   String get textFont => _textFont;
@@ -151,6 +170,12 @@ class TextLayoutSettings {
   set artistWeight(int v) {
     _artistWeight = v;
     if (enableLogging) print("SETTINGS: artistWeight set to $v");
+  }
+
+  int get lyricsWeight => _lyricsWeight;
+  set lyricsWeight(int v) {
+    _lyricsWeight = v;
+    if (enableLogging) print("SETTINGS: lyricsWeight set to $v");
   }
 
   // --------------------- Per-line getters/setters ---------------------
@@ -224,6 +249,30 @@ class TextLayoutSettings {
   set artistPosY(double v) {
     _artistPosY = v;
     if (enableLogging) print("SETTINGS: artistPosY set to $v");
+  }
+
+  String get lyricsFont => _lyricsFont;
+  set lyricsFont(String v) {
+    _lyricsFont = v;
+    if (enableLogging) print("SETTINGS: lyricsFont set to $v");
+  }
+
+  double get lyricsSize => _lyricsSize;
+  set lyricsSize(double v) {
+    _lyricsSize = v;
+    if (enableLogging) print("SETTINGS: lyricsSize set to $v");
+  }
+
+  double get lyricsPosX => _lyricsPosX;
+  set lyricsPosX(double v) {
+    _lyricsPosX = v;
+    if (enableLogging) print("SETTINGS: lyricsPosX set to $v");
+  }
+
+  double get lyricsPosY => _lyricsPosY;
+  set lyricsPosY(double v) {
+    _lyricsPosY = v;
+    if (enableLogging) print("SETTINGS: lyricsPosY set to $v");
   }
 
   // Text layout getters/setters
@@ -327,6 +376,12 @@ class TextLayoutSettings {
     if (enableLogging) print("SETTINGS: artistLineHeight set to $v");
   }
 
+  double get lyricsLineHeight => _lyricsLineHeight;
+  set lyricsLineHeight(double v) {
+    _lyricsLineHeight = v;
+    if (enableLogging) print("SETTINGS: lyricsLineHeight set to $v");
+  }
+
   // Text color getters/setters
   Color get textColor => _textColor;
   set textColor(Color value) {
@@ -352,6 +407,31 @@ class TextLayoutSettings {
     if (enableLogging) print("SETTINGS: artistColor set to $value");
   }
 
+  Color get lyricsColor => _lyricsColor;
+  set lyricsColor(Color value) {
+    _lyricsColor = value;
+    if (enableLogging) print("SETTINGS: lyricsColor set to $value");
+  }
+
+  // Lyrics layout
+  bool get lyricsFitToWidth => _lyricsFitToWidth;
+  set lyricsFitToWidth(bool v) {
+    _lyricsFitToWidth = v;
+    if (enableLogging) print("SETTINGS: lyricsFitToWidth set to $v");
+  }
+
+  int get lyricsHAlign => _lyricsHAlign;
+  set lyricsHAlign(int v) {
+    _lyricsHAlign = v;
+    if (enableLogging) print("SETTINGS: lyricsHAlign set to $v");
+  }
+
+  int get lyricsVAlign => _lyricsVAlign;
+  set lyricsVAlign(int v) {
+    _lyricsVAlign = v;
+    if (enableLogging) print("SETTINGS: lyricsVAlign set to $v");
+  }
+
   TextLayoutSettings({
     bool textEnabled = false,
     bool fillScreen = false,
@@ -360,6 +440,7 @@ class TextLayoutSettings {
     String textTitle = '',
     String textSubtitle = '',
     String textArtist = '',
+    String textLyrics = '',
 
     // Main text settings
     String textFont = 'Roboto',
@@ -391,6 +472,13 @@ class TextLayoutSettings {
     Color artistColor = Colors.white,
     int artistWeight = 400,
 
+    String lyricsFont = '',
+    double lyricsSize = 0.03,
+    double lyricsPosX = 0.1,
+    double lyricsPosY = 0.34,
+    Color lyricsColor = Colors.white,
+    int lyricsWeight = 400,
+
     // Text layout defaults
     bool textFitToWidth = false,
     int textHAlign = 0, // left
@@ -412,11 +500,17 @@ class TextLayoutSettings {
     int artistHAlign = 0,
     int artistVAlign = 0,
     double artistLineHeight = 1.2,
+
+    bool lyricsFitToWidth = true,
+    int lyricsHAlign = 0,
+    int lyricsVAlign = 0,
+    double lyricsLineHeight = 1.2,
   }) : _textEnabled = textEnabled,
        _fillScreen = fillScreen,
        _textTitle = textTitle,
        _textSubtitle = textSubtitle,
        _textArtist = textArtist,
+       _textLyrics = textLyrics,
        _textFont = textFont,
        _textSize = textSize,
        _textPosX = textPosX,
@@ -441,6 +535,12 @@ class TextLayoutSettings {
        _artistPosY = artistPosY,
        _artistColor = artistColor,
        _artistWeight = artistWeight,
+       _lyricsFont = lyricsFont,
+       _lyricsSize = lyricsSize,
+       _lyricsPosX = lyricsPosX,
+       _lyricsPosY = lyricsPosY,
+       _lyricsColor = lyricsColor,
+       _lyricsWeight = lyricsWeight,
        _textFitToWidth = textFitToWidth,
        _textHAlign = textHAlign,
        _textVAlign = textVAlign,
@@ -456,7 +556,11 @@ class TextLayoutSettings {
        _artistFitToWidth = artistFitToWidth,
        _artistHAlign = artistHAlign,
        _artistVAlign = artistVAlign,
-       _artistLineHeight = artistLineHeight {
+       _artistLineHeight = artistLineHeight,
+       _lyricsFitToWidth = lyricsFitToWidth,
+       _lyricsHAlign = lyricsHAlign,
+       _lyricsVAlign = lyricsVAlign,
+       _lyricsLineHeight = lyricsLineHeight {
     if (enableLogging) print("SETTINGS: TextLayoutSettings initialized");
   }
 
@@ -468,6 +572,7 @@ class TextLayoutSettings {
       'textTitle': _textTitle,
       'textSubtitle': _textSubtitle,
       'textArtist': _textArtist,
+      'textLyrics': _textLyrics,
       'textFont': _textFont,
       'textSize': _textSize,
       'textPosX': _textPosX,
@@ -489,9 +594,15 @@ class TextLayoutSettings {
       'artistPosX': _artistPosX,
       'artistPosY': _artistPosY,
       'artistColor': _safeColorValue(_artistColor),
+      'lyricsFont': _lyricsFont,
+      'lyricsSize': _lyricsSize,
+      'lyricsPosX': _lyricsPosX,
+      'lyricsPosY': _lyricsPosY,
+      'lyricsColor': _safeColorValue(_lyricsColor),
       'titleWeight': _titleWeight,
       'subtitleWeight': _subtitleWeight,
       'artistWeight': _artistWeight,
+      'lyricsWeight': _lyricsWeight,
       'textFitToWidth': _textFitToWidth,
       'textHAlign': _textHAlign,
       'textVAlign': _textVAlign,
@@ -508,6 +619,10 @@ class TextLayoutSettings {
       'artistHAlign': _artistHAlign,
       'artistVAlign': _artistVAlign,
       'artistLineHeight': _artistLineHeight,
+      'lyricsFitToWidth': _lyricsFitToWidth,
+      'lyricsHAlign': _lyricsHAlign,
+      'lyricsVAlign': _lyricsVAlign,
+      'lyricsLineHeight': _lyricsLineHeight,
     };
   }
 
@@ -518,6 +633,7 @@ class TextLayoutSettings {
       textTitle: map['textTitle'] ?? '',
       textSubtitle: map['textSubtitle'] ?? '',
       textArtist: map['textArtist'] ?? '',
+      textLyrics: map['textLyrics'] ?? '',
       textFont: map['textFont'] ?? 'Roboto',
       textSize: map['textSize'] ?? 0.05,
       textPosX: map['textPosX'] ?? 0.1,
@@ -547,9 +663,17 @@ class TextLayoutSettings {
       artistColor: map['artistColor'] != null
           ? Color(map['artistColor'])
           : Colors.white,
+      lyricsFont: map['lyricsFont'] ?? '',
+      lyricsSize: map['lyricsSize'] ?? 0.03,
+      lyricsPosX: map['lyricsPosX'] ?? 0.1,
+      lyricsPosY: map['lyricsPosY'] ?? 0.34,
+      lyricsColor: map['lyricsColor'] != null
+          ? Color(map['lyricsColor'])
+          : Colors.white,
       titleWeight: map['titleWeight'] ?? 400,
       subtitleWeight: map['subtitleWeight'] ?? 400,
       artistWeight: map['artistWeight'] ?? 400,
+      lyricsWeight: map['lyricsWeight'] ?? 400,
       textFitToWidth: map['textFitToWidth'] ?? false,
       textHAlign: map['textHAlign'] ?? 0,
       textVAlign: map['textVAlign'] ?? 0,
@@ -566,6 +690,10 @@ class TextLayoutSettings {
       artistHAlign: map['artistHAlign'] ?? 0,
       artistVAlign: map['artistVAlign'] ?? 0,
       artistLineHeight: map['artistLineHeight'] ?? 1.2,
+      lyricsFitToWidth: map['lyricsFitToWidth'] ?? true,
+      lyricsHAlign: map['lyricsHAlign'] ?? 0,
+      lyricsVAlign: map['lyricsVAlign'] ?? 0,
+      lyricsLineHeight: map['lyricsLineHeight'] ?? 1.2,
     );
   }
 }
