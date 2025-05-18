@@ -6,6 +6,8 @@ class TextLayoutSettings {
 
   // Image setting
   bool _fillScreen;
+  bool
+  _applyShaderEffectsToImage; // Add flag for applying shader effects to images
 
   // Text content
   String _textTitle;
@@ -90,6 +92,12 @@ class TextLayoutSettings {
   set fillScreen(bool value) {
     _fillScreen = value;
     if (enableLogging) print("SETTINGS: fillScreen set to $value");
+  }
+
+  bool get applyShaderEffectsToImage => _applyShaderEffectsToImage;
+  set applyShaderEffectsToImage(bool v) {
+    _applyShaderEffectsToImage = v;
+    if (enableLogging) print("SETTINGS: applyShaderEffectsToImage set to $v");
   }
 
   // Text getters/setters
@@ -435,6 +443,7 @@ class TextLayoutSettings {
   TextLayoutSettings({
     bool textEnabled = false,
     bool fillScreen = false,
+    bool applyShaderEffectsToImage = false,
 
     // Text content
     String textTitle = '',
@@ -507,6 +516,7 @@ class TextLayoutSettings {
     double lyricsLineHeight = 1.2,
   }) : _textEnabled = textEnabled,
        _fillScreen = fillScreen,
+       _applyShaderEffectsToImage = applyShaderEffectsToImage,
        _textTitle = textTitle,
        _textSubtitle = textSubtitle,
        _textArtist = textArtist,
@@ -569,6 +579,7 @@ class TextLayoutSettings {
     return {
       'textEnabled': _textEnabled,
       'fillScreen': _fillScreen,
+      'applyShaderEffectsToImage': _applyShaderEffectsToImage,
       'textTitle': _textTitle,
       'textSubtitle': _textSubtitle,
       'textArtist': _textArtist,
@@ -630,6 +641,7 @@ class TextLayoutSettings {
     return TextLayoutSettings(
       textEnabled: map['textEnabled'] ?? false,
       fillScreen: map['fillScreen'] ?? false,
+      applyShaderEffectsToImage: map['applyShaderEffectsToImage'] ?? false,
       textTitle: map['textTitle'] ?? '',
       textSubtitle: map['textSubtitle'] ?? '',
       textArtist: map['textArtist'] ?? '',

@@ -9,6 +9,7 @@ import 'theme/app_theme.dart';
 import 'theme/theme_provider.dart';
 import 'shader_demo/controllers/effect_controller.dart';
 import 'shader_demo/controllers/custom_shader_widgets.dart';
+import 'shader_demo/controllers/preset_initializer.dart';
 import 'theme/custom_fonts.dart';
 
 // Conditionally import web-specific code
@@ -52,6 +53,9 @@ void main() async {
   if (enableShaderDebugLogs) {
     print("Shader debugging enabled");
   }
+
+  // Initialize default shader presets
+  await PresetInitializer.initializeDefaultPresets();
 
   runApp(
     ChangeNotifierProvider(

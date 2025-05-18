@@ -67,6 +67,40 @@ class _TextPanelState extends State<TextPanel> {
           refreshPresets: _refreshPresets,
           refreshCounter: _refreshCounter,
         ),
+
+        // Add toggle for applying shader effects to text
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Apply Shaders to Text',
+              style: TextStyle(color: widget.sliderColor, fontSize: 14),
+            ),
+            Switch(
+              value: widget.settings.textfxSettings.applyShaderEffectsToText,
+              activeColor: widget.sliderColor,
+              onChanged: (value) {
+                final updatedSettings = widget.settings;
+                updatedSettings.textfxSettings.applyShaderEffectsToText = value;
+
+                // Ensure text effects are enabled if this is enabled
+                if (value && !updatedSettings.textfxSettings.textfxEnabled) {
+                  updatedSettings.textfxSettings.textfxEnabled = true;
+                }
+
+                // Make sure text is enabled too
+                if (value && !updatedSettings.textLayoutSettings.textEnabled) {
+                  updatedSettings.textLayoutSettings.textEnabled = true;
+                }
+
+                widget.onSettingsChanged(updatedSettings);
+              },
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Divider(color: widget.sliderColor.withOpacity(0.3)),
+
         // Add wrap for text line selection buttons
         Wrap(
           spacing: 6,
@@ -1016,6 +1050,11 @@ class _TextPanelState extends State<TextPanel> {
         presetData['lyricsLineHeight'] ??
         widget.settings.textLayoutSettings.lyricsLineHeight;
 
+    // Add support for shader effects toggle
+    widget.settings.textfxSettings.applyShaderEffectsToText =
+        presetData['applyShaderEffectsToText'] ??
+        widget.settings.textfxSettings.applyShaderEffectsToText;
+
     // If preset has a selected text line, switch to it
     if (presetData['selectedTextLine'] != null) {
       final String textLineName = presetData['selectedTextLine'];
@@ -1083,6 +1122,8 @@ class _TextPanelState extends State<TextPanel> {
       'artistHAlign': widget.settings.textLayoutSettings.artistHAlign,
       'artistVAlign': widget.settings.textLayoutSettings.artistVAlign,
       'artistLineHeight': widget.settings.textLayoutSettings.artistLineHeight,
+      'applyShaderEffectsToText':
+          widget.settings.textfxSettings.applyShaderEffectsToText,
     };
 
     bool success = await PresetsManager.savePreset(aspect, name, presetData);

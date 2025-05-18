@@ -25,18 +25,21 @@ class PanelHeader extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: textColor,
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: textColor,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-          const Spacer(),
           if (showAnimToggle) ...[
+            SizedBox(width: 8),
             Text('Animate', style: TextStyle(fontSize: 14, color: textColor)),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Switch(value: animationEnabled, onChanged: onAnimationToggled),
           ],
         ],

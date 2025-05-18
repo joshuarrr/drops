@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import '../models/shader_effect.dart';
 import '../models/effect_settings.dart';
 import '../models/presets_manager.dart';
+import '../models/image_category.dart';
 import 'aspect_panel_header.dart';
 import '../views/effect_controls.dart';
+import 'image_selector.dart';
 
 class ImagePanel extends StatelessWidget {
   final ShaderSettings settings;
@@ -11,12 +13,26 @@ class ImagePanel extends StatelessWidget {
   final Color sliderColor;
   final BuildContext context;
 
+  // Parameters for image selection
+  final List<String> coverImages;
+  final List<String> artistImages;
+  final String selectedImage;
+  final ImageCategory imageCategory;
+  final Function(String) onImageSelected;
+  final Function(ImageCategory) onCategoryChanged;
+
   const ImagePanel({
     Key? key,
     required this.settings,
     required this.onSettingsChanged,
     required this.sliderColor,
     required this.context,
+    required this.coverImages,
+    required this.artistImages,
+    required this.selectedImage,
+    required this.imageCategory,
+    required this.onImageSelected,
+    required this.onCategoryChanged,
   }) : super(key: key);
 
   @override
@@ -24,6 +40,7 @@ class ImagePanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Header at the top
         AspectPanelHeader(
           aspect: ShaderAspect.image,
           onPresetSelected: _applyPreset,
@@ -35,6 +52,56 @@ class ImagePanel extends StatelessWidget {
           refreshPresets: _refreshPresets,
           refreshCounter: _refreshCounter,
         ),
+
+        const SizedBox(height: 16),
+
+        // Apply Shaders to Image toggle directly below header
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Apply Shaders to Image',
+              style: TextStyle(color: sliderColor, fontSize: 14),
+            ),
+            Switch(
+              value: settings.textLayoutSettings.applyShaderEffectsToImage,
+              activeColor: sliderColor,
+              onChanged: (value) {
+                settings.textLayoutSettings.applyShaderEffectsToImage = value;
+                onSettingsChanged(settings);
+              },
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 16),
+        Divider(color: sliderColor.withOpacity(0.3)),
+        const SizedBox(height: 16),
+
+        // Image selector
+        ImageSelector(
+          category: imageCategory,
+          coverImages: coverImages,
+          artistImages: artistImages,
+          selectedImage: selectedImage,
+          onCategoryChanged: onCategoryChanged,
+          onImageSelected: onImageSelected,
+        ),
+
+        const SizedBox(height: 16),
+        Divider(color: sliderColor.withOpacity(0.3)),
+        const SizedBox(height: 16),
+
+        // Radio buttons for display mode
+        Text(
+          'Display Mode',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: sliderColor,
+          ),
+        ),
+        const SizedBox(height: 8),
         RadioListTile<bool>(
           value: false,
           groupValue: settings.fillScreen,
@@ -49,6 +116,7 @@ class ImagePanel extends StatelessWidget {
             style: TextStyle(color: sliderColor, fontSize: 14),
           ),
           activeColor: sliderColor,
+          contentPadding: EdgeInsets.zero,
         ),
         RadioListTile<bool>(
           value: true,
@@ -64,6 +132,7 @@ class ImagePanel extends StatelessWidget {
             style: TextStyle(color: sliderColor, fontSize: 14),
           ),
           activeColor: sliderColor,
+          contentPadding: EdgeInsets.zero,
         ),
       ],
     );
@@ -71,16 +140,24 @@ class ImagePanel extends StatelessWidget {
 
   void _resetImage() {
     settings.fillScreen = false;
+    settings.textLayoutSettings.applyShaderEffectsToImage = false;
     onSettingsChanged(settings);
   }
 
   void _applyPreset(Map<String, dynamic> presetData) {
     settings.fillScreen = presetData['fillScreen'] ?? settings.fillScreen;
+    settings.textLayoutSettings.applyShaderEffectsToImage =
+        presetData['applyShaderEffectsToImage'] ??
+        settings.textLayoutSettings.applyShaderEffectsToImage;
     onSettingsChanged(settings);
   }
 
   Future<void> _savePresetForAspect(ShaderAspect aspect, String name) async {
-    Map<String, dynamic> presetData = {'fillScreen': settings.fillScreen};
+    Map<String, dynamic> presetData = {
+      'fillScreen': settings.fillScreen,
+      'applyShaderEffectsToImage':
+          settings.textLayoutSettings.applyShaderEffectsToImage,
+    };
 
     bool success = await PresetsManager.savePreset(aspect, name, presetData);
 

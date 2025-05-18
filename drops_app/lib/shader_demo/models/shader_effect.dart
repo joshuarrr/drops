@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 // Enum representing shader aspects that can be toggled
-enum ShaderAspect { color, blur, image, text, noise, textfx }
+enum ShaderAspect { color, blur, image, text, noise, textfx, rain, chromatic }
 
 // Helper extension for working with ShaderAspects
 extension ShaderAspectExtension on ShaderAspect {
@@ -19,6 +19,10 @@ extension ShaderAspectExtension on ShaderAspect {
         return 'Waves';
       case ShaderAspect.textfx:
         return 'Text FX';
+      case ShaderAspect.rain:
+        return 'Rain';
+      case ShaderAspect.chromatic:
+        return 'Chromatic';
     }
   }
 
@@ -36,6 +40,10 @@ extension ShaderAspectExtension on ShaderAspect {
         return Icons.waves;
       case ShaderAspect.textfx:
         return Icons.format_paint;
+      case ShaderAspect.rain:
+        return Icons.water_drop;
+      case ShaderAspect.chromatic:
+        return Icons.blur_on;
     }
   }
 }

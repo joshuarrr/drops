@@ -151,55 +151,6 @@ class _TextFxPanelState extends State<TextFxPanel>
             ],
           ),
           const SizedBox(height: 16),
-          // Add toggle for applying shaders to text as the first control
-          _buildLabeledSwitch(
-            'Apply Shaders to Text',
-            widget.settings.textfxSettings.applyShaderEffectsToText,
-            (value) {
-              _log('Apply Shaders to Text toggle changed to: $value');
-
-              final updatedSettings = widget.settings;
-              updatedSettings.textfxSettings.applyShaderEffectsToText = value;
-
-              // DIAGNOSTIC: Check if color settings are inadvertently modified when this toggle changes
-              // We'll create a snapshot of the settings before the callback
-              final bool colorEnabledBefore = updatedSettings.colorEnabled;
-              final double overlayIntensityBefore =
-                  updatedSettings.colorSettings.overlayIntensity;
-              final double overlayOpacityBefore =
-                  updatedSettings.colorSettings.overlayOpacity;
-
-              widget.onSettingsChanged(updatedSettings);
-
-              // Check if color settings changed unexpectedly after the callback
-              if (mounted) {
-                setState(() {
-                  // Check if settings changed unexpectedly
-                  if (colorEnabledBefore != widget.settings.colorEnabled) {
-                    _log(
-                      'WARNING: Color enabled changed unexpectedly: $colorEnabledBefore -> ${widget.settings.colorEnabled}',
-                      level: LogLevel.warning,
-                    );
-                  }
-                  if (overlayIntensityBefore !=
-                      widget.settings.colorSettings.overlayIntensity) {
-                    _log(
-                      'WARNING: Overlay intensity changed unexpectedly: $overlayIntensityBefore -> ${widget.settings.colorSettings.overlayIntensity}',
-                      level: LogLevel.warning,
-                    );
-                  }
-                  if (overlayOpacityBefore !=
-                      widget.settings.colorSettings.overlayOpacity) {
-                    _log(
-                      'WARNING: Overlay opacity changed unexpectedly: $overlayOpacityBefore -> ${widget.settings.colorSettings.overlayOpacity}',
-                      level: LogLevel.warning,
-                    );
-                  }
-                });
-              }
-            },
-          ),
-          const SizedBox(height: 8),
           // Add a divider to separate from other controls
           Divider(color: widget.sliderColor.withOpacity(0.3)),
         ],

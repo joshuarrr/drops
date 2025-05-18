@@ -130,10 +130,14 @@ class EffectController {
       settings.colorEnabled ? 'c1' : 'c0',
       settings.blurEnabled ? 'b1' : 'b0',
       settings.noiseEnabled ? 'n1' : 'n0',
+      settings.rainEnabled ? 'r1' : 'r0',
+      settings.chromaticEnabled ? 'ch1' : 'ch0',
       // Only include animation value if anything is animated
       if (settings.colorSettings.colorAnimated ||
           settings.blurSettings.blurAnimated ||
-          settings.noiseSettings.noiseAnimated)
+          settings.noiseSettings.noiseAnimated ||
+          settings.rainSettings.rainAnimated ||
+          settings.chromaticSettings.chromaticAnimated)
         animationValue.toStringAsFixed(2),
       // Hash of settings values for color if enabled
       if (settings.colorEnabled)
@@ -144,6 +148,12 @@ class EffectController {
       // Hash of settings values for noise if enabled
       if (settings.noiseEnabled)
         '${settings.noiseSettings.waveAmount.toStringAsFixed(2)}_${settings.noiseSettings.colorIntensity.toStringAsFixed(2)}',
+      // Hash of settings values for rain if enabled
+      if (settings.rainEnabled)
+        '${settings.rainSettings.rainIntensity.toStringAsFixed(2)}_${settings.rainSettings.dropSize.toStringAsFixed(2)}_${settings.rainSettings.fallSpeed.toStringAsFixed(2)}_${settings.rainSettings.refraction.toStringAsFixed(2)}_${settings.rainSettings.trailIntensity.toStringAsFixed(2)}',
+      // Hash of settings values for chromatic aberration if enabled
+      if (settings.chromaticEnabled)
+        '${settings.chromaticSettings.amount.toStringAsFixed(2)}_${settings.chromaticSettings.angle.toStringAsFixed(2)}_${settings.chromaticSettings.spread.toStringAsFixed(2)}_${settings.chromaticSettings.intensity.toStringAsFixed(2)}',
     ].join('|');
   }
 
@@ -175,7 +185,9 @@ class EffectController {
     // If no effects are enabled, return the original child
     if (!settings.colorEnabled &&
         !settings.blurEnabled &&
-        !settings.noiseEnabled) {
+        !settings.noiseEnabled &&
+        !settings.rainEnabled &&
+        !settings.chromaticEnabled) {
       return child;
     }
 
@@ -184,7 +196,10 @@ class EffectController {
     bool isAnimated =
         (settings.colorSettings.colorAnimated && settings.colorEnabled) ||
         (settings.blurSettings.blurAnimated && settings.blurEnabled) ||
-        (settings.noiseSettings.noiseAnimated && settings.noiseEnabled);
+        (settings.noiseSettings.noiseAnimated && settings.noiseEnabled) ||
+        (settings.rainSettings.rainAnimated && settings.rainEnabled) ||
+        (settings.chromaticSettings.chromaticAnimated &&
+            settings.chromaticEnabled);
 
     // If not animated, check cache for existing widget
     if (!isAnimated) {
@@ -260,6 +275,28 @@ class EffectController {
     // Apply noise effect if enabled
     if (settings.noiseEnabled) {
       result = _applyNoiseEffect(
+        child: result,
+        settings: settings,
+        animationValue: animationValue,
+        preserveTransparency: preserveTransparency,
+        isTextContent: isTextContent,
+      );
+    }
+
+    // Apply rain effect if enabled
+    if (settings.rainEnabled) {
+      result = _applyRainEffect(
+        child: result,
+        settings: settings,
+        animationValue: animationValue,
+        preserveTransparency: preserveTransparency,
+        isTextContent: isTextContent,
+      );
+    }
+
+    // Apply chromatic aberration effect if enabled
+    if (settings.chromaticEnabled) {
+      result = _applyChromaticEffect(
         child: result,
         settings: settings,
         animationValue: animationValue,
@@ -385,6 +422,61 @@ class EffectController {
 
     // Use custom shader implementation
     return NoiseEffectShader(
+      settings: settings,
+      animationValue: animationValue,
+      child: child,
+      preserveTransparency: preserveTransparency,
+      isTextContent: isTextContent,
+    );
+  }
+
+  // Helper method to apply rain effect using custom shader
+  static Widget _applyRainEffect({
+    required Widget child,
+    required ShaderSettings settings,
+    required double animationValue,
+    bool preserveTransparency = false,
+    bool isTextContent = false,
+  }) {
+    // Skip if rain settings are minimal and no animation
+    if (settings.rainSettings.rainIntensity <= 0.0 &&
+        settings.rainSettings.dropSize <= 0.0 &&
+        settings.rainSettings.fallSpeed <= 0.0 &&
+        settings.rainSettings.refraction <= 0.0 &&
+        settings.rainSettings.trailIntensity <= 0.0 &&
+        !settings.rainSettings.rainAnimated) {
+      return child;
+    }
+
+    // Use custom shader implementation
+    return RainEffectShader(
+      settings: settings,
+      animationValue: animationValue,
+      child: child,
+      preserveTransparency: preserveTransparency,
+      isTextContent: isTextContent,
+    );
+  }
+
+  // Helper method to apply chromatic aberration effect using custom shader
+  static Widget _applyChromaticEffect({
+    required Widget child,
+    required ShaderSettings settings,
+    required double animationValue,
+    bool preserveTransparency = false,
+    bool isTextContent = false,
+  }) {
+    // Skip if chromatic aberration settings are minimal and no animation
+    if (settings.chromaticSettings.amount <= 0.0 &&
+        settings.chromaticSettings.angle <= 0.0 &&
+        settings.chromaticSettings.spread <= 0.0 &&
+        settings.chromaticSettings.intensity <= 0.0 &&
+        !settings.chromaticSettings.chromaticAnimated) {
+      return child;
+    }
+
+    // Use custom shader implementation
+    return ChromaticEffectShader(
       settings: settings,
       animationValue: animationValue,
       child: child,

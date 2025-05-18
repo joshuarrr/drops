@@ -18,6 +18,8 @@ import 'views/effect_controls.dart';
 import 'views/panel_container.dart';
 import 'views/preset_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'widgets/image_panel.dart';
+import 'models/image_category.dart';
 
 // Set true to enable additional debug logging
 bool _enableDebugLogging = true;
@@ -79,7 +81,8 @@ void _log(String message, {LogLevel level = LogLevel.info}) {
   }
 }
 
-enum ImageCategory { covers, artists }
+// Use ImageCategory from models instead of declaring it here
+// enum ImageCategory { covers, artists }
 
 class ShaderDemoImpl extends StatefulWidget {
   const ShaderDemoImpl({super.key});
@@ -151,6 +154,9 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
 
     // Initialize unified settings object
     _shaderSettings = ShaderSettings();
+
+    // Enable shaders for images by default
+    _shaderSettings.textLayoutSettings.applyShaderEffectsToImage = true;
 
     // Load persisted settings (if any) before building UI
     _loadShaderSettings();
@@ -307,6 +313,12 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                                   case ShaderAspect.textfx:
                                     _shaderSettings.textfxEnabled = enabled;
                                     break;
+                                  case ShaderAspect.rain:
+                                    _shaderSettings.rainEnabled = enabled;
+                                    break;
+                                  case ShaderAspect.chromatic:
+                                    _shaderSettings.chromaticEnabled = enabled;
+                                    break;
                                 }
                               });
                               _saveShaderSettings();
@@ -365,11 +377,13 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
         // Apply all enabled effects using the shared base time
         // Wrap in RepaintBoundary to prevent excessive rebuilds
         Widget effectsWidget = RepaintBoundary(
-          child: EffectController.applyEffects(
-            child: baseImage!,
-            settings: _shaderSettings,
-            animationValue: animationValue,
-          ),
+          child: _shaderSettings.textLayoutSettings.applyShaderEffectsToImage
+              ? EffectController.applyEffects(
+                  child: baseImage!,
+                  settings: _shaderSettings,
+                  animationValue: animationValue,
+                )
+              : baseImage!, // Don't apply effects if disabled
         );
 
         // Compose text overlay if enabled
@@ -447,23 +461,56 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (_selectedAspect == ShaderAspect.image) ...[
-                  _buildImageCategorySelector(theme),
-                  const SizedBox(height: 12),
-                  _buildImageThumbnails(theme),
-                  const SizedBox(height: 16),
+                  // Use ImagePanel widget here instead of building controls directly
+                  ImagePanel(
+                    settings: _shaderSettings,
+                    onSettingsChanged: (settings) {
+                      setState(() {
+                        _shaderSettings = settings;
+                      });
+                      _saveShaderSettings();
+                    },
+                    sliderColor: sliderColor,
+                    context: context,
+                    coverImages: _coverImages,
+                    artistImages: _artistImages,
+                    selectedImage: _selectedImage,
+                    imageCategory: _imageCategory,
+                    onImageSelected: (path) {
+                      setState(() {
+                        _selectedImage = path;
+                      });
+                      _saveShaderSettings();
+                    },
+                    onCategoryChanged: (category) {
+                      setState(() {
+                        _imageCategory = category;
+
+                        // Ensure selected image belongs to category
+                        final images = _getCurrentImages();
+                        if (!images.contains(_selectedImage) &&
+                            images.isNotEmpty) {
+                          _selectedImage = images.first;
+                        }
+                      });
+                      _saveShaderSettings();
+                    },
+                  ),
                 ],
-                ...EffectControls.buildSlidersForAspect(
-                  aspect: _selectedAspect,
-                  settings: _shaderSettings,
-                  onSettingsChanged: (settings) {
-                    setState(() {
-                      _shaderSettings = settings;
-                    });
-                    _saveShaderSettings();
-                  },
-                  sliderColor: sliderColor,
-                  context: context,
-                ),
+                if (_selectedAspect != ShaderAspect.image) ...[
+                  ...EffectControls.buildSlidersForAspect(
+                    aspect: _selectedAspect,
+                    settings: _shaderSettings,
+                    onSettingsChanged: (settings) {
+                      setState(() {
+                        _shaderSettings = settings;
+                      });
+                      _saveShaderSettings();
+                    },
+                    sliderColor: sliderColor,
+                    context: context,
+                  ),
+                ],
                 // Blur animation controls are now integrated in EffectControls
                 const SizedBox(height: 12),
               ],
@@ -633,107 +680,6 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     } catch (e, stack) {
       debugPrint('Failed to load asset manifest: $e\n$stack');
     }
-  }
-
-  // Build radio selector for image category
-  Widget _buildImageCategorySelector(ThemeData theme) {
-    Color textColor = theme.colorScheme.onSurface;
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _buildCategoryRadio(ImageCategory.covers, 'Covers', textColor),
-        const SizedBox(width: 24),
-        _buildCategoryRadio(ImageCategory.artists, 'Artists', textColor),
-      ],
-    );
-  }
-
-  Widget _buildCategoryRadio(
-    ImageCategory category,
-    String label,
-    Color textColor,
-  ) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Theme(
-          data: ThemeData(
-            radioTheme: RadioThemeData(
-              fillColor: MaterialStateProperty.resolveWith<Color>((
-                Set<MaterialState> states,
-              ) {
-                if (states.contains(MaterialState.selected)) {
-                  return textColor;
-                }
-                return textColor.withOpacity(0.5);
-              }),
-              // Remove outline
-              overlayColor: MaterialStateProperty.all(Colors.transparent),
-            ),
-          ),
-          child: Radio<ImageCategory>(
-            value: category,
-            groupValue: _imageCategory,
-            onChanged: (ImageCategory? value) {
-              if (value != null) {
-                setState(() {
-                  _imageCategory = value;
-
-                  // Ensure selected image belongs to category
-                  final images = _getCurrentImages();
-                  if (!images.contains(_selectedImage) && images.isNotEmpty) {
-                    _selectedImage = images.first;
-                  }
-                });
-                _saveShaderSettings();
-              }
-            },
-            activeColor: textColor,
-            // Remove the outline
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          ),
-        ),
-        Text(label, style: TextStyle(color: textColor)),
-      ],
-    );
-  }
-
-  // Build thumbnails for current category
-  Widget _buildImageThumbnails(ThemeData theme) {
-    final images = _getCurrentImages();
-    if (images.isEmpty) {
-      return Text(
-        'No images',
-        style: TextStyle(color: theme.colorScheme.onSurface),
-      );
-    }
-
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: images.map((path) {
-        final bool isSelected = path == _selectedImage;
-        return GestureDetector(
-          onTap: () {
-            setState(() {
-              _selectedImage = path;
-            });
-            _saveShaderSettings();
-          },
-          child: Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: isSelected ? Colors.white : Colors.transparent,
-                width: 1,
-              ),
-            ),
-            child: Image.asset(path, fit: BoxFit.cover),
-          ),
-        );
-      }).toList(),
-    );
   }
 
   List<String> _getCurrentImages() {

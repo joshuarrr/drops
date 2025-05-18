@@ -7,6 +7,8 @@ import 'blur_settings.dart';
 import 'noise_settings.dart';
 import 'text_fx_settings.dart';
 import 'text_layout_settings.dart';
+import 'rain_settings.dart';
+import 'chromatic_settings.dart';
 
 // Class to store all shader effect settings
 class ShaderSettings {
@@ -16,6 +18,8 @@ class ShaderSettings {
   NoiseSettings _noiseSettings;
   TextFXSettings _textfxSettings;
   TextLayoutSettings _textLayoutSettings;
+  RainSettings _rainSettings;
+  ChromaticSettings _chromaticSettings;
 
   // Flag to control logging
   static bool enableLogging = false;
@@ -26,6 +30,8 @@ class ShaderSettings {
   NoiseSettings get noiseSettings => _noiseSettings;
   TextFXSettings get textfxSettings => _textfxSettings;
   TextLayoutSettings get textLayoutSettings => _textLayoutSettings;
+  RainSettings get rainSettings => _rainSettings;
+  ChromaticSettings get chromaticSettings => _chromaticSettings;
 
   // Convenience getters for most commonly used properties
   // These delegate to the specialized settings classes
@@ -63,6 +69,28 @@ class ShaderSettings {
     _noiseSettings.noiseAnimated = value;
   }
 
+  // Rain settings
+  bool get rainEnabled => _rainSettings.rainEnabled;
+  set rainEnabled(bool value) {
+    _rainSettings.rainEnabled = value;
+  }
+
+  bool get rainAnimated => _rainSettings.rainAnimated;
+  set rainAnimated(bool value) {
+    _rainSettings.rainAnimated = value;
+  }
+
+  // Chromatic aberration settings
+  bool get chromaticEnabled => _chromaticSettings.chromaticEnabled;
+  set chromaticEnabled(bool value) {
+    _chromaticSettings.chromaticEnabled = value;
+  }
+
+  bool get chromaticAnimated => _chromaticSettings.chromaticAnimated;
+  set chromaticAnimated(bool value) {
+    _chromaticSettings.chromaticAnimated = value;
+  }
+
   // Text effect settings
   bool get textfxEnabled => _textfxSettings.textfxEnabled;
   set textfxEnabled(bool value) {
@@ -93,6 +121,8 @@ class ShaderSettings {
     NoiseSettings.enableLogging = enabled;
     TextFXSettings.enableLogging = enabled;
     TextLayoutSettings.enableLogging = enabled;
+    RainSettings.enableLogging = enabled;
+    ChromaticSettings.enableLogging = enabled;
   }
 
   ShaderSettings({
@@ -102,11 +132,15 @@ class ShaderSettings {
     NoiseSettings? noiseSettings,
     TextFXSettings? textfxSettings,
     TextLayoutSettings? textLayoutSettings,
+    RainSettings? rainSettings,
+    ChromaticSettings? chromaticSettings,
   }) : _colorSettings = colorSettings ?? ColorSettings(),
        _blurSettings = blurSettings ?? BlurSettings(),
        _noiseSettings = noiseSettings ?? NoiseSettings(),
        _textfxSettings = textfxSettings ?? TextFXSettings(),
-       _textLayoutSettings = textLayoutSettings ?? TextLayoutSettings() {
+       _textLayoutSettings = textLayoutSettings ?? TextLayoutSettings(),
+       _rainSettings = rainSettings ?? RainSettings(),
+       _chromaticSettings = chromaticSettings ?? ChromaticSettings() {
     if (enableLogging) print("SETTINGS: ShaderSettings initialized");
   }
 
@@ -119,6 +153,8 @@ class ShaderSettings {
         'noiseSettings': _noiseSettings.toMap(),
         'textfxSettings': _textfxSettings.toMap(),
         'textLayoutSettings': _textLayoutSettings.toMap(),
+        'rainSettings': _rainSettings.toMap(),
+        'chromaticSettings': _chromaticSettings.toMap(),
       };
     } catch (e) {
       print('Error serializing ShaderSettings: $e');
@@ -129,6 +165,8 @@ class ShaderSettings {
         'noiseSettings': NoiseSettings().toMap(),
         'textfxSettings': TextFXSettings().toMap(),
         'textLayoutSettings': TextLayoutSettings().toMap(),
+        'rainSettings': RainSettings().toMap(),
+        'chromaticSettings': ChromaticSettings().toMap(),
       };
     }
   }
@@ -156,6 +194,14 @@ class ShaderSettings {
       textLayoutSettings: map['textLayoutSettings'] != null
           ? TextLayoutSettings.fromMap(
               Map<String, dynamic>.from(map['textLayoutSettings']),
+            )
+          : null,
+      rainSettings: map['rainSettings'] != null
+          ? RainSettings.fromMap(Map<String, dynamic>.from(map['rainSettings']))
+          : null,
+      chromaticSettings: map['chromaticSettings'] != null
+          ? ChromaticSettings.fromMap(
+              Map<String, dynamic>.from(map['chromaticSettings']),
             )
           : null,
     );
@@ -214,6 +260,33 @@ class ShaderSettings {
               )
             : null,
       ),
+      rainSettings: RainSettings(
+        rainEnabled: map['rainEnabled'] ?? false,
+        rainIntensity: map['rainIntensity'] ?? 0.5,
+        dropSize: map['dropSize'] ?? 0.5,
+        fallSpeed: map['fallSpeed'] ?? 0.5,
+        refraction: map['refraction'] ?? 0.5,
+        trailIntensity: map['trailIntensity'] ?? 0.3,
+        rainAnimated: map['rainAnimated'] ?? false,
+        rainAnimOptions: map['rainAnimOptions'] != null
+            ? AnimationOptions.fromMap(
+                Map<String, dynamic>.from(map['rainAnimOptions']),
+              )
+            : null,
+      ),
+      chromaticSettings: ChromaticSettings(
+        chromaticEnabled: map['chromaticEnabled'] ?? false,
+        amount: map['chromaticAmount'] ?? 0.5,
+        angle: map['chromaticAngle'] ?? 0.0,
+        spread: map['chromaticSpread'] ?? 0.5,
+        intensity: map['chromaticIntensity'] ?? 0.5,
+        chromaticAnimated: map['chromaticAnimated'] ?? false,
+        animOptions: map['chromaticAnimOptions'] != null
+            ? AnimationOptions.fromMap(
+                Map<String, dynamic>.from(map['chromaticAnimOptions']),
+              )
+            : null,
+      ),
       textfxSettings: TextFXSettings(
         textfxEnabled: map['textfxEnabled'] ?? false,
         textShadowEnabled: map['textShadowEnabled'] ?? false,
@@ -253,12 +326,13 @@ class ShaderSettings {
         textNeonEnabled: map['textNeonEnabled'] ?? false,
         textNeonColor: map['textNeonColor'] != null
             ? Color(map['textNeonColor'])
-            : Colors.white,
+            : Colors.blue,
         textNeonOuterColor: map['textNeonOuterColor'] != null
             ? Color(map['textNeonOuterColor'])
-            : Colors.white,
-        textNeonIntensity: map['textNeonIntensity'] ?? 1.0,
-        textNeonWidth: map['textNeonWidth'] ?? 0.01,
+            : Colors.purple,
+        textNeonIntensity: map['textNeonIntensity'] ?? 0.8,
+        textNeonWidth: map['textNeonWidth'] ?? 0.3,
+        applyShaderEffectsToText: map['applyShaderEffectsToText'] ?? false,
         textfxAnimated: map['textfxAnimated'] ?? false,
         textfxAnimOptions: map['textfxAnimOptions'] != null
             ? AnimationOptions.fromMap(
@@ -272,6 +346,7 @@ class ShaderSettings {
         textTitle: map['textTitle'] ?? '',
         textSubtitle: map['textSubtitle'] ?? '',
         textArtist: map['textArtist'] ?? '',
+        textLyrics: map['textLyrics'] ?? '',
         textFont: map['textFont'] ?? 'Roboto',
         textSize: map['textSize'] ?? 0.05,
         textPosX: map['textPosX'] ?? 0.1,
@@ -301,9 +376,17 @@ class ShaderSettings {
         artistColor: map['artistColor'] != null
             ? Color(map['artistColor'])
             : Colors.white,
+        lyricsFont: map['lyricsFont'] ?? '',
+        lyricsSize: map['lyricsSize'] ?? 0.03,
+        lyricsPosX: map['lyricsPosX'] ?? 0.1,
+        lyricsPosY: map['lyricsPosY'] ?? 0.5,
+        lyricsColor: map['lyricsColor'] != null
+            ? Color(map['lyricsColor'])
+            : Colors.white,
         titleWeight: map['titleWeight'] ?? 400,
         subtitleWeight: map['subtitleWeight'] ?? 400,
         artistWeight: map['artistWeight'] ?? 400,
+        lyricsWeight: map['lyricsWeight'] ?? 400,
         textFitToWidth: map['textFitToWidth'] ?? false,
         textHAlign: map['textHAlign'] ?? 0,
         textVAlign: map['textVAlign'] ?? 0,
@@ -320,6 +403,10 @@ class ShaderSettings {
         artistHAlign: map['artistHAlign'] ?? 0,
         artistVAlign: map['artistVAlign'] ?? 0,
         artistLineHeight: map['artistLineHeight'] ?? 1.2,
+        lyricsFitToWidth: map['lyricsFitToWidth'] ?? false,
+        lyricsHAlign: map['lyricsHAlign'] ?? 0,
+        lyricsVAlign: map['lyricsVAlign'] ?? 0,
+        lyricsLineHeight: map['lyricsLineHeight'] ?? 1.2,
       ),
     );
   }

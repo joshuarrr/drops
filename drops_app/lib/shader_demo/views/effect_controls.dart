@@ -3,6 +3,7 @@ import 'dart:developer' as developer;
 import '../models/shader_effect.dart';
 import '../models/effect_settings.dart';
 import '../models/presets_manager.dart';
+import '../models/image_category.dart';
 import '../../common/font_selector.dart';
 import '../widgets/aspect_toggle.dart';
 import '../widgets/presets_bar.dart';
@@ -12,6 +13,8 @@ import '../widgets/image_panel.dart';
 import '../widgets/text_panel.dart';
 import '../widgets/noise_panel.dart';
 import '../widgets/text_fx_panel.dart';
+import '../widgets/rain_panel.dart';
+import '../widgets/chromatic_panel.dart';
 import '../controllers/effect_controller.dart';
 
 // Enum for identifying each text line (outside class for reuse)
@@ -139,6 +142,28 @@ class EffectControls {
               },
               onTap: onAspectSelected,
             ),
+            // Text toggle moved to be right after image
+            AspectToggle(
+              aspect: ShaderAspect.text,
+              isEnabled: settings.textLayoutSettings.textEnabled,
+              isCurrentImageDark: isCurrentImageDark,
+              onToggled: (aspect, enabled) {
+                _log('Text aspect toggled: $enabled');
+                onAspectToggled(aspect, enabled);
+              },
+              onTap: onAspectSelected,
+            ),
+            // Text FX toggle moved to be right after text
+            AspectToggle(
+              aspect: ShaderAspect.textfx,
+              isEnabled: settings.textfxSettings.textfxEnabled,
+              isCurrentImageDark: isCurrentImageDark,
+              onToggled: (aspect, enabled) {
+                _log('TextFx aspect toggled: $enabled');
+                onAspectToggled(aspect, enabled);
+              },
+              onTap: onAspectSelected,
+            ),
             AspectToggle(
               aspect: ShaderAspect.color,
               isEnabled: settings.colorEnabled,
@@ -160,16 +185,6 @@ class EffectControls {
               onTap: onAspectSelected,
             ),
             AspectToggle(
-              aspect: ShaderAspect.text,
-              isEnabled: settings.textLayoutSettings.textEnabled,
-              isCurrentImageDark: isCurrentImageDark,
-              onToggled: (aspect, enabled) {
-                _log('Text aspect toggled: $enabled');
-                onAspectToggled(aspect, enabled);
-              },
-              onTap: onAspectSelected,
-            ),
-            AspectToggle(
               aspect: ShaderAspect.noise,
               isEnabled: settings.noiseEnabled,
               isCurrentImageDark: isCurrentImageDark,
@@ -180,11 +195,21 @@ class EffectControls {
               onTap: onAspectSelected,
             ),
             AspectToggle(
-              aspect: ShaderAspect.textfx,
-              isEnabled: settings.textfxSettings.textfxEnabled,
+              aspect: ShaderAspect.rain,
+              isEnabled: settings.rainSettings.rainEnabled,
               isCurrentImageDark: isCurrentImageDark,
               onToggled: (aspect, enabled) {
-                _log('TextFx aspect toggled: $enabled');
+                _log('Rain aspect toggled: $enabled');
+                onAspectToggled(aspect, enabled);
+              },
+              onTap: onAspectSelected,
+            ),
+            AspectToggle(
+              aspect: ShaderAspect.chromatic,
+              isEnabled: settings.chromaticEnabled,
+              isCurrentImageDark: isCurrentImageDark,
+              onToggled: (aspect, enabled) {
+                _log('Chromatic aspect toggled: $enabled');
                 onAspectToggled(aspect, enabled);
               },
               onTap: onAspectSelected,
@@ -269,6 +294,12 @@ class EffectControls {
             onSettingsChanged: onSettingsChanged,
             sliderColor: sliderColor,
             context: context,
+            coverImages: const [],
+            artistImages: const [],
+            selectedImage: '',
+            imageCategory: ImageCategory.covers,
+            onImageSelected: (_) {},
+            onCategoryChanged: (_) {},
           ),
         ];
 
@@ -311,6 +342,37 @@ class EffectControls {
             },
             sliderColor: sliderColor,
             context: context,
+          ),
+        ];
+
+      case ShaderAspect.rain:
+        return [
+          RainPanel(
+            settings: settings,
+            onSettingsChanged: (updatedSettings) {
+              _log(
+                'Rain panel settings changed - Rain enabled: ${updatedSettings.rainEnabled}',
+                level: LogLevel.debug,
+              );
+              onSettingsChanged(updatedSettings);
+            },
+            sliderColor: sliderColor,
+            context: context,
+          ),
+        ];
+
+      case ShaderAspect.chromatic:
+        return [
+          ChromaticPanel(
+            settings: settings,
+            onSettingsChanged: (updatedSettings) {
+              _log(
+                'Chromatic panel settings changed - Chromatic enabled: ${updatedSettings.chromaticEnabled}',
+                level: LogLevel.debug,
+              );
+              onSettingsChanged(updatedSettings);
+            },
+            sliderColor: sliderColor,
           ),
         ];
     }
