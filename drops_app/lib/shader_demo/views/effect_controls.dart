@@ -15,6 +15,7 @@ import '../widgets/noise_panel.dart';
 import '../widgets/text_fx_panel.dart';
 import '../widgets/rain_panel.dart';
 import '../widgets/chromatic_panel.dart';
+import '../widgets/ripple_panel.dart';
 import '../controllers/effect_controller.dart';
 
 // Enum for identifying each text line (outside class for reuse)
@@ -217,6 +218,16 @@ class EffectControls {
               },
               onTap: onAspectSelected,
             ),
+            AspectToggle(
+              aspect: ShaderAspect.ripple,
+              isEnabled: settings.rippleEnabled,
+              isCurrentImageDark: isCurrentImageDark,
+              onToggled: (aspect, enabled) {
+                _log('Ripple aspect toggled: $enabled', level: LogLevel.debug);
+                onAspectToggled(aspect, enabled);
+              },
+              onTap: onAspectSelected,
+            ),
           ],
         ),
       ),
@@ -376,6 +387,22 @@ class EffectControls {
               onSettingsChanged(updatedSettings);
             },
             sliderColor: sliderColor,
+          ),
+        ];
+
+      case ShaderAspect.ripple:
+        return [
+          RipplePanel(
+            settings: settings,
+            onSettingsChanged: (updatedSettings) {
+              _log(
+                'Ripple panel settings changed - Ripple enabled: ${updatedSettings.rippleEnabled}',
+                level: LogLevel.debug,
+              );
+              onSettingsChanged(updatedSettings);
+            },
+            sliderColor: sliderColor,
+            context: context,
           ),
         ];
     }

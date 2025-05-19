@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'animation_options.dart';
 
-class TextFXSettings {
+class TextFXSettings extends ChangeNotifier {
   // Enable flag for text effects
   bool _textfxEnabled;
 
@@ -66,6 +66,7 @@ class TextFXSettings {
   set textfxEnabled(bool value) {
     _textfxEnabled = value;
     if (enableLogging) print("SETTINGS: textfxEnabled set to $value");
+    notifyListeners();
   }
 
   bool get applyShaderEffectsToText => _applyShaderEffectsToText;
@@ -73,6 +74,7 @@ class TextFXSettings {
     _applyShaderEffectsToText = value;
     if (enableLogging)
       print("SETTINGS: applyShaderEffectsToText set to $value");
+    notifyListeners();
   }
 
   // Text effects getters and setters
@@ -80,6 +82,7 @@ class TextFXSettings {
   set textShadowEnabled(bool value) {
     _textShadowEnabled = value;
     if (enableLogging) print("SETTINGS: textShadowEnabled set to $value");
+    notifyListeners();
   }
 
   double get textShadowBlur => _textShadowBlur;
@@ -88,6 +91,7 @@ class TextFXSettings {
     if (enableLogging) {
       print("SETTINGS: textShadowBlur set to ${value.toStringAsFixed(3)}");
     }
+    notifyListeners();
   }
 
   double get textShadowOffsetX => _textShadowOffsetX;
@@ -96,6 +100,7 @@ class TextFXSettings {
     if (enableLogging) {
       print("SETTINGS: textShadowOffsetX set to ${value.toStringAsFixed(3)}");
     }
+    notifyListeners();
   }
 
   double get textShadowOffsetY => _textShadowOffsetY;
@@ -104,12 +109,14 @@ class TextFXSettings {
     if (enableLogging) {
       print("SETTINGS: textShadowOffsetY set to ${value.toStringAsFixed(3)}");
     }
+    notifyListeners();
   }
 
   Color get textShadowColor => _textShadowColor;
   set textShadowColor(Color value) {
     _textShadowColor = value;
     if (enableLogging) print("SETTINGS: textShadowColor set to $value");
+    notifyListeners();
   }
 
   double get textShadowOpacity => _textShadowOpacity;
@@ -118,12 +125,14 @@ class TextFXSettings {
     if (enableLogging) {
       print("SETTINGS: textShadowOpacity set to ${value.toStringAsFixed(3)}");
     }
+    notifyListeners();
   }
 
   bool get textGlowEnabled => _textGlowEnabled;
   set textGlowEnabled(bool value) {
     _textGlowEnabled = value;
     if (enableLogging) print("SETTINGS: textGlowEnabled set to $value");
+    notifyListeners();
   }
 
   double get textGlowBlur => _textGlowBlur;
@@ -132,12 +141,14 @@ class TextFXSettings {
     if (enableLogging) {
       print("SETTINGS: textGlowBlur set to ${value.toStringAsFixed(3)}");
     }
+    notifyListeners();
   }
 
   Color get textGlowColor => _textGlowColor;
   set textGlowColor(Color value) {
     _textGlowColor = value;
     if (enableLogging) print("SETTINGS: textGlowColor set to $value");
+    notifyListeners();
   }
 
   double get textGlowOpacity => _textGlowOpacity;
@@ -146,12 +157,14 @@ class TextFXSettings {
     if (enableLogging) {
       print("SETTINGS: textGlowOpacity set to ${value.toStringAsFixed(3)}");
     }
+    notifyListeners();
   }
 
   bool get textOutlineEnabled => _textOutlineEnabled;
   set textOutlineEnabled(bool value) {
     _textOutlineEnabled = value;
     if (enableLogging) print("SETTINGS: textOutlineEnabled set to $value");
+    notifyListeners();
   }
 
   double get textOutlineWidth => _textOutlineWidth;
@@ -160,18 +173,21 @@ class TextFXSettings {
     if (enableLogging) {
       print("SETTINGS: textOutlineWidth set to ${value.toStringAsFixed(3)}");
     }
+    notifyListeners();
   }
 
   Color get textOutlineColor => _textOutlineColor;
   set textOutlineColor(Color value) {
     _textOutlineColor = value;
     if (enableLogging) print("SETTINGS: textOutlineColor set to $value");
+    notifyListeners();
   }
 
   bool get textfxAnimated => _textfxAnimated;
   set textfxAnimated(bool value) {
     _textfxAnimated = value;
     if (enableLogging) print("SETTINGS: textfxAnimated set to $value");
+    notifyListeners();
   }
 
   // Metal effect getters and setters
@@ -179,6 +195,7 @@ class TextFXSettings {
   set textMetalEnabled(bool value) {
     _textMetalEnabled = value;
     if (enableLogging) print("SETTINGS: textMetalEnabled set to $value");
+    notifyListeners();
   }
 
   double get textMetalShine => _textMetalShine;
@@ -187,18 +204,21 @@ class TextFXSettings {
     if (enableLogging) {
       print("SETTINGS: textMetalShine set to ${value.toStringAsFixed(3)}");
     }
+    notifyListeners();
   }
 
   Color get textMetalBaseColor => _textMetalBaseColor;
   set textMetalBaseColor(Color value) {
     _textMetalBaseColor = value;
     if (enableLogging) print("SETTINGS: textMetalBaseColor set to $value");
+    notifyListeners();
   }
 
   Color get textMetalShineColor => _textMetalShineColor;
   set textMetalShineColor(Color value) {
     _textMetalShineColor = value;
     if (enableLogging) print("SETTINGS: textMetalShineColor set to $value");
+    notifyListeners();
   }
 
   // Glass effect getters and setters
@@ -206,6 +226,7 @@ class TextFXSettings {
   set textGlassEnabled(bool value) {
     _textGlassEnabled = value;
     if (enableLogging) print("SETTINGS: textGlassEnabled set to $value");
+    notifyListeners();
   }
 
   double get textGlassOpacity => _textGlassOpacity;
@@ -214,6 +235,7 @@ class TextFXSettings {
     if (enableLogging) {
       print("SETTINGS: textGlassOpacity set to ${value.toStringAsFixed(3)}");
     }
+    notifyListeners();
   }
 
   double get textGlassBlur => _textGlassBlur;
@@ -222,12 +244,14 @@ class TextFXSettings {
     if (enableLogging) {
       print("SETTINGS: textGlassBlur set to ${value.toStringAsFixed(3)}");
     }
+    notifyListeners();
   }
 
   Color get textGlassColor => _textGlassColor;
   set textGlassColor(Color value) {
     _textGlassColor = value;
     if (enableLogging) print("SETTINGS: textGlassColor set to $value");
+    notifyListeners();
   }
 
   double get textGlassRefraction => _textGlassRefraction;
@@ -236,6 +260,7 @@ class TextFXSettings {
     if (enableLogging) {
       print("SETTINGS: textGlassRefraction set to ${value.toStringAsFixed(3)}");
     }
+    notifyListeners();
   }
 
   // Neon effect getters and setters
@@ -243,18 +268,21 @@ class TextFXSettings {
   set textNeonEnabled(bool value) {
     _textNeonEnabled = value;
     if (enableLogging) print("SETTINGS: textNeonEnabled set to $value");
+    notifyListeners();
   }
 
   Color get textNeonColor => _textNeonColor;
   set textNeonColor(Color value) {
     _textNeonColor = value;
     if (enableLogging) print("SETTINGS: textNeonColor set to $value");
+    notifyListeners();
   }
 
   Color get textNeonOuterColor => _textNeonOuterColor;
   set textNeonOuterColor(Color value) {
     _textNeonOuterColor = value;
     if (enableLogging) print("SETTINGS: textNeonOuterColor set to $value");
+    notifyListeners();
   }
 
   double get textNeonIntensity => _textNeonIntensity;
@@ -263,6 +291,7 @@ class TextFXSettings {
     if (enableLogging) {
       print("SETTINGS: textNeonIntensity set to ${value.toStringAsFixed(3)}");
     }
+    notifyListeners();
   }
 
   double get textNeonWidth => _textNeonWidth;
@@ -271,12 +300,14 @@ class TextFXSettings {
     if (enableLogging) {
       print("SETTINGS: textNeonWidth set to ${value.toStringAsFixed(3)}");
     }
+    notifyListeners();
   }
 
   AnimationOptions get textfxAnimOptions => _textfxAnimOptions;
   set textfxAnimOptions(AnimationOptions value) {
     _textfxAnimOptions = value;
     if (enableLogging) print("SETTINGS: textfxAnimOptions updated");
+    notifyListeners();
   }
 
   TextFXSettings({

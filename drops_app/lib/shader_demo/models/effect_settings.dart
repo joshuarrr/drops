@@ -9,6 +9,7 @@ import 'text_fx_settings.dart';
 import 'text_layout_settings.dart';
 import 'rain_settings.dart';
 import 'chromatic_settings.dart';
+import 'ripple_settings.dart';
 
 // Class to store all shader effect settings
 class ShaderSettings {
@@ -20,6 +21,7 @@ class ShaderSettings {
   TextLayoutSettings _textLayoutSettings;
   RainSettings _rainSettings;
   ChromaticSettings _chromaticSettings;
+  RippleSettings _rippleSettings;
 
   // Flag to control logging
   static bool enableLogging = false;
@@ -32,6 +34,7 @@ class ShaderSettings {
   TextLayoutSettings get textLayoutSettings => _textLayoutSettings;
   RainSettings get rainSettings => _rainSettings;
   ChromaticSettings get chromaticSettings => _chromaticSettings;
+  RippleSettings get rippleSettings => _rippleSettings;
 
   // Convenience getters for most commonly used properties
   // These delegate to the specialized settings classes
@@ -91,6 +94,17 @@ class ShaderSettings {
     _chromaticSettings.chromaticAnimated = value;
   }
 
+  // Ripple settings
+  bool get rippleEnabled => _rippleSettings.rippleEnabled;
+  set rippleEnabled(bool value) {
+    _rippleSettings.rippleEnabled = value;
+  }
+
+  bool get rippleAnimated => _rippleSettings.rippleAnimated;
+  set rippleAnimated(bool value) {
+    _rippleSettings.rippleAnimated = value;
+  }
+
   // Text effect settings
   bool get textfxEnabled => _textfxSettings.textfxEnabled;
   set textfxEnabled(bool value) {
@@ -123,6 +137,7 @@ class ShaderSettings {
     TextLayoutSettings.enableLogging = enabled;
     RainSettings.enableLogging = enabled;
     ChromaticSettings.enableLogging = enabled;
+    RippleSettings.enableLogging = enabled;
   }
 
   ShaderSettings({
@@ -134,13 +149,15 @@ class ShaderSettings {
     TextLayoutSettings? textLayoutSettings,
     RainSettings? rainSettings,
     ChromaticSettings? chromaticSettings,
+    RippleSettings? rippleSettings,
   }) : _colorSettings = colorSettings ?? ColorSettings(),
        _blurSettings = blurSettings ?? BlurSettings(),
        _noiseSettings = noiseSettings ?? NoiseSettings(),
        _textfxSettings = textfxSettings ?? TextFXSettings(),
        _textLayoutSettings = textLayoutSettings ?? TextLayoutSettings(),
        _rainSettings = rainSettings ?? RainSettings(),
-       _chromaticSettings = chromaticSettings ?? ChromaticSettings() {
+       _chromaticSettings = chromaticSettings ?? ChromaticSettings(),
+       _rippleSettings = rippleSettings ?? RippleSettings() {
     if (enableLogging) print("SETTINGS: ShaderSettings initialized");
   }
 
@@ -155,6 +172,7 @@ class ShaderSettings {
         'textLayoutSettings': _textLayoutSettings.toMap(),
         'rainSettings': _rainSettings.toMap(),
         'chromaticSettings': _chromaticSettings.toMap(),
+        'rippleSettings': _rippleSettings.toMap(),
       };
     } catch (e) {
       print('Error serializing ShaderSettings: $e');
@@ -167,6 +185,7 @@ class ShaderSettings {
         'textLayoutSettings': TextLayoutSettings().toMap(),
         'rainSettings': RainSettings().toMap(),
         'chromaticSettings': ChromaticSettings().toMap(),
+        'rippleSettings': RippleSettings().toMap(),
       };
     }
   }
@@ -202,6 +221,11 @@ class ShaderSettings {
       chromaticSettings: map['chromaticSettings'] != null
           ? ChromaticSettings.fromMap(
               Map<String, dynamic>.from(map['chromaticSettings']),
+            )
+          : null,
+      rippleSettings: map['rippleSettings'] != null
+          ? RippleSettings.fromMap(
+              Map<String, dynamic>.from(map['rippleSettings']),
             )
           : null,
     );
@@ -284,6 +308,20 @@ class ShaderSettings {
         animOptions: map['chromaticAnimOptions'] != null
             ? AnimationOptions.fromMap(
                 Map<String, dynamic>.from(map['chromaticAnimOptions']),
+              )
+            : null,
+      ),
+      rippleSettings: RippleSettings(
+        rippleEnabled: map['rippleEnabled'] ?? false,
+        rippleIntensity: map['rippleIntensity'] ?? 0.5,
+        rippleSize: map['rippleSize'] ?? 0.5,
+        rippleSpeed: map['rippleSpeed'] ?? 0.5,
+        rippleOpacity: map['rippleOpacity'] ?? 0.7,
+        rippleColor: map['rippleColor'] ?? 0.3,
+        rippleAnimated: map['rippleAnimated'] ?? false,
+        rippleAnimOptions: map['rippleAnimOptions'] != null
+            ? AnimationOptions.fromMap(
+                Map<String, dynamic>.from(map['rippleAnimOptions']),
               )
             : null,
       ),

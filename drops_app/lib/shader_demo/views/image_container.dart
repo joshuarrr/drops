@@ -23,31 +23,39 @@ class ImageContainer extends StatelessWidget {
         final bool isFitMode = !settings.textLayoutSettings.fillScreen;
         final double margin = isFitMode ? 30.0 : 0.0;
 
+        // Create the image widget for both sizes
+        Widget imageWidget = imagePath.isEmpty
+            ? SizedBox(width: screenWidth, height: screenHeight)
+            : Image.asset(
+                imagePath,
+                fit: settings.textLayoutSettings.fillScreen
+                    ? BoxFit.cover
+                    : BoxFit.contain,
+                width: screenWidth,
+                height: screenHeight,
+              );
+
+        // Use Stack to ensure proper layout
         return Container(
-          color: Colors.black,
           width: screenWidth,
           height: screenHeight,
-          alignment: Alignment.center,
-          child: imagePath.isEmpty
-              ? const SizedBox.shrink()
-              : Center(
-                  // Add Center widget to ensure proper alignment
-                  child: Padding(
-                    // Make sure Padding is always applied when in Fit mode with explicit EdgeInsets.all
-                    padding: isFitMode
-                        ? EdgeInsets.all(margin)
-                        : EdgeInsets.zero,
-                    child: Image.asset(
-                      imagePath,
-                      alignment: Alignment.center,
-                      fit: settings.textLayoutSettings.fillScreen
-                          ? BoxFit.cover
-                          : BoxFit.contain,
-                      width: double.infinity,
-                      height: double.infinity,
-                    ),
+          color: Colors.black,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Use Positioned.fill to ensure the image remains full-sized
+              Positioned.fill(
+                child: Center(
+                  child: Container(
+                    width: screenWidth,
+                    height: screenHeight,
+                    padding: EdgeInsets.all(isFitMode ? margin : 0),
+                    child: imageWidget,
                   ),
                 ),
+              ),
+            ],
+          ),
         );
       },
     );

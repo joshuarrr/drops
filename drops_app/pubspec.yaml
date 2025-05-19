@@ -100,7 +100,8 @@ flutter:
     - assets/shaders/blur_effect.frag
     - assets/shaders/noise_effect.frag
     - assets/shaders/rain_effect.frag
-    - assets/shaders/chromatic_aberration.frag
+    - assets/shaders/chromatic_effect.frag
+    - assets/shaders/ripple_effect.frag
 
 
   # An image asset can refer to one or more resolution-specific "variants", see

@@ -330,6 +330,9 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                                   case ShaderAspect.chromatic:
                                     _shaderSettings.chromaticEnabled = enabled;
                                     break;
+                                  case ShaderAspect.ripple:
+                                    _shaderSettings.rippleEnabled = enabled;
+                                    break;
                                 }
                               });
                               _saveShaderSettings();
@@ -376,56 +379,66 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
   }
 
   Widget _buildShaderEffect() {
-    return AnimatedBuilder(
-      animation: _controller,
-      // Use a child parameter to avoid rebuilding static parts of the tree
-      child: ImageContainer(
-        imagePath: _selectedImage,
-        settings: _shaderSettings,
-      ),
-      builder: (context, baseImage) {
-        // Use the raw controller value as the base time; individual effects
-        // now derive their own animation curves (speed/mode/easing).
-        final double animationValue = _controller.value;
+    // Get screen dimensions first to ensure consistent sizing
+    final screenSize = MediaQuery.of(context).size;
+    final width = screenSize.width;
+    final height = screenSize.height;
 
-        // Apply all enabled effects using the shared base time
-        // Wrap in RepaintBoundary to prevent excessive rebuilds
-        Widget effectsWidget = RepaintBoundary(
-          child: _shaderSettings.textLayoutSettings.applyShaderEffectsToImage
-              ? EffectController.applyEffects(
-                  child: baseImage!,
-                  settings: _shaderSettings,
-                  animationValue: animationValue,
+    return SizedBox(
+      width: width,
+      height: height,
+      child: AnimatedBuilder(
+        animation: _controller,
+        // Use a child parameter to avoid rebuilding static parts of the tree
+        child: ImageContainer(
+          imagePath: _selectedImage,
+          settings: _shaderSettings,
+        ),
+        builder: (context, baseImage) {
+          // Use the raw controller value as the base time; individual effects
+          // now derive their own animation curves (speed/mode/easing).
+          final double animationValue = _controller.value;
+
+          // Apply all enabled effects using the shared base time
+          // CRITICAL: We need to ensure the size is maintained throughout the effect chain
+          Widget effectsWidget =
+              _shaderSettings.textLayoutSettings.applyShaderEffectsToImage
+              ? Container(
+                  width: width,
+                  height: height,
+                  alignment: Alignment.center,
+                  child: EffectController.applyEffects(
+                    child: baseImage!,
+                    settings: _shaderSettings,
+                    animationValue: animationValue,
+                  ),
                 )
-              : baseImage!, // Don't apply effects if disabled
-        );
+              : baseImage!; // Don't apply effects if disabled
 
-        // Compose text overlay if enabled
-        List<Widget> stackChildren = [SizedBox.expand(child: effectsWidget)];
+          // Compose text overlay if enabled
+          List<Widget> stackChildren = [Positioned.fill(child: effectsWidget)];
 
-        if (_shaderSettings.textLayoutSettings.textEnabled &&
-            (_shaderSettings.textLayoutSettings.textTitle.isNotEmpty ||
-                _shaderSettings.textLayoutSettings.textSubtitle.isNotEmpty ||
-                _shaderSettings.textLayoutSettings.textArtist.isNotEmpty)) {
-          stackChildren.add(
-            TextOverlay(
-              settings: _shaderSettings,
-              animationValue: animationValue,
-            ),
-          );
-        }
+          if (_shaderSettings.textLayoutSettings.textEnabled &&
+              (_shaderSettings.textLayoutSettings.textTitle.isNotEmpty ||
+                  _shaderSettings.textLayoutSettings.textSubtitle.isNotEmpty ||
+                  _shaderSettings.textLayoutSettings.textArtist.isNotEmpty)) {
+            stackChildren.add(
+              TextOverlay(
+                settings: _shaderSettings,
+                animationValue: animationValue,
+              ),
+            );
+          }
 
-        // Use Container with explicit width and height to ensure full-screen capture
-        return Container(
-          color: Colors.black,
-          width: MediaQuery.of(context).size.width,
-          height: MediaQuery.of(context).size.height,
-          child: Center(
-            // Add Center widget to ensure content is perfectly centered
+          // Use Container with explicit dimensions to ensure full-size rendering
+          return Container(
+            color: Colors.black,
+            width: width,
+            height: height,
             child: Stack(fit: StackFit.expand, children: stackChildren),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 

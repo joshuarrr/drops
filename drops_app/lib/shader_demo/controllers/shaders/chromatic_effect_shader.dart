@@ -1,19 +1,16 @@
-import 'dart:math';
 import 'dart:developer' as developer;
-import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_shaders/flutter_shaders.dart';
 
 import '../../models/effect_settings.dart';
-import '../../models/animation_options.dart';
 import '../../utils/animation_utils.dart';
 import 'debug_flags.dart'; // Import the shared debug flag
 
 /// Controls debug logging for shaders (external reference)
 bool enableShaderDebugLogs = true;
 
-/// Custom chromatic aberration effect shader widget using GLSL
+/// Custom chromatic aberration effect shader widget
 class ChromaticEffectShader extends StatelessWidget {
   final Widget child;
   final ShaderSettings settings;
@@ -22,13 +19,11 @@ class ChromaticEffectShader extends StatelessWidget {
   final bool isTextContent;
   final String _logTag = 'ChromaticEffectShader';
 
-  // Log throttling - improved to be static and more efficient
+  // Log throttling - using static variables for efficient throttling
   static DateTime _lastLogTime = DateTime.now().subtract(
     const Duration(seconds: 1),
   );
-  static const Duration _logThrottleInterval = Duration(
-    milliseconds: 1000,
-  ); // Increased from 500ms to 1000ms
+  static const Duration _logThrottleInterval = Duration(milliseconds: 1000);
   static String _lastLogMessage =
       ""; // Track the last message to avoid duplicates
 
@@ -63,79 +58,55 @@ class ChromaticEffectShader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Only log when parameters actually change
-    final String logMessage =
-        "Building ChromaticEffectShader with amount=${settings.chromaticSettings.amount.toStringAsFixed(2)}, "
-        "spread=${settings.chromaticSettings.spread.toStringAsFixed(2)}, "
-        "intensity=${settings.chromaticSettings.intensity.toStringAsFixed(2)}, "
-        "animated=${settings.chromaticSettings.chromaticAnimated}";
-
     if (enableShaderDebugLogs) {
+      final String logMessage =
+          "Building ChromaticEffectShader with intensity=${settings.chromaticSettings.intensity.toStringAsFixed(2)} "
+          "(animated: ${settings.chromaticSettings.chromaticAnimated})";
       _log(logMessage);
     }
 
-    // Use ShaderBuilder to apply the custom GLSL shader
-    return ShaderBuilder(assetKey: 'assets/shaders/chromatic_aberration.frag', (
+    // Use ShaderBuilder with AnimatedSampler for the effect
+    return ShaderBuilder(assetKey: 'assets/shaders/chromatic_effect.frag', (
       context,
       shader,
       child,
     ) {
-      // Calculate parameters
-      double amount = settings.chromaticSettings.amount;
-      double angle =
-          settings.chromaticSettings.angle * (pi / 180.0); // Convert to radians
-      double spread = settings.chromaticSettings.spread;
-      double intensity = settings.chromaticSettings.intensity;
-
-      // Apply animation if enabled
-      double animTime = 0.0;
-      if (settings.chromaticSettings.chromaticAnimated) {
-        final double animValue = ShaderAnimationUtils.computeAnimatedValue(
-          settings.chromaticSettings.animOptions,
-          animationValue,
-        );
-
-        // Calculate animation time for shader
-        animTime = animValue;
-
-        // Add pulsing effect
-        if (settings.chromaticSettings.animOptions.mode ==
-            AnimationMode.pulse) {
-          final double pulse = sin(animValue * 2 * pi);
-          amount = amount * (0.5 + 0.5 * pulse.abs());
-          spread = spread * (0.8 + 0.4 * pulse.abs());
-        }
-      }
-
-      // Adjust for text content if needed
-      if (isTextContent) {
-        intensity *= 0.5; // Reduce intensity for text
-        amount *= 0.3; // Reduce amount for text
-      }
-
       return AnimatedSampler((image, size, canvas) {
         try {
-          // Set shader uniform values
-          shader.setFloat(0, animTime); // uTime
-          shader.setFloat(1, size.width); // uResolutionX
-          shader.setFloat(2, size.height); // uResolutionY
-          shader.setImageSampler(0, image); // uTexture
-          shader.setFloat(3, amount); // uAmount
-          shader.setFloat(4, spread); // uSpread
-          shader.setFloat(5, intensity); // uIntensity
-          shader.setFloat(
-            6,
-            angle * (180 / pi),
-          ); // Convert angle back to degrees for shader
+          // Set the texture sampler first
+          shader.setImageSampler(0, image);
 
-          // Draw the shader
-          canvas.drawRect(
-            Rect.fromLTWH(0, 0, size.width, size.height),
-            Paint()..shader = shader,
-          );
+          // Compute animated intensity if enabled
+          double intensity = settings.chromaticSettings.intensity;
+          double amount = settings.chromaticSettings.amount;
+          double angle = settings.chromaticSettings.angle;
+          double spread = settings.chromaticSettings.spread;
+
+          if (settings.chromaticSettings.chromaticAnimated) {
+            // Reuse helper to obtain a 0-1 value taking animation settings into account
+            final double animValue = ShaderAnimationUtils.computeAnimatedValue(
+              settings.chromaticSettings.animOptions,
+              animationValue,
+            );
+
+            // Apply animation based on the current animation mode
+            intensity = intensity * animValue;
+          }
+
+          // Set uniforms for the shader
+          shader.setFloat(0, size.width); // iResolution.x
+          shader.setFloat(1, size.height); // iResolution.y
+          shader.setFloat(2, animationValue); // iTime
+          shader.setFloat(3, intensity); // iIntensity
+          shader.setFloat(4, amount); // iAmount
+          shader.setFloat(5, angle); // iAngle
+          shader.setFloat(6, spread); // iSpread
+
+          // Draw with the shader, ensuring it covers the full area
+          canvas.drawRect(Offset.zero & size, Paint()..shader = shader);
         } catch (e) {
-          _log("SHADER ERROR: $e");
-          // Fall back to drawing the original image on error
+          _log("ERROR: $e");
+          // Fall back to drawing the original image
           canvas.drawImageRect(
             image,
             Rect.fromLTWH(

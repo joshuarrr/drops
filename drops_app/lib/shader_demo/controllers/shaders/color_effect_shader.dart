@@ -116,86 +116,102 @@ class ColorEffectShader extends StatelessWidget {
       animationValue,
     );
 
-    // Simplified approach using AnimatedSampler with ShaderBuilder
-    return ShaderBuilder(assetKey: 'assets/shaders/color_effect.frag', (
-      context,
-      shader,
-      child,
-    ) {
-      return AnimatedSampler((image, size, canvas) {
-        try {
-          // Set the texture sampler first
-          shader.setImageSampler(0, image);
+    // Use LayoutBuilder to ensure consistent sizing
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Simplified approach using AnimatedSampler with ShaderBuilder
+        return ShaderBuilder(assetKey: 'assets/shaders/color_effect.frag', (
+          context,
+          shader,
+          child,
+        ) {
+          return SizedBox(
+            width: constraints.maxWidth,
+            height: constraints.maxHeight,
+            child: AnimatedSampler((image, size, canvas) {
+              try {
+                // Set the texture sampler first
+                shader.setImageSampler(0, image);
 
-          // Compute animated values when requested
-          double hue = settings.colorSettings.hue;
-          double saturation = settings.colorSettings.saturation;
-          double lightness = settings.colorSettings.lightness;
+                // Compute animated values when requested
+                double hue = settings.colorSettings.hue;
+                double saturation = settings.colorSettings.saturation;
+                double lightness = settings.colorSettings.lightness;
 
-          if (settings.colorSettings.colorAnimated) {
-            // Animate hue through the full color wheel [0,1)
-            hue = (hue + hslAnimValue) % 1.0;
+                if (settings.colorSettings.colorAnimated) {
+                  // Animate hue through the full color wheel [0,1)
+                  hue = (hue + hslAnimValue) % 1.0;
 
-            // Add a gentle pulse to saturation & lightness for a richer effect
-            final double pulse = math.sin(hslAnimValue * 2 * math.pi);
-            saturation = (saturation + 0.25 * pulse).clamp(-1.0, 1.0);
-            lightness = (lightness + 0.15 * pulse).clamp(-1.0, 1.0);
-          }
+                  // Add a gentle pulse to saturation & lightness for a richer effect
+                  final double pulse = math.sin(hslAnimValue * 2 * math.pi);
+                  saturation = (saturation + 0.25 * pulse).clamp(-1.0, 1.0);
+                  lightness = (lightness + 0.15 * pulse).clamp(-1.0, 1.0);
+                }
 
-          // Determine overlay values (may animate independently)
-          double overlayHue = settings.colorSettings.overlayHue;
-          double overlayIntensity = settings.colorSettings.overlayIntensity;
-          double overlayOpacity = settings.colorSettings.overlayOpacity;
+                // Determine overlay values (may animate independently)
+                double overlayHue = settings.colorSettings.overlayHue;
+                double overlayIntensity =
+                    settings.colorSettings.overlayIntensity;
+                double overlayOpacity = settings.colorSettings.overlayOpacity;
 
-          if (settings.colorSettings.overlayAnimated) {
-            overlayHue = (overlayHue + overlayAnimValue) % 1.0;
-            // Subtle breathing effect on intensity & opacity
-            final double pulse = math.sin(overlayAnimValue * 2 * math.pi);
-            overlayIntensity = (overlayIntensity + 0.3 * pulse).clamp(0.0, 1.0);
-            overlayOpacity = (overlayOpacity + 0.3 * pulse).clamp(0.0, 1.0);
-          }
+                if (settings.colorSettings.overlayAnimated) {
+                  overlayHue = (overlayHue + overlayAnimValue) % 1.0;
+                  // Subtle breathing effect on intensity & opacity
+                  final double pulse = math.sin(overlayAnimValue * 2 * math.pi);
+                  overlayIntensity = (overlayIntensity + 0.3 * pulse).clamp(
+                    0.0,
+                    1.0,
+                  );
+                  overlayOpacity = (overlayOpacity + 0.3 * pulse).clamp(
+                    0.0,
+                    1.0,
+                  );
+                }
 
-          // If preserveTransparency is enabled, we need to avoid applying color overlays
-          if (preserveTransparency) {
-            if (overlayIntensity > 0 || overlayOpacity > 0) {
-              _log(
-                "preserveTransparency enabled - zeroing overlay intensity and opacity",
-              );
-            }
-            // IMPORTANT FIX: Setting these to 0 prevents the solid background effect
-            overlayIntensity = 0.0;
-            overlayOpacity = 0.0;
-          }
+                // If preserveTransparency is enabled, we need to avoid applying color overlays
+                if (preserveTransparency) {
+                  if (overlayIntensity > 0 || overlayOpacity > 0) {
+                    _log(
+                      "preserveTransparency enabled - zeroing overlay intensity and opacity",
+                    );
+                  }
+                  // IMPORTANT FIX: Setting these to 0 prevents the solid background effect
+                  overlayIntensity = 0.0;
+                  overlayOpacity = 0.0;
+                }
 
-          // Set uniforms after the texture sampler
-          shader.setFloat(0, animationValue);
-          shader.setFloat(1, hue);
-          shader.setFloat(2, saturation);
-          shader.setFloat(3, lightness);
-          shader.setFloat(4, overlayHue);
-          shader.setFloat(5, overlayIntensity);
-          shader.setFloat(6, overlayOpacity);
-          shader.setFloat(7, image.width.toDouble());
-          shader.setFloat(8, image.height.toDouble());
+                // Set uniforms after the texture sampler
+                shader.setFloat(0, animationValue);
+                shader.setFloat(1, hue);
+                shader.setFloat(2, saturation);
+                shader.setFloat(3, lightness);
+                shader.setFloat(4, overlayHue);
+                shader.setFloat(5, overlayIntensity);
+                shader.setFloat(6, overlayOpacity);
+                shader.setFloat(7, image.width.toDouble());
+                shader.setFloat(8, image.height.toDouble());
 
-          // Draw with the shader, ensuring it covers the full area
-          canvas.drawRect(Offset.zero & size, Paint()..shader = shader);
-        } catch (e) {
-          _log("ERROR: $e");
-          // Fall back to drawing the original image
-          canvas.drawImageRect(
-            image,
-            Rect.fromLTWH(
-              0,
-              0,
-              image.width.toDouble(),
-              image.height.toDouble(),
-            ),
-            Rect.fromLTWH(0, 0, size.width, size.height),
-            Paint(),
+                // Draw with the shader, ensuring it covers the full area
+                canvas.drawRect(Offset.zero & size, Paint()..shader = shader);
+              } catch (e) {
+                _log("ERROR: $e");
+                // Fall back to drawing the original image
+                canvas.drawImageRect(
+                  image,
+                  Rect.fromLTWH(
+                    0,
+                    0,
+                    image.width.toDouble(),
+                    image.height.toDouble(),
+                  ),
+                  Rect.fromLTWH(0, 0, size.width, size.height),
+                  Paint(),
+                );
+              }
+            }, child: this.child),
           );
-        }
-      }, child: this.child);
-    }, child: child);
+        }, child: child);
+      },
+    );
   }
 }

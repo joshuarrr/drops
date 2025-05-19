@@ -132,12 +132,14 @@ class EffectController {
       settings.noiseEnabled ? 'n1' : 'n0',
       settings.rainEnabled ? 'r1' : 'r0',
       settings.chromaticEnabled ? 'ch1' : 'ch0',
+      settings.rippleEnabled ? 'rp1' : 'rp0',
       // Only include animation value if anything is animated
       if (settings.colorSettings.colorAnimated ||
           settings.blurSettings.blurAnimated ||
           settings.noiseSettings.noiseAnimated ||
           settings.rainSettings.rainAnimated ||
-          settings.chromaticSettings.chromaticAnimated)
+          settings.chromaticSettings.chromaticAnimated ||
+          settings.rippleSettings.rippleAnimated)
         animationValue.toStringAsFixed(2),
       // Hash of settings values for color if enabled
       if (settings.colorEnabled)
@@ -154,6 +156,9 @@ class EffectController {
       // Hash of settings values for chromatic aberration if enabled
       if (settings.chromaticEnabled)
         '${settings.chromaticSettings.amount.toStringAsFixed(2)}_${settings.chromaticSettings.angle.toStringAsFixed(2)}_${settings.chromaticSettings.spread.toStringAsFixed(2)}_${settings.chromaticSettings.intensity.toStringAsFixed(2)}',
+      // Hash of settings values for ripple if enabled
+      if (settings.rippleEnabled)
+        '${settings.rippleSettings.rippleIntensity.toStringAsFixed(2)}_${settings.rippleSettings.rippleSize.toStringAsFixed(2)}_${settings.rippleSettings.rippleSpeed.toStringAsFixed(2)}_${settings.rippleSettings.rippleOpacity.toStringAsFixed(2)}_${settings.rippleSettings.rippleColor.toStringAsFixed(2)}',
     ].join('|');
   }
 
@@ -187,7 +192,8 @@ class EffectController {
         !settings.blurEnabled &&
         !settings.noiseEnabled &&
         !settings.rainEnabled &&
-        !settings.chromaticEnabled) {
+        !settings.chromaticEnabled &&
+        !settings.rippleEnabled) {
       return child;
     }
 
@@ -199,7 +205,8 @@ class EffectController {
         (settings.noiseSettings.noiseAnimated && settings.noiseEnabled) ||
         (settings.rainSettings.rainAnimated && settings.rainEnabled) ||
         (settings.chromaticSettings.chromaticAnimated &&
-            settings.chromaticEnabled);
+            settings.chromaticEnabled) ||
+        (settings.rippleSettings.rippleAnimated && settings.rippleEnabled);
 
     // If not animated, check cache for existing widget
     if (!isAnimated) {
@@ -258,65 +265,85 @@ class EffectController {
     // Start with the original child
     Widget result = child;
 
-    // Wrap in a SizedBox.expand to maintain full dimensions
-    result = SizedBox.expand(child: result);
+    // Use LayoutBuilder to ensure consistent sizing throughout the effect chain
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Wrap in a Container with explicit dimensions to maintain size
+        result = Container(
+          width: constraints.maxWidth,
+          height: constraints.maxHeight,
+          child: result,
+        );
 
-    // Apply color effect first if enabled
-    if (settings.colorEnabled) {
-      result = _applyColorEffect(
-        child: result,
-        settings: settings,
-        animationValue: animationValue,
-        preserveTransparency: preserveTransparency,
-        isTextContent: isTextContent,
-      );
-    }
+        // Apply color effect first if enabled
+        if (settings.colorEnabled) {
+          result = _applyColorEffect(
+            child: result,
+            settings: settings,
+            animationValue: animationValue,
+            preserveTransparency: preserveTransparency,
+            isTextContent: isTextContent,
+          );
+        }
 
-    // Apply noise effect if enabled
-    if (settings.noiseEnabled) {
-      result = _applyNoiseEffect(
-        child: result,
-        settings: settings,
-        animationValue: animationValue,
-        preserveTransparency: preserveTransparency,
-        isTextContent: isTextContent,
-      );
-    }
+        // Apply noise effect if enabled
+        if (settings.noiseEnabled) {
+          result = _applyNoiseEffect(
+            child: result,
+            settings: settings,
+            animationValue: animationValue,
+            preserveTransparency: preserveTransparency,
+            isTextContent: isTextContent,
+          );
+        }
 
-    // Apply rain effect if enabled
-    if (settings.rainEnabled) {
-      result = _applyRainEffect(
-        child: result,
-        settings: settings,
-        animationValue: animationValue,
-        preserveTransparency: preserveTransparency,
-        isTextContent: isTextContent,
-      );
-    }
+        // Apply rain effect if enabled
+        if (settings.rainEnabled) {
+          result = _applyRainEffect(
+            child: result,
+            settings: settings,
+            animationValue: animationValue,
+            preserveTransparency: preserveTransparency,
+            isTextContent: isTextContent,
+          );
+        }
 
-    // Apply chromatic aberration effect if enabled
-    if (settings.chromaticEnabled) {
-      result = _applyChromaticEffect(
-        child: result,
-        settings: settings,
-        animationValue: animationValue,
-        preserveTransparency: preserveTransparency,
-        isTextContent: isTextContent,
-      );
-    }
+        // Apply ripple effect if enabled
+        if (settings.rippleEnabled) {
+          result = _applyRippleEffect(
+            child: result,
+            settings: settings,
+            animationValue: animationValue,
+            preserveTransparency: preserveTransparency,
+            isTextContent: isTextContent,
+          );
+        }
 
-    // Apply blur effect last if enabled
-    if (settings.blurEnabled) {
-      result = _applyBlurEffect(
-        child: result,
-        settings: settings,
-        animationValue: animationValue,
-        preserveTransparency: preserveTransparency,
-        isTextContent: isTextContent,
-      );
-    }
+        // Apply chromatic aberration effect if enabled
+        if (settings.chromaticEnabled) {
+          result = _applyChromaticEffect(
+            child: result,
+            settings: settings,
+            animationValue: animationValue,
+            preserveTransparency: preserveTransparency,
+            isTextContent: isTextContent,
+          );
+        }
 
-    return result;
+        // Apply blur effect last if enabled
+        if (settings.blurEnabled) {
+          result = _applyBlurEffect(
+            child: result,
+            settings: settings,
+            animationValue: animationValue,
+            preserveTransparency: preserveTransparency,
+            isTextContent: isTextContent,
+          );
+        }
+
+        return result;
+      },
+    );
   }
 
   // Helper method to apply color effect to any widget using custom shader
@@ -458,6 +485,33 @@ class EffectController {
     );
   }
 
+  // Helper method to apply ripple effect using custom shader
+  static Widget _applyRippleEffect({
+    required Widget child,
+    required ShaderSettings settings,
+    required double animationValue,
+    bool preserveTransparency = false,
+    bool isTextContent = false,
+  }) {
+    // Skip if ripple settings are minimal and no animation
+    if (settings.rippleSettings.rippleIntensity <= 0.0 &&
+        settings.rippleSettings.rippleSize <= 0.0 &&
+        settings.rippleSettings.rippleSpeed <= 0.0 &&
+        settings.rippleSettings.rippleOpacity <= 0.0 &&
+        !settings.rippleSettings.rippleAnimated) {
+      return child;
+    }
+
+    // Use custom shader implementation
+    return RippleEffectShader(
+      settings: settings,
+      animationValue: animationValue,
+      child: child,
+      preserveTransparency: preserveTransparency,
+      isTextContent: isTextContent,
+    );
+  }
+
   // Helper method to apply chromatic aberration effect using custom shader
   static Widget _applyChromaticEffect({
     required Widget child,
@@ -475,13 +529,22 @@ class EffectController {
       return child;
     }
 
-    // Use custom shader implementation
-    return ChromaticEffectShader(
-      settings: settings,
-      animationValue: animationValue,
-      child: child,
-      preserveTransparency: preserveTransparency,
-      isTextContent: isTextContent,
+    // Use LayoutBuilder to capture the parent constraints
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Wrap in a Container with explicit dimensions to maintain size
+        return SizedBox(
+          width: constraints.maxWidth,
+          height: constraints.maxHeight,
+          child: ChromaticEffectShader(
+            settings: settings,
+            animationValue: animationValue,
+            child: child,
+            preserveTransparency: preserveTransparency,
+            isTextContent: isTextContent,
+          ),
+        );
+      },
     );
   }
 }

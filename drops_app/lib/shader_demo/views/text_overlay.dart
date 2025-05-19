@@ -73,68 +73,78 @@ class _TextOverlayState extends State<TextOverlay> {
     final textSettings = widget.settings.textLayoutSettings;
     final fxSettings = widget.settings.textfxSettings;
 
-    // Check if settings or animation value have changed
-    bool settingsChanged =
-        _lastTextOverlaySettings == null ||
-        !_areTextSettingsEqual(widget.settings, _lastTextOverlaySettings!);
+    // Use a ListenableBuilder to listen to changes in TextFXSettings
+    return ListenableBuilder(
+      listenable: fxSettings,
+      builder: (context, _) {
+        // Check if settings or animation value have changed
+        bool settingsChanged =
+            _lastTextOverlaySettings == null ||
+            !_areTextSettingsEqual(widget.settings, _lastTextOverlaySettings!);
 
-    // Check animation changes if shader effects are applied to text
-    bool animationChanged =
-        fxSettings.applyShaderEffectsToText &&
-        fxSettings.textfxEnabled &&
-        (_lastTextOverlayAnimValue == null ||
-            ((widget.settings.colorSettings.colorAnimated &&
-                        widget.settings.colorEnabled) ||
-                    (widget.settings.blurSettings.blurAnimated &&
-                        widget.settings.blurEnabled) ||
-                    (widget.settings.noiseSettings.noiseAnimated &&
-                        widget.settings.noiseEnabled)) &&
-                (_lastTextOverlayAnimValue! - widget.animationValue).abs() >
-                    0.01);
+        // Check animation changes if shader effects are applied to text
+        bool animationChanged =
+            fxSettings.applyShaderEffectsToText &&
+            fxSettings.textfxEnabled &&
+            (_lastTextOverlayAnimValue == null ||
+                ((widget.settings.colorSettings.colorAnimated &&
+                            widget.settings.colorEnabled) ||
+                        (widget.settings.blurSettings.blurAnimated &&
+                            widget.settings.blurEnabled) ||
+                        (widget.settings.noiseSettings.noiseAnimated &&
+                            widget.settings.noiseEnabled)) &&
+                    (_lastTextOverlayAnimValue! - widget.animationValue).abs() >
+                        0.01);
 
-    // Force a rebuild if settings changed
-    if (settingsChanged) {
-      _currentKey = _uuid.v4();
-    }
+        // Force a rebuild if settings changed
+        if (settingsChanged) {
+          _currentKey = _uuid.v4();
+        }
 
-    // Return cached overlay if available and nothing significant changed
-    if (_cachedTextOverlay != null && !settingsChanged && !animationChanged) {
-      return _cachedTextOverlay!;
-    }
+        // Return cached overlay if available and nothing significant changed
+        if (_cachedTextOverlay != null &&
+            !settingsChanged &&
+            !animationChanged) {
+          return _cachedTextOverlay!;
+        }
 
-    // Build text overlay stack
-    final overlayStack = Stack(children: _buildTextLines());
+        // Build text overlay stack
+        final overlayStack = Stack(children: _buildTextLines());
 
-    // Create and cache the result
-    Widget result;
-    if (fxSettings.applyShaderEffectsToText && fxSettings.textfxEnabled) {
-      result = Container(
-        key: Key(_currentKey), // Force rebuild with key
-        color: Colors.transparent,
-        child: RepaintBoundary(
-          child: EffectController.applyEffects(
+        // Create and cache the result
+        Widget result;
+        if (fxSettings.applyShaderEffectsToText && fxSettings.textfxEnabled) {
+          result = Container(
+            key: Key(_currentKey), // Force rebuild with key
+            color: Colors.transparent,
+            child: RepaintBoundary(
+              child: EffectController.applyEffects(
+                child: overlayStack,
+                settings: widget.settings,
+                animationValue: widget.animationValue,
+                isTextContent: true,
+                preserveTransparency: true,
+              ),
+            ),
+          );
+        } else {
+          result = Container(
+            key: Key(_currentKey), // Force rebuild with key
+            color: Colors.transparent,
             child: overlayStack,
-            settings: widget.settings,
-            animationValue: widget.animationValue,
-            isTextContent: true,
-            preserveTransparency: true,
-          ),
-        ),
-      );
-    } else {
-      result = Container(
-        key: Key(_currentKey), // Force rebuild with key
-        color: Colors.transparent,
-        child: overlayStack,
-      );
-    }
+          );
+        }
 
-    // Update cache
-    _cachedTextOverlay = result;
-    _lastTextOverlaySettings = ShaderSettings.fromMap(widget.settings.toMap());
-    _lastTextOverlayAnimValue = widget.animationValue;
+        // Update cache
+        _cachedTextOverlay = result;
+        _lastTextOverlaySettings = ShaderSettings.fromMap(
+          widget.settings.toMap(),
+        );
+        _lastTextOverlayAnimValue = widget.animationValue;
 
-    return result;
+        return result;
+      },
+    );
   }
 
   // Helper to check if a font is a variable font

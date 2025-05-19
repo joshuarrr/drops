@@ -63,7 +63,7 @@ class RainEffectShader extends StatelessWidget {
 
         final noiseTexture = snapshot.data!;
 
-        // Now use the ShaderBuilder with both textures
+        // Now use the ShaderBuilder with both textures - simplified structure
         return ShaderBuilder(assetKey: 'assets/shaders/rain_effect.frag', (
           context,
           shader,
@@ -71,10 +71,10 @@ class RainEffectShader extends StatelessWidget {
         ) {
           return AnimatedSampler((image, size, canvas) {
             try {
-              // Set the main texture sampler
+              // Set the main texture sampler first
               shader.setImageSampler(0, image);
 
-              // Set the noise texture sampler
+              // Set the noise texture sampler second
               shader.setImageSampler(1, noiseTexture);
 
               // When rainAnimated is false, we still send the fall speed

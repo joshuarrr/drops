@@ -1,0 +1,125 @@
+#version 460 core
+
+#include <flutter/runtime_effect.glsl>
+
+// Input from Flutter
+uniform vec2 iResolution;     // Resolution (width, height)
+uniform float iTime;          // Time in seconds
+uniform float iIntensity;     // Intensity of the effect
+uniform float iAmount;        // Amount of aberration
+uniform float iAngle;         // Direction of aberration in degrees
+uniform float iSpread;        // Spread between color channels
+uniform sampler2D iChannel0;  // Input texture
+
+out vec4 fragColor;
+
+#define INVERT_Y 0
+#define PI 3.14159265359
+
+// Adjusts the RGB aberration amount based on input parameters
+vec2 getAberrationOffset(float channel, float angle, float amount, float spread) {
+    // Convert angle from degrees to radians
+    float radAngle = radians(angle);
+    
+    // Adjust spread per channel (R=-1, G=0, B=1)
+    float channelOffset = (channel - 1.0) * spread;
+    
+    // Calculate offset direction based on angle
+    vec2 direction = vec2(cos(radAngle), sin(radAngle));
+    
+    // Calculate offset magnitude based on amount parameter
+    return direction * amount * channelOffset;
+}
+
+float correctLensDistortionR(float x)
+{
+  float a = -0.01637 + 0.01;
+  float b = -0.03 + 0.01;
+  float c = -0.06489 + 0.01;
+  float d = 1.0 - (a + b + c);
+
+  return (x*x*x*x * a + x*x*x * b + x*x * c + d * x);
+}
+
+float correctLensDistortionG(float x)
+{
+  float a = -0.01637;
+  float b = -0.03;
+  float c = -0.06489;
+  float d = 1.0 - (a + b + c);
+
+  return (x*x*x*x * a + x*x*x * b + x*x * c + d * x);
+}
+
+float correctLensDistortionB(float x)
+{
+  float a = -0.01637 - 0.01;
+  float b = -0.03 - 0.01;
+  float c = -0.06489 - 0.01;
+  float d = 1.0 - (a + b + c);
+
+  return (x*x*x*x * a + x*x*x * b + x*x * c + d * x);
+}
+
+void main()
+{
+    // Get the fragment coordinate
+    vec2 fragCoord = FlutterFragCoord();
+    
+    // Normalized pixel coordinates (from 0 to 1 for both x,y regardless of aspect)
+    vec2 uv = fragCoord/iResolution.xy;
+
+#if INVERT_Y
+    uv.y = 1.0 - uv.y;
+#endif // INVERT_Y
+    
+    // get polar coordinates
+    vec2 cart = (uv - vec2(0.5)) * 2.2;  // 0->1 to -1->1
+    cart.x *= max(iResolution.x, iResolution.y) / min(iResolution.x, iResolution.y);
+    
+    float an = atan(cart.y, cart.x);
+    float len = length(cart);
+    
+    float lenR = correctLensDistortionR(len);
+    float lenG = correctLensDistortionG(len);
+    float lenB = correctLensDistortionB(len);
+
+    // back to cartesian
+    vec2 dir = vec2(iResolution.y / iResolution.x, 1.0) *
+                vec2(cos(an), sin(an));
+                
+    vec2 modUV_R = lenR * dir * 0.5 + vec2(0.5);
+    vec2 modUV_G = lenG * dir * 0.5 + vec2(0.5);
+    vec2 modUV_B = lenB * dir * 0.5 + vec2(0.5);
+    
+    float animSpeed = 0.5;
+    float blendFactor = sin(iTime * animSpeed) * 0.5 + 0.5;
+    
+    // Apply intensity parameter to control effect strength
+    blendFactor *= iIntensity * iAmount;
+    
+    // Incorporate angle and spread parameters into the effect
+    vec2 rOffset = getAberrationOffset(0.0, iAngle, iAmount * 0.05, iSpread);
+    vec2 gOffset = getAberrationOffset(1.0, iAngle, iAmount * 0.05, iSpread);
+    vec2 bOffset = getAberrationOffset(2.0, iAngle, iAmount * 0.05, iSpread);
+    
+    // Apply radial distortion with directional aberration
+    vec2 fetchUV_R = mix(uv + rOffset, modUV_R, blendFactor);
+    vec2 fetchUV_G = mix(uv + gOffset, modUV_G, blendFactor);
+    vec2 fetchUV_B = mix(uv + bOffset, modUV_B, blendFactor);
+    
+    // Ensure UVs stay within bounds to avoid artifacts
+    fetchUV_R = clamp(fetchUV_R, vec2(0.0), vec2(1.0));
+    fetchUV_G = clamp(fetchUV_G, vec2(0.0), vec2(1.0));
+    fetchUV_B = clamp(fetchUV_B, vec2(0.0), vec2(1.0));
+    
+    // fetch texture data
+    vec3 col = vec3( 
+        texture(iChannel0, fetchUV_R).r,
+        texture(iChannel0, fetchUV_G).g,
+        texture(iChannel0, fetchUV_B).b
+    );
+    
+    // Output to screen
+    fragColor = vec4(col, 1.0);
+} 
