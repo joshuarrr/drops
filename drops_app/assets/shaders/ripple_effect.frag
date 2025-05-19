@@ -17,6 +17,10 @@ uniform float iSize;      // Ripple size (equivalent to zoom in the original)
 uniform float iSpeed;     // Ripple speed
 uniform float iOpacity;   // Effect opacity
 uniform float iColorFactor; // Color influence
+uniform float iDropCount;   // Number of ripple drops (1-30)
+uniform float iSeed;        // Randomization seed
+uniform float iOvalness;    // Control for oval shape (0=circles, 1=very oval)
+uniform float iRotation;    // Rotation angle for oval ripples (0-1, scaled to 0-2π)
 
 // Output
 out vec4 fragColor;
@@ -45,7 +49,7 @@ float dispersion(float d, float t) {
     for (float k = 1.0; k < 10.0; k++) {
         sum += A * wave(abs(d), k, sqrt(k), t) / k; // dispersion for capillary waves
     }
-    return sum / d; // correct 2d function ("1/r")
+    return sum / max(d, 0.001); // correct 2d function ("1/r"), avoid division by zero
 }
 
 // Generate a pseudorandom value based on a 2D position
@@ -53,53 +57,142 @@ float random(vec2 st) {
     return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
 }
 
+// Generate seed offsets for completely random positions
+vec2 getRandomOffset(float index, float seed) {
+    // Use different seeds for x and y coordinates and incorporate the iSeed value
+    vec2 offset;
+    offset.x = random(vec2(index * 0.1 + seed, iSeed * 2.3));
+    offset.y = random(vec2(iSeed * 3.7, index * 0.1 + seed));
+    return offset;
+}
+
+// Calculate a drop's lifecycle state (0-1 for fade-in, 1-2 for active, 2-3 for fade-out)
+float getDropLifecycle(float index, float time) {
+    // Each drop gets a random offset for its lifecycle
+    float timeOffset = random(vec2(index * 13.37, iSeed * 42.0)) * 10.0;
+    
+    // Calculate the current lifecycle phase (0-3)
+    // We use modularity to create a repeating cycle
+    float cycleTime = mod(time + timeOffset, 3.0);
+    
+    return cycleTime;
+}
+
+// Calculate drop opacity based on lifecycle
+float getDropOpacity(float lifecycle) {
+    if (lifecycle < 1.0) {
+        // Fade in (0-1)
+        return lifecycle;
+    } else if (lifecycle < 2.0) {
+        // Full opacity (1-2)
+        return 1.0;
+    } else {
+        // Fade out (2-3)
+        return 3.0 - lifecycle;
+    }
+}
+
 // Generate a ripple from a single source point
-float ripple(vec2 seed, vec2 pos) {
+float ripple(vec2 seed, vec2 pos, float aspectRatio, float opacity) {
     float period = 10.0 + 10.0 * iSpeed; // Scale period with speed
     float zoom = 10.0 + 20.0 * iSize;    // Scaling factor for size
     
     // Get pseudorandom values for the source position and timing
-    vec2 src = vec2(random(seed), random(seed + vec2(1.0, 1.0)));
-    float offset = random(seed + vec2(2.0, 2.0));
+    vec2 src = seed;
+    float offset = random(seed + vec2(2.0, 2.0) + vec2(iSeed));
     
     // Calculate local time for this ripple
     float localtime = iTime * iSpeed / period + offset;
     
-    // Update source position over time
-    src = refl2(src + floor(localtime) * vec2(random(seed + vec2(3.0, 3.0)), random(seed + vec2(4.0, 4.0))));
+    // Create minor movements over time
+    vec2 timeDrift = vec2(
+        sin(localtime * 1.5 + seed.x * 10.0 + iSeed),
+        cos(localtime * 1.2 + seed.y * 10.0 + iSeed)
+    ) * 0.03;
     
-    // Calculate distance from current position to ripple source
-    float d = zoom * length(pos - src);
+    src += timeDrift;
+    
+    // Calculate displacement vector from source to current position
+    float dx = pos.x - src.x;
+    float dy = pos.y - src.y;
+    
+    // Calculate rotation angle (scale from 0-1 to 0-2π)
+    float rotationAngle = iRotation * 6.28318530718; // 2π
+    
+    // First, correct for the screen's aspect ratio to make circles perfect
+    // This ensures that when ovalness=0, we have perfect circles
+    dx *= aspectRatio;
+    
+    // Now apply the ovalness - at maximum ovalness (1.0), we create ellipses
+    // We'll use rotation value to determine if horizontal (0.25/0.75) or vertical (0/0.5) ovals
+    if (iOvalness > 0.0) {
+        // Calculate a stretch factor: more ovalness = more stretch
+        float stretchFactor = 1.0 + iOvalness * 2.0; // Scale up for more dramatic effect
+        
+        // Rotate the point according to the rotation parameter
+        float sinAngle = sin(rotationAngle);
+        float cosAngle = cos(rotationAngle);
+        
+        // First rotate
+        float rotatedDx = dx * cosAngle - dy * sinAngle;
+        float rotatedDy = dx * sinAngle + dy * cosAngle;
+        
+        // Then apply stretching - make x-coordinate wider (horizontal oval)
+        rotatedDx /= stretchFactor;
+        
+        // Rotate back to apply the stretching in the right orientation
+        dx = rotatedDx * cosAngle + rotatedDy * sinAngle;
+        dy = -rotatedDx * sinAngle + rotatedDy * cosAngle;
+    }
+    
+    // Calculate distance with the modified coordinates
+    float d = zoom * sqrt(dx * dx + dy * dy);
     
     // Current phase of the ripple animation
     float t = fract(localtime) * period;
     
     // Apply dispersion function to create the wave
-    float v = 5.0 * dispersion(d * 5.0, t) / d;
+    float v = 5.0 * dispersion(d * 5.0, t) / max(d, 0.001);
     
     // Apply easing function to create smooth transitions
     v *= easeout(t / period);
     
+    // Apply opacity based on drop lifecycle
+    v *= opacity;
+    
     return v;
 }
 
-// Generate multiple ripples across the surface
+// Generate multiple ripples across the surface with random positions
 float ripples(vec2 pos) {
-    float h = 0.0;
+    // Calculate aspect ratio for proper circular ripples
+    // Width divided by height gives us the correction factor for x coordinates
+    float aspectRatio = iWidth / iHeight;
     
-    // Add multiple ripple sources with different seed positions
-    h += ripple(vec2(0.0, 0.0), pos);
-    h += ripple(vec2(0.0, 0.25), pos);
-    h += ripple(vec2(0.25, 0.25), pos);
-    h += ripple(vec2(0.25, 0.0), pos);
-    h += ripple(vec2(0.0, 0.5), pos);
-    h += ripple(vec2(0.25, 0.5), pos);
-    h += ripple(vec2(0.5, 0.5), pos);
-    h += ripple(vec2(0.5, 0.25), pos);
-    h += ripple(vec2(0.5, 0.0), pos);
+    float h = 0.0;
+    int dropCount = int(clamp(iDropCount, 1.0, 30.0));
+    
+    // Use completely randomized positions with animated lifecycle
+    for (int i = 0; i < dropCount; i++) {
+        // Calculate drop lifecycle
+        float lifecycle = getDropLifecycle(float(i), iTime);
+        float opacity = getDropOpacity(lifecycle);
+        
+        // Get completely random positions across the entire screen
+        // We use two different seeds to create position transitions
+        vec2 seed1 = getRandomOffset(float(i), float(i) * 10.0 + iSeed);
+        vec2 seed2 = getRandomOffset(float(i), float(i) * 20.0 + iSeed + 100.0);
+        
+        // Blend between two positions based on lifecycle to create smoother transitions
+        // When lifecycle goes from 2.0 to 3.0 (fading out), we start blending to the next position
+        float positionBlend = max(0.0, (lifecycle - 2.0));
+        vec2 seed = mix(seed1, seed2, positionBlend);
+        
+        h += ripple(seed, pos, aspectRatio, opacity);
+    }
     
     // Average the ripple heights
-    return h / 9.0;
+    return h / float(dropCount);
 }
 
 // Calculate normal vector from the ripple height field

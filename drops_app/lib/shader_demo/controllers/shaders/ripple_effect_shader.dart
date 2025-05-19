@@ -41,7 +41,11 @@ class RippleEffectShader extends StatelessWidget {
       _log(
         "Building RippleEffectShader with intensity=${settings.rippleSettings.rippleIntensity.toStringAsFixed(2)}, "
         "size=${settings.rippleSettings.rippleSize.toStringAsFixed(2)}, "
-        "speed=${settings.rippleSettings.rippleSpeed.toStringAsFixed(2)} "
+        "speed=${settings.rippleSettings.rippleSpeed.toStringAsFixed(2)}, "
+        "dropCount=${settings.rippleSettings.rippleDropCount}, "
+        "seed=${settings.rippleSettings.rippleSeed.toStringAsFixed(2)}, "
+        "ovalness=${settings.rippleSettings.rippleOvalness.toStringAsFixed(2)}, "
+        "rotation=${settings.rippleSettings.rippleRotation.toStringAsFixed(2)} "
         "(animated: ${settings.rippleSettings.rippleAnimated})",
       );
     }
@@ -70,10 +74,18 @@ class RippleEffectShader extends StatelessWidget {
 
           // Get the individual parameters
           double intensity = settings.rippleSettings.rippleIntensity;
-          double rippleSize = settings.rippleSettings.rippleSize;
+          double rippleSize =
+              1.0 -
+              settings
+                  .rippleSettings
+                  .rippleSize; // Invert size for more intuitive control
           double speed = settings.rippleSettings.rippleSpeed;
           double opacity = settings.rippleSettings.rippleOpacity;
           double colorFactor = settings.rippleSettings.rippleColor;
+          double dropCount = settings.rippleSettings.rippleDropCount.toDouble();
+          double seed = settings.rippleSettings.rippleSeed;
+          double ovalness = settings.rippleSettings.rippleOvalness;
+          double rotation = settings.rippleSettings.rippleRotation;
 
           // Compute animation values if animation is enabled
           if (settings.rippleSettings.rippleAnimated) {
@@ -92,6 +104,10 @@ class RippleEffectShader extends StatelessWidget {
           shader.setFloat(5, speed);
           shader.setFloat(6, opacity);
           shader.setFloat(7, colorFactor);
+          shader.setFloat(8, dropCount);
+          shader.setFloat(9, seed);
+          shader.setFloat(10, ovalness);
+          shader.setFloat(11, rotation);
 
           // Draw with shader using exact same approach as other shaders
           canvas.drawRect(Offset.zero & size, Paint()..shader = shader);

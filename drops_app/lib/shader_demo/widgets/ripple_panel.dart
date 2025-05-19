@@ -56,6 +56,76 @@ class _RipplePanelState extends State<RipplePanel> {
                 },
               ),
               SizedBox(height: 8),
+
+              // Number of drops with randomize button
+              Row(
+                children: [
+                  Expanded(
+                    child: LabeledSlider(
+                      label: 'Number of Drops',
+                      value: widget.settings.rippleSettings.rippleDropCount
+                          .toDouble(),
+                      min: 1.0,
+                      max: 30.0,
+                      divisions: 29,
+                      displayValue: widget
+                          .settings
+                          .rippleSettings
+                          .rippleDropCount
+                          .toString(),
+                      onChanged: (value) {
+                        final updatedSettings = widget.settings;
+                        updatedSettings.rippleSettings.rippleDropCount = value
+                            .round();
+                        widget.onSettingsChanged(updatedSettings);
+                      },
+                      activeColor: widget.sliderColor,
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.shuffle, color: widget.sliderColor),
+                    tooltip: 'Randomize drop positions',
+                    onPressed: () {
+                      final updatedSettings = widget.settings;
+                      updatedSettings.rippleSettings.randomizeDropPositions();
+                      widget.onSettingsChanged(updatedSettings);
+                    },
+                  ),
+                ],
+              ),
+
+              LabeledSlider(
+                label: 'Ovalness',
+                value: widget.settings.rippleSettings.rippleOvalness,
+                min: 0.0,
+                max: 1.0,
+                divisions: 100,
+                displayValue: widget.settings.rippleSettings.rippleOvalness
+                    .toStringAsFixed(2),
+                onChanged: (value) {
+                  final updatedSettings = widget.settings;
+                  updatedSettings.rippleSettings.rippleOvalness = value;
+                  widget.onSettingsChanged(updatedSettings);
+                },
+                activeColor: widget.sliderColor,
+              ),
+
+              LabeledSlider(
+                label: 'Rotation',
+                value: widget.settings.rippleSettings.rippleRotation,
+                min: 0.0,
+                max: 1.0,
+                divisions: 100,
+                displayValue: widget.settings.rippleSettings.rippleRotation
+                    .toStringAsFixed(2),
+                onChanged: (value) {
+                  final updatedSettings = widget.settings;
+                  updatedSettings.rippleSettings.rippleRotation = value;
+                  widget.onSettingsChanged(updatedSettings);
+                },
+                activeColor: widget.sliderColor,
+              ),
+
               LabeledSlider(
                 label: 'Intensity',
                 value: widget.settings.rippleSettings.rippleIntensity,
