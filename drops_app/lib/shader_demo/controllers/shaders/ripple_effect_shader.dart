@@ -7,6 +7,9 @@ import '../../models/effect_settings.dart';
 import '../../utils/animation_utils.dart';
 import 'debug_flags.dart';
 
+// Set to true for more verbose logging
+bool enableVerboseRippleLogging = true;
+
 /// RippleEffectShader: Adds a ripple water-like effect to a widget
 class RippleEffectShader extends StatelessWidget {
   final Widget child;
@@ -43,7 +46,7 @@ class RippleEffectShader extends StatelessWidget {
       );
     }
 
-    // Use ShaderBuilder with AnimatedSampler for the effect
+    // Simplified shader structure - no LayoutBuilder, matching ChromaticEffectShader
     return ShaderBuilder(assetKey: 'assets/shaders/ripple_effect.frag', (
       context,
       shader,
@@ -51,7 +54,13 @@ class RippleEffectShader extends StatelessWidget {
     ) {
       return AnimatedSampler((image, size, canvas) {
         try {
-          // Set the texture sampler first
+          if (enableVerboseRippleLogging) {
+            _log(
+              "RIPPLE SAMPLER: image=${image.width}x${image.height}, canvas=${size.width}x${size.height}",
+            );
+          }
+
+          // Set the texture sampler first - match ChromaticEffectShader naming
           shader.setImageSampler(0, image);
 
           // Calculate animation value and time parameter
@@ -68,28 +77,27 @@ class RippleEffectShader extends StatelessWidget {
 
           // Compute animation values if animation is enabled
           if (settings.rippleSettings.rippleAnimated) {
-            // Compute animated progress
             timeValue = ShaderAnimationUtils.computeAnimatedValue(
               settings.rippleSettings.rippleAnimOptions,
               animationValue,
             );
           }
 
-          // Set uniforms for the shader
-          shader.setFloat(0, size.width); // width
-          shader.setFloat(1, size.height); // height
-          shader.setFloat(2, timeValue); // time
-          shader.setFloat(3, intensity); // intensity
-          shader.setFloat(4, rippleSize); // size
-          shader.setFloat(5, speed); // speed
-          shader.setFloat(6, opacity); // opacity
-          shader.setFloat(7, colorFactor); // colorFactor
+          // Set uniforms using size from canvas rather than constraints
+          shader.setFloat(0, size.width);
+          shader.setFloat(1, size.height);
+          shader.setFloat(2, timeValue);
+          shader.setFloat(3, intensity);
+          shader.setFloat(4, rippleSize);
+          shader.setFloat(5, speed);
+          shader.setFloat(6, opacity);
+          shader.setFloat(7, colorFactor);
 
-          // Draw with the shader, ensuring it covers the full area
+          // Draw with shader using exact same approach as other shaders
           canvas.drawRect(Offset.zero & size, Paint()..shader = shader);
         } catch (e) {
           _log("ERROR: $e");
-          // Fall back to drawing the original image
+          // Fall back to drawing original image
           canvas.drawImageRect(
             image,
             Rect.fromLTWH(
@@ -105,4 +113,31 @@ class RippleEffectShader extends StatelessWidget {
       }, child: this.child);
     }, child: child);
   }
+}
+
+/// Helper method to apply ripple effect using custom shader
+Widget applyRippleEffect({
+  required Widget child,
+  required ShaderSettings settings,
+  required double animationValue,
+  bool preserveTransparency = false,
+  bool isTextContent = false,
+}) {
+  // Skip if ripple settings are minimal and no animation
+  if (settings.rippleSettings.rippleIntensity <= 0.0 &&
+      settings.rippleSettings.rippleSize <= 0.0 &&
+      settings.rippleSettings.rippleSpeed <= 0.0 &&
+      settings.rippleSettings.rippleOpacity <= 0.0 &&
+      !settings.rippleSettings.rippleAnimated) {
+    return child;
+  }
+
+  // Use custom shader implementation
+  return RippleEffectShader(
+    settings: settings,
+    animationValue: animationValue,
+    child: child,
+    preserveTransparency: preserveTransparency,
+    isTextContent: isTextContent,
+  );
 }

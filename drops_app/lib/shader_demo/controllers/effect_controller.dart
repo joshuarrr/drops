@@ -268,8 +268,8 @@ class EffectController {
     // Use LayoutBuilder to ensure consistent sizing throughout the effect chain
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Wrap in a Container with explicit dimensions to maintain size
-        result = Container(
+        // Wrap in a SizedBox with explicit dimensions to maintain size throughout effects chain
+        result = SizedBox(
           width: constraints.maxWidth,
           height: constraints.maxHeight,
           child: result,
@@ -502,7 +502,7 @@ class EffectController {
       return child;
     }
 
-    // Use custom shader implementation
+    // Use custom shader implementation - directly without additional wrapping
     return RippleEffectShader(
       settings: settings,
       animationValue: animationValue,
@@ -529,22 +529,13 @@ class EffectController {
       return child;
     }
 
-    // Use LayoutBuilder to capture the parent constraints
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // Wrap in a Container with explicit dimensions to maintain size
-        return SizedBox(
-          width: constraints.maxWidth,
-          height: constraints.maxHeight,
-          child: ChromaticEffectShader(
-            settings: settings,
-            animationValue: animationValue,
-            child: child,
-            preserveTransparency: preserveTransparency,
-            isTextContent: isTextContent,
-          ),
-        );
-      },
+    // Use shader directly without additional wrapping
+    return ChromaticEffectShader(
+      settings: settings,
+      animationValue: animationValue,
+      child: child,
+      preserveTransparency: preserveTransparency,
+      isTextContent: isTextContent,
     );
   }
 }
