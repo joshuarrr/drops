@@ -3,6 +3,7 @@ import '../models/shader_effect.dart';
 import '../models/effect_settings.dart';
 import '../models/presets_manager.dart';
 import '../../common/font_selector.dart';
+import '../../theme/custom_fonts.dart';
 import 'value_slider.dart';
 import 'alignment_selector.dart';
 import 'aspect_panel_header.dart';
@@ -10,6 +11,7 @@ import 'text_input_field.dart';
 import 'color_picker.dart';
 import 'dart:async';
 import '../views/effect_controls.dart';
+import '../views/text_overlay.dart';
 
 // Enum for identifying each text line (outside class for reuse)
 enum TextLine { title, subtitle, artist, lyrics }
@@ -50,6 +52,23 @@ class TextPanel extends StatefulWidget {
 class _TextPanelState extends State<TextPanel> {
   // Selected text line for editing
   TextLine selectedTextLine = TextLine.title;
+
+  // Method to check if a font is a variable font
+  bool _isVariableFont(String fontName) {
+    // Kyiv Type variable fonts
+    if (fontName == CustomFonts.kyivTypeSansFamily ||
+        fontName == CustomFonts.kyivTypeSerifFamily ||
+        fontName == CustomFonts.kyivTypeTitlingFamily) {
+      return true;
+    }
+
+    // League Spartan is also a variable font
+    if (fontName == CustomFonts.leagueSpartanFamily) {
+      return true;
+    }
+
+    return false;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -181,6 +200,8 @@ class _TextPanelState extends State<TextPanel> {
           sliderColor: widget.sliderColor,
           defaultValue: 0.05,
         ),
+        // Add width slider for variable fonts
+        if (_isVariableFont(_getCurrentFont())) _getVariableFontSliders(),
         // Add Fit to Width checkbox
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -280,8 +301,21 @@ class _TextPanelState extends State<TextPanel> {
     // Update the setting value
     setter(value);
 
-    // Ensure the cache is invalidated for immediate visual feedback
-    widget.settings.textLayoutSettings.textEnabled = true;
+    // Make sure changes are applied immediately for variable font axes
+    if (_isVariableFont(_getCurrentFont())) {
+      // Force cache invalidation by toggling the textEnabled property
+      // This is a hack to force the text overlay to rebuild
+      bool currentState = widget.settings.textLayoutSettings.textEnabled;
+      widget.settings.textLayoutSettings.textEnabled = false;
+      // Immediately set back to original state
+      Future.microtask(() {
+        widget.settings.textLayoutSettings.textEnabled = currentState;
+        widget.onSettingsChanged(widget.settings);
+      });
+
+      // Direct call to bust the TextOverlay cache
+      TextOverlay.forceFontRefresh();
+    }
 
     // Notify the parent widget
     widget.onSettingsChanged(widget.settings);
@@ -1228,5 +1262,160 @@ class _TextPanelState extends State<TextPanel> {
         settings.colorSettings.overlayIntensity = 0.0;
       }
     }
+  }
+
+  double _getCurrentWidth() {
+    switch (selectedTextLine) {
+      case TextLine.title:
+        return widget.settings.textLayoutSettings.titleWidth;
+      case TextLine.subtitle:
+        return widget.settings.textLayoutSettings.subtitleWidth;
+      case TextLine.artist:
+        return widget.settings.textLayoutSettings.artistWidth;
+      case TextLine.lyrics:
+        return widget.settings.textLayoutSettings.lyricsWidth;
+    }
+  }
+
+  void _setCurrentWidth(double width) {
+    switch (selectedTextLine) {
+      case TextLine.title:
+        widget.settings.textLayoutSettings.titleWidth = width;
+        break;
+      case TextLine.subtitle:
+        widget.settings.textLayoutSettings.subtitleWidth = width;
+        break;
+      case TextLine.artist:
+        widget.settings.textLayoutSettings.artistWidth = width;
+        break;
+      case TextLine.lyrics:
+        widget.settings.textLayoutSettings.lyricsWidth = width;
+        break;
+    }
+    // Force a direct refresh of the text overlay
+    TextOverlay.forceFontRefresh();
+  }
+
+  double _getCurrentContrast() {
+    switch (selectedTextLine) {
+      case TextLine.title:
+        return widget.settings.textLayoutSettings.titleContrast;
+      case TextLine.subtitle:
+        return widget.settings.textLayoutSettings.subtitleContrast;
+      case TextLine.artist:
+        return widget.settings.textLayoutSettings.artistContrast;
+      case TextLine.lyrics:
+        return widget.settings.textLayoutSettings.lyricsContrast;
+    }
+  }
+
+  void _setCurrentContrast(double contrast) {
+    switch (selectedTextLine) {
+      case TextLine.title:
+        widget.settings.textLayoutSettings.titleContrast = contrast;
+        break;
+      case TextLine.subtitle:
+        widget.settings.textLayoutSettings.subtitleContrast = contrast;
+        break;
+      case TextLine.artist:
+        widget.settings.textLayoutSettings.artistContrast = contrast;
+        break;
+      case TextLine.lyrics:
+        widget.settings.textLayoutSettings.lyricsContrast = contrast;
+        break;
+    }
+    // Force a direct refresh of the text overlay
+    TextOverlay.forceFontRefresh();
+  }
+
+  Widget _getVariableFontSliders() {
+    final String fontFamily = _getCurrentFont();
+    List<String> supportedAxes = [];
+
+    // Determine which axes are supported by this font
+    if (fontFamily == CustomFonts.kyivTypeSansFamily) {
+      supportedAxes = KyivTypeSansFont.availableAxes;
+    } else if (fontFamily == CustomFonts.kyivTypeSerifFamily) {
+      supportedAxes = KyivTypeSerifFont.availableAxes;
+    } else if (fontFamily == CustomFonts.kyivTypeTitlingFamily) {
+      supportedAxes = KyivTypeTitlingFont.availableAxes;
+    }
+
+    List<Widget> sliders = [];
+
+    // Add slider for Width if supported
+    if (supportedAxes.contains('wdth')) {
+      sliders.add(
+        ValueSlider(
+          label: 'Width',
+          value: (_getCurrentWidth()) / 1000, // Normalize 0-1000 range to 0-1
+          onChanged: (v) => _onSliderChanged(
+            v,
+            (val) => _setCurrentWidth(val * 1000),
+          ), // Convert back to 0-1000 range
+          sliderColor: widget.sliderColor,
+          defaultValue: 0.5, // Default width (500 normalized to 0-1 scale)
+        ),
+      );
+    }
+
+    // Add slider for Contrast if supported
+    if (supportedAxes.contains('CONT')) {
+      // For Titling font, add a note about limited contrast stops
+      if (fontFamily == CustomFonts.kyivTypeTitlingFamily) {
+        sliders.add(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ValueSlider(
+                label: 'Contrast',
+                value:
+                    (_getCurrentContrast()) /
+                    1000, // Normalize 0-1000 range to 0-1
+                onChanged: (v) => _onSliderChanged(
+                  v,
+                  (val) => _setCurrentContrast(val * 1000),
+                ), // Convert back to 0-1000 range
+                sliderColor: widget.sliderColor,
+                defaultValue:
+                    0.1, // Default contrast (100 normalized to 0-1 scale)
+              ),
+              Padding(
+                padding: const EdgeInsets.only(left: 8.0, bottom: 8.0),
+                child: Text(
+                  'Note: This font supports only low (0-350), medium (350-650), and high (650+) contrast values',
+                  style: TextStyle(
+                    color: widget.sliderColor.withOpacity(0.7),
+                    fontSize: 11,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      } else {
+        sliders.add(
+          ValueSlider(
+            label: 'Contrast',
+            value:
+                (_getCurrentContrast()) / 1000, // Normalize 0-1000 range to 0-1
+            onChanged: (v) => _onSliderChanged(
+              v,
+              (val) => _setCurrentContrast(val * 1000),
+            ), // Convert back to 0-1000 range
+            sliderColor: widget.sliderColor,
+            defaultValue: 0.1, // Default contrast (100 normalized to 0-1 scale)
+          ),
+        );
+      }
+    }
+
+    // Additional axes could be added here
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: sliders,
+    );
   }
 }

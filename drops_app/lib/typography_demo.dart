@@ -3,6 +3,7 @@ import 'theme/theme_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'common/app_scaffold.dart';
+import 'common/variable_font_control.dart';
 // Explicitly import all the font classes from custom_fonts.dart
 import 'theme/custom_fonts.dart'
     show
@@ -24,7 +25,10 @@ import 'theme/custom_fonts.dart'
         BlackoutMidnightFont,
         BlackoutTwoAmFont,
         SnigletFont,
-        LindenHillFont;
+        LindenHillFont,
+        KyivTypeSansFont,
+        KyivTypeSerifFont,
+        KyivTypeTitlingFont;
 
 class TypographyDemo extends StatefulWidget {
   const TypographyDemo({super.key});
@@ -36,6 +40,30 @@ class TypographyDemo extends StatefulWidget {
 class _TypographyDemoState extends State<TypographyDemo> {
   String _selectedFontFamily = 'Alumni Sans';
   String? _selectedFoundry;
+
+  @override
+  void initState() {
+    super.initState();
+    // Set Fontesk as the initially selected foundry to showcase the new fonts
+    _selectedFoundry = 'Fontesk';
+    // Initial font from Fontesk collection
+    _selectedFontFamily = 'Valiant';
+
+    // For debugging - log the font families
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _debugPrintFontFamilies();
+    });
+  }
+
+  // Debug method to test font registration
+  void _debugPrintFontFamilies() {
+    print(
+      '\n\nFONTESK FONTS IN FONTINFO: ${_fontInfo.entries.where((e) => e.value['foundry'] == 'Fontesk').length}',
+    );
+    print(
+      'FONTESK FONTS IN _fontFamilies: ${_fontFamilies.where((f) => _fontInfo[f]?['foundry'] == 'Fontesk').length}',
+    );
+  }
 
   // Font foundry information with URLs
   final Map<String, Map<String, String>> _fontInfo = {
@@ -127,6 +155,78 @@ class _TypographyDemoState extends State<TypographyDemo> {
       'foundry': 'League',
       'url': 'https://www.theleagueofmoveabletype.com/linden-hill',
     },
+    // Kyiv Type fonts
+    'Kyiv Type Sans': {
+      'foundry': 'Fontesk',
+      'url': 'https://www.fontesk.com/kyiv-type-font/',
+    },
+    'Kyiv Type Serif': {
+      'foundry': 'Fontesk',
+      'url': 'https://www.fontesk.com/kyiv-type-font/',
+    },
+    'Kyiv Type Titling': {
+      'foundry': 'Fontesk',
+      'url': 'https://www.fontesk.com/kyiv-type-font/',
+    },
+    // Additional Fontesk fonts
+    'Valiant': {'foundry': 'Fontesk', 'url': 'https://www.fontesk.com/'},
+    'Starlance': {'foundry': 'Fontesk', 'url': 'https://www.fontesk.com/'},
+    'Farabee': {'foundry': 'Fontesk', 'url': 'https://www.fontesk.com/'},
+    'Farabee Straight': {
+      'foundry': 'Fontesk',
+      'url': 'https://www.fontesk.com/',
+    },
+    'Super Jellyfish': {
+      'foundry': 'Fontesk',
+      'url': 'https://www.fontesk.com/',
+    },
+    'Vaganov SP Demo': {
+      'foundry': 'Fontesk',
+      'url': 'https://www.fontesk.com/',
+    },
+    'Ballast Stencil': {
+      'foundry': 'Fontesk',
+      'url': 'https://www.fontesk.com/',
+    },
+    'Parajanov': {'foundry': 'Fontesk', 'url': 'https://www.fontesk.com/'},
+    'Martius': {'foundry': 'Fontesk', 'url': 'https://www.fontesk.com/'},
+    'Super Brave': {'foundry': 'Fontesk', 'url': 'https://www.fontesk.com/'},
+    'Canalha': {'foundry': 'Fontesk', 'url': 'https://www.fontesk.com/'},
+    'Beast': {'foundry': 'Fontesk', 'url': 'https://www.fontesk.com/'},
+    'Lettertype': {'foundry': 'Fontesk', 'url': 'https://www.fontesk.com/'},
+    'FN Octahedron': {'foundry': 'Fontesk', 'url': 'https://www.fontesk.com/'},
+    'DotMatrix Duo': {'foundry': 'Fontesk', 'url': 'https://www.fontesk.com/'},
+    'Tintagel': {'foundry': 'Fontesk', 'url': 'https://www.fontesk.com/'},
+    'Gotfridus': {'foundry': 'Fontesk', 'url': 'https://www.fontesk.com/'},
+    'LT Basix': {'foundry': 'Fontesk', 'url': 'https://www.fontesk.com/'},
+    'Molten Display': {'foundry': 'Fontesk', 'url': 'https://www.fontesk.com/'},
+    'Triform': {'foundry': 'Fontesk', 'url': 'https://www.fontesk.com/'},
+    'Groutpix Flow Serif': {
+      'foundry': 'Fontesk',
+      'url': 'https://www.fontesk.com/',
+    },
+    'Rhombic': {'foundry': 'Fontesk', 'url': 'https://www.fontesk.com/'},
+    'Nose Transport': {'foundry': 'Fontesk', 'url': 'https://www.fontesk.com/'},
+    'Outright': {'foundry': 'Fontesk', 'url': 'https://www.fontesk.com/'},
+    'Moonet': {'foundry': 'Fontesk', 'url': 'https://www.fontesk.com/'},
+    'MYKA Tryba': {'foundry': 'Fontesk', 'url': 'https://www.fontesk.com/'},
+    'Frontline': {'foundry': 'Fontesk', 'url': 'https://www.fontesk.com/'},
+    'Jaro': {'foundry': 'Fontesk', 'url': 'https://www.fontesk.com/'},
+    'Tea Type': {'foundry': 'Fontesk', 'url': 'https://www.fontesk.com/'},
+    'Moloko': {'foundry': 'Fontesk', 'url': 'https://www.fontesk.com/'},
+    'Tachyo': {'foundry': 'Fontesk', 'url': 'https://www.fontesk.com/'},
+    'Scorn': {'foundry': 'Fontesk', 'url': 'https://www.fontesk.com/'},
+    'Fasad': {'foundry': 'Fontesk', 'url': 'https://www.fontesk.com/'},
+    'Krease': {'foundry': 'Fontesk', 'url': 'https://www.fontesk.com/'},
+    'Beon': {'foundry': 'Fontesk', 'url': 'https://www.fontesk.com/'},
+    'Gadems': {'foundry': 'Fontesk', 'url': 'https://www.fontesk.com/'},
+    'Grisha': {'foundry': 'Fontesk', 'url': 'https://www.fontesk.com/'},
+    'Deserta': {'foundry': 'Fontesk', 'url': 'https://www.fontesk.com/'},
+    'Neon Sans': {'foundry': 'Fontesk', 'url': 'https://www.fontesk.com/'},
+    'Rookworst': {'foundry': 'Fontesk', 'url': 'https://www.fontesk.com/'},
+    'Deadender': {'foundry': 'Fontesk', 'url': 'https://www.fontesk.com/'},
+    'Klaxons': {'foundry': 'Fontesk', 'url': 'https://www.fontesk.com/'},
+    'Starway': {'foundry': 'Fontesk', 'url': 'https://www.fontesk.com/'},
   };
 
   // Available font families to showcase
@@ -168,6 +268,54 @@ class _TypographyDemoState extends State<TypographyDemo> {
     'Blackout Two AM',
     'Sniglet',
     'Linden Hill',
+    // Kyiv Type fonts
+    'Kyiv Type Sans',
+    'Kyiv Type Serif',
+    'Kyiv Type Titling',
+    // Additional Fontesk fonts
+    'Valiant',
+    'Starlance',
+    'Farabee',
+    'Farabee Straight',
+    'Super Jellyfish',
+    'Vaganov SP Demo',
+    'Ballast Stencil',
+    'Parajanov',
+    'Martius',
+    'Super Brave',
+    'Canalha',
+    'Beast',
+    'Lettertype',
+    'FN Octahedron',
+    'DotMatrix Duo',
+    'Tintagel',
+    'Gotfridus',
+    'LT Basix',
+    'Molten Display',
+    'Triform',
+    'Groutpix Flow Serif',
+    'Rhombic',
+    'Nose Transport',
+    'Outright',
+    'Moonet',
+    'MYKA Tryba',
+    'Frontline',
+    'Jaro',
+    'Tea Type',
+    'Moloko',
+    'Tachyo',
+    'Scorn',
+    'Fasad',
+    'Krease',
+    'Beon',
+    'Gadems',
+    'Grisha',
+    'Deserta',
+    'Neon Sans',
+    'Rookworst',
+    'Deadender',
+    'Klaxons',
+    'Starway',
   ];
 
   // Available foundries
@@ -186,9 +334,49 @@ class _TypographyDemoState extends State<TypographyDemo> {
       return _fontFamilies;
     }
 
-    return _fontFamilies
+    // Find any fonts that are missing from _fontInfo
+    final missingFonts = _fontFamilies
+        .where((font) => !_fontInfo.containsKey(font))
+        .toList();
+    if (missingFonts.isNotEmpty) {
+      print('WARNING: These fonts are missing from _fontInfo: $missingFonts');
+    }
+
+    final filteredFonts = _fontFamilies
         .where((font) => _fontInfo[font]?['foundry'] == _selectedFoundry)
         .toList();
+
+    // Debug print for Fontesk foundry
+    if (_selectedFoundry == 'Fontesk') {
+      print('FONTESK FONTS COUNT: ${filteredFonts.length}');
+      print('FONTESK FONTS: ${filteredFonts.join(', ')}');
+    }
+
+    return filteredFonts;
+  }
+
+  // Variable font axis values for each font family
+  final Map<String, Map<String, double>> _fontVariations = {
+    'Kyiv Type Sans': {'wght': 400.0, 'wdth': 100.0, 'CONT': 100.0},
+    'Kyiv Type Serif': {'wght': 400.0, 'wdth': 100.0, 'CONT': 100.0},
+    'Kyiv Type Titling': {'wght': 400.0, 'wdth': 100.0, 'CONT': 100.0},
+  };
+
+  // Method to check if a font is a variable font
+  bool _isVariableFont(String family) {
+    return family == CustomFonts.kyivTypeSansFamily ||
+        family == CustomFonts.kyivTypeSerifFamily ||
+        family == CustomFonts.kyivTypeTitlingFamily;
+  }
+
+  // Update font variation value and refresh display
+  void _updateFontVariationValue(String axis, double value) {
+    setState(() {
+      if (_fontVariations.containsKey(_selectedFontFamily)) {
+        // Simply set the value directly - continuous range
+        _fontVariations[_selectedFontFamily]![axis] = value;
+      }
+    });
   }
 
   @override
@@ -260,6 +448,14 @@ class _TypographyDemoState extends State<TypographyDemo> {
                 ],
               ),
             ),
+
+            // Variable font control section - only shown for variable fonts
+            if (_isVariableFont(_selectedFontFamily))
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: _buildVariableFontControls(theme),
+              ),
+
             // Font list
             Expanded(
               child: SingleChildScrollView(
@@ -733,6 +929,17 @@ class _TypographyDemoState extends State<TypographyDemo> {
   }
 
   TextStyle _safeFontStyle(String family, ThemeData theme, Color defaultColor) {
+    // Check if this is a Fontesk font
+    if (_fontInfo[family]?['foundry'] == 'Fontesk') {
+      // Use direct TextStyle for Fontesk fonts
+      return TextStyle(
+        fontFamily: family,
+        fontSize: 24,
+        color: defaultColor,
+        height: 1.2,
+      );
+    }
+
     // Special case for fonts from other foundries
     if (_fontInfo[family]?['foundry'] != 'Google') {
       // Font Library fonts
@@ -795,6 +1002,38 @@ class _TypographyDemoState extends State<TypographyDemo> {
       if (family == 'Linden Hill') {
         return LindenHillFont.regular(color: defaultColor, fontSize: 24);
       }
+
+      // Kyiv Type fonts - variable fonts
+      if (family == 'Kyiv Type Sans') {
+        final variations = _fontVariations[family];
+        return KyivTypeSansFont.regular(
+          color: defaultColor,
+          fontSize: 24,
+          weightValue: variations?['wght'],
+          widthValue: variations?['wdth'],
+          contrastValue: variations?['CONT'],
+        );
+      }
+      if (family == 'Kyiv Type Serif') {
+        final variations = _fontVariations[family];
+        return KyivTypeSerifFont.regular(
+          color: defaultColor,
+          fontSize: 24,
+          weightValue: variations?['wght'],
+          widthValue: variations?['wdth'],
+          contrastValue: variations?['CONT'],
+        );
+      }
+      if (family == 'Kyiv Type Titling') {
+        final variations = _fontVariations[family];
+        return KyivTypeTitlingFont.regular(
+          color: defaultColor,
+          fontSize: 24,
+          weightValue: variations?['wght'],
+          widthValue: variations?['wdth'],
+          contrastValue: variations?['CONT'],
+        );
+      }
     }
 
     try {
@@ -813,5 +1052,124 @@ class _TypographyDemoState extends State<TypographyDemo> {
           ) ??
           TextStyle(fontSize: 24, color: defaultColor, fontFamily: family);
     }
+  }
+
+  // Build variable font controls based on current selected font
+  Widget _buildVariableFontControls(ThemeData theme) {
+    final textColor = theme.colorScheme.onSurface;
+    final accentColor = theme.colorScheme.primary;
+
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Variable Font Controls',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                color: textColor,
+              ),
+            ),
+            const SizedBox(height: 16),
+            if (_selectedFontFamily.contains('Kyiv Type')) ...[
+              // Weight Axis Slider
+              _buildAxisSlider(
+                'Weight',
+                'wght',
+                100,
+                900,
+                _fontVariations[_selectedFontFamily]!['wght'] ?? 400,
+                textColor,
+                accentColor,
+              ),
+
+              // Width Axis Slider
+              _buildAxisSlider(
+                'Width',
+                'wdth',
+                75,
+                125,
+                _fontVariations[_selectedFontFamily]!['wdth'] ?? 100,
+                textColor,
+                accentColor,
+              ),
+
+              // Contrast Axis Slider
+              _buildAxisSlider(
+                'Contrast',
+                'CONT',
+                0,
+                1000,
+                _fontVariations[_selectedFontFamily]!['CONT'] ?? 100,
+                textColor,
+                accentColor,
+              ),
+
+              const SizedBox(height: 16),
+              // Font preview
+              Center(
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: accentColor.withOpacity(0.5)),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'Sample Text - АаБбВв',
+                    style: _safeFontStyle(
+                      _selectedFontFamily,
+                      theme,
+                      textColor,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Build a slider for a specific axis
+  Widget _buildAxisSlider(
+    String label,
+    String axis,
+    int min,
+    int max,
+    double value,
+    Color textColor,
+    Color accentColor,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              label,
+              style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
+            ),
+            Text(value.toInt().toString(), style: TextStyle(color: textColor)),
+          ],
+        ),
+        Slider(
+          value: value,
+          min: min.toDouble(),
+          max: max.toDouble(),
+          divisions: max - min,
+          activeColor: accentColor,
+          onChanged: (newValue) {
+            _updateFontVariationValue(axis, newValue);
+          },
+        ),
+        const SizedBox(height: 8),
+      ],
+    );
   }
 }

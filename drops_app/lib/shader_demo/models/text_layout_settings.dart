@@ -447,6 +447,20 @@ class TextLayoutSettings {
     if (enableLogging) print("SETTINGS: lyricsVAlign set to $v");
   }
 
+  // Variable font width properties (default is 100.0 for normal width)
+  double _titleWidth = 100.0;
+  double _subtitleWidth = 100.0;
+  double _artistWidth = 100.0;
+  double _lyricsWidth = 100.0;
+  double _textWidth = 100.0;
+
+  // Variable font contrast properties (default is 100.0 for normal contrast)
+  double _titleContrast = 100.0;
+  double _subtitleContrast = 100.0;
+  double _artistContrast = 100.0;
+  double _lyricsContrast = 100.0;
+  double _textContrast = 100.0;
+
   TextLayoutSettings({
     bool textEnabled = false,
     bool fillScreen = false,
@@ -522,6 +536,20 @@ class TextLayoutSettings {
     int lyricsHAlign = 0,
     int lyricsVAlign = 0,
     double lyricsLineHeight = 1.2,
+
+    // Variable font width properties
+    double titleWidth = 100.0,
+    double subtitleWidth = 100.0,
+    double artistWidth = 100.0,
+    double lyricsWidth = 100.0,
+    double textWidth = 100.0,
+
+    // Variable font contrast properties
+    double titleContrast = 100.0,
+    double subtitleContrast = 100.0,
+    double artistContrast = 100.0,
+    double lyricsContrast = 100.0,
+    double textContrast = 100.0,
   }) : _textEnabled = textEnabled,
        _fillScreen = fillScreen,
        _applyShaderEffectsToImage = applyShaderEffectsToImage,
@@ -579,7 +607,17 @@ class TextLayoutSettings {
        _lyricsFitToWidth = lyricsFitToWidth,
        _lyricsHAlign = lyricsHAlign,
        _lyricsVAlign = lyricsVAlign,
-       _lyricsLineHeight = lyricsLineHeight {
+       _lyricsLineHeight = lyricsLineHeight,
+       _titleWidth = titleWidth,
+       _subtitleWidth = subtitleWidth,
+       _artistWidth = artistWidth,
+       _lyricsWidth = lyricsWidth,
+       _textWidth = textWidth,
+       _titleContrast = titleContrast,
+       _subtitleContrast = subtitleContrast,
+       _artistContrast = artistContrast,
+       _lyricsContrast = lyricsContrast,
+       _textContrast = textContrast {
     if (enableLogging) print("SETTINGS: TextLayoutSettings initialized");
   }
 
@@ -644,6 +682,16 @@ class TextLayoutSettings {
       'lyricsHAlign': _lyricsHAlign,
       'lyricsVAlign': _lyricsVAlign,
       'lyricsLineHeight': _lyricsLineHeight,
+      'titleWidth': _titleWidth,
+      'subtitleWidth': _subtitleWidth,
+      'artistWidth': _artistWidth,
+      'lyricsWidth': _lyricsWidth,
+      'textWidth': _textWidth,
+      'titleContrast': _titleContrast,
+      'subtitleContrast': _subtitleContrast,
+      'artistContrast': _artistContrast,
+      'lyricsContrast': _lyricsContrast,
+      'textContrast': _textContrast,
     };
   }
 
@@ -717,6 +765,78 @@ class TextLayoutSettings {
       lyricsHAlign: map['lyricsHAlign'] ?? 0,
       lyricsVAlign: map['lyricsVAlign'] ?? 0,
       lyricsLineHeight: map['lyricsLineHeight'] ?? 1.2,
+      titleWidth: map['titleWidth'] ?? 100.0,
+      subtitleWidth: map['subtitleWidth'] ?? 100.0,
+      artistWidth: map['artistWidth'] ?? 100.0,
+      lyricsWidth: map['lyricsWidth'] ?? 100.0,
+      textWidth: map['textWidth'] ?? 100.0,
+      titleContrast: map['titleContrast'] ?? 100.0,
+      subtitleContrast: map['subtitleContrast'] ?? 100.0,
+      artistContrast: map['artistContrast'] ?? 100.0,
+      lyricsContrast: map['lyricsContrast'] ?? 100.0,
+      textContrast: map['textContrast'] ?? 100.0,
     );
+  }
+
+  // Variable font width getters/setters
+  double get titleWidth => _titleWidth;
+  set titleWidth(double v) {
+    _titleWidth = v;
+    if (enableLogging) print("SETTINGS: titleWidth set to $v");
+  }
+
+  double get subtitleWidth => _subtitleWidth;
+  set subtitleWidth(double v) {
+    _subtitleWidth = v;
+    if (enableLogging) print("SETTINGS: subtitleWidth set to $v");
+  }
+
+  double get artistWidth => _artistWidth;
+  set artistWidth(double v) {
+    _artistWidth = v;
+    if (enableLogging) print("SETTINGS: artistWidth set to $v");
+  }
+
+  double get lyricsWidth => _lyricsWidth;
+  set lyricsWidth(double v) {
+    _lyricsWidth = v;
+    if (enableLogging) print("SETTINGS: lyricsWidth set to $v");
+  }
+
+  double get textWidth => _textWidth;
+  set textWidth(double v) {
+    _textWidth = v;
+    if (enableLogging) print("SETTINGS: textWidth set to $v");
+  }
+
+  // Variable font contrast getters/setters
+  double get titleContrast => _titleContrast;
+  set titleContrast(double v) {
+    _titleContrast = v;
+    if (enableLogging) print("SETTINGS: titleContrast set to $v");
+  }
+
+  double get subtitleContrast => _subtitleContrast;
+  set subtitleContrast(double v) {
+    _subtitleContrast = v;
+    if (enableLogging) print("SETTINGS: subtitleContrast set to $v");
+  }
+
+  double get artistContrast => _artistContrast;
+  set artistContrast(double v) {
+    _artistContrast = v;
+    if (enableLogging) print("SETTINGS: artistContrast set to $v");
+  }
+
+  double get lyricsContrast => _lyricsContrast;
+  set lyricsContrast(double v) {
+    _lyricsContrast = v;
+    if (enableLogging) print("SETTINGS: lyricsContrast set to $v");
+  }
+
+  double get textContrast => _textContrast;
+  set textContrast(double v) {
+    _textContrast = v;
+    if (enableLogging) print("SETTINGS: textContrast set to $v");
   }
 }

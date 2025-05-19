@@ -26,6 +26,56 @@ class CustomFonts {
   static const String snigletFamily = 'Sniglet';
   static const String lindenHillFamily = 'Linden Hill';
 
+  // Kyiv Type variable fonts
+  static const String kyivTypeSansFamily = 'Kyiv Type Sans';
+  static const String kyivTypeSerifFamily = 'Kyiv Type Serif';
+  static const String kyivTypeTitlingFamily = 'Kyiv Type Titling';
+
+  // Additional Fontesk fonts
+  static const String valiantFamily = 'Valiant';
+  static const String starlanceFamily = 'Starlance';
+  static const String farabeeFamily = 'Farabee';
+  static const String farabeeStraightFamily = 'Farabee Straight';
+  static const String superJellyfishFamily = 'Super Jellyfish';
+  static const String vaganovSpDemoFamily = 'Vaganov SP Demo';
+  static const String ballastStencilFamily = 'Ballast Stencil';
+  static const String parajanovFamily = 'Parajanov';
+  static const String martiusFamily = 'Martius';
+  static const String superBraveFamily = 'Super Brave';
+  static const String canalhaFamily = 'Canalha';
+  static const String beastFamily = 'Beast';
+  static const String lettertypeFamily = 'Lettertype';
+  static const String fnOctahedronFamily = 'FN Octahedron';
+  static const String dotMatrixDuoFamily = 'DotMatrix Duo';
+  static const String tintagelFamily = 'Tintagel';
+  static const String gotfridusFamily = 'Gotfridus';
+  static const String ltBasixFamily = 'LT Basix';
+  static const String moltenDisplayFamily = 'Molten Display';
+  static const String triformFamily = 'Triform';
+  static const String groutpixFlowSerifFamily = 'Groutpix Flow Serif';
+  static const String rhombicFamily = 'Rhombic';
+  static const String noseTransportFamily = 'Nose Transport';
+  static const String outrightFamily = 'Outright';
+  static const String moonetFamily = 'Moonet';
+  static const String mykaFamily = 'MYKA Tryba';
+  static const String frontlineFamily = 'Frontline';
+  static const String jaroFamily = 'Jaro';
+  static const String teaTypeFamily = 'Tea Type';
+  static const String molokoFamily = 'Moloko';
+  static const String tachyoFamily = 'Tachyo';
+  static const String scornFamily = 'Scorn';
+  static const String fasadFamily = 'Fasad';
+  static const String kreaseFamily = 'Krease';
+  static const String beonFamily = 'Beon';
+  static const String gademsFamily = 'Gadems';
+  static const String grishaFamily = 'Grisha';
+  static const String desertaFamily = 'Deserta';
+  static const String neonSansFamily = 'Neon Sans';
+  static const String rookworstFamily = 'Rookworst';
+  static const String deadenderFamily = 'Deadender';
+  static const String klaxonsFamily = 'Klaxons';
+  static const String starwayFamily = 'Starway';
+
   // Font URLs - using CDN sources that support CORS
   static const Map<String, String> fontUrls = {
     'Lemon':
@@ -85,6 +135,12 @@ class CustomFonts {
     'Blackout Two AM': 'fonts/league/blackout_two_am-webfont.ttf',
     'Sniglet': 'fonts/league/Sniglet-webfont.ttf',
     'Linden Hill': 'fonts/league/LindenHill-webfont.ttf',
+    'Kyiv Type Sans':
+        'fonts/fontesk/KyivType-VariableGX/KyivTypeSans-VarGX.ttf',
+    'Kyiv Type Serif':
+        'fonts/fontesk/KyivType-VariableGX/KyivTypeSerif-VarGX.ttf',
+    'Kyiv Type Titling':
+        'fonts/fontesk/KyivType-VariableGX/KyivTypeTitling-VarGX.ttf',
   };
 
   /// Register web fonts for Flutter web
@@ -852,6 +908,331 @@ class GoudyStMFont {
       color: color,
       fontSize: fontSize,
       fontWeight: fontWeight,
+      decoration: decoration,
+    );
+  }
+}
+
+/// Font definition for Kyiv Type Sans
+class KyivTypeSansFont {
+  // Variable font axes
+  static const String weightAxis = 'wght';
+  static const String widthAxis = 'wdth';
+  static const String contrastAxis = 'CONT';
+  static const String italicAxis = 'slnt';
+
+  // Check if this font is a variable font
+  static bool get isVariableFont => true;
+
+  // Get the available axes for this variable font
+  static List<String> get availableAxes => [
+    weightAxis,
+    // widthAxis and contrastAxis are defined but may not work correctly
+    // in the current implementation. Uncomment after testing.
+    widthAxis,
+    contrastAxis,
+  ];
+
+  // Get the available axes as a map with details about each axis
+  static Map<String, Map<String, dynamic>> get availableAxesInfo => {
+    weightAxis: {
+      'name': 'Weight',
+      'min': 100.0,
+      'max': 1000.0,
+      'default': 400.0,
+    },
+    widthAxis: {'name': 'Width', 'min': 1.0, 'max': 1000.0, 'default': 100.0},
+    contrastAxis: {
+      'name': 'Contrast',
+      'min': 1.0,
+      'max': 1000.0,
+      'default': 100.0,
+    },
+  };
+
+  static TextStyle regular({
+    Color? color,
+    double? fontSize,
+    FontWeight? fontWeight,
+    FontStyle? fontStyle,
+    TextDecoration? decoration,
+    double? weightValue,
+    double? widthValue,
+    double? contrastValue,
+    double? italicValue,
+  }) {
+    final fontVariations = <ui.FontVariation>[];
+
+    // Add weight variation if specified (default to 400 for regular)
+    if (weightValue != null) {
+      fontVariations.add(ui.FontVariation(weightAxis, weightValue));
+    } else if (fontWeight != null) {
+      // Convert FontWeight to numeric value (100-900)
+      final weightNumeric = (fontWeight.index + 1) * 100;
+      fontVariations.add(
+        ui.FontVariation(weightAxis, weightNumeric.toDouble()),
+      );
+    } else {
+      fontVariations.add(ui.FontVariation(weightAxis, 400));
+    }
+
+    // Add width variation if specified
+    if (widthValue != null) {
+      fontVariations.add(ui.FontVariation(widthAxis, widthValue));
+    }
+
+    // Add contrast variation if specified
+    if (contrastValue != null) {
+      fontVariations.add(ui.FontVariation(contrastAxis, contrastValue));
+    }
+
+    // Add italic variation if specified
+    if (italicValue != null) {
+      fontVariations.add(ui.FontVariation(italicAxis, italicValue));
+    } else if (fontStyle == FontStyle.italic) {
+      fontVariations.add(
+        ui.FontVariation(italicAxis, -10),
+      ); // Typical slant value
+    }
+
+    return TextStyle(
+      fontFamily: CustomFonts.kyivTypeSansFamily,
+      color: color,
+      fontSize: fontSize,
+      fontVariations: fontVariations,
+      decoration: decoration,
+    );
+  }
+}
+
+/// Font definition for Kyiv Type Serif
+class KyivTypeSerifFont {
+  // Variable font axes
+  static const String weightAxis = 'wght';
+  static const String widthAxis = 'wdth';
+  static const String contrastAxis = 'CONT';
+  static const String italicAxis = 'slnt';
+
+  // Check if this font is a variable font
+  static bool get isVariableFont => true;
+
+  // Get the available axes for this variable font
+  static List<String> get availableAxes => [
+    weightAxis,
+    // widthAxis and contrastAxis are defined but may not work correctly
+    // in the current implementation. Uncomment after testing.
+    widthAxis,
+    contrastAxis,
+  ];
+
+  // Get the available axes as a map with details about each axis
+  static Map<String, Map<String, dynamic>> get availableAxesInfo => {
+    weightAxis: {
+      'name': 'Weight',
+      'min': 100.0,
+      'max': 1000.0,
+      'default': 400.0,
+    },
+    widthAxis: {'name': 'Width', 'min': 1.0, 'max': 1000.0, 'default': 100.0},
+    contrastAxis: {
+      'name': 'Contrast',
+      'min': 1.0,
+      'max': 1000.0,
+      'default': 100.0,
+    },
+  };
+
+  static TextStyle regular({
+    Color? color,
+    double? fontSize,
+    FontWeight? fontWeight,
+    FontStyle? fontStyle,
+    TextDecoration? decoration,
+    double? weightValue,
+    double? widthValue,
+    double? contrastValue,
+    double? italicValue,
+  }) {
+    final fontVariations = <ui.FontVariation>[];
+
+    // Add weight variation if specified (default to 400 for regular)
+    if (weightValue != null) {
+      fontVariations.add(ui.FontVariation(weightAxis, weightValue));
+    } else if (fontWeight != null) {
+      // Convert FontWeight to numeric value (100-900)
+      final weightNumeric = (fontWeight.index + 1) * 100;
+      fontVariations.add(
+        ui.FontVariation(weightAxis, weightNumeric.toDouble()),
+      );
+    } else {
+      fontVariations.add(ui.FontVariation(weightAxis, 400));
+    }
+
+    // Add width variation if specified
+    if (widthValue != null) {
+      fontVariations.add(ui.FontVariation(widthAxis, widthValue));
+    }
+
+    // Add contrast variation if specified
+    if (contrastValue != null) {
+      fontVariations.add(ui.FontVariation(contrastAxis, contrastValue));
+    }
+
+    // Add italic variation if specified
+    if (italicValue != null) {
+      fontVariations.add(ui.FontVariation(italicAxis, italicValue));
+    } else if (fontStyle == FontStyle.italic) {
+      fontVariations.add(
+        ui.FontVariation(italicAxis, -10),
+      ); // Typical slant value
+    }
+
+    return TextStyle(
+      fontFamily: CustomFonts.kyivTypeSerifFamily,
+      color: color,
+      fontSize: fontSize,
+      fontVariations: fontVariations,
+      decoration: decoration,
+    );
+  }
+}
+
+/// Font definition for Kyiv Type Titling
+class KyivTypeTitlingFont {
+  // Variable font axes
+  static const String weightAxis = 'wght';
+  static const String widthAxis = 'wdth';
+  static const String contrastAxis = 'CONT';
+  static const String italicAxis = 'slnt';
+
+  // Check if this font is a variable font
+  static bool get isVariableFont => true;
+
+  // Get the available axes for this variable font
+  static List<String> get availableAxes => [
+    weightAxis,
+    // Width axis from font info - may not work as expected
+    widthAxis,
+    // Contrast axis has only 3 distinct values according to font info
+    contrastAxis,
+  ];
+
+  // Get the available axes as a map with details about each axis
+  static Map<String, Map<String, dynamic>> get availableAxesInfo => {
+    weightAxis: {
+      'name': 'Weight',
+      'min': 0.0, // From font info: starts at 0.0, not 100.0
+      'max': 1000.0,
+      'default': 350.0, // Default to Regular (350.0) weight
+      'stops': [
+        0.0,
+        200.0,
+        350.0,
+        500.0,
+        700.0,
+        840.0,
+        1000.0,
+      ], // Named instances
+    },
+    widthAxis: {'name': 'Width', 'min': 0.0, 'max': 1000.0, 'default': 100.0},
+    // Contrast has only 3 discrete values
+    contrastAxis: {
+      'name': 'Contrast',
+      'min': 0.0,
+      'max': 1000.0,
+      'default': 0.0,
+      'stops': [0.0, 500.0, 1000.0], // Only 3 effective values
+      'description':
+          'This font supports only low (0), medium (500), and high (1000) contrast values',
+    },
+  };
+
+  static TextStyle regular({
+    Color? color,
+    double? fontSize,
+    FontWeight? fontWeight,
+    FontStyle? fontStyle,
+    TextDecoration? decoration,
+    double? weightValue,
+    double? widthValue,
+    double? contrastValue,
+    double? italicValue,
+  }) {
+    final fontVariations = <ui.FontVariation>[];
+
+    // Add weight variation if specified (default to 350 for regular)
+    if (weightValue != null) {
+      fontVariations.add(ui.FontVariation(weightAxis, weightValue));
+    } else if (fontWeight != null) {
+      // Map standard FontWeight to the font's named instances
+      double mappedWeight;
+      switch (fontWeight) {
+        case FontWeight.w100:
+          mappedWeight = 0.0; // Thin
+          break;
+        case FontWeight.w200:
+          mappedWeight = 200.0; // Light
+          break;
+        case FontWeight.w300:
+        case FontWeight.w400:
+          mappedWeight = 350.0; // Regular
+          break;
+        case FontWeight.w500:
+          mappedWeight = 500.0; // Medium
+          break;
+        case FontWeight.w600:
+        case FontWeight.w700:
+          mappedWeight = 700.0; // Bold
+          break;
+        case FontWeight.w800:
+          mappedWeight = 840.0; // Heavy
+          break;
+        case FontWeight.w900:
+          mappedWeight = 1000.0; // Black
+          break;
+        default:
+          mappedWeight = 350.0; // Default to Regular
+      }
+      fontVariations.add(ui.FontVariation(weightAxis, mappedWeight));
+    } else {
+      fontVariations.add(
+        ui.FontVariation(weightAxis, 350.0),
+      ); // Default to Regular
+    }
+
+    // Add width variation if specified
+    if (widthValue != null) {
+      fontVariations.add(ui.FontVariation(widthAxis, widthValue));
+    }
+
+    // Add contrast variation if specified
+    if (contrastValue != null) {
+      // Map to the 3 discrete values
+      double mappedContrast;
+      if (contrastValue < 350) {
+        mappedContrast = 0.0; // Low
+      } else if (contrastValue < 650) {
+        mappedContrast = 500.0; // Medium
+      } else {
+        mappedContrast = 1000.0; // High
+      }
+      fontVariations.add(ui.FontVariation(contrastAxis, mappedContrast));
+    }
+
+    // Add italic variation if specified (Note: Titling may not support italic)
+    if (italicValue != null) {
+      fontVariations.add(ui.FontVariation(italicAxis, italicValue));
+    } else if (fontStyle == FontStyle.italic) {
+      fontVariations.add(
+        ui.FontVariation(italicAxis, -10),
+      ); // Typical slant value
+    }
+
+    return TextStyle(
+      fontFamily: CustomFonts.kyivTypeTitlingFamily,
+      color: color,
+      fontSize: fontSize,
+      fontVariations: fontVariations,
       decoration: decoration,
     );
   }

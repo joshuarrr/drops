@@ -40,7 +40,7 @@ dependencies:
   google_fonts: ^6.2.1
   path_provider: ^2.1.2
   shared_preferences: ^2.2.2
-  uuid: ^4.2.1
+  uuid: ^4.5.1
   url_launcher: ^6.3.1
 
 dev_dependencies:
@@ -92,6 +92,8 @@ flutter:
     - assets/google_fonts/Tektur/
     - assets/google_fonts/Asap_Condensed/
     - assets/fonts/league/
+    - assets/fonts/fontesk/KyivType-VariableGX/
+    - assets/fonts/fontesk/
 
   shaders:
     - assets/shaders/color_effect.frag
@@ -259,3 +261,198 @@ flutter:
         - asset: assets/fonts/league/OFLGoudyStMTT.ttf
         - asset: assets/fonts/league/OFLGoudyStMTT-Italic.ttf
           style: italic
+    - family: Kyiv Type Sans
+      fonts:
+        - asset: assets/fonts/fontesk/KyivType-VariableGX/KyivTypeSans-VarGX.ttf
+    - family: Kyiv Type Serif
+      fonts:
+        - asset: assets/fonts/fontesk/KyivType-VariableGX/KyivTypeSerif-VarGX.ttf
+    - family: Kyiv Type Titling
+      fonts:
+        - asset: assets/fonts/fontesk/KyivType-VariableGX/KyivTypeTitling-VarGX.ttf
+    - family: Valiant
+      fonts:
+        - asset: assets/fonts/fontesk/VALIANT.otf
+    - family: Starlance
+      fonts:
+        - asset: assets/fonts/fontesk/STARLANCE.ttf
+    - family: Farabee Straight
+      fonts:
+        - asset: assets/fonts/fontesk/Farabee Straight Black.ttf
+          weight: 900
+        - asset: assets/fonts/fontesk/Farabee Straight Bold.ttf
+          weight: 700
+        - asset: assets/fonts/fontesk/Farabee Straight Semibold.ttf
+          weight: 600
+        - asset: assets/fonts/fontesk/Farabee Straight Medium.ttf
+          weight: 500
+        - asset: assets/fonts/fontesk/Farabee Straight Regular.ttf
+          weight: 400
+        - asset: assets/fonts/fontesk/Farabee Straight Light.ttf
+          weight: 300
+        - asset: assets/fonts/fontesk/Farabee Straight Thin.ttf
+          weight: 100
+    - family: Farabee
+      fonts:
+        - asset: assets/fonts/fontesk/Farabee Black.ttf
+          weight: 900
+        - asset: assets/fonts/fontesk/Farabee Bold.ttf
+          weight: 700
+        - asset: assets/fonts/fontesk/Farabee Semibold.ttf
+          weight: 600
+        - asset: assets/fonts/fontesk/Farabee Medium.ttf
+          weight: 500
+        - asset: assets/fonts/fontesk/Farabee Regular.ttf
+          weight: 400
+        - asset: assets/fonts/fontesk/Farabee Light.ttf
+          weight: 300
+        - asset: assets/fonts/fontesk/Farabee Thin.ttf
+          weight: 100
+    - family: Super Jellyfish
+      fonts:
+        - asset: assets/fonts/fontesk/Super Jellyfish.ttf
+    - family: Vaganov SP Demo
+      fonts:
+        - asset: assets/fonts/fontesk/VaganovSPDemo-Bold.otf
+          weight: 700
+    - family: Ballast Stencil
+      fonts:
+        - asset: assets/fonts/fontesk/BallastStencil-Regular.otf
+    - family: Parajanov
+      fonts:
+        - asset: assets/fonts/fontesk/Parajanov.ttf
+    - family: Martius
+      fonts:
+        - asset: assets/fonts/fontesk/Martius.ttf
+    - family: Super Brave
+      fonts:
+        - asset: assets/fonts/fontesk/Super Brave.ttf
+    - family: Canalha
+      fonts:
+        - asset: assets/fonts/fontesk/Canalha-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/fontesk/Canalha-Regular.ttf
+          weight: 400
+    - family: Beast
+      fonts:
+        - asset: assets/fonts/fontesk/Beast-Regular.otf
+    - family: Lettertype
+      fonts:
+        - asset: assets/fonts/fontesk/Lettertype-Regular.otf
+          weight: 400
+        - asset: assets/fonts/fontesk/Lettertype-SemiBold.otf
+          weight: 600
+        - asset: assets/fonts/fontesk/Lettertype-Bold.otf
+          weight: 700
+        - asset: assets/fonts/fontesk/Lettertype-Italic.otf
+          style: italic
+        - asset: assets/fonts/fontesk/Lettertype-SemiBold-Italic.otf
+          weight: 600
+          style: italic
+        - asset: assets/fonts/fontesk/Lettertype-Bold-Italic.otf
+          weight: 700
+          style: italic
+    - family: FN Octahedron
+      fonts:
+        - asset: assets/fonts/fontesk/FN OCTAHEDRON v1.0.otf
+    - family: DotMatrix Duo
+      fonts:
+        - asset: assets/fonts/fontesk/DotMatrixDuo-CondensedRegular.otf
+    - family: Tintagel
+      fonts:
+        - asset: assets/fonts/fontesk/Tintagel.otf
+    - family: Gotfridus
+      fonts:
+        - asset: assets/fonts/fontesk/Gotfridus.ttf
+    - family: LT Basix
+      fonts:
+        - asset: assets/fonts/fontesk/LTBasix-Regular.ttf
+    - family: Molten Display
+      fonts:
+        - asset: assets/fonts/fontesk/Molten Display.otf
+    - family: Triform
+      fonts:
+        - asset: assets/fonts/fontesk/Triform.ttf
+    - family: Groutpix Flow Serif
+      fonts:
+        - asset: assets/fonts/fontesk/GroutpixFlowSerif.ttf
+    - family: Rhombic
+      fonts:
+        - asset: assets/fonts/fontesk/Rhombic.ttf
+    - family: Nose Transport
+      fonts:
+        - asset: assets/fonts/fontesk/NoseTransport16-BoldDot.otf
+          weight: 700
+        - asset: assets/fonts/fontesk/NoseTransport16-RegularDot.otf
+          weight: 400
+        - asset: assets/fonts/fontesk/NoseTransport16-LightSquare.otf
+          weight: 300
+    - family: Outright
+      fonts:
+        - asset: assets/fonts/fontesk/Outright.otf
+    - family: Moonet
+      fonts:
+        - asset: assets/fonts/fontesk/Moonet DEMO.otf
+    - family: MYKA Tryba
+      fonts:
+        - asset: assets/fonts/fontesk/MYKA Tryba.ttf
+    - family: Frontline
+      fonts:
+        - asset: assets/fonts/fontesk/Frontline-Regular.otf
+          weight: 400
+        - asset: assets/fonts/fontesk/Frontline-Italic.otf
+          weight: 400
+          style: italic
+    - family: Jaro
+      fonts:
+        - asset: assets/fonts/fontesk/Jaro72pt-Regular.ttf
+    - family: Tea Type
+      fonts:
+        - asset: assets/fonts/fontesk/Tea Type.otf
+    - family: Moloko
+      fonts:
+        - asset: assets/fonts/fontesk/molokofont.otf
+    - family: Tachyo
+      fonts:
+        - asset: assets/fonts/fontesk/Tachyo-1.0.0.otf
+    - family: Scorn
+      fonts:
+        - asset: assets/fonts/fontesk/scorn.otf
+    - family: Fasad
+      fonts:
+        - asset: assets/fonts/fontesk/Fasad-Regular.otf
+    - family: Krease
+      fonts:
+        - asset: assets/fonts/fontesk/Krease-Display.otf
+    - family: Beon
+      fonts:
+        - asset: assets/fonts/fontesk/Beon-Regular.otf
+    - family: Gadems
+      fonts:
+        - asset: assets/fonts/fontesk/Gadems-PERSONALUSEONLY.otf
+    - family: Grisha
+      fonts:
+        - asset: assets/fonts/fontesk/Grisha.ttf
+    - family: Deserta
+      fonts:
+        - asset: assets/fonts/fontesk/Deserta.otf
+    - family: Neon Sans
+      fonts:
+        - asset: assets/fonts/fontesk/NeonSans.otf
+    - family: Rookworst
+      fonts:
+        - asset: assets/fonts/fontesk/Rookworst.ttf
+    - family: Deadender
+      fonts:
+        - asset: assets/fonts/fontesk/DeadenderRegular.ttf
+    - family: Klaxons
+      fonts:
+        - asset: assets/fonts/fontesk/Klaxons.otf
+    - family: Starway
+      fonts:
+        - asset: assets/fonts/fontesk/Starway.otf
+          weight: 400
+        - asset: assets/fonts/fontesk/Starway-Light.otf
+          weight: 300
+        - asset: assets/fonts/fontesk/Starway-Bold.otf
+          weight: 700
