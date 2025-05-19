@@ -160,7 +160,30 @@ class EffectControls {
               isEnabled: settings.textfxSettings.textfxEnabled,
               isCurrentImageDark: isCurrentImageDark,
               onToggled: (aspect, enabled) {
-                _log('TextFx aspect toggled: $enabled', level: LogLevel.debug);
+                _log('TextFx aspect toggled: $enabled', level: LogLevel.info);
+
+                // Create a deep copy to avoid mutation issues
+                var updatedSettings = ShaderSettings.fromMap(settings.toMap());
+
+                // Update setting through proper method
+                updatedSettings.textfxSettings.textfxEnabled = enabled;
+
+                // When enabling text effects, we should also automatically enable
+                // the Apply Shaders to Text flag for better user experience
+                if (enabled &&
+                    !updatedSettings.textfxSettings.applyShaderEffectsToText) {
+                  _log(
+                    'Auto-enabling Apply Shaders to Text when TextFx is enabled',
+                    level: LogLevel.info,
+                  );
+                  updatedSettings.textfxSettings.applyShaderEffectsToText =
+                      true;
+                }
+
+                // Force immediate notification to listeners
+                updatedSettings.textfxSettings.forceNotify();
+
+                // Pass through to aspect handler
                 onAspectToggled(aspect, enabled);
               },
               onTap: onAspectSelected,

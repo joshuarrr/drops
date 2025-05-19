@@ -68,12 +68,17 @@ vec2 getRandomOffset(float index, float seed) {
 
 // Calculate a drop's lifecycle state (0-1 for fade-in, 1-2 for active, 2-3 for fade-out)
 float getDropLifecycle(float index, float time) {
-    // Each drop gets a random offset for its lifecycle
-    float timeOffset = random(vec2(index * 13.37, iSeed * 42.0)) * 10.0;
+    // Ensure each drop has a different phase in the lifecycle
+    // Divide the total cycle time by dropCount to stagger the drops
+    float dropCount = clamp(iDropCount, 1.0, 30.0);
     
-    // Calculate the current lifecycle phase (0-3)
-    // We use modularity to create a repeating cycle
-    float cycleTime = mod(time + timeOffset, 3.0);
+    // Create offset for each drop that's evenly distributed across the cycle
+    // plus a bit of randomization to avoid too much uniformity
+    float baseOffset = index / dropCount * 3.0; // Distribute drops evenly across the 3.0 cycle
+    float randomOffset = random(vec2(index * 13.37, iSeed * 42.0)) * 0.5; // Small random variation
+    
+    // Calculate the current lifecycle phase (0-3) with even distribution
+    float cycleTime = mod(time + baseOffset + randomOffset, 3.0);
     
     return cycleTime;
 }
@@ -82,18 +87,18 @@ float getDropLifecycle(float index, float time) {
 float getDropOpacity(float lifecycle) {
     if (lifecycle < 1.0) {
         // Fade in (0-1)
-        return lifecycle;
+        return smoothstep(0.0, 1.0, lifecycle);
     } else if (lifecycle < 2.0) {
         // Full opacity (1-2)
         return 1.0;
     } else {
         // Fade out (2-3)
-        return 3.0 - lifecycle;
+        return smoothstep(1.0, 0.0, lifecycle - 2.0);
     }
 }
 
 // Generate a ripple from a single source point
-float ripple(vec2 seed, vec2 pos, float aspectRatio, float opacity) {
+float ripple(vec2 seed, vec2 pos, float aspectRatio, float opacity, float lifecycle) {
     float period = 10.0 + 10.0 * iSpeed; // Scale period with speed
     float zoom = 10.0 + 20.0 * iSize;    // Scaling factor for size
     
@@ -101,8 +106,11 @@ float ripple(vec2 seed, vec2 pos, float aspectRatio, float opacity) {
     vec2 src = seed;
     float offset = random(seed + vec2(2.0, 2.0) + vec2(iSeed));
     
-    // Calculate local time for this ripple
-    float localtime = iTime * iSpeed / period + offset;
+    // Calculate local time for this ripple - vary with lifecycle 
+    // Use lifecycle to control ring expansion (0-3 range maps to animation progress)
+    // For a new drop (lifecycle < 1), the ripple animation starts from the beginning
+    float waveProgress = min(lifecycle, 2.0) / 2.0; // Map 0-2 to 0-1 range (caps at 1.0)
+    float localtime = waveProgress * iSpeed / period + offset;
     
     // Create minor movements over time
     vec2 timeDrift = vec2(
@@ -148,8 +156,8 @@ float ripple(vec2 seed, vec2 pos, float aspectRatio, float opacity) {
     // Calculate distance with the modified coordinates
     float d = zoom * sqrt(dx * dx + dy * dy);
     
-    // Current phase of the ripple animation
-    float t = fract(localtime) * period;
+    // Current phase of the ripple animation - scaled by lifecycle
+    float t = waveProgress * period;
     
     // Apply dispersion function to create the wave
     float v = 5.0 * dispersion(d * 5.0, t) / max(d, 0.001);
@@ -159,6 +167,12 @@ float ripple(vec2 seed, vec2 pos, float aspectRatio, float opacity) {
     
     // Apply opacity based on drop lifecycle
     v *= opacity;
+    
+    // Fade out as the ripple approaches the end of its lifecycle
+    if (lifecycle > 2.0) {
+        float fadeOut = smoothstep(1.0, 0.0, (lifecycle - 2.0));
+        v *= fadeOut;
+    }
     
     return v;
 }
@@ -178,20 +192,19 @@ float ripples(vec2 pos) {
         float lifecycle = getDropLifecycle(float(i), iTime);
         float opacity = getDropOpacity(lifecycle);
         
+        // Use a unique seed for each drop based on its index
+        // This ensures each drop has a consistent but unique position
+        float seedBase = float(i) * 100.0 + iSeed;
+        
         // Get completely random positions across the entire screen
-        // We use two different seeds to create position transitions
-        vec2 seed1 = getRandomOffset(float(i), float(i) * 10.0 + iSeed);
-        vec2 seed2 = getRandomOffset(float(i), float(i) * 20.0 + iSeed + 100.0);
+        // Each drop should have its own position that doesn't change during its lifecycle
+        vec2 dropPosition = getRandomOffset(float(i), seedBase);
         
-        // Blend between two positions based on lifecycle to create smoother transitions
-        // When lifecycle goes from 2.0 to 3.0 (fading out), we start blending to the next position
-        float positionBlend = max(0.0, (lifecycle - 2.0));
-        vec2 seed = mix(seed1, seed2, positionBlend);
-        
-        h += ripple(seed, pos, aspectRatio, opacity);
+        // Apply the ripple effect for this drop
+        h += ripple(dropPosition, pos, aspectRatio, opacity, lifecycle);
     }
     
-    // Average the ripple heights
+    // Average the ripple heights and scale by intensity
     return h / float(dropCount);
 }
 
@@ -201,7 +214,7 @@ vec3 ripples_normal(vec2 pos) {
     return normalize(vec3(
         ripples(pos - vec2(d, 0.0)) - ripples(pos + vec2(d, 0.0)),
         ripples(pos - vec2(0.0, d)) - ripples(pos + vec2(0.0, d)),
-        d
+        d * 2.0 * iIntensity // Add intensity to the z component for stronger normals
     ));
 }
 

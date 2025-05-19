@@ -56,6 +56,16 @@ class TextFXSettings extends ChangeNotifier {
   // Flag to control logging
   static bool enableLogging = false;
 
+  // Counter for forcing rebuilds when properties change
+  int _updateCounter = 0;
+  int get updateCounter => _updateCounter;
+
+  // Public method to increment counter
+  void incrementCounter() {
+    _updateCounter++;
+    notifyListeners();
+  }
+
   // Helper to safely get a color's value or default to white if null
   int _safeColorValue(Color? color) {
     return color?.value ?? Colors.white.value;
@@ -65,6 +75,7 @@ class TextFXSettings extends ChangeNotifier {
   bool get textfxEnabled => _textfxEnabled;
   set textfxEnabled(bool value) {
     _textfxEnabled = value;
+    _updateCounter++;
     if (enableLogging) print("SETTINGS: textfxEnabled set to $value");
     notifyListeners();
   }
@@ -72,6 +83,7 @@ class TextFXSettings extends ChangeNotifier {
   bool get applyShaderEffectsToText => _applyShaderEffectsToText;
   set applyShaderEffectsToText(bool value) {
     _applyShaderEffectsToText = value;
+    _updateCounter++;
     if (enableLogging)
       print("SETTINGS: applyShaderEffectsToText set to $value");
     notifyListeners();
@@ -81,6 +93,7 @@ class TextFXSettings extends ChangeNotifier {
   bool get textShadowEnabled => _textShadowEnabled;
   set textShadowEnabled(bool value) {
     _textShadowEnabled = value;
+    _updateCounter++;
     if (enableLogging) print("SETTINGS: textShadowEnabled set to $value");
     notifyListeners();
   }
@@ -88,6 +101,7 @@ class TextFXSettings extends ChangeNotifier {
   double get textShadowBlur => _textShadowBlur;
   set textShadowBlur(double value) {
     _textShadowBlur = value;
+    _updateCounter++;
     if (enableLogging) {
       print("SETTINGS: textShadowBlur set to ${value.toStringAsFixed(3)}");
     }
@@ -97,6 +111,7 @@ class TextFXSettings extends ChangeNotifier {
   double get textShadowOffsetX => _textShadowOffsetX;
   set textShadowOffsetX(double value) {
     _textShadowOffsetX = value;
+    _updateCounter++;
     if (enableLogging) {
       print("SETTINGS: textShadowOffsetX set to ${value.toStringAsFixed(3)}");
     }
@@ -106,6 +121,7 @@ class TextFXSettings extends ChangeNotifier {
   double get textShadowOffsetY => _textShadowOffsetY;
   set textShadowOffsetY(double value) {
     _textShadowOffsetY = value;
+    _updateCounter++;
     if (enableLogging) {
       print("SETTINGS: textShadowOffsetY set to ${value.toStringAsFixed(3)}");
     }
@@ -115,6 +131,7 @@ class TextFXSettings extends ChangeNotifier {
   Color get textShadowColor => _textShadowColor;
   set textShadowColor(Color value) {
     _textShadowColor = value;
+    _updateCounter++;
     if (enableLogging) print("SETTINGS: textShadowColor set to $value");
     notifyListeners();
   }
@@ -122,6 +139,7 @@ class TextFXSettings extends ChangeNotifier {
   double get textShadowOpacity => _textShadowOpacity;
   set textShadowOpacity(double value) {
     _textShadowOpacity = value;
+    _updateCounter++;
     if (enableLogging) {
       print("SETTINGS: textShadowOpacity set to ${value.toStringAsFixed(3)}");
     }
@@ -131,6 +149,7 @@ class TextFXSettings extends ChangeNotifier {
   bool get textGlowEnabled => _textGlowEnabled;
   set textGlowEnabled(bool value) {
     _textGlowEnabled = value;
+    _updateCounter++;
     if (enableLogging) print("SETTINGS: textGlowEnabled set to $value");
     notifyListeners();
   }
@@ -138,6 +157,7 @@ class TextFXSettings extends ChangeNotifier {
   double get textGlowBlur => _textGlowBlur;
   set textGlowBlur(double value) {
     _textGlowBlur = value;
+    _updateCounter++;
     if (enableLogging) {
       print("SETTINGS: textGlowBlur set to ${value.toStringAsFixed(3)}");
     }
@@ -147,6 +167,7 @@ class TextFXSettings extends ChangeNotifier {
   Color get textGlowColor => _textGlowColor;
   set textGlowColor(Color value) {
     _textGlowColor = value;
+    _updateCounter++;
     if (enableLogging) print("SETTINGS: textGlowColor set to $value");
     notifyListeners();
   }
@@ -154,6 +175,7 @@ class TextFXSettings extends ChangeNotifier {
   double get textGlowOpacity => _textGlowOpacity;
   set textGlowOpacity(double value) {
     _textGlowOpacity = value;
+    _updateCounter++;
     if (enableLogging) {
       print("SETTINGS: textGlowOpacity set to ${value.toStringAsFixed(3)}");
     }
@@ -163,6 +185,7 @@ class TextFXSettings extends ChangeNotifier {
   bool get textOutlineEnabled => _textOutlineEnabled;
   set textOutlineEnabled(bool value) {
     _textOutlineEnabled = value;
+    _updateCounter++;
     if (enableLogging) print("SETTINGS: textOutlineEnabled set to $value");
     notifyListeners();
   }
@@ -170,6 +193,7 @@ class TextFXSettings extends ChangeNotifier {
   double get textOutlineWidth => _textOutlineWidth;
   set textOutlineWidth(double value) {
     _textOutlineWidth = value;
+    _updateCounter++;
     if (enableLogging) {
       print("SETTINGS: textOutlineWidth set to ${value.toStringAsFixed(3)}");
     }
@@ -179,6 +203,7 @@ class TextFXSettings extends ChangeNotifier {
   Color get textOutlineColor => _textOutlineColor;
   set textOutlineColor(Color value) {
     _textOutlineColor = value;
+    _updateCounter++;
     if (enableLogging) print("SETTINGS: textOutlineColor set to $value");
     notifyListeners();
   }
@@ -186,6 +211,7 @@ class TextFXSettings extends ChangeNotifier {
   bool get textfxAnimated => _textfxAnimated;
   set textfxAnimated(bool value) {
     _textfxAnimated = value;
+    _updateCounter++;
     if (enableLogging) print("SETTINGS: textfxAnimated set to $value");
     notifyListeners();
   }
@@ -194,6 +220,7 @@ class TextFXSettings extends ChangeNotifier {
   bool get textMetalEnabled => _textMetalEnabled;
   set textMetalEnabled(bool value) {
     _textMetalEnabled = value;
+    _updateCounter++;
     if (enableLogging) print("SETTINGS: textMetalEnabled set to $value");
     notifyListeners();
   }
@@ -201,6 +228,7 @@ class TextFXSettings extends ChangeNotifier {
   double get textMetalShine => _textMetalShine;
   set textMetalShine(double value) {
     _textMetalShine = value;
+    _updateCounter++;
     if (enableLogging) {
       print("SETTINGS: textMetalShine set to ${value.toStringAsFixed(3)}");
     }
@@ -210,6 +238,7 @@ class TextFXSettings extends ChangeNotifier {
   Color get textMetalBaseColor => _textMetalBaseColor;
   set textMetalBaseColor(Color value) {
     _textMetalBaseColor = value;
+    _updateCounter++;
     if (enableLogging) print("SETTINGS: textMetalBaseColor set to $value");
     notifyListeners();
   }
@@ -217,6 +246,7 @@ class TextFXSettings extends ChangeNotifier {
   Color get textMetalShineColor => _textMetalShineColor;
   set textMetalShineColor(Color value) {
     _textMetalShineColor = value;
+    _updateCounter++;
     if (enableLogging) print("SETTINGS: textMetalShineColor set to $value");
     notifyListeners();
   }
@@ -225,6 +255,7 @@ class TextFXSettings extends ChangeNotifier {
   bool get textGlassEnabled => _textGlassEnabled;
   set textGlassEnabled(bool value) {
     _textGlassEnabled = value;
+    _updateCounter++;
     if (enableLogging) print("SETTINGS: textGlassEnabled set to $value");
     notifyListeners();
   }
@@ -232,6 +263,7 @@ class TextFXSettings extends ChangeNotifier {
   double get textGlassOpacity => _textGlassOpacity;
   set textGlassOpacity(double value) {
     _textGlassOpacity = value;
+    _updateCounter++;
     if (enableLogging) {
       print("SETTINGS: textGlassOpacity set to ${value.toStringAsFixed(3)}");
     }
@@ -241,6 +273,7 @@ class TextFXSettings extends ChangeNotifier {
   double get textGlassBlur => _textGlassBlur;
   set textGlassBlur(double value) {
     _textGlassBlur = value;
+    _updateCounter++;
     if (enableLogging) {
       print("SETTINGS: textGlassBlur set to ${value.toStringAsFixed(3)}");
     }
@@ -250,6 +283,7 @@ class TextFXSettings extends ChangeNotifier {
   Color get textGlassColor => _textGlassColor;
   set textGlassColor(Color value) {
     _textGlassColor = value;
+    _updateCounter++;
     if (enableLogging) print("SETTINGS: textGlassColor set to $value");
     notifyListeners();
   }
@@ -257,6 +291,7 @@ class TextFXSettings extends ChangeNotifier {
   double get textGlassRefraction => _textGlassRefraction;
   set textGlassRefraction(double value) {
     _textGlassRefraction = value;
+    _updateCounter++;
     if (enableLogging) {
       print("SETTINGS: textGlassRefraction set to ${value.toStringAsFixed(3)}");
     }
@@ -267,6 +302,7 @@ class TextFXSettings extends ChangeNotifier {
   bool get textNeonEnabled => _textNeonEnabled;
   set textNeonEnabled(bool value) {
     _textNeonEnabled = value;
+    _updateCounter++;
     if (enableLogging) print("SETTINGS: textNeonEnabled set to $value");
     notifyListeners();
   }
@@ -274,6 +310,7 @@ class TextFXSettings extends ChangeNotifier {
   Color get textNeonColor => _textNeonColor;
   set textNeonColor(Color value) {
     _textNeonColor = value;
+    _updateCounter++;
     if (enableLogging) print("SETTINGS: textNeonColor set to $value");
     notifyListeners();
   }
@@ -281,6 +318,7 @@ class TextFXSettings extends ChangeNotifier {
   Color get textNeonOuterColor => _textNeonOuterColor;
   set textNeonOuterColor(Color value) {
     _textNeonOuterColor = value;
+    _updateCounter++;
     if (enableLogging) print("SETTINGS: textNeonOuterColor set to $value");
     notifyListeners();
   }
@@ -288,6 +326,7 @@ class TextFXSettings extends ChangeNotifier {
   double get textNeonIntensity => _textNeonIntensity;
   set textNeonIntensity(double value) {
     _textNeonIntensity = value;
+    _updateCounter++;
     if (enableLogging) {
       print("SETTINGS: textNeonIntensity set to ${value.toStringAsFixed(3)}");
     }
@@ -297,6 +336,7 @@ class TextFXSettings extends ChangeNotifier {
   double get textNeonWidth => _textNeonWidth;
   set textNeonWidth(double value) {
     _textNeonWidth = value;
+    _updateCounter++;
     if (enableLogging) {
       print("SETTINGS: textNeonWidth set to ${value.toStringAsFixed(3)}");
     }
@@ -306,7 +346,19 @@ class TextFXSettings extends ChangeNotifier {
   AnimationOptions get textfxAnimOptions => _textfxAnimOptions;
   set textfxAnimOptions(AnimationOptions value) {
     _textfxAnimOptions = value;
+    _updateCounter++;
     if (enableLogging) print("SETTINGS: textfxAnimOptions updated");
+    notifyListeners();
+  }
+
+  // Force notify method to trigger a rebuild
+  void forceNotify() {
+    _updateCounter++;
+    if (enableLogging) {
+      print(
+        "SETTINGS: TextFXSettings forceNotify called, counter: $_updateCounter",
+      );
+    }
     notifyListeners();
   }
 

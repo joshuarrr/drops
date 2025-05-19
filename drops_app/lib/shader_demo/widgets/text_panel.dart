@@ -99,19 +99,32 @@ class _TextPanelState extends State<TextPanel> {
               value: widget.settings.textfxSettings.applyShaderEffectsToText,
               activeColor: widget.sliderColor,
               onChanged: (value) {
-                final updatedSettings = widget.settings;
+                // Create a deep copy of the settings to avoid reference issues
+                final updatedSettings = ShaderSettings.fromMap(
+                  widget.settings.toMap(),
+                );
                 updatedSettings.textfxSettings.applyShaderEffectsToText = value;
+
+                debugPrint('Apply Shaders to Text toggled: $value');
 
                 // Ensure text effects are enabled if this is enabled
                 if (value && !updatedSettings.textfxSettings.textfxEnabled) {
+                  debugPrint(
+                    'Auto-enabling text effects since Apply Shaders to Text was enabled',
+                  );
                   updatedSettings.textfxSettings.textfxEnabled = true;
                 }
 
                 // Make sure text is enabled too
                 if (value && !updatedSettings.textLayoutSettings.textEnabled) {
+                  debugPrint(
+                    'Auto-enabling text layout since Apply Shaders to Text was enabled',
+                  );
                   updatedSettings.textLayoutSettings.textEnabled = true;
                 }
 
+                // Force a notification to ensure immediate update
+                updatedSettings.textfxSettings.forceNotify();
                 widget.onSettingsChanged(updatedSettings);
               },
             ),
