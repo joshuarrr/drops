@@ -327,10 +327,10 @@ class EffectController {
           );
         }
 
-        // Apply chromatic aberration effect if enabled and targeted to the current content type
-        if (settings.chromaticEnabled &&
-            ((isTextContent && settings.chromaticSettings.applyToText) ||
-                (!isTextContent && settings.chromaticSettings.applyToImage))) {
+        // Apply chromatic aberration effect if targeted to the current content type
+        // Without checking chromaticEnabled flag
+        if ((isTextContent && settings.chromaticSettings.applyToText) ||
+            (!isTextContent && settings.chromaticSettings.applyToImage)) {
           result = _applyChromaticEffect(
             child: result,
             settings: settings,
@@ -534,9 +534,9 @@ class EffectController {
     bool preserveTransparency = false,
     bool isTextContent = false,
   }) {
-    // Skip if chromatic aberration settings are minimal and no animation
+    // Skip only if ALL settings values are zero/minimal
+    // No longer check settings.chromaticEnabled
     if (settings.chromaticSettings.amount <= 0.0 &&
-        settings.chromaticSettings.angle <= 0.0 &&
         settings.chromaticSettings.spread <= 0.0 &&
         settings.chromaticSettings.intensity <= 0.0 &&
         !settings.chromaticSettings.chromaticAnimated) {

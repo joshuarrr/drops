@@ -54,6 +54,7 @@ class EffectOptionsMenu extends StatelessWidget {
     return PopupMenuButton<String>(
       icon: Icon(Icons.more_vert, color: textColor, size: 20),
       padding: EdgeInsets.zero,
+      offset: const Offset(0, 0),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       itemBuilder: (context) {
         List<PopupMenuEntry<String>> items = [];

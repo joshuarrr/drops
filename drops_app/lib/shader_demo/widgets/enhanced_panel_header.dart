@@ -43,30 +43,33 @@ class EnhancedPanelHeader extends StatelessWidget {
     return Column(
       children: [
         // Top row with title and menu
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '${aspect.label} Settings',
-              style: TextStyle(
-                color: sliderColor,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                '${aspect.label} Settings',
+                style: TextStyle(
+                  color: sliderColor,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-            // Use the new options menu
-            EffectOptionsMenu(
-              aspect: aspect,
-              textColor: sliderColor,
-              onSavePreset: onSavePreset,
-              onReset: onReset,
-              applyToImage: applyToImage,
-              applyToText: applyToText,
-              onApplyToImageChanged: onApplyToImageChanged,
-              onApplyToTextChanged: onApplyToTextChanged,
-            ),
-          ],
+              // Use the new options menu
+              EffectOptionsMenu(
+                aspect: aspect,
+                textColor: sliderColor,
+                onSavePreset: onSavePreset,
+                onReset: onReset,
+                applyToImage: applyToImage,
+                applyToText: applyToText,
+                onApplyToImageChanged: onApplyToImageChanged,
+                onApplyToTextChanged: onApplyToTextChanged,
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 8),
         // Preset chips

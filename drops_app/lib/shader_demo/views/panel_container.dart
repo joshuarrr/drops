@@ -10,7 +10,7 @@ class PanelContainer extends StatelessWidget {
     super.key,
     required this.isDark,
     required this.child,
-    this.padding = const EdgeInsets.all(16),
+    this.padding = const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
     this.margin,
     this.borderRadius = 16,
   });

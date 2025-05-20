@@ -31,6 +31,19 @@ class _ChromaticPanelState extends State<ChromaticPanel> {
   static int _refreshCounter = 0;
 
   @override
+  void initState() {
+    super.initState();
+    // Ensure chromatic effect is enabled when panel is created
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!widget.settings.chromaticEnabled) {
+        final updatedSettings = widget.settings;
+        updatedSettings.chromaticEnabled = true;
+        widget.onSettingsChanged(updatedSettings);
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -60,16 +73,8 @@ class _ChromaticPanelState extends State<ChromaticPanel> {
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: Column(
             children: [
-              // Enable/disable switch
-              LabeledSwitch(
-                label: 'Enable Chromatic Aberration',
-                value: widget.settings.chromaticEnabled,
-                onChanged: (value) {
-                  final updatedSettings = widget.settings;
-                  updatedSettings.chromaticEnabled = value;
-                  widget.onSettingsChanged(updatedSettings);
-                },
-              ),
+              // Remove the Enable/disable switch
+              // The effect is now automatically enabled when the panel is visible
               SizedBox(height: 8),
               LabeledSlider(
                 label: 'Amount',
@@ -82,6 +87,8 @@ class _ChromaticPanelState extends State<ChromaticPanel> {
                 onChanged: (value) {
                   final updatedSettings = widget.settings;
                   updatedSettings.chromaticSettings.amount = value;
+                  updatedSettings.chromaticEnabled =
+                      true; // Ensure it's enabled when values change
                   widget.onSettingsChanged(updatedSettings);
                 },
                 activeColor: widget.sliderColor,
@@ -97,6 +104,8 @@ class _ChromaticPanelState extends State<ChromaticPanel> {
                 onChanged: (value) {
                   final updatedSettings = widget.settings;
                   updatedSettings.chromaticSettings.angle = value;
+                  updatedSettings.chromaticEnabled =
+                      true; // Ensure it's enabled when values change
                   widget.onSettingsChanged(updatedSettings);
                 },
                 activeColor: widget.sliderColor,
@@ -112,6 +121,8 @@ class _ChromaticPanelState extends State<ChromaticPanel> {
                 onChanged: (value) {
                   final updatedSettings = widget.settings;
                   updatedSettings.chromaticSettings.spread = value;
+                  updatedSettings.chromaticEnabled =
+                      true; // Ensure it's enabled when values change
                   widget.onSettingsChanged(updatedSettings);
                 },
                 activeColor: widget.sliderColor,
@@ -127,6 +138,8 @@ class _ChromaticPanelState extends State<ChromaticPanel> {
                 onChanged: (value) {
                   final updatedSettings = widget.settings;
                   updatedSettings.chromaticSettings.intensity = value;
+                  updatedSettings.chromaticEnabled =
+                      true; // Ensure it's enabled when values change
                   widget.onSettingsChanged(updatedSettings);
                 },
                 activeColor: widget.sliderColor,
@@ -147,9 +160,8 @@ class _ChromaticPanelState extends State<ChromaticPanel> {
                       final updatedSettings = widget.settings;
                       updatedSettings.chromaticSettings.chromaticAnimated =
                           value;
-                      if (!updatedSettings.chromaticEnabled) {
-                        updatedSettings.chromaticEnabled = true;
-                      }
+                      // Always ensure the effect is enabled when animation is toggled
+                      updatedSettings.chromaticEnabled = true;
                       widget.onSettingsChanged(updatedSettings);
                     },
                   ),
@@ -168,6 +180,8 @@ class _ChromaticPanelState extends State<ChromaticPanel> {
                         .chromaticSettings
                         .animOptions
                         .copyWith(speed: v);
+                    widget.settings.chromaticEnabled =
+                        true; // Ensure it's enabled when values change
                     widget.onSettingsChanged(widget.settings);
                   },
                   animationMode:
@@ -178,6 +192,8 @@ class _ChromaticPanelState extends State<ChromaticPanel> {
                         .chromaticSettings
                         .animOptions
                         .copyWith(mode: m);
+                    widget.settings.chromaticEnabled =
+                        true; // Ensure it's enabled when values change
                     widget.onSettingsChanged(widget.settings);
                   },
                   animationEasing:
@@ -188,6 +204,8 @@ class _ChromaticPanelState extends State<ChromaticPanel> {
                         .chromaticSettings
                         .animOptions
                         .copyWith(easing: e);
+                    widget.settings.chromaticEnabled =
+                        true; // Ensure it's enabled when values change
                     widget.onSettingsChanged(widget.settings);
                   },
                   sliderColor: widget.sliderColor,
@@ -201,7 +219,7 @@ class _ChromaticPanelState extends State<ChromaticPanel> {
 
   void _resetChromatic() {
     final defaultSettings = ChromaticSettings();
-    widget.settings.chromaticEnabled = false;
+    widget.settings.chromaticEnabled = true; // Keep enabled, just reset values
     widget.settings.chromaticSettings.amount = defaultSettings.amount;
     widget.settings.chromaticSettings.angle = defaultSettings.angle;
     widget.settings.chromaticSettings.spread = defaultSettings.spread;
@@ -213,9 +231,9 @@ class _ChromaticPanelState extends State<ChromaticPanel> {
   }
 
   void _applyPreset(Map<String, dynamic> presetData) {
-    if (presetData.containsKey('chromaticEnabled')) {
-      widget.settings.chromaticEnabled = presetData['chromaticEnabled'];
-    }
+    // Always enable the effect when applying a preset
+    widget.settings.chromaticEnabled = true;
+
     if (presetData.containsKey('amount')) {
       widget.settings.chromaticSettings.amount = presetData['amount'];
     }
@@ -244,7 +262,6 @@ class _ChromaticPanelState extends State<ChromaticPanel> {
 
   Future<void> _savePresetForAspect(ShaderAspect aspect, String name) async {
     Map<String, dynamic> presetData = {
-      'chromaticEnabled': widget.settings.chromaticEnabled,
       'amount': widget.settings.chromaticSettings.amount,
       'angle': widget.settings.chromaticSettings.angle,
       'spread': widget.settings.chromaticSettings.spread,

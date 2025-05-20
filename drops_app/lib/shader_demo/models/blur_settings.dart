@@ -21,7 +21,7 @@ class BlurSettings with TargetableEffectSettings {
   AnimationOptions _blurAnimOptions;
 
   // Flag to control logging
-  static bool enableLogging = true;
+  static bool enableLogging = false;
 
   // Property getters and setters
   bool get blurEnabled => _blurEnabled;

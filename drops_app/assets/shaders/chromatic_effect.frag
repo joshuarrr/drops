@@ -82,40 +82,45 @@ void main()
         return;
     }
     
-    // get polar coordinates
-    vec2 cart = (uv - vec2(0.5)) * 2.2;  // 0->1 to -1->1
-    cart.x *= max(iResolution.x, iResolution.y) / min(iResolution.x, iResolution.y);
+    // get polar coordinates - maintain aspect ratio better
+    vec2 cart = (uv - vec2(0.5)) * 2.0;  // 0->1 to -1->1
+    // Preserve aspect ratio without squishing the image
+    float aspectRatio = iResolution.x / iResolution.y;
+    cart.x *= aspectRatio;
     
     float an = atan(cart.y, cart.x);
     float len = length(cart);
     
-    float lenR = correctLensDistortionR(len);
-    float lenG = correctLensDistortionG(len);
-    float lenB = correctLensDistortionB(len);
+    // Apply lens distortion only to color separation, not to overall image dimensions
+    float lenR = len + (correctLensDistortionR(len) - len) * iIntensity;
+    float lenG = len + (correctLensDistortionG(len) - len) * iIntensity;
+    float lenB = len + (correctLensDistortionB(len) - len) * iIntensity;
 
     // back to cartesian
-    vec2 dir = vec2(iResolution.y / iResolution.x, 1.0) *
-                vec2(cos(an), sin(an));
+    vec2 dir = normalize(vec2(cos(an), sin(an)));
                 
-    vec2 modUV_R = lenR * dir * 0.5 + vec2(0.5);
-    vec2 modUV_G = lenG * dir * 0.5 + vec2(0.5);
-    vec2 modUV_B = lenB * dir * 0.5 + vec2(0.5);
+    vec2 modUV_R = (dir * lenR / aspectRatio) * 0.5 + vec2(0.5);
+    vec2 modUV_G = (dir * lenG / aspectRatio) * 0.5 + vec2(0.5);
+    vec2 modUV_B = (dir * lenB / aspectRatio) * 0.5 + vec2(0.5);
     
     float animSpeed = 0.5;
     float blendFactor = sin(iTime * animSpeed) * 0.5 + 0.5;
     
-    // Apply intensity parameter to control effect strength
-    blendFactor *= iIntensity * iAmount;
+    // Apply intensity parameter to control color separation strength without affecting overall dimensions
+    blendFactor *= iIntensity;
+    
+    // Use a smaller base value for aberration offsets to prevent excessive distortion
+    float aberrationScale = 0.03;
     
     // Incorporate angle and spread parameters into the effect
-    vec2 rOffset = getAberrationOffset(0.0, iAngle, iAmount * 0.05, iSpread);
-    vec2 gOffset = getAberrationOffset(1.0, iAngle, iAmount * 0.05, iSpread);
-    vec2 bOffset = getAberrationOffset(2.0, iAngle, iAmount * 0.05, iSpread);
+    vec2 rOffset = getAberrationOffset(0.0, iAngle, iAmount * aberrationScale, iSpread);
+    vec2 gOffset = getAberrationOffset(1.0, iAngle, iAmount * aberrationScale, iSpread);
+    vec2 bOffset = getAberrationOffset(2.0, iAngle, iAmount * aberrationScale, iSpread);
     
-    // Apply radial distortion with directional aberration
-    vec2 fetchUV_R = mix(uv + rOffset, modUV_R, blendFactor);
-    vec2 fetchUV_G = mix(uv + gOffset, modUV_G, blendFactor);
-    vec2 fetchUV_B = mix(uv + bOffset, modUV_B, blendFactor);
+    // Apply directional aberration without excessive distortion
+    vec2 fetchUV_R = mix(uv, uv + rOffset * iIntensity, blendFactor);
+    vec2 fetchUV_G = mix(uv, uv + gOffset * iIntensity, blendFactor);
+    vec2 fetchUV_B = mix(uv, uv + bOffset * iIntensity, blendFactor);
     
     // Ensure UVs stay within bounds to avoid artifacts
     fetchUV_R = clamp(fetchUV_R, vec2(0.0), vec2(1.0));

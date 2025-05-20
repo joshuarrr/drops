@@ -57,6 +57,7 @@ class BlurPanel extends StatelessWidget {
           ),
           sliderColor: sliderColor,
           defaultValue: 0.0,
+          debounceMillis: 150,
         ),
         ValueSlider(
           label: 'Shatter Radius',
@@ -69,6 +70,7 @@ class BlurPanel extends StatelessWidget {
           ),
           sliderColor: sliderColor,
           defaultValue: 15.0 / 120.0, // Default scaled value
+          debounceMillis: 150,
         ),
         ValueSlider(
           label: 'Shatter Opacity',
@@ -79,6 +81,7 @@ class BlurPanel extends StatelessWidget {
           ),
           sliderColor: sliderColor,
           defaultValue: 1.0,
+          debounceMillis: 150,
         ),
         ValueSlider(
           label: 'Intensity',
@@ -91,6 +94,7 @@ class BlurPanel extends StatelessWidget {
           ),
           sliderColor: sliderColor,
           defaultValue: 0.0, // Default is 1.0 (middle position)
+          debounceMillis: 150,
         ),
         ValueSlider(
           label: 'Contrast',
@@ -103,6 +107,7 @@ class BlurPanel extends StatelessWidget {
           ),
           sliderColor: sliderColor,
           defaultValue: 0.0,
+          debounceMillis: 150,
         ),
         Padding(
           padding: const EdgeInsets.only(top: 8, bottom: 8),

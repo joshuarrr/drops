@@ -10,7 +10,7 @@ import '../../utils/animation_utils.dart';
 import 'debug_flags.dart'; // Import the shared debug flag
 
 /// Controls debug logging for shaders (external reference)
-bool enableShaderDebugLogs = true;
+bool enableShaderDebugLogs = false;
 
 /// Custom blur effect shader widget
 class BlurEffectShader extends StatelessWidget {
@@ -25,9 +25,18 @@ class BlurEffectShader extends StatelessWidget {
   static DateTime _lastLogTime = DateTime.now().subtract(
     const Duration(seconds: 1),
   );
-  static const Duration _logThrottleInterval = Duration(milliseconds: 1000);
+  static const Duration _logThrottleInterval = Duration(milliseconds: 2000);
   static String _lastLogMessage =
       ""; // Track the last message to avoid duplicates
+
+  // Cache previous settings values to avoid unnecessary shader updates
+  static double _lastAmount = -1;
+  static double _lastRadius = -1;
+  static double _lastOpacity = -1;
+  static int _lastBlendMode = -1;
+  static double _lastIntensity = -1;
+  static double _lastContrast = -1;
+  static bool _settingsChanged = true;
 
   const BlurEffectShader({
     super.key,
@@ -58,14 +67,58 @@ class BlurEffectShader extends StatelessWidget {
     debugPrint('[$_logTag] $message');
   }
 
+  // Check if shader settings have meaningfully changed
+  bool _haveSettingsChanged() {
+    // Use rounded values to avoid minor fluctuations causing rebuilds
+    final amount = (settings.blurSettings.blurAmount * 100).round() / 100;
+    final radius = (settings.blurSettings.blurRadius * 10).round() / 10;
+    final opacity = (settings.blurSettings.blurOpacity * 100).round() / 100;
+    final blendMode = settings.blurSettings.blurBlendMode;
+    final intensity = (settings.blurSettings.blurIntensity * 100).round() / 100;
+    final contrast = (settings.blurSettings.blurContrast * 100).round() / 100;
+
+    // Check if any values have changed significantly
+    final bool changed =
+        amount != _lastAmount ||
+        radius != _lastRadius ||
+        opacity != _lastOpacity ||
+        blendMode != _lastBlendMode ||
+        intensity != _lastIntensity ||
+        contrast != _lastContrast;
+
+    // Update cached values
+    if (changed) {
+      _lastAmount = amount;
+      _lastRadius = radius;
+      _lastOpacity = opacity;
+      _lastBlendMode = blendMode;
+      _lastIntensity = intensity;
+      _lastContrast = contrast;
+      _settingsChanged = true;
+
+      if (enableShaderDebugLogs) {
+        _log(
+          "Settings changed - amount:$amount radius:$radius opacity:$opacity blend:$blendMode intensity:$intensity contrast:$contrast",
+        );
+      }
+    } else {
+      _settingsChanged = false;
+    }
+
+    return changed;
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (enableShaderDebugLogs) {
-      final String logMessage =
-          "Building BlurEffectShader with amount=${settings.blurSettings.blurAmount.toStringAsFixed(2)} "
-          "opacity=${settings.blurSettings.blurOpacity.toStringAsFixed(2)} "
-          "(animated: ${settings.blurSettings.blurAnimated})";
-      _log(logMessage);
+    // Check if settings have changed to avoid unnecessary logging
+    final bool settingsChanged = _haveSettingsChanged();
+
+    if (enableShaderDebugLogs && settingsChanged) {
+      _log(
+        "Building BlurEffectShader with amount=${settings.blurSettings.blurAmount.toStringAsFixed(2)} "
+        "opacity=${settings.blurSettings.blurOpacity.toStringAsFixed(2)} "
+        "(animated: ${settings.blurSettings.blurAnimated})",
+      );
     }
 
     // Simplified approach using AnimatedSampler with ShaderBuilder
@@ -106,7 +159,7 @@ class BlurEffectShader extends StatelessWidget {
           double intensity = settings.blurSettings.blurIntensity;
           double contrast = settings.blurSettings.blurContrast;
 
-          if (enableShaderDebugLogs) {
+          if (enableShaderDebugLogs && settingsChanged) {
             _log(
               "Setting shader parameters - Amount: ${amount.toStringAsFixed(2)}, " +
                   "Opacity: ${opacity.toStringAsFixed(2)}, " +
@@ -123,7 +176,7 @@ class BlurEffectShader extends StatelessWidget {
 
           if (isTextContent) {
             effectiveRadius = effectiveRadius * 0.6; // 40% reduction
-            if (enableShaderDebugLogs) {
+            if (enableShaderDebugLogs && settingsChanged) {
               _log(
                 "Reducing radius for text content from ${settings.blurSettings.blurRadius} to $effectiveRadius",
               );
