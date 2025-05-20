@@ -6,6 +6,8 @@ import 'dart:ui' as ui;
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:developer' as developer;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:async';
+import 'dart:math' as math;
 
 import 'utils/animation_utils.dart';
 import 'utils/logging_utils.dart' as logging;
@@ -23,6 +25,7 @@ import 'views/image_container.dart';
 import 'views/text_overlay.dart';
 import 'widgets/image_panel.dart';
 import 'models/image_category.dart';
+import 'controllers/custom_shader_widgets.dart';
 
 // Set true to enable additional debug logging
 bool _enableDebugLogging = true;
@@ -154,6 +157,11 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
   // Add a flag to track when the preset dialog is open
   bool _isPresetDialogOpen = false;
 
+  // Add state variables for preset navigation
+  List<ShaderPreset> _availablePresets = [];
+  int _currentPresetIndex = -1;
+  bool _presetsLoaded = false;
+
   @override
   void initState() {
     super.initState();
@@ -193,6 +201,9 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
       // Set up system UI to be fully immersive
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     });
+
+    // Load all available presets
+    _loadAvailablePresets();
   }
 
   @override
@@ -242,6 +253,8 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                 context: context,
                 onPresetLoaded: (preset) {
                   _applyPreset(preset);
+                  // Update the current preset index
+                  _findCurrentPresetIndex();
                   // Note: We don't need to set _isPresetDialogOpen to false here
                   // as the dialog is closed automatically and will trigger the then() block
                 },
@@ -250,6 +263,9 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                 setState(() {
                   _isPresetDialogOpen = false;
                 });
+
+                // Refresh available presets in case any were added or deleted
+                _loadAvailablePresets();
               });
             }
           },
@@ -287,6 +303,21 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
             }
           });
         },
+        // Change from horizontal to vertical swipe
+        onVerticalDragEnd: (details) {
+          // Only enable swipe navigation when controls are hidden
+          if (!_showControls && !_isPresetDialogOpen) {
+            if (details.primaryVelocity != null) {
+              if (details.primaryVelocity! > 0) {
+                // Swipe down - previous preset
+                _navigateToPreviousPreset();
+              } else if (details.primaryVelocity! < 0) {
+                // Swipe up - next preset
+                _navigateToNextPreset();
+              }
+            }
+          }
+        },
         child: Stack(
           fit: StackFit.expand,
           children: [
@@ -294,7 +325,7 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
             RepaintBoundary(key: _previewKey, child: _buildShaderEffect()),
 
             // Controls overlay that can be toggled
-            if (_showControls)
+            if (_showControls && !_isPresetDialogOpen)
               Positioned(
                 top: 0,
                 right: 0,
@@ -398,8 +429,49 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
               ),
 
             // Aspect parameter sliders for the selected aspect
-            if (_showControls && _showAspectSliders)
+            if (_showControls && _showAspectSliders && !_isPresetDialogOpen)
               _buildAspectParameterSliders(),
+
+            // Add preset navigation indicators when controls are hidden
+            if (!_showControls &&
+                !_isPresetDialogOpen &&
+                _availablePresets.isNotEmpty)
+              Positioned(
+                bottom: 40,
+                left: 0,
+                right: 0,
+                child: Column(
+                  children: [
+                    // Preset counter
+                    Text(
+                      _currentPresetIndex >= 0
+                          ? 'Preset ${_currentPresetIndex + 1} / ${_availablePresets.length}'
+                          : '',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                        shadows: [Shadow(blurRadius: 3, color: Colors.black54)],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 10),
+                    // Preset name
+                    if (_currentPresetIndex >= 0)
+                      Text(
+                        _availablePresets[_currentPresetIndex].name,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          shadows: [
+                            Shadow(blurRadius: 3, color: Colors.black54),
+                          ],
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                  ],
+                ),
+              ),
           ],
         ),
       ),
@@ -706,5 +778,81 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     } catch (e, stack) {
       debugPrint('ShaderDemoImpl: Failed to save settings → $e\n$stack');
     }
+  }
+
+  // Load all available presets for navigation
+  Future<void> _loadAvailablePresets() async {
+    // Only load if not already loaded
+    if (_presetsLoaded) return;
+
+    try {
+      final presets = await PresetController.getAllPresets();
+
+      // Sort presets by created date (newest first)
+      presets.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+      setState(() {
+        _availablePresets = presets;
+        _presetsLoaded = true;
+
+        // Find the current preset index if possible
+        _findCurrentPresetIndex();
+      });
+    } catch (e) {
+      debugPrint('Error loading available presets: $e');
+    }
+  }
+
+  // Find current preset in available presets list
+  void _findCurrentPresetIndex() {
+    // This is a simple check - in a production app, you might want
+    // to do a more sophisticated comparison of the settings
+    for (int i = 0; i < _availablePresets.length; i++) {
+      final preset = _availablePresets[i];
+      if (preset.imagePath == _selectedImage) {
+        _currentPresetIndex = i;
+        break;
+      }
+    }
+  }
+
+  // Navigate to the next preset
+  void _navigateToNextPreset() {
+    if (_availablePresets.isEmpty) return;
+
+    // Ensure presets are loaded
+    if (!_presetsLoaded) {
+      _loadAvailablePresets().then((_) => _navigateToNextPreset());
+      return;
+    }
+
+    int nextIndex = _currentPresetIndex + 1;
+    if (nextIndex >= _availablePresets.length) {
+      nextIndex = 0; // Wrap around
+    }
+
+    // Apply the preset
+    _applyPreset(_availablePresets[nextIndex]);
+    _currentPresetIndex = nextIndex;
+  }
+
+  // Navigate to the previous preset
+  void _navigateToPreviousPreset() {
+    if (_availablePresets.isEmpty) return;
+
+    // Ensure presets are loaded
+    if (!_presetsLoaded) {
+      _loadAvailablePresets().then((_) => _navigateToPreviousPreset());
+      return;
+    }
+
+    int prevIndex = _currentPresetIndex - 1;
+    if (prevIndex < 0) {
+      prevIndex = _availablePresets.length - 1; // Wrap around
+    }
+
+    // Apply the preset
+    _applyPreset(_availablePresets[prevIndex]);
+    _currentPresetIndex = prevIndex;
   }
 }

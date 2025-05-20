@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 import '../models/shader_preset.dart';
 import '../controllers/preset_controller.dart';
 import '../models/effect_settings.dart';
+import 'dart:async';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_shaders/flutter_shaders.dart';
+import '../controllers/custom_shader_widgets.dart';
+import '../controllers/effect_controller.dart';
 
 /// Dialog for saving a new preset
 class SavePresetDialog extends StatefulWidget {
@@ -174,14 +180,35 @@ class PresetsDialog extends StatefulWidget {
   State<PresetsDialog> createState() => _PresetsDialogState();
 }
 
-class _PresetsDialogState extends State<PresetsDialog> {
+class _PresetsDialogState extends State<PresetsDialog>
+    with SingleTickerProviderStateMixin {
   List<ShaderPreset> _presets = [];
   bool _isLoading = true;
+
+  // Add shared animation controller for shader previews
+  late AnimationController _shaderAnimationController;
 
   @override
   void initState() {
     super.initState();
+
+    // Create shared animation controller for shader animations
+    _shaderAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 10),
+    );
+    // Start continuous animation
+    _shaderAnimationController.repeat();
+
     _loadPresets();
+  }
+
+  @override
+  void dispose() {
+    // Dispose animation controller
+    _shaderAnimationController.dispose();
+
+    super.dispose();
   }
 
   Future<void> _loadPresets() async {
@@ -230,35 +257,23 @@ class _PresetsDialogState extends State<PresetsDialog> {
             Container(
               height: appBarHeight + topPadding,
               padding: EdgeInsets.only(top: topPadding),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surface.withOpacity(0.8),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
               child: Row(
                 children: [
-                  // Back button area to match app bar layout
-                  IconButton(
-                    icon: Icon(
-                      Icons.arrow_back,
-                      color: theme.colorScheme.onSurface,
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  Text(
-                    'Saved Presets',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w500,
-                      color: theme.colorScheme.onSurface,
+                  // Spacer to balance layout
+                  SizedBox(width: 48),
+                  // Expanded space with centered title
+                  Expanded(
+                    child: Center(
+                      child: Text(
+                        'Saved Presets',
+                        style: TextStyle(
+                          fontSize: 20,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
                     ),
                   ),
-                  const Spacer(),
+                  // Close button
                   IconButton(
                     icon: Icon(Icons.close, color: theme.colorScheme.onSurface),
                     onPressed: () => Navigator.pop(context),
@@ -271,7 +286,7 @@ class _PresetsDialogState extends State<PresetsDialog> {
             Expanded(
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                color: Colors.black.withOpacity(0.7),
+                color: Colors.black.withOpacity(0.4),
                 child: _isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : _presets.isEmpty
@@ -286,25 +301,30 @@ class _PresetsDialogState extends State<PresetsDialog> {
                           ),
                         ),
                       )
-                    : GridView.builder(
-                        padding: const EdgeInsets.symmetric(vertical: 20),
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          childAspectRatio: size.width / size.height,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                        ),
-                        itemCount: _presets.length,
-                        itemBuilder: (context, index) {
-                          final preset = _presets[index];
-                          return _buildPresetItem(preset);
-                        },
-                      ),
+                    : _buildGridView(size),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  // Build the grid view of presets
+  Widget _buildGridView(Size size) {
+    return GridView.builder(
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: size.width / size.height,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+      ),
+      itemCount: _presets.length,
+      itemBuilder: (context, index) {
+        final preset = _presets[index];
+        return _buildPresetItem(preset);
+      },
     );
   }
 
@@ -318,17 +338,11 @@ class _PresetsDialogState extends State<PresetsDialog> {
           Expanded(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: preset.thumbnailData != null
-                  ? Image.memory(
-                      preset.thumbnailData!,
-                      fit: BoxFit.cover,
-                      alignment: Alignment.center,
-                    )
-                  : Image.asset(
-                      preset.imagePath,
-                      fit: BoxFit.cover,
-                      alignment: Alignment.center,
-                    ),
+              // Use MiniShaderPreview with the shared controller
+              child: MiniShaderPreview(
+                preset: preset,
+                sharedController: _shaderAnimationController,
+              ),
             ),
           ),
           const SizedBox(height: 8),
@@ -397,6 +411,101 @@ class _PresetsDialogState extends State<PresetsDialog> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Mini preview widget for rendering a shader effect from a preset's settings
+class MiniShaderPreview extends StatefulWidget {
+  final ShaderPreset preset;
+  final AnimationController? sharedController;
+
+  const MiniShaderPreview({
+    Key? key,
+    required this.preset,
+    this.sharedController,
+  }) : super(key: key);
+
+  @override
+  State<MiniShaderPreview> createState() => _MiniShaderPreviewState();
+}
+
+class _MiniShaderPreviewState extends State<MiniShaderPreview>
+    with SingleTickerProviderStateMixin {
+  AnimationController? _localController;
+
+  // Use either the shared controller or a local one
+  AnimationController get _controller =>
+      widget.sharedController ?? _localController!;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Only create a local controller if no shared one was provided
+    if (widget.sharedController == null) {
+      _localController = AnimationController(
+        vsync: this,
+        duration: const Duration(seconds: 10),
+      );
+      _localController!.repeat();
+    }
+  }
+
+  @override
+  void dispose() {
+    // Only dispose the local controller if we created one
+    _localController?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final animationValue = _controller.value;
+
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            // Base image with effects
+            Container(
+              color: Colors.black,
+              child: EffectController.applyEffects(
+                child: Image.asset(widget.preset.imagePath, fit: BoxFit.cover),
+                settings: widget.preset.settings,
+                animationValue: animationValue,
+              ),
+            ),
+
+            // Text overlay if enabled
+            if (widget.preset.settings.textLayoutSettings.textEnabled)
+              Container(
+                alignment: Alignment.center,
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  widget.preset.settings.textLayoutSettings.textTitle.isNotEmpty
+                      ? widget.preset.settings.textLayoutSettings.textTitle
+                      : widget.preset.name,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24.0,
+                    fontWeight: FontWeight.bold,
+                    shadows: [
+                      Shadow(
+                        blurRadius: 5.0,
+                        color: Colors.black.withOpacity(0.7),
+                        offset: const Offset(1.0, 1.0),
+                      ),
+                    ],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }
