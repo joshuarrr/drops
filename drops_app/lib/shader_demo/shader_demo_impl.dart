@@ -162,6 +162,15 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
   int _currentPresetIndex = -1;
   bool _presetsLoaded = false;
 
+  // Store unsaved edits to restore when returning to current state
+  ShaderSettings? _unsavedSettings;
+  String? _unsavedImage;
+  ImageCategory? _unsavedCategory;
+
+  // PageController for smooth preset transitions
+  late PageController _pageController;
+  bool _isScrolling = false;
+
   @override
   void initState() {
     super.initState();
@@ -194,6 +203,9 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
       vsync: this,
     )..repeat();
 
+    // Initialize PageController with initial page 0
+    _pageController = PageController(initialPage: 0);
+
     _loadImageAssets();
 
     // Delay full immersive mode until after widget is built
@@ -209,6 +221,7 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
   @override
   void dispose() {
     _controller.dispose();
+    _pageController.dispose();
     // Restore system UI when we leave this screen
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
@@ -300,29 +313,32 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
             _showControls = !_showControls;
             if (!_showControls) {
               _showAspectSliders = false;
+              // Save current shader settings when hiding controls
+              _saveShaderSettings();
+
+              // Always save current settings to unsaved state when hiding controls
+              // This ensures the current edited state (including image changes) is preserved
+              _unsavedSettings = ShaderSettings.fromMap(
+                _shaderSettings.toMap(),
+              );
+              _unsavedImage = _selectedImage;
+              _unsavedCategory = _imageCategory;
+
+              // Reset current preset index when we have unsaved changes
+              // This ensures we're in the "Current State" when hiding controls
+              _currentPresetIndex = -1;
             }
           });
-        },
-        // Change from horizontal to vertical swipe
-        onVerticalDragEnd: (details) {
-          // Only enable swipe navigation when controls are hidden
-          if (!_showControls && !_isPresetDialogOpen) {
-            if (details.primaryVelocity != null) {
-              if (details.primaryVelocity! > 0) {
-                // Swipe down - previous preset
-                _navigateToPreviousPreset();
-              } else if (details.primaryVelocity! < 0) {
-                // Swipe up - next preset
-                _navigateToNextPreset();
-              }
-            }
-          }
         },
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // Wrap the effect in a RepaintBoundary for thumbnail capture
-            RepaintBoundary(key: _previewKey, child: _buildShaderEffect()),
+            // Show presets based on PageView when controls are hidden and we have loaded presets
+            // Otherwise show the preview with current settings
+            if (!_showControls && !_isPresetDialogOpen)
+              _buildPresetPageView()
+            else
+              RepaintBoundary(key: _previewKey, child: _buildShaderEffect()),
 
             // Controls overlay that can be toggled
             if (_showControls && !_isPresetDialogOpen)
@@ -343,19 +359,7 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                         16,
                         kToolbarHeight, // extend ~56 px further
                       ),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          // Fade starts roughly halfway down the app-bar title.
-                          stops: const [0.0, 0.5, 1.0],
-                          colors: [
-                            theme.colorScheme.surface.withOpacity(0.7),
-                            theme.colorScheme.surface.withOpacity(0.0),
-                            Colors.transparent,
-                          ],
-                        ),
-                      ),
+                      decoration: BoxDecoration(color: Colors.transparent),
                       child: Column(
                         children: [
                           EffectControls.buildAspectToggleBar(
@@ -431,49 +435,193 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
             // Aspect parameter sliders for the selected aspect
             if (_showControls && _showAspectSliders && !_isPresetDialogOpen)
               _buildAspectParameterSliders(),
-
-            // Add preset navigation indicators when controls are hidden
-            if (!_showControls &&
-                !_isPresetDialogOpen &&
-                _availablePresets.isNotEmpty)
-              Positioned(
-                bottom: 40,
-                left: 0,
-                right: 0,
-                child: Column(
-                  children: [
-                    // Preset counter
-                    Text(
-                      _currentPresetIndex >= 0
-                          ? 'Preset ${_currentPresetIndex + 1} / ${_availablePresets.length}'
-                          : '',
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 12,
-                        shadows: [Shadow(blurRadius: 3, color: Colors.black54)],
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 10),
-                    // Preset name
-                    if (_currentPresetIndex >= 0)
-                      Text(
-                        _availablePresets[_currentPresetIndex].name,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          shadows: [
-                            Shadow(blurRadius: 3, color: Colors.black54),
-                          ],
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                  ],
-                ),
-              ),
           ],
         ),
+      ),
+    );
+  }
+
+  // Build a PageView for swiping through presets
+  Widget _buildPresetPageView() {
+    // Create a temporary current-state preset using always current settings
+    // rather than unsaved settings (which might be null)
+    final currentStatePreset = ShaderPreset(
+      id: 'current_state',
+      name: 'Current State',
+      createdAt: DateTime.now(),
+      settings: _unsavedSettings ?? _shaderSettings,
+      imagePath: _unsavedImage ?? _selectedImage,
+    );
+
+    // Create a combined list with current state as first item
+    final allPresets = [currentStatePreset, ..._availablePresets];
+
+    // Adjust current preset index to account for the added current state
+    int adjustedIndex = _currentPresetIndex < 0 ? 0 : _currentPresetIndex + 1;
+
+    // Initialize page controller to current preset index if needed
+    if (!_isScrolling) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_pageController.hasClients) {
+          // Start with current page (0 for edited state, or adjustedIndex for a preset)
+          _pageController.jumpToPage(
+            _currentPresetIndex < 0 ? 0 : adjustedIndex,
+          );
+        }
+      });
+    }
+
+    return PageView.builder(
+      scrollDirection: Axis.vertical,
+      controller: _pageController,
+      onPageChanged: (index) {
+        if (!_isScrolling) {
+          setState(() {
+            if (index == 0) {
+              // Returning to current edited state - restore unsaved changes
+              if (_unsavedSettings != null) {
+                _shaderSettings = _unsavedSettings!;
+                _selectedImage = _unsavedImage!;
+                _imageCategory = _unsavedCategory!;
+              }
+            } else {
+              // Save current state before applying preset if this is first navigation from current state
+              if (_unsavedSettings == null) {
+                _unsavedSettings = ShaderSettings.fromMap(
+                  _shaderSettings.toMap(),
+                );
+                _unsavedImage = _selectedImage;
+                _unsavedCategory = _imageCategory;
+              }
+
+              // Apply one of the saved presets (adjust index to account for current state)
+              _currentPresetIndex = index - 1;
+              _applyPreset(
+                _availablePresets[_currentPresetIndex],
+                showControls: false,
+              );
+            }
+          });
+        }
+      },
+      itemCount: allPresets.length,
+      itemBuilder: (context, index) {
+        return _buildPresetPageItem(index, allPresets);
+      },
+    );
+  }
+
+  // Build a single preset page
+  Widget _buildPresetPageItem(int index, List<ShaderPreset> presets) {
+    final preset = presets[index];
+
+    // If this is the current state (index 0)
+    if (index == 0) {
+      return GestureDetector(
+        onTap: () {
+          setState(() {
+            _showControls = !_showControls;
+            if (!_showControls) {
+              _showAspectSliders = false;
+            }
+          });
+        },
+        child: _buildShaderEffectForPreset(preset),
+      );
+    }
+
+    // Handle saved presets (adjust index for comparison with _currentPresetIndex)
+    if (index - 1 == _currentPresetIndex) {
+      return GestureDetector(
+        onTap: () {
+          setState(() {
+            _showControls = !_showControls;
+            if (!_showControls) {
+              _showAspectSliders = false;
+            }
+          });
+        },
+        child: _buildShaderEffectForPreset(preset),
+      );
+    } else {
+      // For other presets, use a preloaded or simpler version
+      return GestureDetector(
+        onTap: () {
+          setState(() {
+            // For non-current-state presets, apply the preset
+            if (index > 0) {
+              _currentPresetIndex = index - 1;
+              _applyPreset(
+                _availablePresets[_currentPresetIndex],
+                showControls: false,
+              );
+            }
+            _showControls = !_showControls;
+            if (!_showControls) {
+              _showAspectSliders = false;
+            }
+          });
+        },
+        child: Container(
+          color: Colors.black,
+          child: Image.asset(preset.imagePath, fit: BoxFit.cover),
+        ),
+      );
+    }
+  }
+
+  // Build shader effect for a specific preset
+  Widget _buildShaderEffectForPreset(ShaderPreset preset) {
+    // Get screen dimensions first to ensure consistent sizing
+    final screenSize = MediaQuery.of(context).size;
+    final width = screenSize.width;
+    final height = screenSize.height;
+
+    // Create a temporary settings object for this preset to avoid modifying the main one
+    final presetSettings = preset.settings;
+
+    return SizedBox(
+      width: width,
+      height: height,
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) {
+          final double animationValue = _controller.value;
+
+          // Apply effects using the preset's settings
+          Widget effectsWidget = Container(
+            width: width,
+            height: height,
+            alignment: Alignment.center,
+            child: EffectController.applyEffects(
+              child: Image.asset(preset.imagePath, fit: BoxFit.cover),
+              settings: presetSettings,
+              animationValue: animationValue,
+            ),
+          );
+
+          // Add text overlay if enabled in the preset
+          List<Widget> stackChildren = [Positioned.fill(child: effectsWidget)];
+
+          if (presetSettings.textLayoutSettings.textEnabled &&
+              (presetSettings.textLayoutSettings.textTitle.isNotEmpty ||
+                  presetSettings.textLayoutSettings.textSubtitle.isNotEmpty ||
+                  presetSettings.textLayoutSettings.textArtist.isNotEmpty)) {
+            stackChildren.add(
+              TextOverlay(
+                settings: presetSettings,
+                animationValue: animationValue,
+              ),
+            );
+          }
+
+          return Container(
+            color: Colors.black,
+            width: width,
+            height: height,
+            child: Stack(fit: StackFit.expand, children: stackChildren),
+          );
+        },
       ),
     );
   }
@@ -634,7 +782,7 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     );
   }
 
-  void _applyPreset(ShaderPreset preset) {
+  void _applyPreset(ShaderPreset preset, {bool showControls = true}) {
     // Force a rebuild with new settings
     setState(() {
       // Apply all settings from the preset
@@ -648,8 +796,10 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
         _imageCategory = ImageCategory.artists;
       }
 
-      // Trigger aspect controls to reflect loaded settings - first ensure controls are visible
-      _showControls = true;
+      // Only show controls if explicitly requested
+      if (showControls) {
+        _showControls = true;
+      }
 
       // If aspect sliders are open, maintain current aspect but refresh its state
       if (_showAspectSliders) {
@@ -658,6 +808,12 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
         // If no sliders were open, default to color aspect as that's most visually obvious
         _selectedAspect = ShaderAspect.color;
       }
+
+      // Clear unsaved settings when applying a preset
+      // This ensures we don't have stale unsaved settings
+      _unsavedSettings = null;
+      _unsavedImage = null;
+      _unsavedCategory = null;
     });
 
     // Force controller to restart animation to ensure effects are visible
@@ -816,9 +972,9 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     }
   }
 
-  // Navigate to the next preset
+  // Navigate to the next preset - modified to use PageController
   void _navigateToNextPreset() {
-    if (_availablePresets.isEmpty) return;
+    // Always include the current state, even if there are no saved presets
 
     // Ensure presets are loaded
     if (!_presetsLoaded) {
@@ -826,19 +982,34 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
       return;
     }
 
-    int nextIndex = _currentPresetIndex + 1;
-    if (nextIndex >= _availablePresets.length) {
-      nextIndex = 0; // Wrap around
+    // Calculate target page - add 1 to include current state at index 0
+    int nextIndex =
+        _currentPresetIndex +
+        2; // +1 for next preset, +1 for current state offset
+
+    // Total count includes current state + all available presets
+    int totalCount = _availablePresets.length + 1;
+
+    if (nextIndex >= totalCount) {
+      nextIndex = 0; // Wrap around to current state
     }
 
-    // Apply the preset
-    _applyPreset(_availablePresets[nextIndex]);
-    _currentPresetIndex = nextIndex;
+    // Use the PageController to animate to the next page
+    _isScrolling = true;
+    _pageController
+        .animateToPage(
+          nextIndex,
+          duration: Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        )
+        .then((_) {
+          _isScrolling = false;
+        });
   }
 
-  // Navigate to the previous preset
+  // Navigate to the previous preset - modified to use PageController
   void _navigateToPreviousPreset() {
-    if (_availablePresets.isEmpty) return;
+    // Always include the current state, even if there are no saved presets
 
     // Ensure presets are loaded
     if (!_presetsLoaded) {
@@ -846,13 +1017,36 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
       return;
     }
 
-    int prevIndex = _currentPresetIndex - 1;
-    if (prevIndex < 0) {
-      prevIndex = _availablePresets.length - 1; // Wrap around
+    // Calculate target page - account for current state at index 0
+    int prevIndex = _currentPresetIndex; // current index in saved presets
+
+    // If we're viewing a saved preset, we need to offset it to account for current state
+    if (prevIndex > 0) {
+      prevIndex--; // Go to previous preset
+    } else {
+      // We're at the first preset, go to the last
+      prevIndex = _availablePresets.length - 1;
     }
 
-    // Apply the preset
-    _applyPreset(_availablePresets[prevIndex]);
-    _currentPresetIndex = prevIndex;
+    // Add 1 to account for current state at index 0
+    prevIndex++;
+
+    // If we're at the beginning, wrap to the end
+    if (prevIndex < 0) {
+      prevIndex = _availablePresets
+          .length; // Wrap to the last preset including current state
+    }
+
+    // Use the PageController to animate to the previous page
+    _isScrolling = true;
+    _pageController
+        .animateToPage(
+          prevIndex,
+          duration: Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        )
+        .then((_) {
+          _isScrolling = false;
+        });
   }
 }

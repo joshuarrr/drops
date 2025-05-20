@@ -57,10 +57,39 @@ class _TextOverlayState extends State<TextOverlay> {
     super.initState();
     _currentKey = _uuid.v4();
     TextOverlay._activeState = this; // Register this state
+
+    // Listen to changes on textfx settings to force updates
+    widget.settings.textfxSettings.addListener(_onTextFxSettingsChanged);
+  }
+
+  @override
+  void didUpdateWidget(TextOverlay oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // Handle changes in widget settings by updating listeners
+    if (oldWidget.settings.textfxSettings != widget.settings.textfxSettings) {
+      oldWidget.settings.textfxSettings.removeListener(
+        _onTextFxSettingsChanged,
+      );
+      widget.settings.textfxSettings.addListener(_onTextFxSettingsChanged);
+    }
+  }
+
+  void _onTextFxSettingsChanged() {
+    // Force rebuild by invalidating cache when text effects change
+    _lastTextOverlaySettings = null;
+    _cachedTextOverlay = null;
+    _currentKey = _uuid.v4();
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
   void dispose() {
+    // Remove listener when disposing
+    widget.settings.textfxSettings.removeListener(_onTextFxSettingsChanged);
+
     if (TextOverlay._activeState == this) {
       TextOverlay._activeState = null;
     }
@@ -73,93 +102,95 @@ class _TextOverlayState extends State<TextOverlay> {
     final textSettings = widget.settings.textLayoutSettings;
     final fxSettings = widget.settings.textfxSettings;
 
-    // Use a ListenableBuilder to listen to changes in TextFXSettings
-    return ListenableBuilder(
-      listenable: fxSettings,
-      builder: (context, _) {
-        // Check if settings or animation value have changed
-        bool settingsChanged =
-            _lastTextOverlaySettings == null ||
-            !_areTextSettingsEqual(widget.settings, _lastTextOverlaySettings!);
-
-        // Check if any effect is targeted to text
-        bool shouldApplyEffectsToText =
-            (widget.settings.colorEnabled &&
-                widget.settings.colorSettings.applyToText) ||
-            (widget.settings.blurEnabled &&
-                widget.settings.blurSettings.applyToText) ||
-            (widget.settings.noiseEnabled &&
-                widget.settings.noiseSettings.applyToText) ||
-            (widget.settings.rainEnabled &&
-                widget.settings.rainSettings.applyToText) ||
-            (widget.settings.chromaticEnabled &&
-                widget.settings.chromaticSettings.applyToText) ||
-            (widget.settings.rippleEnabled &&
-                widget.settings.rippleSettings.applyToText);
-
-        // Check animation changes if shader effects are applied to text
-        bool animationChanged =
-            shouldApplyEffectsToText &&
-            fxSettings.textfxEnabled &&
-            (_lastTextOverlayAnimValue == null ||
-                ((widget.settings.colorSettings.colorAnimated &&
-                            widget.settings.colorEnabled) ||
-                        (widget.settings.blurSettings.blurAnimated &&
-                            widget.settings.blurEnabled) ||
-                        (widget.settings.noiseSettings.noiseAnimated &&
-                            widget.settings.noiseEnabled)) &&
-                    (_lastTextOverlayAnimValue! - widget.animationValue).abs() >
-                        0.01);
-
-        // Force a rebuild if settings changed
-        if (settingsChanged) {
-          _currentKey = _uuid.v4();
-        }
-
-        // Return cached overlay if available and nothing significant changed
-        if (_cachedTextOverlay != null &&
-            !settingsChanged &&
-            !animationChanged) {
-          return _cachedTextOverlay!;
-        }
-
-        // Build text overlay stack
-        final overlayStack = Stack(children: _buildTextLines());
-
-        // Create and cache the result
-        Widget result;
-        if (shouldApplyEffectsToText) {
-          result = Container(
-            key: Key(_currentKey), // Force rebuild with key
-            color: Colors.transparent,
-            child: RepaintBoundary(
-              child: EffectController.applyEffects(
-                child: overlayStack,
-                settings: widget.settings,
-                animationValue: widget.animationValue,
-                isTextContent: true,
-                preserveTransparency: true,
-              ),
-            ),
-          );
-        } else {
-          result = Container(
-            key: Key(_currentKey), // Force rebuild with key
-            color: Colors.transparent,
-            child: overlayStack,
-          );
-        }
-
-        // Update cache
-        _cachedTextOverlay = result;
-        _lastTextOverlaySettings = ShaderSettings.fromMap(
-          widget.settings.toMap(),
-        );
-        _lastTextOverlayAnimValue = widget.animationValue;
-
-        return result;
-      },
+    // Create a unique key for each settings configuration to force rebuild when needed
+    final settingsKey = Object.hash(
+      textSettings.hashCode,
+      fxSettings
+          .updateCounter, // Use updateCounter property from TextFXSettings
+      widget.animationValue.toStringAsFixed(
+        3,
+      ), // Round to avoid too many rebuilds
     );
+
+    final currentKey = '$_currentKey-$settingsKey';
+
+    // Check if settings or animation value have changed
+    bool settingsChanged =
+        _lastTextOverlaySettings == null ||
+        !_areTextSettingsEqual(widget.settings, _lastTextOverlaySettings!);
+
+    // Check if any effect is targeted to text
+    bool shouldApplyEffectsToText =
+        (widget.settings.colorEnabled &&
+            widget.settings.colorSettings.applyToText) ||
+        (widget.settings.blurEnabled &&
+            widget.settings.blurSettings.applyToText) ||
+        (widget.settings.noiseEnabled &&
+            widget.settings.noiseSettings.applyToText) ||
+        (widget.settings.rainEnabled &&
+            widget.settings.rainSettings.applyToText) ||
+        (widget.settings.chromaticEnabled &&
+            widget.settings.chromaticSettings.applyToText) ||
+        (widget.settings.rippleEnabled &&
+            widget.settings.rippleSettings.applyToText);
+
+    // Check animation changes if shader effects are applied to text
+    bool animationChanged =
+        shouldApplyEffectsToText &&
+        fxSettings.textfxEnabled &&
+        (_lastTextOverlayAnimValue == null ||
+            ((widget.settings.colorSettings.colorAnimated &&
+                        widget.settings.colorEnabled) ||
+                    (widget.settings.blurSettings.blurAnimated &&
+                        widget.settings.blurEnabled) ||
+                    (widget.settings.noiseSettings.noiseAnimated &&
+                        widget.settings.noiseEnabled)) &&
+                (_lastTextOverlayAnimValue! - widget.animationValue).abs() >
+                    0.01);
+
+    // Force a rebuild if settings changed
+    if (settingsChanged) {
+      _currentKey = _uuid.v4();
+    }
+
+    // Return cached overlay if available and nothing significant changed
+    if (_cachedTextOverlay != null && !settingsChanged && !animationChanged) {
+      return _cachedTextOverlay!;
+    }
+
+    // Build text overlay stack
+    final overlayStack = Stack(children: _buildTextLines());
+
+    // Create and cache the result
+    Widget result;
+    if (shouldApplyEffectsToText) {
+      result = Container(
+        key: Key(currentKey), // Force rebuild with key
+        color: Colors.transparent,
+        child: RepaintBoundary(
+          child: EffectController.applyEffects(
+            child: overlayStack,
+            settings: widget.settings,
+            animationValue: widget.animationValue,
+            isTextContent: true,
+            preserveTransparency: true,
+          ),
+        ),
+      );
+    } else {
+      result = Container(
+        key: Key(currentKey), // Force rebuild with key
+        color: Colors.transparent,
+        child: overlayStack,
+      );
+    }
+
+    // Update cache
+    _cachedTextOverlay = result;
+    _lastTextOverlaySettings = ShaderSettings.fromMap(widget.settings.toMap());
+    _lastTextOverlayAnimValue = widget.animationValue;
+
+    return result;
   }
 
   // Helper to check if a font is a variable font

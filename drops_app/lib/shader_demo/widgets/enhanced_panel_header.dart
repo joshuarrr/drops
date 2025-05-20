@@ -55,6 +55,13 @@ class EnhancedPanelHeader extends StatelessWidget {
                   color: sliderColor,
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black.withOpacity(0.5),
+                      offset: const Offset(0, 1),
+                      blurRadius: 3,
+                    ),
+                  ],
                 ),
               ),
               // Use the new options menu
@@ -147,6 +154,13 @@ class EnhancedPanelHeader extends StatelessWidget {
                               style: TextStyle(
                                 color: sliderColor,
                                 fontSize: 12,
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black.withOpacity(0.5),
+                                    offset: const Offset(0, 1),
+                                    blurRadius: 2,
+                                  ),
+                                ],
                               ),
                             ),
                           ),

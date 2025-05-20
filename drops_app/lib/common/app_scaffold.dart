@@ -46,6 +46,11 @@ class AppScaffold extends StatelessWidget {
                     )
                   : null,
               actions: appBarActions,
+              scrolledUnderElevation: 0,
+              surfaceTintColor: Colors.transparent,
+              foregroundColor: theme.brightness == Brightness.dark
+                  ? Colors.white
+                  : Colors.black,
             )
           : null,
       extendBodyBehindAppBar: extendBodyBehindAppBar,

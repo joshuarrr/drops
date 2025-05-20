@@ -32,13 +32,33 @@ class PanelHeader extends StatelessWidget {
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: textColor,
+                shadows: [
+                  Shadow(
+                    color: Colors.black.withOpacity(0.3),
+                    offset: const Offset(0, 1),
+                    blurRadius: 2,
+                  ),
+                ],
               ),
               overflow: TextOverflow.ellipsis,
             ),
           ),
           if (showAnimToggle) ...[
             SizedBox(width: 8),
-            Text('Animate', style: TextStyle(fontSize: 14, color: textColor)),
+            Text(
+              'Animate',
+              style: TextStyle(
+                fontSize: 14,
+                color: textColor,
+                shadows: [
+                  Shadow(
+                    color: Colors.black.withOpacity(0.3),
+                    offset: const Offset(0, 1),
+                    blurRadius: 2,
+                  ),
+                ],
+              ),
+            ),
             SizedBox(width: 8),
             Switch(value: animationEnabled, onChanged: onAnimationToggled),
           ],

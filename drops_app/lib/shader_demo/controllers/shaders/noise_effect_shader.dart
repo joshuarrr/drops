@@ -21,6 +21,14 @@ class NoiseEffectShader extends StatelessWidget {
   final bool isTextContent;
   final String _logTag = 'NoiseEffectShader';
 
+  // Log throttling - using static variables for efficient throttling
+  static DateTime _lastLogTime = DateTime.now().subtract(
+    const Duration(seconds: 1),
+  );
+  static const Duration _logThrottleInterval = Duration(milliseconds: 1000);
+  static String _lastLogMessage =
+      ""; // Track the last message to avoid duplicates
+
   const NoiseEffectShader({
     super.key,
     required this.child,
@@ -33,6 +41,19 @@ class NoiseEffectShader extends StatelessWidget {
   // Custom log function that uses both dart:developer and debugPrint for visibility
   void _log(String message) {
     if (!enableShaderDebugLogs) return;
+
+    // Skip if this is the same message that was just logged
+    if (message == _lastLogMessage) return;
+
+    // Throttle logs to avoid excessive output
+    final now = DateTime.now();
+    if (now.difference(_lastLogTime) < _logThrottleInterval) {
+      return;
+    }
+
+    _lastLogTime = now;
+    _lastLogMessage = message;
+
     developer.log(message, name: _logTag);
     debugPrint('[$_logTag] $message');
   }

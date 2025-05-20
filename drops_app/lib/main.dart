@@ -481,8 +481,8 @@ class _GradientScreenState extends State<GradientScreen>
       title: 'Home',
       currentIndex: 0, // Home tab
       showBackButton: false,
-      extendBodyBehindAppBar: true,
-      appBarBackgroundColor: Colors.transparent,
+      extendBodyBehindAppBar: false,
+      appBarBackgroundColor: theme.colorScheme.surface,
       appBarElevation: 0,
       body: FadeTransition(
         opacity: _animation,

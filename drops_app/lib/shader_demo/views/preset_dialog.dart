@@ -180,35 +180,14 @@ class PresetsDialog extends StatefulWidget {
   State<PresetsDialog> createState() => _PresetsDialogState();
 }
 
-class _PresetsDialogState extends State<PresetsDialog>
-    with SingleTickerProviderStateMixin {
+class _PresetsDialogState extends State<PresetsDialog> {
   List<ShaderPreset> _presets = [];
   bool _isLoading = true;
-
-  // Add shared animation controller for shader previews
-  late AnimationController _shaderAnimationController;
 
   @override
   void initState() {
     super.initState();
-
-    // Create shared animation controller for shader animations
-    _shaderAnimationController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 10),
-    );
-    // Start continuous animation
-    _shaderAnimationController.repeat();
-
     _loadPresets();
-  }
-
-  @override
-  void dispose() {
-    // Dispose animation controller
-    _shaderAnimationController.dispose();
-
-    super.dispose();
   }
 
   Future<void> _loadPresets() async {
@@ -242,69 +221,72 @@ class _PresetsDialogState extends State<PresetsDialog>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final size = MediaQuery.of(context).size;
-    final topPadding = MediaQuery.of(context).padding.top;
-
-    // Define app bar height to match the app's toolbar height
-    const appBarHeight = kToolbarHeight;
 
     return Dialog.fullscreen(
       backgroundColor: Colors.transparent,
       child: Material(
         color: Colors.transparent,
-        child: Column(
-          children: [
-            // Header that matches app bar size and position
-            Container(
-              height: appBarHeight + topPadding,
-              padding: EdgeInsets.only(top: topPadding),
-              child: Row(
-                children: [
-                  // Spacer to balance layout
-                  SizedBox(width: 48),
-                  // Expanded space with centered title
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        'Saved Presets',
-                        style: TextStyle(
-                          fontSize: 20,
-                          color: theme.colorScheme.onSurface,
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Header with title and close button
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16.0,
+                  vertical: 8.0,
+                ),
+                child: Row(
+                  children: [
+                    // Spacer to balance layout
+                    const SizedBox(width: 48),
+                    // Expanded space with centered title
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          'Saved Presets',
+                          style: TextStyle(
+                            fontSize: 20,
+                            color: theme.colorScheme.onSurface,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  // Close button
-                  IconButton(
-                    icon: Icon(Icons.close, color: theme.colorScheme.onSurface),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
+                    // Close button
+                    IconButton(
+                      icon: Icon(
+                        Icons.close,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
               ),
-            ),
 
-            // Content
-            Expanded(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                color: Colors.black.withOpacity(0.4),
-                child: _isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : _presets.isEmpty
-                    ? Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(32.0),
-                          child: Text(
-                            'No saved presets yet.',
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              color: Colors.white,
+              // Content
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  // Removed the background color to eliminate the scrim
+                  child: _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _presets.isEmpty
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(32.0),
+                            child: Text(
+                              'No saved presets yet.',
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                color: Colors.white,
+                              ),
                             ),
                           ),
-                        ),
-                      )
-                    : _buildGridView(size),
+                        )
+                      : _buildGridView(size),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -313,7 +295,8 @@ class _PresetsDialogState extends State<PresetsDialog>
   // Build the grid view of presets
   Widget _buildGridView(Size size) {
     return GridView.builder(
-      padding: const EdgeInsets.symmetric(vertical: 20),
+      // Adjusted padding to ensure content isn't clipped
+      padding: const EdgeInsets.only(top: 8.0, bottom: 16.0, left: 0, right: 0),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         childAspectRatio: size.width / size.height,
@@ -332,180 +315,89 @@ class _PresetsDialogState extends State<PresetsDialog>
     return InkWell(
       onTap: () => _handlePresetLoad(preset),
       borderRadius: BorderRadius.circular(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              // Use MiniShaderPreview with the shared controller
-              child: MiniShaderPreview(
-                preset: preset,
-                sharedController: _shaderAnimationController,
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  preset.name,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(16),
-                  onTap: () async {
-                    final confirm = await showDialog<bool>(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('Delete Preset'),
-                        content: Text(
-                          'Are you sure you want to delete "${preset.name}"?',
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, false),
-                            child: const Text('Cancel'),
-                          ),
-                          FilledButton(
-                            onPressed: () => Navigator.pop(context, true),
-                            style: FilledButton.styleFrom(
-                              backgroundColor: Colors.red,
-                            ),
-                            child: const Text('Delete'),
-                          ),
-                        ],
-                      ),
-                    );
-
-                    if (confirm == true) {
-                      await PresetController.deletePreset(preset.id);
-                      _loadPresets();
-                    }
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(6.0),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.4),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.delete,
-                      size: 18,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Mini preview widget for rendering a shader effect from a preset's settings
-class MiniShaderPreview extends StatefulWidget {
-  final ShaderPreset preset;
-  final AnimationController? sharedController;
-
-  const MiniShaderPreview({
-    Key? key,
-    required this.preset,
-    this.sharedController,
-  }) : super(key: key);
-
-  @override
-  State<MiniShaderPreview> createState() => _MiniShaderPreviewState();
-}
-
-class _MiniShaderPreviewState extends State<MiniShaderPreview>
-    with SingleTickerProviderStateMixin {
-  AnimationController? _localController;
-
-  // Use either the shared controller or a local one
-  AnimationController get _controller =>
-      widget.sharedController ?? _localController!;
-
-  @override
-  void initState() {
-    super.initState();
-
-    // Only create a local controller if no shared one was provided
-    if (widget.sharedController == null) {
-      _localController = AnimationController(
-        vsync: this,
-        duration: const Duration(seconds: 10),
-      );
-      _localController!.repeat();
-    }
-  }
-
-  @override
-  void dispose() {
-    // Only dispose the local controller if we created one
-    _localController?.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        final animationValue = _controller.value;
-
-        return Stack(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Stack(
           fit: StackFit.expand,
           children: [
-            // Base image with effects
-            Container(
-              color: Colors.black,
-              child: EffectController.applyEffects(
-                child: Image.asset(widget.preset.imagePath, fit: BoxFit.cover),
-                settings: widget.preset.settings,
-                animationValue: animationValue,
-              ),
-            ),
+            // Background image
+            preset.thumbnailData != null
+                ? Image.memory(preset.thumbnailData!, fit: BoxFit.cover)
+                : Image.asset(preset.imagePath, fit: BoxFit.cover),
 
-            // Text overlay if enabled
-            if (widget.preset.settings.textLayoutSettings.textEnabled)
-              Container(
-                alignment: Alignment.center,
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  widget.preset.settings.textLayoutSettings.textTitle.isNotEmpty
-                      ? widget.preset.settings.textLayoutSettings.textTitle
-                      : widget.preset.name,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24.0,
-                    fontWeight: FontWeight.bold,
-                    shadows: [
-                      Shadow(
-                        blurRadius: 5.0,
-                        color: Colors.black.withOpacity(0.7),
-                        offset: const Offset(1.0, 1.0),
+            // Overlay with name and delete button at the bottom
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12.0,
+                  vertical: 8.0,
+                ),
+                decoration: BoxDecoration(color: Colors.black.withOpacity(0.3)),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Preset name
+                    Expanded(
+                      child: Text(
+                        preset.name,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ],
-                  ),
-                  textAlign: TextAlign.center,
+                    ),
+
+                    // Delete button
+                    InkWell(
+                      borderRadius: BorderRadius.circular(16),
+                      onTap: () async {
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Delete Preset'),
+                            content: Text(
+                              'Are you sure you want to delete "${preset.name}"?',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: const Text('Cancel'),
+                              ),
+                              FilledButton(
+                                onPressed: () => Navigator.pop(context, true),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: Colors.red,
+                                ),
+                                child: const Text('Delete'),
+                              ),
+                            ],
+                          ),
+                        );
+
+                        if (confirm == true) {
+                          await PresetController.deletePreset(preset.id);
+                          _loadPresets();
+                        }
+                      },
+                      child: const Icon(
+                        Icons.delete,
+                        size: 18,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
                 ),
               ),
+            ),
           ],
-        );
-      },
+        ),
+      ),
     );
   }
 }

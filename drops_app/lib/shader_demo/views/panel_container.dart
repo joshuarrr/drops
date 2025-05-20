@@ -37,12 +37,10 @@ class PanelContainer extends StatelessWidget {
       padding: padding,
       margin: margin,
       decoration: BoxDecoration(
-        // Use a semi-opaque white background in light mode and a
-        // semi-opaque black background in dark mode so controls are
-        // clearly visible against the image.
+        // Use a more transparent background, reduce the alpha from 0.3 to 0.1
         color: isDark
-            ? Colors.black.withValues(alpha: 0.3)
-            : Colors.white.withValues(alpha: 0.3),
+            ? Colors.black.withValues(alpha: 0.1)
+            : Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(borderRadius),
       ),
       child: child,
