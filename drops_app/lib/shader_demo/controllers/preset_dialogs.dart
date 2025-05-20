@@ -7,7 +7,7 @@ import 'preset_controller.dart';
 /// Handles showing dialogs for saving and loading shader presets
 class PresetDialogs {
   /// Show dialog to save a preset
-  static void showSavePresetDialog({
+  static Future<void> showSavePresetDialog({
     required BuildContext context,
     required ShaderSettings settings,
     required String imagePath,
@@ -16,7 +16,7 @@ class PresetDialogs {
     // Store a reference to the scaffold context before showing the dialog
     final scaffoldContext = context;
 
-    showDialog(
+    return showDialog(
       context: context,
       barrierColor: Colors.black.withOpacity(0.5),
       builder: (context) => SavePresetDialog(

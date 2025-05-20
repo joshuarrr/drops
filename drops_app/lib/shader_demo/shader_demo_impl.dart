@@ -256,7 +256,13 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                 settings: _shaderSettings,
                 imagePath: _selectedImage,
                 previewKey: _previewKey,
-              );
+              ).then((_) {
+                // Reload available presets immediately after saving
+                setState(() {
+                  _presetsLoaded = false; // Force reload of presets
+                });
+                _loadAvailablePresets();
+              });
             } else if (value == 'load_preset') {
               setState(() {
                 _isPresetDialogOpen = true;
@@ -443,6 +449,15 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
 
   // Build a PageView for swiping through presets
   Widget _buildPresetPageView() {
+    // Ensure presets are loaded
+    if (!_presetsLoaded) {
+      // Load presets if not already loaded
+      _loadAvailablePresets();
+
+      // Show a loading indicator while presets are being loaded
+      return Center(child: CircularProgressIndicator());
+    }
+
     // Create a temporary current-state preset using always current settings
     // rather than unsaved settings (which might be null)
     final currentStatePreset = ShaderPreset(
