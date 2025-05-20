@@ -55,14 +55,15 @@ class PresetDialogs {
   }
 
   /// Show dialog to load a preset
-  static void showLoadPresetDialog({
+  /// Returns a Future that completes when the dialog is closed
+  static Future<void> showLoadPresetDialog({
     required BuildContext context,
     required Function(ShaderPreset) onPresetLoaded,
   }) {
     // Store a reference to the scaffold context before showing the dialog
     final scaffoldContext = context;
 
-    showDialog(
+    return showDialog(
       context: context,
       barrierColor: Colors.black.withOpacity(0.5),
       builder: (context) => PresetsDialog(

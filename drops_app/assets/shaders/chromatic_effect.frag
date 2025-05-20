@@ -73,6 +73,15 @@ void main()
     uv.y = 1.0 - uv.y;
 #endif // INVERT_Y
     
+    // Sample the original texture to get alpha
+    vec4 originalColor = texture(iChannel0, uv);
+    
+    // If pixel is fully transparent, keep it transparent
+    if (originalColor.a < 0.01) {
+        fragColor = vec4(0.0, 0.0, 0.0, 0.0);
+        return;
+    }
+    
     // get polar coordinates
     vec2 cart = (uv - vec2(0.5)) * 2.2;  // 0->1 to -1->1
     cart.x *= max(iResolution.x, iResolution.y) / min(iResolution.x, iResolution.y);
@@ -120,6 +129,6 @@ void main()
         texture(iChannel0, fetchUV_B).b
     );
     
-    // Output to screen
-    fragColor = vec4(col, 1.0);
+    // Output to screen with original alpha
+    fragColor = vec4(col, originalColor.a);
 } 

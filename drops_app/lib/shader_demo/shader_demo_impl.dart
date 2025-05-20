@@ -151,6 +151,9 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
   double? _lastTextOverlayAnimValue;
   final _textOverlayMemoKey = GlobalKey();
 
+  // Add a flag to track when the preset dialog is open
+  bool _isPresetDialogOpen = false;
+
   @override
   void initState() {
     super.initState();
@@ -207,7 +210,8 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
 
     return AppScaffold(
       title: 'Shaders',
-      showAppBar: true,
+      showAppBar:
+          !_isPresetDialogOpen, // Hide app bar when preset dialog is open
       showBackButton: true,
       currentIndex: 1, // Demos tab
       extendBodyBehindAppBar: true,
@@ -230,10 +234,23 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                 previewKey: _previewKey,
               );
             } else if (value == 'load_preset') {
+              setState(() {
+                _isPresetDialogOpen = true;
+              });
+
               PresetDialogs.showLoadPresetDialog(
                 context: context,
-                onPresetLoaded: _applyPreset,
-              );
+                onPresetLoaded: (preset) {
+                  _applyPreset(preset);
+                  // Note: We don't need to set _isPresetDialogOpen to false here
+                  // as the dialog is closed automatically and will trigger the then() block
+                },
+              ).then((_) {
+                // This runs when the dialog is closed (either with a preset or without)
+                setState(() {
+                  _isPresetDialogOpen = false;
+                });
+              });
             }
           },
           itemBuilder: (context) => [

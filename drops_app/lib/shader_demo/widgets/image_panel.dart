@@ -51,8 +51,8 @@ class ImagePanel extends StatelessWidget {
           deletePreset: _deletePresetAndUpdate,
           refreshPresets: _refreshPresets,
           refreshCounter: _refreshCounter,
-          // For the image panel, these settings don't really apply
-          // since it's not an effect, but we need to provide them
+          // For the image panel, only apply to image makes sense
+          // "Apply to Text" option will be hidden in the menu
           applyToImage: true,
           applyToText: true,
           onApplyToImageChanged: (_) {},

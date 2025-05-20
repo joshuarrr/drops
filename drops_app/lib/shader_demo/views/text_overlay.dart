@@ -985,7 +985,11 @@ class _TextOverlayState extends State<TextOverlay> {
 
     if (a.blurEnabled && a.blurSettings.applyToText) {
       if (a.blurSettings.blurAmount != b.blurSettings.blurAmount ||
-          a.blurSettings.blurRadius != b.blurSettings.blurRadius) {
+          a.blurSettings.blurRadius != b.blurSettings.blurRadius ||
+          a.blurSettings.blurOpacity != b.blurSettings.blurOpacity ||
+          a.blurSettings.blurIntensity != b.blurSettings.blurIntensity ||
+          a.blurSettings.blurContrast != b.blurSettings.blurContrast ||
+          a.blurSettings.blurBlendMode != b.blurSettings.blurBlendMode) {
         return false;
       }
     }

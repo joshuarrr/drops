@@ -46,7 +46,9 @@ class EffectOptionsMenu extends StatelessWidget {
     // Determine which targeting options to show
     final bool showApplyToImage = aspect != ShaderAspect.image;
     final bool showApplyToText =
-        aspect != ShaderAspect.text && aspect != ShaderAspect.textfx;
+        aspect != ShaderAspect.text &&
+        aspect != ShaderAspect.textfx &&
+        aspect != ShaderAspect.image; // Also hide for image aspect
     final bool showDivider = showApplyToImage || showApplyToText;
 
     return PopupMenuButton<String>(

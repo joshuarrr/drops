@@ -215,71 +215,94 @@ class _PresetsDialogState extends State<PresetsDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final size = MediaQuery.of(context).size;
+    final topPadding = MediaQuery.of(context).padding.top;
+
+    // Define app bar height to match the app's toolbar height
+    const appBarHeight = kToolbarHeight;
 
     return Dialog.fullscreen(
       backgroundColor: Colors.transparent,
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
+      child: Material(
+        color: Colors.transparent,
+        child: Column(
+          children: [
+            // Header that matches app bar size and position
+            Container(
+              height: appBarHeight + topPadding,
+              padding: EdgeInsets.only(top: topPadding),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface.withOpacity(0.8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
                 children: [
+                  // Back button area to match app bar layout
+                  IconButton(
+                    icon: Icon(
+                      Icons.arrow_back,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                  ),
                   Text(
                     'Saved Presets',
                     style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w500,
+                      color: theme.colorScheme.onSurface,
                     ),
                   ),
                   const Spacer(),
                   IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white),
+                    icon: Icon(Icons.close, color: theme.colorScheme.onSurface),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
-              if (_isLoading)
-                const Expanded(
-                  child: Center(child: CircularProgressIndicator()),
-                )
-              else if (_presets.isEmpty)
-                Expanded(
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(32.0),
-                      child: Text(
-                        'No saved presets yet.',
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: Colors.white,
+            ),
+
+            // Content
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                color: Colors.black.withOpacity(0.7),
+                child: _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : _presets.isEmpty
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(32.0),
+                          child: Text(
+                            'No saved presets yet.',
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: Colors.white,
+                            ),
+                          ),
                         ),
+                      )
+                    : GridView.builder(
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          childAspectRatio: size.width / size.height,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                        ),
+                        itemCount: _presets.length,
+                        itemBuilder: (context, index) {
+                          final preset = _presets[index];
+                          return _buildPresetItem(preset);
+                        },
                       ),
-                    ),
-                  ),
-                )
-              else
-                Expanded(
-                  child: GridView.builder(
-                    padding: const EdgeInsets.only(bottom: 20),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: size.width / size.height,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                    ),
-                    itemCount: _presets.length,
-                    itemBuilder: (context, index) {
-                      final preset = _presets[index];
-                      return _buildPresetItem(preset);
-                    },
-                  ),
-                ),
-            ],
-          ),
+              ),
+            ),
+          ],
         ),
       ),
     );

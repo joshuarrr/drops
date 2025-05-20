@@ -32,7 +32,7 @@ extension ShaderAspectExtension on ShaderAspect {
       case ShaderAspect.rain:
         return 'Rain';
       case ShaderAspect.chromatic:
-        return 'Chromatic';
+        return 'Chroma';
       case ShaderAspect.ripple:
         return 'Ripple';
     }

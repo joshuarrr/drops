@@ -63,6 +63,7 @@ class BlurEffectShader extends StatelessWidget {
     if (enableShaderDebugLogs) {
       final String logMessage =
           "Building BlurEffectShader with amount=${settings.blurSettings.blurAmount.toStringAsFixed(2)} "
+          "opacity=${settings.blurSettings.blurOpacity.toStringAsFixed(2)} "
           "(animated: ${settings.blurSettings.blurAnimated})";
       _log(logMessage);
     }
@@ -104,6 +105,16 @@ class BlurEffectShader extends StatelessWidget {
           double opacity = settings.blurSettings.blurOpacity;
           double intensity = settings.blurSettings.blurIntensity;
           double contrast = settings.blurSettings.blurContrast;
+
+          if (enableShaderDebugLogs) {
+            _log(
+              "Setting shader parameters - Amount: ${amount.toStringAsFixed(2)}, " +
+                  "Opacity: ${opacity.toStringAsFixed(2)}, " +
+                  "Intensity: ${intensity.toStringAsFixed(2)}, " +
+                  "Contrast: ${contrast.toStringAsFixed(2)}, " +
+                  "BlendMode: ${settings.blurSettings.blurBlendMode}",
+            );
+          }
 
           // Performance tweak: reduce blur radius for text-only layers to
           // minimise the number of kernel samples.  A 40-50 % cut keeps most
