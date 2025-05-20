@@ -3,6 +3,7 @@ import '../models/shader_preset.dart';
 import '../controllers/preset_controller.dart';
 import '../models/effect_settings.dart';
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_shaders/flutter_shaders.dart';
@@ -170,6 +171,9 @@ class _SavePresetDialogState extends State<SavePresetDialog> {
   }
 }
 
+// Sorting options
+enum SortMethod { dateNewest, alphabetical, reverseAlphabetical, random }
+
 /// Dialog for displaying and loading presets
 class PresetsDialog extends StatefulWidget {
   final Function(ShaderPreset) onLoad;
@@ -182,7 +186,11 @@ class PresetsDialog extends StatefulWidget {
 
 class _PresetsDialogState extends State<PresetsDialog> {
   List<ShaderPreset> _presets = [];
+  List<ShaderPreset> _originalPresets = [];
   bool _isLoading = true;
+
+  // Current sort method
+  SortMethod _currentSort = SortMethod.dateNewest;
 
   @override
   void initState() {
@@ -197,13 +205,56 @@ class _PresetsDialogState extends State<PresetsDialog> {
 
     final presets = await PresetController.getAllPresets();
 
-    // Sort presets by created date (newest first)
-    presets.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    // Save original unsorted presets
+    _originalPresets = List.from(presets);
+
+    // Apply current sorting
+    _sortPresets(presets);
 
     setState(() {
       _presets = presets;
       _isLoading = false;
     });
+  }
+
+  void _sortPresets(List<ShaderPreset> presets) {
+    switch (_currentSort) {
+      case SortMethod.dateNewest:
+        presets.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        break;
+      case SortMethod.alphabetical:
+        presets.sort(
+          (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+        );
+        break;
+      case SortMethod.reverseAlphabetical:
+        presets.sort(
+          (a, b) => b.name.toLowerCase().compareTo(a.name.toLowerCase()),
+        );
+        break;
+      case SortMethod.random:
+        final random = Random();
+        // Fisher-Yates shuffle
+        for (var i = presets.length - 1; i > 0; i--) {
+          var j = random.nextInt(i + 1);
+          var temp = presets[i];
+          presets[i] = presets[j];
+          presets[j] = temp;
+        }
+        break;
+    }
+  }
+
+  void _changeSort(SortMethod method) {
+    if (_currentSort != method) {
+      setState(() {
+        _currentSort = method;
+        // Create a copy of the presets list to sort
+        final sortedPresets = List<ShaderPreset>.from(_originalPresets);
+        _sortPresets(sortedPresets);
+        _presets = sortedPresets;
+      });
+    }
   }
 
   void _handlePresetLoad(ShaderPreset preset) {
@@ -263,6 +314,49 @@ class _PresetsDialogState extends State<PresetsDialog> {
                 ),
               ),
 
+              // Sort options
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 16,
+                  horizontal: 8,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(left: 16, bottom: 8),
+                      child: Text(
+                        'Sort by:',
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.onSurface.withOpacity(0.7),
+                        ),
+                      ),
+                    ),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Row(
+                        children: [
+                          _buildSortTag(
+                            SortMethod.dateNewest,
+                            'Date (Newest)',
+                            theme,
+                          ),
+                          _buildSortTag(SortMethod.alphabetical, 'A-Z', theme),
+                          _buildSortTag(
+                            SortMethod.reverseAlphabetical,
+                            'Z-A',
+                            theme,
+                          ),
+                          _buildSortTag(SortMethod.random, 'Random', theme),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
               // Content
               Expanded(
                 child: Container(
@@ -288,6 +382,36 @@ class _PresetsDialogState extends State<PresetsDialog> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildSortTag(SortMethod method, String label, ThemeData theme) {
+    final bool isSelected = method == _currentSort;
+    final bool isDark = theme.brightness == Brightness.dark;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: ChoiceChip(
+        label: Text(
+          label,
+          style: isSelected
+              ? theme.textTheme.labelLarge?.copyWith(
+                  color: isDark ? Colors.white : Colors.black,
+                  fontWeight: FontWeight.bold,
+                )
+              : theme.textTheme.labelLarge,
+        ),
+        selected: isSelected,
+        selectedColor: isDark
+            ? Colors.black.withOpacity(0.85)
+            : Colors.white.withOpacity(0.85),
+        backgroundColor: theme.colorScheme.surface,
+        onSelected: (selected) {
+          if (selected) {
+            _changeSort(method);
+          }
+        },
       ),
     );
   }

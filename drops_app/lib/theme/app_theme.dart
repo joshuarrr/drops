@@ -31,6 +31,106 @@ class AppTheme {
     surfaceTint: Colors.white,
   );
 
+  // Define button styles based on color scheme
+  static ButtonStyle _buildElevatedButtonStyle(ColorScheme colorScheme) {
+    return ButtonStyle(
+      backgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+        if (states.contains(WidgetState.disabled)) {
+          return colorScheme.primary.withOpacity(0.35);
+        } else if (states.contains(WidgetState.focused) ||
+            states.contains(WidgetState.pressed) ||
+            states.contains(WidgetState.selected)) {
+          return colorScheme.primary.withOpacity(0.85);
+        }
+        return colorScheme.primary.withOpacity(0.5);
+      }),
+      foregroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+        return colorScheme.onPrimary;
+      }),
+      elevation: WidgetStateProperty.all(0),
+      shape: WidgetStateProperty.all(
+        RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+          side: BorderSide.none,
+        ),
+      ),
+    );
+  }
+
+  static ButtonStyle _buildTextButtonStyle(ColorScheme colorScheme) {
+    return ButtonStyle(
+      backgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+        if (states.contains(WidgetState.focused) ||
+            states.contains(WidgetState.pressed) ||
+            states.contains(WidgetState.selected)) {
+          return Colors.transparent;
+        }
+        return Colors.transparent;
+      }),
+      foregroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+        if (states.contains(WidgetState.disabled)) {
+          return colorScheme.primary.withOpacity(0.35);
+        } else if (states.contains(WidgetState.focused) ||
+            states.contains(WidgetState.pressed) ||
+            states.contains(WidgetState.selected)) {
+          return colorScheme.primary.withOpacity(0.85);
+        }
+        return colorScheme.primary.withOpacity(0.5);
+      }),
+      overlayColor: WidgetStateProperty.all(Colors.transparent),
+      padding: WidgetStateProperty.all(
+        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      ),
+      shape: WidgetStateProperty.all(
+        RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+    );
+  }
+
+  static ButtonStyle _buildOutlinedButtonStyle(ColorScheme colorScheme) {
+    return ButtonStyle(
+      backgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+        return Colors.transparent;
+      }),
+      foregroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+        if (states.contains(WidgetState.disabled)) {
+          return colorScheme.primary.withOpacity(0.35);
+        } else if (states.contains(WidgetState.focused) ||
+            states.contains(WidgetState.pressed) ||
+            states.contains(WidgetState.selected)) {
+          return colorScheme.primary.withOpacity(0.85);
+        }
+        return colorScheme.primary.withOpacity(0.5);
+      }),
+      side: WidgetStateProperty.all(BorderSide.none),
+      shape: WidgetStateProperty.all(
+        RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+    );
+  }
+
+  // Update chip theme for both light and dark themes
+  static ChipThemeData _buildChipTheme(ColorScheme colorScheme) {
+    // For chips, we want to invert colors when selected
+    final bool isDark = colorScheme.brightness == Brightness.dark;
+
+    return ChipThemeData(
+      backgroundColor: colorScheme.surface,
+      disabledColor: colorScheme.primary.withOpacity(0.35),
+      selectedColor: isDark
+          ? Colors.black.withOpacity(0.85) // Dark mode: black background
+          : Colors.white.withOpacity(0.85), // Light mode: white background
+      labelStyle: TextStyle(color: colorScheme.onSurface),
+      secondaryLabelStyle: TextStyle(color: colorScheme.onSurface),
+      selectedShadowColor: Colors.transparent,
+      showCheckmark: true,
+      checkmarkColor: isDark ? Colors.white : Colors.black,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      side: BorderSide.none,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    );
+  }
+
   // Light theme
   static final ThemeData lightTheme = ThemeData(
     useMaterial3: true,
@@ -49,20 +149,18 @@ class AppTheme {
       behavior: SnackBarBehavior.floating,
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-        foregroundColor: _lightColorScheme.onPrimary,
-        backgroundColor: _lightColorScheme.primary,
-      ),
+      style: _buildElevatedButtonStyle(_lightColorScheme),
     ),
     textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(foregroundColor: _lightColorScheme.primary),
+      style: _buildTextButtonStyle(_lightColorScheme),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
-      style: OutlinedButton.styleFrom(
-        foregroundColor: _lightColorScheme.primary,
-        side: BorderSide(color: _lightColorScheme.primary),
-      ),
+      style: _buildOutlinedButtonStyle(_lightColorScheme),
     ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: _buildElevatedButtonStyle(_lightColorScheme),
+    ),
+    chipTheme: _buildChipTheme(_lightColorScheme),
     iconTheme: IconThemeData(color: _lightColorScheme.primary),
     sliderTheme: SliderThemeData(
       activeTrackColor: _lightColorScheme.primary,
@@ -132,20 +230,18 @@ class AppTheme {
       behavior: SnackBarBehavior.floating,
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-        foregroundColor: _darkColorScheme.onPrimary,
-        backgroundColor: _darkColorScheme.primary,
-      ),
+      style: _buildElevatedButtonStyle(_darkColorScheme),
     ),
     textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(foregroundColor: _darkColorScheme.primary),
+      style: _buildTextButtonStyle(_darkColorScheme),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
-      style: OutlinedButton.styleFrom(
-        foregroundColor: _darkColorScheme.primary,
-        side: BorderSide(color: _darkColorScheme.primary),
-      ),
+      style: _buildOutlinedButtonStyle(_darkColorScheme),
     ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: _buildElevatedButtonStyle(_darkColorScheme),
+    ),
+    chipTheme: _buildChipTheme(_darkColorScheme),
     iconTheme: IconThemeData(color: _darkColorScheme.primary),
     sliderTheme: SliderThemeData(
       activeTrackColor: _darkColorScheme.primary,
