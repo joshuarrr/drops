@@ -1,12 +1,25 @@
 import 'package:flutter/material.dart';
 import 'animation_options.dart';
+import 'targetable_effect_settings.dart';
 
-class TextFXSettings extends ChangeNotifier {
+class TextFXSettings extends ChangeNotifier with TargetableEffectSettings {
   // Enable flag for text effects
   bool _textfxEnabled;
 
-  // Flag to control if background shaders affect text
-  bool _applyShaderEffectsToText;
+  // Getter and setter for textfxEnabled with synchronization to applyToText
+  bool get textfxEnabled => _textfxEnabled;
+  set textfxEnabled(bool value) {
+    if (_textfxEnabled == value) return;
+    _textfxEnabled = value;
+    // Keep applyToText in sync with textfxEnabled for consistent behavior
+    super.applyToText = value;
+    _updateCounter++;
+    if (enableLogging)
+      print(
+        "SETTINGS: textfxEnabled set to $value and applyToText synced to $value",
+      );
+    notifyListeners();
+  }
 
   // Shadow settings
   bool _textShadowEnabled; // Enable/disable text shadow
@@ -72,20 +85,22 @@ class TextFXSettings extends ChangeNotifier {
   }
 
   // Property getters and setters
-  bool get textfxEnabled => _textfxEnabled;
-  set textfxEnabled(bool value) {
-    _textfxEnabled = value;
+
+  // Override the setter for applyToText to notify listeners
+  @override
+  set applyToText(bool value) {
+    super.applyToText = value;
     _updateCounter++;
-    if (enableLogging) print("SETTINGS: textfxEnabled set to $value");
+    if (enableLogging) print("SETTINGS: applyToText set to $value");
     notifyListeners();
   }
 
-  bool get applyShaderEffectsToText => _applyShaderEffectsToText;
-  set applyShaderEffectsToText(bool value) {
-    _applyShaderEffectsToText = value;
+  // Override the setter for applyToImage to notify listeners
+  @override
+  set applyToImage(bool value) {
+    super.applyToImage = value;
     _updateCounter++;
-    if (enableLogging)
-      print("SETTINGS: applyShaderEffectsToText set to $value");
+    if (enableLogging) print("SETTINGS: applyToImage set to $value");
     notifyListeners();
   }
 
@@ -364,7 +379,6 @@ class TextFXSettings extends ChangeNotifier {
 
   TextFXSettings({
     bool textfxEnabled = false,
-    bool applyShaderEffectsToText = false,
     bool textShadowEnabled = false,
     double textShadowBlur = 3.0,
     double textShadowOffsetX = 2.0,
@@ -394,8 +408,9 @@ class TextFXSettings extends ChangeNotifier {
     double textNeonWidth = 0.01,
     bool textfxAnimated = false,
     AnimationOptions? textfxAnimOptions,
+    bool applyToImage = true, // New parameter with default true
+    bool applyToText = true, // New parameter with default true
   }) : _textfxEnabled = textfxEnabled,
-       _applyShaderEffectsToText = applyShaderEffectsToText,
        _textShadowEnabled = textShadowEnabled,
        _textShadowBlur = textShadowBlur,
        _textShadowOffsetX = textShadowOffsetX,
@@ -425,14 +440,17 @@ class TextFXSettings extends ChangeNotifier {
        _textNeonWidth = textNeonWidth,
        _textfxAnimated = textfxAnimated,
        _textfxAnimOptions = textfxAnimOptions ?? AnimationOptions() {
+    // Set the targeting flags
+    this.applyToImage = applyToImage;
+    this.applyToText = applyToText;
+
     if (enableLogging) print("SETTINGS: TextFXSettings initialized");
   }
 
   // Serialization helpers
   Map<String, dynamic> toMap() {
-    return {
+    final map = {
       'textfxEnabled': _textfxEnabled,
-      'applyShaderEffectsToText': _applyShaderEffectsToText,
       'textShadowEnabled': _textShadowEnabled,
       'textShadowBlur': _textShadowBlur,
       'textShadowOffsetX': _textShadowOffsetX,
@@ -463,12 +481,16 @@ class TextFXSettings extends ChangeNotifier {
       'textfxAnimated': _textfxAnimated,
       'textfxAnimOptions': _textfxAnimOptions.toMap(),
     };
+
+    // Add targeting flags from the mixin
+    addTargetingToMap(map);
+
+    return map;
   }
 
   factory TextFXSettings.fromMap(Map<String, dynamic> map) {
-    return TextFXSettings(
+    final settings = TextFXSettings(
       textfxEnabled: map['textfxEnabled'] ?? false,
-      applyShaderEffectsToText: map['applyShaderEffectsToText'] ?? false,
       textShadowEnabled: map['textShadowEnabled'] ?? false,
       textShadowBlur: map['textShadowBlur'] ?? 3.0,
       textShadowOffsetX: map['textShadowOffsetX'] ?? 2.0,
@@ -519,5 +541,15 @@ class TextFXSettings extends ChangeNotifier {
             )
           : null,
     );
+
+    // Handle legacy applyShaderEffectsToText field
+    if (map.containsKey('applyShaderEffectsToText')) {
+      settings.applyToText = map['applyShaderEffectsToText'] ?? true;
+    } else {
+      // Load targeting flags from the map
+      settings.loadTargetingFromMap(map);
+    }
+
+    return settings;
   }
 }

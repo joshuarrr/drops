@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'dart:developer' as developer;
 import '../models/effect_settings.dart';
 import '../models/shader_effect.dart';
+import '../models/presets_manager.dart';
 import '../controllers/effect_controller.dart';
 import 'color_picker.dart';
+import 'enhanced_panel_header.dart';
 
 class TextFxPanel extends StatefulWidget {
   final ShaderSettings settings;
@@ -30,6 +32,10 @@ class _TextFxPanelState extends State<TextFxPanel>
 
   // Track whether animation is enabled
   bool _animationEnabled = false;
+
+  // Add static fields for presets
+  static Map<ShaderAspect, Map<String, dynamic>> _cachedPresets = {};
+  static int _refreshCounter = 0;
 
   // Custom log function that uses both dart:developer and debugPrint for visibility
   void _log(String message, {LogLevel level = LogLevel.info}) {
@@ -62,14 +68,6 @@ class _TextFxPanelState extends State<TextFxPanel>
   void didUpdateWidget(TextFxPanel oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    // Log important changes that might affect the overlay
-    if (oldWidget.settings.textfxSettings.applyShaderEffectsToText !=
-        widget.settings.textfxSettings.applyShaderEffectsToText) {
-      _log(
-        'Apply Shaders to Text changed from ${oldWidget.settings.textfxSettings.applyShaderEffectsToText} to ${widget.settings.textfxSettings.applyShaderEffectsToText}',
-      );
-    }
-
     // Update animation state when settings change
     if (oldWidget.settings.textfxSettings.textfxAnimated !=
         widget.settings.textfxSettings.textfxAnimated) {
@@ -91,8 +89,28 @@ class _TextFxPanelState extends State<TextFxPanel>
 
     return Column(
       children: [
-        // Panel header with animation toggle
-        _buildPanelHeader(),
+        // Panel header with animation toggle, presets, and options
+        EnhancedPanelHeader(
+          aspect: ShaderAspect.textfx,
+          onPresetSelected: _applyPreset,
+          onReset: _resetTextFx,
+          onSavePreset: _savePresetForAspect,
+          sliderColor: widget.sliderColor,
+          loadPresets: _loadPresetsForAspect,
+          deletePreset: _deletePresetAndUpdate,
+          refreshPresets: _refreshPresets,
+          refreshCounter: _refreshCounter,
+          // TextFX only applies to text, so use the applyToText flag for consistent behavior
+          applyToImage: false,
+          applyToText: widget.settings.textfxSettings.applyToText,
+          onApplyToImageChanged: (_) {}, // Not used
+          onApplyToTextChanged: (value) {
+            widget.settings.textfxSettings.applyToText = value;
+            // Also enable/disable textfxEnabled for backward compatibility
+            widget.settings.textfxSettings.textfxEnabled = value;
+            widget.onSettingsChanged(widget.settings);
+          },
+        ),
 
         // Tabs for different effect types
         TabBar(
@@ -131,31 +149,234 @@ class _TextFxPanelState extends State<TextFxPanel>
     );
   }
 
-  Widget _buildPanelHeader() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                'Text Effects',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: widget.sliderColor,
-                ),
-              ),
-              const Spacer(),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // Add a divider to separate from other controls
-          Divider(color: widget.sliderColor.withOpacity(0.3)),
-        ],
-      ),
-    );
+  // Add preset methods
+  void _resetTextFx() {
+    widget.settings.textfxSettings.textfxEnabled = false;
+    widget.settings.textfxSettings.textShadowEnabled = false;
+    widget.settings.textfxSettings.textGlowEnabled = false;
+    widget.settings.textfxSettings.textOutlineEnabled = false;
+    widget.settings.textfxSettings.textMetalEnabled = false;
+    widget.settings.textfxSettings.textGlassEnabled = false;
+    widget.settings.textfxSettings.textNeonEnabled = false;
+    widget.onSettingsChanged(widget.settings);
+  }
+
+  void _applyPreset(Map<String, dynamic> presetData) {
+    if (presetData.containsKey('textfxEnabled')) {
+      widget.settings.textfxSettings.textfxEnabled =
+          presetData['textfxEnabled'];
+    }
+
+    // Shadow settings
+    if (presetData.containsKey('textShadowEnabled')) {
+      widget.settings.textfxSettings.textShadowEnabled =
+          presetData['textShadowEnabled'];
+    }
+    if (presetData.containsKey('textShadowBlur')) {
+      widget.settings.textfxSettings.textShadowBlur =
+          presetData['textShadowBlur'];
+    }
+    if (presetData.containsKey('textShadowOffsetX')) {
+      widget.settings.textfxSettings.textShadowOffsetX =
+          presetData['textShadowOffsetX'];
+    }
+    if (presetData.containsKey('textShadowOffsetY')) {
+      widget.settings.textfxSettings.textShadowOffsetY =
+          presetData['textShadowOffsetY'];
+    }
+    if (presetData.containsKey('textShadowOpacity')) {
+      widget.settings.textfxSettings.textShadowOpacity =
+          presetData['textShadowOpacity'];
+    }
+    if (presetData.containsKey('textShadowColor')) {
+      widget.settings.textfxSettings.textShadowColor = Color(
+        presetData['textShadowColor'],
+      );
+    }
+
+    // Glow settings
+    if (presetData.containsKey('textGlowEnabled')) {
+      widget.settings.textfxSettings.textGlowEnabled =
+          presetData['textGlowEnabled'];
+    }
+    if (presetData.containsKey('textGlowBlur')) {
+      widget.settings.textfxSettings.textGlowBlur = presetData['textGlowBlur'];
+    }
+    if (presetData.containsKey('textGlowOpacity')) {
+      widget.settings.textfxSettings.textGlowOpacity =
+          presetData['textGlowOpacity'];
+    }
+    if (presetData.containsKey('textGlowColor')) {
+      widget.settings.textfxSettings.textGlowColor = Color(
+        presetData['textGlowColor'],
+      );
+    }
+
+    // Outline settings
+    if (presetData.containsKey('textOutlineEnabled')) {
+      widget.settings.textfxSettings.textOutlineEnabled =
+          presetData['textOutlineEnabled'];
+    }
+    if (presetData.containsKey('textOutlineWidth')) {
+      widget.settings.textfxSettings.textOutlineWidth =
+          presetData['textOutlineWidth'];
+    }
+    if (presetData.containsKey('textOutlineColor')) {
+      widget.settings.textfxSettings.textOutlineColor = Color(
+        presetData['textOutlineColor'],
+      );
+    }
+
+    // Metal settings
+    if (presetData.containsKey('textMetalEnabled')) {
+      widget.settings.textfxSettings.textMetalEnabled =
+          presetData['textMetalEnabled'];
+    }
+    if (presetData.containsKey('textMetalShine')) {
+      widget.settings.textfxSettings.textMetalShine =
+          presetData['textMetalShine'];
+    }
+    if (presetData.containsKey('textMetalBaseColor')) {
+      widget.settings.textfxSettings.textMetalBaseColor = Color(
+        presetData['textMetalBaseColor'],
+      );
+    }
+    if (presetData.containsKey('textMetalShineColor')) {
+      widget.settings.textfxSettings.textMetalShineColor = Color(
+        presetData['textMetalShineColor'],
+      );
+    }
+
+    // Glass settings
+    if (presetData.containsKey('textGlassEnabled')) {
+      widget.settings.textfxSettings.textGlassEnabled =
+          presetData['textGlassEnabled'];
+    }
+    if (presetData.containsKey('textGlassOpacity')) {
+      widget.settings.textfxSettings.textGlassOpacity =
+          presetData['textGlassOpacity'];
+    }
+    if (presetData.containsKey('textGlassBlur')) {
+      widget.settings.textfxSettings.textGlassBlur =
+          presetData['textGlassBlur'];
+    }
+    if (presetData.containsKey('textGlassRefraction')) {
+      widget.settings.textfxSettings.textGlassRefraction =
+          presetData['textGlassRefraction'];
+    }
+    if (presetData.containsKey('textGlassColor')) {
+      widget.settings.textfxSettings.textGlassColor = Color(
+        presetData['textGlassColor'],
+      );
+    }
+
+    // Neon settings
+    if (presetData.containsKey('textNeonEnabled')) {
+      widget.settings.textfxSettings.textNeonEnabled =
+          presetData['textNeonEnabled'];
+    }
+    if (presetData.containsKey('textNeonIntensity')) {
+      widget.settings.textfxSettings.textNeonIntensity =
+          presetData['textNeonIntensity'];
+    }
+    if (presetData.containsKey('textNeonWidth')) {
+      widget.settings.textfxSettings.textNeonWidth =
+          presetData['textNeonWidth'];
+    }
+    if (presetData.containsKey('textNeonColor')) {
+      widget.settings.textfxSettings.textNeonColor = Color(
+        presetData['textNeonColor'],
+      );
+    }
+    if (presetData.containsKey('textNeonOuterColor')) {
+      widget.settings.textfxSettings.textNeonOuterColor = Color(
+        presetData['textNeonOuterColor'],
+      );
+    }
+
+    // Update the UI with the new settings
+    widget.onSettingsChanged(widget.settings);
+  }
+
+  Future<void> _savePresetForAspect(ShaderAspect aspect, String name) async {
+    Map<String, dynamic> presetData = {
+      'textfxEnabled': widget.settings.textfxSettings.textfxEnabled,
+
+      // Shadow settings
+      'textShadowEnabled': widget.settings.textfxSettings.textShadowEnabled,
+      'textShadowBlur': widget.settings.textfxSettings.textShadowBlur,
+      'textShadowOffsetX': widget.settings.textfxSettings.textShadowOffsetX,
+      'textShadowOffsetY': widget.settings.textfxSettings.textShadowOffsetY,
+      'textShadowOpacity': widget.settings.textfxSettings.textShadowOpacity,
+      'textShadowColor': widget.settings.textfxSettings.textShadowColor.value,
+
+      // Glow settings
+      'textGlowEnabled': widget.settings.textfxSettings.textGlowEnabled,
+      'textGlowBlur': widget.settings.textfxSettings.textGlowBlur,
+      'textGlowOpacity': widget.settings.textfxSettings.textGlowOpacity,
+      'textGlowColor': widget.settings.textfxSettings.textGlowColor.value,
+
+      // Outline settings
+      'textOutlineEnabled': widget.settings.textfxSettings.textOutlineEnabled,
+      'textOutlineWidth': widget.settings.textfxSettings.textOutlineWidth,
+      'textOutlineColor': widget.settings.textfxSettings.textOutlineColor.value,
+
+      // Metal settings
+      'textMetalEnabled': widget.settings.textfxSettings.textMetalEnabled,
+      'textMetalShine': widget.settings.textfxSettings.textMetalShine,
+      'textMetalBaseColor':
+          widget.settings.textfxSettings.textMetalBaseColor.value,
+      'textMetalShineColor':
+          widget.settings.textfxSettings.textMetalShineColor.value,
+
+      // Glass settings
+      'textGlassEnabled': widget.settings.textfxSettings.textGlassEnabled,
+      'textGlassOpacity': widget.settings.textfxSettings.textGlassOpacity,
+      'textGlassBlur': widget.settings.textfxSettings.textGlassBlur,
+      'textGlassRefraction': widget.settings.textfxSettings.textGlassRefraction,
+      'textGlassColor': widget.settings.textfxSettings.textGlassColor.value,
+
+      // Neon settings
+      'textNeonEnabled': widget.settings.textfxSettings.textNeonEnabled,
+      'textNeonIntensity': widget.settings.textfxSettings.textNeonIntensity,
+      'textNeonWidth': widget.settings.textfxSettings.textNeonWidth,
+      'textNeonColor': widget.settings.textfxSettings.textNeonColor.value,
+      'textNeonOuterColor':
+          widget.settings.textfxSettings.textNeonOuterColor.value,
+    };
+
+    bool success = await PresetsManager.savePreset(aspect, name, presetData);
+
+    if (success) {
+      // Update cached presets
+      _cachedPresets[aspect] = await PresetsManager.getPresetsForAspect(aspect);
+      // Force refresh of the UI to show the new preset immediately
+      _refreshPresets();
+    }
+  }
+
+  static Future<Map<String, dynamic>> _loadPresetsForAspect(
+    ShaderAspect aspect,
+  ) async {
+    if (!_cachedPresets.containsKey(aspect)) {
+      _cachedPresets[aspect] = await PresetsManager.getPresetsForAspect(aspect);
+    }
+    return _cachedPresets[aspect] ?? {};
+  }
+
+  static void _refreshPresets() {
+    _refreshCounter++;
+  }
+
+  static Future<bool> _deletePresetAndUpdate(
+    ShaderAspect aspect,
+    String name,
+  ) async {
+    final success = await PresetsManager.deletePreset(aspect, name);
+    if (success) {
+      _cachedPresets[aspect] = await PresetsManager.getPresetsForAspect(aspect);
+    }
+    return success;
   }
 
   Widget _buildShadowTab() {

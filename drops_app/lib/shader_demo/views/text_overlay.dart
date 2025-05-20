@@ -82,9 +82,24 @@ class _TextOverlayState extends State<TextOverlay> {
             _lastTextOverlaySettings == null ||
             !_areTextSettingsEqual(widget.settings, _lastTextOverlaySettings!);
 
+        // Check if any effect is targeted to text
+        bool shouldApplyEffectsToText =
+            (widget.settings.colorEnabled &&
+                widget.settings.colorSettings.applyToText) ||
+            (widget.settings.blurEnabled &&
+                widget.settings.blurSettings.applyToText) ||
+            (widget.settings.noiseEnabled &&
+                widget.settings.noiseSettings.applyToText) ||
+            (widget.settings.rainEnabled &&
+                widget.settings.rainSettings.applyToText) ||
+            (widget.settings.chromaticEnabled &&
+                widget.settings.chromaticSettings.applyToText) ||
+            (widget.settings.rippleEnabled &&
+                widget.settings.rippleSettings.applyToText);
+
         // Check animation changes if shader effects are applied to text
         bool animationChanged =
-            fxSettings.applyShaderEffectsToText &&
+            shouldApplyEffectsToText &&
             fxSettings.textfxEnabled &&
             (_lastTextOverlayAnimValue == null ||
                 ((widget.settings.colorSettings.colorAnimated &&
@@ -113,7 +128,7 @@ class _TextOverlayState extends State<TextOverlay> {
 
         // Create and cache the result
         Widget result;
-        if (fxSettings.applyShaderEffectsToText && fxSettings.textfxEnabled) {
+        if (shouldApplyEffectsToText) {
           result = Container(
             key: Key(_currentKey), // Force rebuild with key
             color: Colors.transparent,
@@ -773,9 +788,27 @@ class _TextOverlayState extends State<TextOverlay> {
   bool _areTextSettingsEqual(ShaderSettings a, ShaderSettings b) {
     // Check main text toggles
     if (a.textLayoutSettings.textEnabled != b.textLayoutSettings.textEnabled ||
-        a.textfxSettings.textfxEnabled != b.textfxSettings.textfxEnabled ||
-        a.textfxSettings.applyShaderEffectsToText !=
-            b.textfxSettings.applyShaderEffectsToText) {
+        a.textfxSettings.textfxEnabled != b.textfxSettings.textfxEnabled) {
+      return false;
+    }
+
+    // Check if any effect targeting text has changed by comparing each effect's applyToText flag
+    if (a.colorSettings.applyToText != b.colorSettings.applyToText ||
+        a.blurSettings.applyToText != b.blurSettings.applyToText ||
+        a.noiseSettings.applyToText != b.noiseSettings.applyToText ||
+        a.rainSettings.applyToText != b.rainSettings.applyToText ||
+        a.chromaticSettings.applyToText != b.chromaticSettings.applyToText ||
+        a.rippleSettings.applyToText != b.rippleSettings.applyToText) {
+      return false;
+    }
+
+    // Check if any effect enabling has changed
+    if (a.colorEnabled != b.colorEnabled ||
+        a.blurEnabled != b.blurEnabled ||
+        a.noiseEnabled != b.noiseEnabled ||
+        a.rainEnabled != b.rainEnabled ||
+        a.chromaticEnabled != b.chromaticEnabled ||
+        a.rippleEnabled != b.rippleEnabled) {
       return false;
     }
 
@@ -940,36 +973,52 @@ class _TextOverlayState extends State<TextOverlay> {
       return false;
     }
 
-    // If we're applying shader effects to text, we need to check those settings as well
-    if (a.textfxSettings.applyShaderEffectsToText) {
-      // Check shader settings that affect text
-      if (a.colorEnabled != b.colorEnabled ||
-          a.blurEnabled != b.blurEnabled ||
-          a.noiseEnabled != b.noiseEnabled) {
+    // Check shader effect settings that apply to text
+    // Only check detailed settings for enabled effects that apply to text
+    if (a.colorEnabled && a.colorSettings.applyToText) {
+      if (a.colorSettings.hue != b.colorSettings.hue ||
+          a.colorSettings.saturation != b.colorSettings.saturation ||
+          a.colorSettings.lightness != b.colorSettings.lightness) {
         return false;
       }
+    }
 
-      // Only check detailed settings for enabled effects
-      if (a.colorEnabled) {
-        if (a.colorSettings.hue != b.colorSettings.hue ||
-            a.colorSettings.saturation != b.colorSettings.saturation ||
-            a.colorSettings.lightness != b.colorSettings.lightness) {
-          return false;
-        }
+    if (a.blurEnabled && a.blurSettings.applyToText) {
+      if (a.blurSettings.blurAmount != b.blurSettings.blurAmount ||
+          a.blurSettings.blurRadius != b.blurSettings.blurRadius) {
+        return false;
       }
+    }
 
-      if (a.blurEnabled) {
-        if (a.blurSettings.blurAmount != b.blurSettings.blurAmount ||
-            a.blurSettings.blurRadius != b.blurSettings.blurRadius) {
-          return false;
-        }
+    if (a.noiseEnabled && a.noiseSettings.applyToText) {
+      if (a.noiseSettings.waveAmount != b.noiseSettings.waveAmount ||
+          a.noiseSettings.colorIntensity != b.noiseSettings.colorIntensity) {
+        return false;
       }
+    }
 
-      if (a.noiseEnabled) {
-        if (a.noiseSettings.waveAmount != b.noiseSettings.waveAmount ||
-            a.noiseSettings.colorIntensity != b.noiseSettings.colorIntensity) {
-          return false;
-        }
+    if (a.rainEnabled && a.rainSettings.applyToText) {
+      if (a.rainSettings.rainIntensity != b.rainSettings.rainIntensity ||
+          a.rainSettings.dropSize != b.rainSettings.dropSize ||
+          a.rainSettings.fallSpeed != b.rainSettings.fallSpeed) {
+        return false;
+      }
+    }
+
+    if (a.chromaticEnabled && a.chromaticSettings.applyToText) {
+      if (a.chromaticSettings.amount != b.chromaticSettings.amount ||
+          a.chromaticSettings.angle != b.chromaticSettings.angle ||
+          a.chromaticSettings.spread != b.chromaticSettings.spread) {
+        return false;
+      }
+    }
+
+    if (a.rippleEnabled && a.rippleSettings.applyToText) {
+      if (a.rippleSettings.rippleIntensity !=
+              b.rippleSettings.rippleIntensity ||
+          a.rippleSettings.rippleSize != b.rippleSettings.rippleSize ||
+          a.rippleSettings.rippleSpeed != b.rippleSettings.rippleSpeed) {
+        return false;
       }
     }
 

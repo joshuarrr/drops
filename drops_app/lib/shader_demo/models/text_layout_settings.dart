@@ -6,8 +6,6 @@ class TextLayoutSettings {
 
   // Image setting
   bool _fillScreen;
-  bool
-  _applyShaderEffectsToImage; // Add flag for applying shader effects to images
   double _fitScreenMargin; // Margin in pixels when using Fit to Screen mode
 
   // Text content
@@ -93,12 +91,6 @@ class TextLayoutSettings {
   set fillScreen(bool value) {
     _fillScreen = value;
     if (enableLogging) print("SETTINGS: fillScreen set to $value");
-  }
-
-  bool get applyShaderEffectsToImage => _applyShaderEffectsToImage;
-  set applyShaderEffectsToImage(bool v) {
-    _applyShaderEffectsToImage = v;
-    if (enableLogging) print("SETTINGS: applyShaderEffectsToImage set to $v");
   }
 
   double get fitScreenMargin => _fitScreenMargin;
@@ -464,7 +456,6 @@ class TextLayoutSettings {
   TextLayoutSettings({
     bool textEnabled = false,
     bool fillScreen = false,
-    bool applyShaderEffectsToImage = false,
     double fitScreenMargin = 0.0,
 
     // Text content
@@ -552,7 +543,6 @@ class TextLayoutSettings {
     double textContrast = 100.0,
   }) : _textEnabled = textEnabled,
        _fillScreen = fillScreen,
-       _applyShaderEffectsToImage = applyShaderEffectsToImage,
        _fitScreenMargin = fitScreenMargin,
        _textTitle = textTitle,
        _textSubtitle = textSubtitle,
@@ -626,7 +616,6 @@ class TextLayoutSettings {
     return {
       'textEnabled': _textEnabled,
       'fillScreen': _fillScreen,
-      'applyShaderEffectsToImage': _applyShaderEffectsToImage,
       'fitScreenMargin': _fitScreenMargin,
       'textTitle': _textTitle,
       'textSubtitle': _textSubtitle,
@@ -699,7 +688,6 @@ class TextLayoutSettings {
     return TextLayoutSettings(
       textEnabled: map['textEnabled'] ?? false,
       fillScreen: map['fillScreen'] ?? false,
-      applyShaderEffectsToImage: map['applyShaderEffectsToImage'] ?? false,
       fitScreenMargin: map['fitScreenMargin'] ?? 0.0,
       textTitle: map['textTitle'] ?? '',
       textSubtitle: map['textSubtitle'] ?? '',

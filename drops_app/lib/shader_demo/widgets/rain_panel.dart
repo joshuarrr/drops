@@ -5,7 +5,7 @@ import '../models/animation_options.dart';
 import '../models/presets_manager.dart';
 import 'value_slider.dart';
 import 'animation_controls.dart';
-import 'aspect_panel_header.dart';
+import 'enhanced_panel_header.dart';
 import '../views/effect_controls.dart';
 
 class RainPanel extends StatelessWidget {
@@ -27,7 +27,7 @@ class RainPanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AspectPanelHeader(
+        EnhancedPanelHeader(
           aspect: ShaderAspect.rain,
           onPresetSelected: _applyPreset,
           onReset: _resetRain,
@@ -37,6 +37,16 @@ class RainPanel extends StatelessWidget {
           deletePreset: _deletePresetAndUpdate,
           refreshPresets: _refreshPresets,
           refreshCounter: _refreshCounter,
+          applyToImage: settings.rainSettings.applyToImage,
+          applyToText: settings.rainSettings.applyToText,
+          onApplyToImageChanged: (value) {
+            settings.rainSettings.applyToImage = value;
+            onSettingsChanged(settings);
+          },
+          onApplyToTextChanged: (value) {
+            settings.rainSettings.applyToText = value;
+            onSettingsChanged(settings);
+          },
         ),
         ValueSlider(
           label: 'Rain Intensity',

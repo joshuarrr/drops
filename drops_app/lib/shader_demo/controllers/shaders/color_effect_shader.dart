@@ -18,6 +18,7 @@ class ColorEffectShader extends StatelessWidget {
   final ShaderSettings settings;
   final double animationValue;
   final bool preserveTransparency;
+  final bool isTextContent; // Add parameter to identify text content
   final String _logTag = 'ColorEffectShader';
 
   // Add static map to track last logged values to avoid repeating identical logs
@@ -85,6 +86,7 @@ class ColorEffectShader extends StatelessWidget {
     required this.settings,
     required this.animationValue, // This is the shared base time (0-1)
     this.preserveTransparency = false,
+    this.isTextContent = false, // Default to false for backward compatibility
   });
 
   @override
@@ -92,7 +94,7 @@ class ColorEffectShader extends StatelessWidget {
     // Only log when there are non-zero values or values have changed
     if (_shouldLogColorSettings()) {
       _log(
-        "Building ColorEffectShader (${preserveTransparency ? 'text' : 'background'}) with " +
+        "Building ColorEffectShader (${isTextContent ? 'text' : 'background'}) with " +
             "hsl=[${settings.colorSettings.hue.toStringAsFixed(2)}, " +
             "${settings.colorSettings.saturation.toStringAsFixed(2)}, " +
             "${settings.colorSettings.lightness.toStringAsFixed(2)}], " +
@@ -190,6 +192,10 @@ class ColorEffectShader extends StatelessWidget {
                 shader.setFloat(6, overlayOpacity);
                 shader.setFloat(7, image.width.toDouble());
                 shader.setFloat(8, image.height.toDouble());
+                shader.setFloat(
+                  9,
+                  isTextContent ? 1.0 : 0.0,
+                ); // Pass the isTextContent flag to the shader
 
                 // Draw with the shader, ensuring it covers the full area
                 canvas.drawRect(Offset.zero & size, Paint()..shader = shader);

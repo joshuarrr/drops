@@ -168,17 +168,13 @@ class EffectControls {
                 // Update setting through proper method
                 updatedSettings.textfxSettings.textfxEnabled = enabled;
 
-                // When enabling text effects, we should also automatically enable
-                // the Apply Shaders to Text flag for better user experience
-                if (enabled &&
-                    !updatedSettings.textfxSettings.applyShaderEffectsToText) {
-                  _log(
-                    'Auto-enabling Apply Shaders to Text when TextFx is enabled',
-                    level: LogLevel.info,
-                  );
-                  updatedSettings.textfxSettings.applyShaderEffectsToText =
-                      true;
-                }
+                // Always keep textfxEnabled and applyToText in sync
+                updatedSettings.textfxSettings.applyToText = enabled;
+
+                _log(
+                  'Setting TextFx enabled to $enabled and Apply Shaders to Text to $enabled',
+                  level: LogLevel.info,
+                );
 
                 // Force immediate notification to listeners
                 updatedSettings.textfxSettings.forceNotify();
@@ -372,7 +368,7 @@ class EffectControls {
             settings: settings,
             onSettingsChanged: (updatedSettings) {
               _log(
-                'TextFx panel settings changed - TextFx enabled: ${updatedSettings.textfxSettings.textfxEnabled}, Apply shaders: ${updatedSettings.textfxSettings.applyShaderEffectsToText}',
+                'TextFx panel settings changed - TextFx enabled: ${updatedSettings.textfxSettings.textfxEnabled}, Apply shaders: ${updatedSettings.textfxSettings.applyToText}',
                 level: LogLevel.debug,
               );
               onSettingsChanged(updatedSettings);

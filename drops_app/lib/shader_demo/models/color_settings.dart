@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'animation_options.dart';
+import 'targetable_effect_settings.dart';
 
-class ColorSettings {
+class ColorSettings with TargetableEffectSettings {
   // Enable flags for color effects
   bool _colorEnabled;
 
@@ -118,6 +119,8 @@ class ColorSettings {
     bool overlayAnimated = false,
     AnimationOptions? colorAnimOptions,
     AnimationOptions? overlayAnimOptions,
+    bool applyToImage = true,
+    bool applyToText = true,
   }) : _colorEnabled = colorEnabled,
        _hue = hue,
        _saturation = saturation,
@@ -129,12 +132,15 @@ class ColorSettings {
        _overlayAnimated = overlayAnimated,
        _colorAnimOptions = colorAnimOptions ?? AnimationOptions(),
        _overlayAnimOptions = overlayAnimOptions ?? AnimationOptions() {
+    this.applyToImage = applyToImage;
+    this.applyToText = applyToText;
+
     if (enableLogging) print("SETTINGS: ColorSettings initialized");
   }
 
   // Serialization helpers
   Map<String, dynamic> toMap() {
-    return {
+    final map = {
       'colorEnabled': _colorEnabled,
       'hue': _hue,
       'saturation': _saturation,
@@ -147,10 +153,14 @@ class ColorSettings {
       'colorAnimOptions': _colorAnimOptions.toMap(),
       'overlayAnimOptions': _overlayAnimOptions.toMap(),
     };
+
+    addTargetingToMap(map);
+
+    return map;
   }
 
   factory ColorSettings.fromMap(Map<String, dynamic> map) {
-    return ColorSettings(
+    final settings = ColorSettings(
       colorEnabled: map['colorEnabled'] ?? false,
       hue: map['hue'] ?? 0.0,
       saturation: map['saturation'] ?? 0.0,
@@ -171,5 +181,9 @@ class ColorSettings {
             )
           : null,
     );
+
+    settings.loadTargetingFromMap(map);
+
+    return settings;
   }
 }

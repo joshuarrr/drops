@@ -8,7 +8,7 @@ import '../models/presets_manager.dart';
 import '../controllers/effect_controller.dart';
 import 'value_slider.dart';
 import 'animation_controls.dart';
-import 'aspect_panel_header.dart';
+import 'enhanced_panel_header.dart';
 import '../views/effect_controls.dart';
 
 class ColorPanel extends StatefulWidget {
@@ -64,7 +64,7 @@ class _ColorPanelState extends State<ColorPanel> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AspectPanelHeader(
+        EnhancedPanelHeader(
           aspect: ShaderAspect.color,
           onPresetSelected: _applyPreset,
           onReset: _resetColor,
@@ -74,6 +74,16 @@ class _ColorPanelState extends State<ColorPanel> {
           deletePreset: _deletePresetAndUpdate,
           refreshPresets: _refreshPresets,
           refreshCounter: _refreshCounter,
+          applyToImage: widget.settings.colorSettings.applyToImage,
+          applyToText: widget.settings.colorSettings.applyToText,
+          onApplyToImageChanged: (value) {
+            widget.settings.colorSettings.applyToImage = value;
+            widget.onSettingsChanged(widget.settings);
+          },
+          onApplyToTextChanged: (value) {
+            widget.settings.colorSettings.applyToText = value;
+            widget.onSettingsChanged(widget.settings);
+          },
         ),
         // Main color controls section with collapsible header
         _buildSectionHeader(

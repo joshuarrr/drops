@@ -12,6 +12,7 @@ uniform float uOverlayHue;
 uniform float uOverlayIntensity;
 uniform float uOverlayOpacity;
 uniform vec2 uResolution;
+uniform float uIsTextContent; // Add parameter to identify if we're processing text
 
 // Define output
 out vec4 fragColor;
@@ -77,10 +78,10 @@ void main() {
     // Sample the texture
     vec4 color = texture(uTexture, uv);
     
-    // If the sampled texel is fully transparent (e.g. text layer background),
-    // keep it transparent instead of showing a debug color. This prevents
-    // pink artifacts when the shader is applied only to text.
-    if (color.a == 0.0) {
+    // If the sampled texel is fully transparent and we're NOT processing text,
+    // keep it transparent. However, for text content we want to process even transparent pixels
+    // to ensure proper application of the shader to text layers.
+    if (color.a == 0.0 && uIsTextContent < 0.5) {
         fragColor = vec4(0.0, 0.0, 0.0, 0.0);
         return;
     }
@@ -89,9 +90,43 @@ void main() {
     vec3 hsl = rgb2hsl(color.rgb);
     
     // Apply hue, saturation, and lightness adjustments
-    hsl.x = fract(hsl.x + uHue); // Hue adjustment
-    hsl.y = clamp(hsl.y * (1.0 + uSaturation), 0.0, 1.0); // Saturation adjustment
-    hsl.z = clamp(hsl.z * (1.0 + uLightness), 0.0, 1.0); // Lightness adjustment
+    // For text content, use a more direct approach for better visibility
+    if (uIsTextContent > 0.5 && color.a > 0.0) {
+        // For text content, we want more dramatic color changes
+        // Use a replacement approach instead of adjustment for text
+        if (abs(uHue) > 0.01) {
+            // For stronger hue effect on text, blend toward the selected hue rather than just shifting
+            float hueBias = 0.7; // How much to bias toward the selected hue
+            hsl.x = mix(hsl.x, fract(uHue), hueBias);
+        }
+        
+        // Handle saturation - for text we want more dramatic effect
+        if (uSaturation != 0.0) {
+            if (uSaturation > 0.0) {
+                // Boosting saturation - go more directly toward full saturation
+                hsl.y = mix(hsl.y, 1.0, min(1.0, uSaturation * 2.0));
+            } else {
+                // Decreasing saturation - go more directly toward grayscale
+                hsl.y = hsl.y * max(0.0, 1.0 + uSaturation * 2.0);
+            }
+        }
+        
+        // Handle lightness - for text we want more dramatic effect
+        if (uLightness != 0.0) {
+            if (uLightness > 0.0) {
+                // Boosting lightness - go more directly toward white but preserve color
+                hsl.z = mix(hsl.z, 0.8, min(1.0, uLightness));
+            } else {
+                // Decreasing lightness - go more directly toward black but preserve color
+                hsl.z = mix(hsl.z, 0.2, min(1.0, -uLightness));
+            }
+        }
+    } else {
+        // For non-text content, use the original adjustments
+        hsl.x = fract(hsl.x + uHue); // Hue adjustment
+        hsl.y = clamp(hsl.y * (1.0 + uSaturation), 0.0, 1.0); // Saturation adjustment
+        hsl.z = clamp(hsl.z * (1.0 + uLightness), 0.0, 1.0); // Lightness adjustment
+    }
     
     // Convert back to RGB
     vec3 adjustedRgb = hsl2rgb(hsl);

@@ -1,6 +1,7 @@
 import 'animation_options.dart';
+import 'targetable_effect_settings.dart';
 
-class RainSettings {
+class RainSettings with TargetableEffectSettings {
   // Enable flag for rain effect
   bool _rainEnabled;
 
@@ -91,6 +92,8 @@ class RainSettings {
     double trailIntensity = 0.3,
     bool rainAnimated = false,
     AnimationOptions? rainAnimOptions,
+    bool applyToImage = true, // New parameter with default true
+    bool applyToText = true, // New parameter with default true
   }) : _rainEnabled = rainEnabled,
        _rainIntensity = rainIntensity,
        _dropSize = dropSize,
@@ -99,12 +102,16 @@ class RainSettings {
        _trailIntensity = trailIntensity,
        _rainAnimated = rainAnimated,
        _rainAnimOptions = rainAnimOptions ?? AnimationOptions() {
+    // Set the targeting flags
+    this.applyToImage = applyToImage;
+    this.applyToText = applyToText;
+
     if (enableLogging) print("SETTINGS: RainSettings initialized");
   }
 
   // Serialization helpers
   Map<String, dynamic> toMap() {
-    return {
+    final map = {
       'rainEnabled': _rainEnabled,
       'rainIntensity': _rainIntensity,
       'dropSize': _dropSize,
@@ -114,10 +121,15 @@ class RainSettings {
       'rainAnimated': _rainAnimated,
       'rainAnimOptions': _rainAnimOptions.toMap(),
     };
+
+    // Add targeting flags from the mixin
+    addTargetingToMap(map);
+
+    return map;
   }
 
   factory RainSettings.fromMap(Map<String, dynamic> map) {
-    return RainSettings(
+    final settings = RainSettings(
       rainEnabled: map['rainEnabled'] ?? false,
       rainIntensity: map['rainIntensity'] ?? 0.5,
       dropSize: map['dropSize'] ?? 0.5,
@@ -131,5 +143,10 @@ class RainSettings {
             )
           : null,
     );
+
+    // Load targeting flags from the map
+    settings.loadTargetingFromMap(map);
+
+    return settings;
   }
 }

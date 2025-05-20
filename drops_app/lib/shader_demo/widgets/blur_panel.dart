@@ -5,7 +5,7 @@ import '../models/animation_options.dart';
 import '../models/presets_manager.dart';
 import 'value_slider.dart';
 import 'animation_controls.dart';
-import 'aspect_panel_header.dart';
+import 'enhanced_panel_header.dart';
 import '../views/effect_controls.dart';
 
 class BlurPanel extends StatelessWidget {
@@ -27,7 +27,7 @@ class BlurPanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AspectPanelHeader(
+        EnhancedPanelHeader(
           aspect: ShaderAspect.blur,
           onPresetSelected: _applyPreset,
           onReset: _resetBlur,
@@ -37,6 +37,16 @@ class BlurPanel extends StatelessWidget {
           deletePreset: _deletePresetAndUpdate,
           refreshPresets: _refreshPresets,
           refreshCounter: _refreshCounter,
+          applyToImage: settings.blurSettings.applyToImage,
+          applyToText: settings.blurSettings.applyToText,
+          onApplyToImageChanged: (value) {
+            settings.blurSettings.applyToImage = value;
+            onSettingsChanged(settings);
+          },
+          onApplyToTextChanged: (value) {
+            settings.blurSettings.applyToText = value;
+            onSettingsChanged(settings);
+          },
         ),
         ValueSlider(
           label: 'Shatter Amount',

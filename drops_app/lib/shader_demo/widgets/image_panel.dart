@@ -3,7 +3,7 @@ import '../models/shader_effect.dart';
 import '../models/effect_settings.dart';
 import '../models/presets_manager.dart';
 import '../models/image_category.dart';
-import 'aspect_panel_header.dart';
+import 'enhanced_panel_header.dart';
 import '../views/effect_controls.dart';
 import 'image_selector.dart';
 
@@ -41,7 +41,7 @@ class ImagePanel extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Header at the top
-        AspectPanelHeader(
+        EnhancedPanelHeader(
           aspect: ShaderAspect.image,
           onPresetSelected: _applyPreset,
           onReset: _resetImage,
@@ -51,31 +51,14 @@ class ImagePanel extends StatelessWidget {
           deletePreset: _deletePresetAndUpdate,
           refreshPresets: _refreshPresets,
           refreshCounter: _refreshCounter,
+          // For the image panel, these settings don't really apply
+          // since it's not an effect, but we need to provide them
+          applyToImage: true,
+          applyToText: true,
+          onApplyToImageChanged: (_) {},
+          onApplyToTextChanged: (_) {},
         ),
 
-        const SizedBox(height: 16),
-
-        // Apply Shaders to Image toggle directly below header
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Apply Shaders to Image',
-              style: TextStyle(color: sliderColor, fontSize: 14),
-            ),
-            Switch(
-              value: settings.textLayoutSettings.applyShaderEffectsToImage,
-              activeColor: sliderColor,
-              onChanged: (value) {
-                settings.textLayoutSettings.applyShaderEffectsToImage = value;
-                onSettingsChanged(settings);
-              },
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 16),
-        Divider(color: sliderColor.withOpacity(0.3)),
         const SizedBox(height: 16),
 
         // Image selector
@@ -140,16 +123,21 @@ class ImagePanel extends StatelessWidget {
 
   void _resetImage() {
     settings.fillScreen = false;
-    settings.textLayoutSettings.applyShaderEffectsToImage = false;
     settings.textLayoutSettings.fitScreenMargin = 30.0;
+
+    // Reset all effect targeting flags to default values (true)
+    settings.colorSettings.applyToImage = true;
+    settings.blurSettings.applyToImage = true;
+    settings.noiseSettings.applyToImage = true;
+    settings.rainSettings.applyToImage = true;
+    settings.chromaticSettings.applyToImage = true;
+    settings.rippleSettings.applyToImage = true;
+
     onSettingsChanged(settings);
   }
 
   void _applyPreset(Map<String, dynamic> presetData) {
     settings.fillScreen = presetData['fillScreen'] ?? settings.fillScreen;
-    settings.textLayoutSettings.applyShaderEffectsToImage =
-        presetData['applyShaderEffectsToImage'] ??
-        settings.textLayoutSettings.applyShaderEffectsToImage;
     settings.textLayoutSettings.fitScreenMargin =
         presetData['fitScreenMargin'] ?? 30.0;
     onSettingsChanged(settings);
@@ -158,8 +146,6 @@ class ImagePanel extends StatelessWidget {
   Future<void> _savePresetForAspect(ShaderAspect aspect, String name) async {
     Map<String, dynamic> presetData = {
       'fillScreen': settings.fillScreen,
-      'applyShaderEffectsToImage':
-          settings.textLayoutSettings.applyShaderEffectsToImage,
       'fitScreenMargin': settings.textLayoutSettings.fitScreenMargin,
     };
 

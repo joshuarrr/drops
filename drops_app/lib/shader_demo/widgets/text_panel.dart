@@ -6,7 +6,7 @@ import '../../common/font_selector.dart';
 import '../../theme/custom_fonts.dart';
 import 'value_slider.dart';
 import 'alignment_selector.dart';
-import 'aspect_panel_header.dart';
+import 'enhanced_panel_header.dart';
 import 'text_input_field.dart';
 import 'color_picker.dart';
 import 'dart:async';
@@ -75,7 +75,7 @@ class _TextPanelState extends State<TextPanel> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AspectPanelHeader(
+        EnhancedPanelHeader(
           aspect: ShaderAspect.text,
           onPresetSelected: _applyPreset,
           onReset: _resetText,
@@ -85,51 +85,24 @@ class _TextPanelState extends State<TextPanel> {
           deletePreset: _deletePresetAndUpdate,
           refreshPresets: _refreshPresets,
           refreshCounter: _refreshCounter,
+          // For the text panel, these settings control whether ALL
+          // effects are applied to text or not, so we use
+          // an approach that can toggle all effects at once
+          applyToImage: false, // Not relevant for text panel
+          applyToText: _anyEffectAppliesToText(),
+          onApplyToImageChanged: (_) {}, // Not used for text panel
+          onApplyToTextChanged: (value) {
+            // Toggle all effects to apply/not apply to text
+            widget.settings.colorSettings.applyToText = value;
+            widget.settings.blurSettings.applyToText = value;
+            widget.settings.noiseSettings.applyToText = value;
+            widget.settings.rainSettings.applyToText = value;
+            widget.settings.chromaticSettings.applyToText = value;
+            widget.settings.rippleSettings.applyToText = value;
+            widget.onSettingsChanged(widget.settings);
+          },
         ),
 
-        // Add toggle for applying shader effects to text
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Apply Shaders to Text',
-              style: TextStyle(color: widget.sliderColor, fontSize: 14),
-            ),
-            Switch(
-              value: widget.settings.textfxSettings.applyShaderEffectsToText,
-              activeColor: widget.sliderColor,
-              onChanged: (value) {
-                // Create a deep copy of the settings to avoid reference issues
-                final updatedSettings = ShaderSettings.fromMap(
-                  widget.settings.toMap(),
-                );
-                updatedSettings.textfxSettings.applyShaderEffectsToText = value;
-
-                debugPrint('Apply Shaders to Text toggled: $value');
-
-                // Ensure text effects are enabled if this is enabled
-                if (value && !updatedSettings.textfxSettings.textfxEnabled) {
-                  debugPrint(
-                    'Auto-enabling text effects since Apply Shaders to Text was enabled',
-                  );
-                  updatedSettings.textfxSettings.textfxEnabled = true;
-                }
-
-                // Make sure text is enabled too
-                if (value && !updatedSettings.textLayoutSettings.textEnabled) {
-                  debugPrint(
-                    'Auto-enabling text layout since Apply Shaders to Text was enabled',
-                  );
-                  updatedSettings.textLayoutSettings.textEnabled = true;
-                }
-
-                // Force a notification to ensure immediate update
-                updatedSettings.textfxSettings.forceNotify();
-                widget.onSettingsChanged(updatedSettings);
-              },
-            ),
-          ],
-        ),
         const SizedBox(height: 8),
         Divider(color: widget.sliderColor.withOpacity(0.3)),
 
@@ -1084,23 +1057,18 @@ class _TextPanelState extends State<TextPanel> {
     widget.settings.textLayoutSettings.artistLineHeight =
         presetData['artistLineHeight'] ??
         widget.settings.textLayoutSettings.artistLineHeight;
-    widget.settings.textLayoutSettings.lyricsFitToWidth =
-        presetData['lyricsFitToWidth'] ??
-        widget.settings.textLayoutSettings.lyricsFitToWidth;
-    widget.settings.textLayoutSettings.lyricsHAlign =
-        presetData['lyricsHAlign'] ??
-        widget.settings.textLayoutSettings.lyricsHAlign;
-    widget.settings.textLayoutSettings.lyricsVAlign =
-        presetData['lyricsVAlign'] ??
-        widget.settings.textLayoutSettings.lyricsVAlign;
-    widget.settings.textLayoutSettings.lyricsLineHeight =
-        presetData['lyricsLineHeight'] ??
-        widget.settings.textLayoutSettings.lyricsLineHeight;
 
-    // Add support for shader effects toggle
-    widget.settings.textfxSettings.applyShaderEffectsToText =
-        presetData['applyShaderEffectsToText'] ??
-        widget.settings.textfxSettings.applyShaderEffectsToText;
+    // Handle legacy apply shader to text option
+    if (presetData.containsKey('applyShaderEffectsToText')) {
+      // Convert the legacy global flag to per-effect flags
+      final bool applyToText = presetData['applyShaderEffectsToText'] ?? true;
+      widget.settings.colorSettings.applyToText = applyToText;
+      widget.settings.blurSettings.applyToText = applyToText;
+      widget.settings.noiseSettings.applyToText = applyToText;
+      widget.settings.rainSettings.applyToText = applyToText;
+      widget.settings.chromaticSettings.applyToText = applyToText;
+      widget.settings.rippleSettings.applyToText = applyToText;
+    }
 
     // If preset has a selected text line, switch to it
     if (presetData['selectedTextLine'] != null) {
@@ -1169,8 +1137,12 @@ class _TextPanelState extends State<TextPanel> {
       'artistHAlign': widget.settings.textLayoutSettings.artistHAlign,
       'artistVAlign': widget.settings.textLayoutSettings.artistVAlign,
       'artistLineHeight': widget.settings.textLayoutSettings.artistLineHeight,
-      'applyShaderEffectsToText':
-          widget.settings.textfxSettings.applyShaderEffectsToText,
+      'colorApplyToText': widget.settings.colorSettings.applyToText,
+      'blurApplyToText': widget.settings.blurSettings.applyToText,
+      'noiseApplyToText': widget.settings.noiseSettings.applyToText,
+      'rainApplyToText': widget.settings.rainSettings.applyToText,
+      'chromaticApplyToText': widget.settings.chromaticSettings.applyToText,
+      'rippleApplyToText': widget.settings.rippleSettings.applyToText,
     };
 
     bool success = await PresetsManager.savePreset(aspect, name, presetData);
@@ -1430,5 +1402,15 @@ class _TextPanelState extends State<TextPanel> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: sliders,
     );
+  }
+
+  // Helper method to check if any effect is set to apply to text
+  bool _anyEffectAppliesToText() {
+    return widget.settings.colorSettings.applyToText ||
+        widget.settings.blurSettings.applyToText ||
+        widget.settings.noiseSettings.applyToText ||
+        widget.settings.rainSettings.applyToText ||
+        widget.settings.chromaticSettings.applyToText ||
+        widget.settings.rippleSettings.applyToText;
   }
 }

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'animation_options.dart';
+import 'targetable_effect_settings.dart';
 
-class ChromaticSettings {
+class ChromaticSettings with TargetableEffectSettings {
   // Main toggle
   bool _chromaticEnabled;
 
@@ -72,6 +73,8 @@ class ChromaticSettings {
     double intensity = 0.5,
     bool chromaticAnimated = false,
     AnimationOptions? animOptions,
+    bool applyToImage = true, // New parameter with default true
+    bool applyToText = true, // New parameter with default true
   }) : _chromaticEnabled = chromaticEnabled,
        _amount = amount,
        _angle = angle,
@@ -79,12 +82,16 @@ class ChromaticSettings {
        _intensity = intensity,
        _chromaticAnimated = chromaticAnimated,
        _animOptions = animOptions ?? AnimationOptions() {
+    // Set the targeting flags
+    this.applyToImage = applyToImage;
+    this.applyToText = applyToText;
+
     if (enableLogging) print("SETTINGS: ChromaticSettings initialized");
   }
 
   // Serialization
   Map<String, dynamic> toMap() {
-    return {
+    final map = {
       'chromaticEnabled': _chromaticEnabled,
       'amount': _amount,
       'angle': _angle,
@@ -93,10 +100,15 @@ class ChromaticSettings {
       'chromaticAnimated': _chromaticAnimated,
       'animOptions': _animOptions.toMap(),
     };
+
+    // Add targeting flags from the mixin
+    addTargetingToMap(map);
+
+    return map;
   }
 
   factory ChromaticSettings.fromMap(Map<String, dynamic> map) {
-    return ChromaticSettings(
+    final settings = ChromaticSettings(
       chromaticEnabled: map['chromaticEnabled'] ?? false,
       amount: map['amount']?.toDouble() ?? 0.5,
       angle: map['angle']?.toDouble() ?? 0.0,
@@ -109,5 +121,10 @@ class ChromaticSettings {
             )
           : null,
     );
+
+    // Load targeting flags from the map
+    settings.loadTargetingFromMap(map);
+
+    return settings;
   }
 }

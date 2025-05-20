@@ -370,7 +370,7 @@ class ShaderSettings {
             : Colors.purple,
         textNeonIntensity: map['textNeonIntensity'] ?? 0.8,
         textNeonWidth: map['textNeonWidth'] ?? 0.3,
-        applyShaderEffectsToText: map['applyShaderEffectsToText'] ?? false,
+        applyToText: map['applyShaderEffectsToText'] ?? true,
         textfxAnimated: map['textfxAnimated'] ?? false,
         textfxAnimOptions: map['textfxAnimOptions'] != null
             ? AnimationOptions.fromMap(

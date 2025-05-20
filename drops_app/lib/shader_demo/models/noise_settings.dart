@@ -1,6 +1,7 @@
 import 'animation_options.dart';
+import 'targetable_effect_settings.dart';
 
-class NoiseSettings {
+class NoiseSettings with TargetableEffectSettings {
   // Enable flag for noise effect
   bool _noiseEnabled;
 
@@ -79,6 +80,8 @@ class NoiseSettings {
     double waveAmount = 0.02,
     bool noiseAnimated = false,
     AnimationOptions? noiseAnimOptions,
+    bool applyToImage = true, // New parameter with default true
+    bool applyToText = true, // New parameter with default true
   }) : _noiseEnabled = noiseEnabled,
        _noiseScale = noiseScale,
        _noiseSpeed = noiseSpeed,
@@ -86,12 +89,16 @@ class NoiseSettings {
        _waveAmount = waveAmount,
        _noiseAnimated = noiseAnimated,
        _noiseAnimOptions = noiseAnimOptions ?? AnimationOptions() {
+    // Set the targeting flags
+    this.applyToImage = applyToImage;
+    this.applyToText = applyToText;
+
     if (enableLogging) print("SETTINGS: NoiseSettings initialized");
   }
 
   // Serialization helpers
   Map<String, dynamic> toMap() {
-    return {
+    final map = {
       'noiseEnabled': _noiseEnabled,
       'noiseScale': _noiseScale,
       'noiseSpeed': _noiseSpeed,
@@ -100,10 +107,15 @@ class NoiseSettings {
       'noiseAnimated': _noiseAnimated,
       'noiseAnimOptions': _noiseAnimOptions.toMap(),
     };
+
+    // Add targeting flags from the mixin
+    addTargetingToMap(map);
+
+    return map;
   }
 
   factory NoiseSettings.fromMap(Map<String, dynamic> map) {
-    return NoiseSettings(
+    final settings = NoiseSettings(
       noiseEnabled: map['noiseEnabled'] ?? false,
       noiseScale: map['noiseScale'] ?? 5.0,
       noiseSpeed: map['noiseSpeed'] ?? 0.5,
@@ -116,5 +128,10 @@ class NoiseSettings {
             )
           : null,
     );
+
+    // Load targeting flags from the map
+    settings.loadTargetingFromMap(map);
+
+    return settings;
   }
 }

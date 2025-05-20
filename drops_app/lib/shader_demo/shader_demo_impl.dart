@@ -158,8 +158,19 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     // Initialize unified settings object
     _shaderSettings = ShaderSettings();
 
-    // Enable shaders for images by default
-    _shaderSettings.textLayoutSettings.applyShaderEffectsToImage = true;
+    // Set default values for effect targeting
+    _shaderSettings.colorSettings.applyToImage = true;
+    _shaderSettings.colorSettings.applyToText = true;
+    _shaderSettings.blurSettings.applyToImage = true;
+    _shaderSettings.blurSettings.applyToText = true;
+    _shaderSettings.noiseSettings.applyToImage = true;
+    _shaderSettings.noiseSettings.applyToText = true;
+    _shaderSettings.rainSettings.applyToImage = true;
+    _shaderSettings.rainSettings.applyToText = true;
+    _shaderSettings.chromaticSettings.applyToImage = true;
+    _shaderSettings.chromaticSettings.applyToText = true;
+    _shaderSettings.rippleSettings.applyToImage = true;
+    _shaderSettings.rippleSettings.applyToText = true;
 
     // Load persisted settings (if any) before building UI
     _loadShaderSettings();
@@ -399,10 +410,24 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
           // now derive their own animation curves (speed/mode/easing).
           final double animationValue = _controller.value;
 
+          // Check if any effect is targeted to image
+          final bool shouldApplyEffectsToImage =
+              (_shaderSettings.colorEnabled &&
+                  _shaderSettings.colorSettings.applyToImage) ||
+              (_shaderSettings.blurEnabled &&
+                  _shaderSettings.blurSettings.applyToImage) ||
+              (_shaderSettings.noiseEnabled &&
+                  _shaderSettings.noiseSettings.applyToImage) ||
+              (_shaderSettings.rainEnabled &&
+                  _shaderSettings.rainSettings.applyToImage) ||
+              (_shaderSettings.chromaticEnabled &&
+                  _shaderSettings.chromaticSettings.applyToImage) ||
+              (_shaderSettings.rippleEnabled &&
+                  _shaderSettings.rippleSettings.applyToImage);
+
           // Apply all enabled effects using the shared base time
           // CRITICAL: We need to ensure the size is maintained throughout the effect chain
-          Widget effectsWidget =
-              _shaderSettings.textLayoutSettings.applyShaderEffectsToImage
+          Widget effectsWidget = shouldApplyEffectsToImage
               ? Container(
                   width: width,
                   height: height,
@@ -413,7 +438,7 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                     animationValue: animationValue,
                   ),
                 )
-              : baseImage!; // Don't apply effects if disabled
+              : baseImage!; // Don't apply effects if none target the image
 
           // Compose text overlay if enabled
           List<Widget> stackChildren = [Positioned.fill(child: effectsWidget)];

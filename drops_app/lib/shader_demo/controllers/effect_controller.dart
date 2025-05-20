@@ -275,8 +275,10 @@ class EffectController {
           child: result,
         );
 
-        // Apply color effect first if enabled
-        if (settings.colorEnabled) {
+        // Apply color effect first if enabled and targeted to the current content type
+        if (settings.colorEnabled &&
+            ((isTextContent && settings.colorSettings.applyToText) ||
+                (!isTextContent && settings.colorSettings.applyToImage))) {
           result = _applyColorEffect(
             child: result,
             settings: settings,
@@ -286,8 +288,10 @@ class EffectController {
           );
         }
 
-        // Apply noise effect if enabled
-        if (settings.noiseEnabled) {
+        // Apply noise effect if enabled and targeted to the current content type
+        if (settings.noiseEnabled &&
+            ((isTextContent && settings.noiseSettings.applyToText) ||
+                (!isTextContent && settings.noiseSettings.applyToImage))) {
           result = _applyNoiseEffect(
             child: result,
             settings: settings,
@@ -297,8 +301,10 @@ class EffectController {
           );
         }
 
-        // Apply rain effect if enabled
-        if (settings.rainEnabled) {
+        // Apply rain effect if enabled and targeted to the current content type
+        if (settings.rainEnabled &&
+            ((isTextContent && settings.rainSettings.applyToText) ||
+                (!isTextContent && settings.rainSettings.applyToImage))) {
           result = _applyRainEffect(
             child: result,
             settings: settings,
@@ -308,8 +314,10 @@ class EffectController {
           );
         }
 
-        // Apply ripple effect if enabled
-        if (settings.rippleEnabled) {
+        // Apply ripple effect if enabled and targeted to the current content type
+        if (settings.rippleEnabled &&
+            ((isTextContent && settings.rippleSettings.applyToText) ||
+                (!isTextContent && settings.rippleSettings.applyToImage))) {
           result = _applyRippleEffect(
             child: result,
             settings: settings,
@@ -319,8 +327,10 @@ class EffectController {
           );
         }
 
-        // Apply chromatic aberration effect if enabled
-        if (settings.chromaticEnabled) {
+        // Apply chromatic aberration effect if enabled and targeted to the current content type
+        if (settings.chromaticEnabled &&
+            ((isTextContent && settings.chromaticSettings.applyToText) ||
+                (!isTextContent && settings.chromaticSettings.applyToImage))) {
           result = _applyChromaticEffect(
             child: result,
             settings: settings,
@@ -330,8 +340,10 @@ class EffectController {
           );
         }
 
-        // Apply blur effect last if enabled
-        if (settings.blurEnabled) {
+        // Apply blur effect last if enabled and targeted to the current content type
+        if (settings.blurEnabled &&
+            ((isTextContent && settings.blurSettings.applyToText) ||
+                (!isTextContent && settings.blurSettings.applyToImage))) {
           result = _applyBlurEffect(
             child: result,
             settings: settings,
@@ -396,6 +408,7 @@ class EffectController {
         child: child,
         preserveTransparency:
             true, // Always preserve transparency for text/transparent content
+        isTextContent: isTextContent, // Pass isTextContent flag to shader
       );
     } else {
       // Use custom shader implementation with original settings
@@ -404,6 +417,7 @@ class EffectController {
         animationValue: animationValue,
         child: child,
         preserveTransparency: preserveTransparency,
+        isTextContent: isTextContent, // Pass isTextContent flag to shader
       );
     }
   }

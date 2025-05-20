@@ -1,7 +1,8 @@
 // shatter effect
 import 'animation_options.dart';
+import 'targetable_effect_settings.dart';
 
-class BlurSettings {
+class BlurSettings with TargetableEffectSettings {
   // Enable flag for blur effect
   bool _blurEnabled;
 
@@ -100,6 +101,8 @@ class BlurSettings {
     double blurContrast = 0.0,
     bool blurAnimated = false,
     AnimationOptions? blurAnimOptions,
+    bool applyToImage = true, // New parameter with default true
+    bool applyToText = true, // New parameter with default true
   }) : _blurEnabled = blurEnabled,
        _blurAmount = blurAmount,
        _blurRadius = blurRadius,
@@ -109,12 +112,16 @@ class BlurSettings {
        _blurContrast = blurContrast,
        _blurAnimated = blurAnimated,
        _blurAnimOptions = blurAnimOptions ?? AnimationOptions() {
+    // Set the targeting flags
+    this.applyToImage = applyToImage;
+    this.applyToText = applyToText;
+
     if (enableLogging) print("SETTINGS: BlurSettings initialized");
   }
 
   // Serialization helpers
   Map<String, dynamic> toMap() {
-    return {
+    final map = {
       'blurEnabled': _blurEnabled,
       'blurAmount': _blurAmount,
       'blurRadius': _blurRadius,
@@ -125,10 +132,15 @@ class BlurSettings {
       'blurAnimated': _blurAnimated,
       'blurAnimOptions': _blurAnimOptions.toMap(),
     };
+
+    // Add targeting flags from the mixin
+    addTargetingToMap(map);
+
+    return map;
   }
 
   factory BlurSettings.fromMap(Map<String, dynamic> map) {
-    return BlurSettings(
+    final settings = BlurSettings(
       blurEnabled: map['blurEnabled'] ?? false,
       blurAmount: map['blurAmount'] ?? 0.0,
       blurRadius: map['blurRadius'] ?? 15.0,
@@ -143,5 +155,10 @@ class BlurSettings {
             )
           : null,
     );
+
+    // Load targeting flags from the map
+    settings.loadTargetingFromMap(map);
+
+    return settings;
   }
 }

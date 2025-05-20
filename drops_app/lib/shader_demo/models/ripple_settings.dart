@@ -1,7 +1,8 @@
 import 'animation_options.dart';
 import 'dart:math';
+import 'targetable_effect_settings.dart';
 
-class RippleSettings {
+class RippleSettings with TargetableEffectSettings {
   // Enable flag for ripple effect
   bool _rippleEnabled;
 
@@ -144,6 +145,8 @@ class RippleSettings {
     double rippleRotation = 0.0,
     bool rippleAnimated = false,
     AnimationOptions? rippleAnimOptions,
+    bool applyToImage = true, // New parameter with default true
+    bool applyToText = true, // New parameter with default true
   }) : _rippleEnabled = rippleEnabled,
        _rippleIntensity = rippleIntensity,
        _rippleSize = rippleSize,
@@ -156,12 +159,16 @@ class RippleSettings {
        _rippleRotation = rippleRotation,
        _rippleAnimated = rippleAnimated,
        _rippleAnimOptions = rippleAnimOptions ?? AnimationOptions() {
+    // Set the targeting flags
+    this.applyToImage = applyToImage;
+    this.applyToText = applyToText;
+
     if (enableLogging) print("SETTINGS: RippleSettings initialized");
   }
 
   // Serialization helpers
   Map<String, dynamic> toMap() {
-    return {
+    final map = {
       'rippleEnabled': _rippleEnabled,
       'rippleIntensity': _rippleIntensity,
       'rippleSize': _rippleSize,
@@ -175,10 +182,15 @@ class RippleSettings {
       'rippleAnimated': _rippleAnimated,
       'rippleAnimOptions': _rippleAnimOptions.toMap(),
     };
+
+    // Add targeting flags from the mixin
+    addTargetingToMap(map);
+
+    return map;
   }
 
   factory RippleSettings.fromMap(Map<String, dynamic> map) {
-    return RippleSettings(
+    final settings = RippleSettings(
       rippleEnabled: map['rippleEnabled'] ?? false,
       rippleIntensity: map['rippleIntensity'] ?? 0.5,
       rippleSize: map['rippleSize'] ?? 0.5,
@@ -196,5 +208,10 @@ class RippleSettings {
             )
           : null,
     );
+
+    // Load targeting flags from the map
+    settings.loadTargetingFromMap(map);
+
+    return settings;
   }
 }
