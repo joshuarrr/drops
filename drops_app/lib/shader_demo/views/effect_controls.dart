@@ -127,10 +127,10 @@ class EffectControls {
       return;
     }
 
-    // First check if music is enabled
+    // Check if music is enabled
     if (!_musicController!.getMusicEnabledState()) {
       _log('Music is disabled, cannot play', level: LogLevel.warning);
-      return;
+      return; // Don't auto-enable music, let the aspect toggle control that
     }
 
     if (musicTracks.isEmpty) {
@@ -163,18 +163,15 @@ class EffectControls {
       return;
     }
 
-    // First, update the settings to reflect paused state
-    if (_musicController!.isPlaying()) {
-      final updatedSettings = _musicController!.getCurrentSettings();
-      updatedSettings.musicSettings.isPlaying = false;
-      _musicController!.onSettingsChanged(updatedSettings);
+    // Force pause regardless of what the controller thinks is the current state
+    // This ensures the UI and actual playback state stay in sync
+    _log('Pausing audio playback');
+    _musicController?.pause();
 
-      // Then pause the actual playback
-      _log('Pausing audio playback');
-      _musicController?.pause();
-    } else {
-      _log('Music already paused, no action needed');
-    }
+    // Always update the settings to reflect paused state
+    final updatedSettings = _musicController!.getCurrentSettings();
+    updatedSettings.musicSettings.isPlaying = false;
+    _musicController!.onSettingsChanged(updatedSettings);
   }
 
   static void seekMusic(double position) {

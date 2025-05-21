@@ -210,6 +210,12 @@ class MusicController {
 
   // Play/resume current track
   Future<void> play() async {
+    // Check if music is enabled at all before attempting to play
+    if (!_settings.musicEnabled) {
+      _log('Music is disabled, cannot play', level: LogLevel.warning);
+      return;
+    }
+
     final trackPath = _settings.musicSettings.currentTrack;
 
     // Double check track path
@@ -284,14 +290,34 @@ class MusicController {
   Future<void> pause() async {
     _log('Pausing playback');
     try {
+      // First pause the player to stop sound
       await _audioPlayer.pause();
+
+      // Then also stop to ensure complete cancellation of playback
+      // This helps for cases where pause doesn't completely work
+      try {
+        await _audioPlayer.stop();
+      } catch (e) {
+        _log(
+          'Error stopping playback after pause: $e',
+          level: LogLevel.warning,
+        );
+        // Continue anyway
+      }
 
       // Update settings
       final updatedSettings = ShaderSettings.fromMap(_settings.toMap());
       updatedSettings.musicSettings.isPlaying = false;
       onSettingsChanged(updatedSettings);
+
+      _log('Successfully paused/stopped playback');
     } catch (e) {
       _log('Error pausing playback: $e', level: LogLevel.error);
+
+      // Still try to update the UI state even if the pause failed
+      final updatedSettings = ShaderSettings.fromMap(_settings.toMap());
+      updatedSettings.musicSettings.isPlaying = false;
+      onSettingsChanged(updatedSettings);
     }
   }
 
@@ -374,6 +400,10 @@ class MusicController {
       return;
     }
 
+    // Check if we're already playing this track
+    final bool sameTrack = _settings.musicSettings.currentTrack == trackPath;
+    final bool wasPlaying = _settings.musicSettings.isPlaying;
+
     // Always stop any current playback to ensure clean state
     try {
       _log('Stopping any current playback before selecting new track');
@@ -393,7 +423,8 @@ class MusicController {
     updatedSettings.musicSettings.playbackPosition = 0;
     updatedSettings.musicSettings.duration = 0;
 
-    // Force isPlaying to false during the transition
+    // Only set isPlaying to false if we're changing tracks
+    // If it's the same track and was playing, we'll restart it
     updatedSettings.musicSettings.isPlaying = false;
 
     // Store the changes locally and notify listeners
@@ -404,28 +435,40 @@ class MusicController {
       'Track selected successfully, current track is now: ${_settings.musicSettings.currentTrack}',
     );
 
-    // Now try to play the track
-    try {
-      _log('Attempting to play track: $trackPath');
-      // Short delay to ensure UI updates before playback starts
-      await Future.delayed(Duration(milliseconds: 100));
+    // Only try to play if music is enabled
+    if (!_settings.musicEnabled) {
+      _log(
+        'Music is disabled, track selected but not playing',
+        level: LogLevel.info,
+      );
+      return;
+    }
 
-      // Set isPlaying to true before playing to ensure UI reflects correct state
-      final playSettings = ShaderSettings.fromMap(_settings.toMap());
-      playSettings.musicSettings.isPlaying = true;
-      _settings = playSettings;
-      onSettingsChanged(playSettings);
+    // Now try to play the track if it should be playing
+    // (either it was playing before, or it's a new track and autoplay is enabled)
+    if (wasPlaying || (!sameTrack && _settings.musicSettings.autoplay)) {
+      try {
+        _log('Attempting to play track: $trackPath');
+        // Short delay to ensure UI updates before playback starts
+        await Future.delayed(Duration(milliseconds: 100));
 
-      // Now actually play
-      await play();
-    } catch (e) {
-      _log('Error playing track after selection: $e', level: LogLevel.error);
+        // Set isPlaying to true before playing to ensure UI reflects correct state
+        final playSettings = ShaderSettings.fromMap(_settings.toMap());
+        playSettings.musicSettings.isPlaying = true;
+        _settings = playSettings;
+        onSettingsChanged(playSettings);
 
-      // If play fails, make sure isPlaying is reset to false
-      final failedSettings = ShaderSettings.fromMap(_settings.toMap());
-      failedSettings.musicSettings.isPlaying = false;
-      _settings = failedSettings;
-      onSettingsChanged(failedSettings);
+        // Now actually play
+        await play();
+      } catch (e) {
+        _log('Error playing track after selection: $e', level: LogLevel.error);
+
+        // If play fails, make sure isPlaying is reset to false
+        final failedSettings = ShaderSettings.fromMap(_settings.toMap());
+        failedSettings.musicSettings.isPlaying = false;
+        _settings = failedSettings;
+        onSettingsChanged(failedSettings);
+      }
     }
   }
 

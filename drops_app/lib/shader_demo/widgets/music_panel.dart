@@ -203,9 +203,12 @@ class _MusicPanelState extends State<MusicPanel> {
                       ? Icons.pause_circle_filled
                       : Icons.play_circle_filled,
                 ),
-                onPressed: musicSettings.currentTrack.isEmpty
+                onPressed:
+                    musicSettings.currentTrack.isEmpty ||
+                        !widget.settings.musicEnabled
                     ? null
                     : () {
+                        // Update the state before calling the method
                         final updatedSettings = ShaderSettings.fromMap(
                           widget.settings.toMap(),
                         );
@@ -213,11 +216,14 @@ class _MusicPanelState extends State<MusicPanel> {
                         updatedSettings.musicSettings.isPlaying = shouldPlay;
                         widget.onSettingsChanged(updatedSettings);
 
+                        // Now directly call the play/pause method
                         if (shouldPlay) {
+                          _log('Play button pressed, calling onPlay');
                           if (widget.onPlay != null) {
                             widget.onPlay!();
                           }
                         } else {
+                          _log('Pause button pressed, calling onPause');
                           if (widget.onPause != null) {
                             widget.onPause!();
                           }

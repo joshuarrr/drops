@@ -495,6 +495,23 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                                     break;
                                   case ShaderAspect.music:
                                     _shaderSettings.musicEnabled = enabled;
+                                    // When music is disabled, pause any currently playing music
+                                    if (!enabled &&
+                                        _shaderSettings
+                                            .musicSettings
+                                            .isPlaying) {
+                                      EffectControls.pauseMusic();
+                                    } else if (enabled &&
+                                        !_shaderSettings
+                                            .musicSettings
+                                            .isPlaying &&
+                                        _shaderSettings
+                                            .musicSettings
+                                            .currentTrack
+                                            .isNotEmpty) {
+                                      // When music is enabled and there's a track selected but not playing, start playback
+                                      EffectControls.playMusic();
+                                    }
                                     break;
                                   case ShaderAspect.cymatics:
                                     _shaderSettings.cymaticsEnabled = enabled;
