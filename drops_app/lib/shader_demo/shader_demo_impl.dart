@@ -374,7 +374,23 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
         ),
       ],
       body: GestureDetector(
-        onTap: () {
+        onTap: () async {
+          // First, save the current edited state if we have unsaved changes
+          if (_showControls && _hasUnsavedChanges()) {
+            // Save current state as untitled preset
+            final newPreset = await _saveUntitledPreset();
+            if (newPreset != null) {
+              _currentPresetIndex = _availablePresets.indexWhere(
+                (p) => p.id == newPreset.id,
+              );
+
+              // Clear unsaved settings since we've now saved to a preset
+              _unsavedSettings = null;
+              _unsavedImage = null;
+              _unsavedCategory = null;
+            }
+          }
+
           setState(() {
             // Tap on screen hides both top controls and effect sliders
             _showControls = !_showControls;
@@ -382,18 +398,6 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
               _showAspectSliders = false;
               // Save current shader settings when hiding controls
               _saveShaderSettings();
-
-              // Always save current settings to unsaved state when hiding controls
-              // This ensures the current edited state (including image changes) is preserved
-              _unsavedSettings = ShaderSettings.fromMap(
-                _shaderSettings.toMap(),
-              );
-              _unsavedImage = _selectedImage;
-              _unsavedCategory = _imageCategory;
-
-              // Reset current preset index when we have unsaved changes
-              // This ensures we're in the "Current State" when hiding controls
-              _currentPresetIndex = -1;
             }
           });
         },
@@ -554,31 +558,47 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     // Apply sort method before building PageView to ensure consistent ordering
     _ensurePresetsUseSavedSortMethod();
 
-    // Create a temporary current-state preset using always current settings
-    // rather than unsaved settings (which might be null)
-    final currentStatePreset = ShaderPreset(
-      id: 'current_state',
-      name: 'Current State',
-      createdAt: DateTime.now(),
-      settings: _unsavedSettings ?? _shaderSettings,
-      imagePath: _unsavedImage ?? _selectedImage,
-    );
+    // Filter out presets that are hidden from slideshow
+    final visiblePresets = _availablePresets
+        .where((preset) => !preset.isHiddenFromSlideshow)
+        .toList();
 
-    // Create a combined list with current state as first item
-    final allPresets = [currentStatePreset, ..._availablePresets];
+    // Handle no presets case
+    if (visiblePresets.isEmpty) {
+      return const Center(
+        child: Text(
+          'No presets available for slideshow.\nTap to return to edit mode.',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.white),
+        ),
+      );
+    }
 
-    // Adjust current preset index to account for the added current state
-    int adjustedIndex = _currentPresetIndex < 0 ? 0 : _currentPresetIndex + 1;
+    // Determine which preset to start with
+    int startIndex = 0; // Default to first preset
+
+    // If we have a current preset selected, start with that
+    if (_currentPresetIndex >= 0 &&
+        _currentPresetIndex < _availablePresets.length) {
+      final currentPresetId = _availablePresets[_currentPresetIndex].id;
+      // Find this preset in the filtered visible list
+      final visibleIndex = visiblePresets.indexWhere(
+        (p) => p.id == currentPresetId,
+      );
+      if (visibleIndex >= 0) {
+        startIndex = visibleIndex;
+      }
+    }
 
     // CRITICAL: Force rebuild of PageController if the index has changed significantly
     // This ensures we can always navigate the full list in both directions
     if (_pageController.hasClients &&
-        (_pageController.page?.round() ?? 0) != adjustedIndex) {
+        (_pageController.page?.round() ?? 0) != startIndex) {
       // Dispose old controller
       final oldController = _pageController;
 
       // Create a new controller at the correct index
-      _pageController = PageController(initialPage: adjustedIndex);
+      _pageController = PageController(initialPage: startIndex);
 
       // Schedule disposal after this frame to avoid build errors
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -588,12 +608,9 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     // Initialize page controller to current preset index if needed
     else if (!_isScrolling && _pageController.hasClients) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        // Start with current page (0 for edited state, or adjustedIndex for a preset)
-        // Only do this if we're not already scrolling to avoid interrupting animations
+        // Start with current preset
         if (!_isScrolling) {
-          _pageController.jumpToPage(
-            _currentPresetIndex < 0 ? 0 : adjustedIndex,
-          );
+          _pageController.jumpToPage(startIndex);
         }
       });
     }
@@ -607,101 +624,41 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
       onPageChanged: (index) {
         if (!_isScrolling) {
           setState(() {
-            if (index == 0) {
-              // Returning to current edited state - restore unsaved changes
-              _currentPresetIndex = -1;
-              if (_unsavedSettings != null) {
-                _shaderSettings = _unsavedSettings!;
-                _selectedImage = _unsavedImage!;
-                _imageCategory = _unsavedCategory!;
-              }
-            } else {
-              // Save current state before applying preset if this is first navigation from current state
-              if (_unsavedSettings == null) {
-                _unsavedSettings = ShaderSettings.fromMap(
-                  _shaderSettings.toMap(),
-                );
-                _unsavedImage = _selectedImage;
-                _unsavedCategory = _imageCategory;
-              }
+            // Find the preset ID from the visible presets list
+            final selectedPresetId = visiblePresets[index].id;
 
-              // Apply one of the saved presets (adjust index to account for current state)
-              // Important: Do NOT reassign _currentPresetIndex here for Random sort to maintain consistent order
-              // Only update for non-random sort or if sort information isn't available
-              final targetPresetIndex = index - 1;
+            // Find the index of this preset in the full presets list
+            _currentPresetIndex = _availablePresets.indexWhere(
+              (p) => p.id == selectedPresetId,
+            );
 
-              // Always update the current preset index to maintain correct navigation
-              _currentPresetIndex = targetPresetIndex;
-
+            // Apply the selected preset
+            if (_currentPresetIndex >= 0) {
               _applyPreset(
-                _availablePresets[targetPresetIndex],
+                _availablePresets[_currentPresetIndex],
                 showControls: false,
               );
             }
           });
         }
       },
-      itemCount: allPresets.length,
+      itemCount: visiblePresets.length,
       itemBuilder: (context, index) {
-        return _buildPresetPageItem(index, allPresets);
+        final preset = visiblePresets[index];
+
+        return GestureDetector(
+          onTap: () {
+            setState(() {
+              _showControls = !_showControls;
+              if (!_showControls) {
+                _showAspectSliders = false;
+              }
+            });
+          },
+          child: _buildShaderEffectForPreset(preset),
+        );
       },
     );
-  }
-
-  // Build a single preset page
-  Widget _buildPresetPageItem(int index, List<ShaderPreset> presets) {
-    final preset = presets[index];
-
-    // If this is the current state (index 0)
-    if (index == 0) {
-      return GestureDetector(
-        onTap: () {
-          setState(() {
-            _showControls = !_showControls;
-            if (!_showControls) {
-              _showAspectSliders = false;
-            }
-          });
-        },
-        child: _buildShaderEffectForPreset(preset),
-      );
-    }
-
-    // Handle saved presets (adjust index for comparison with _currentPresetIndex)
-    if (index - 1 == _currentPresetIndex) {
-      return GestureDetector(
-        onTap: () {
-          setState(() {
-            _showControls = !_showControls;
-            if (!_showControls) {
-              _showAspectSliders = false;
-            }
-          });
-        },
-        child: _buildShaderEffectForPreset(preset),
-      );
-    } else {
-      // For other presets, use a preloaded or simpler version
-      return GestureDetector(
-        onTap: () {
-          setState(() {
-            // For non-current-state presets, apply the preset
-            if (index > 0) {
-              _currentPresetIndex = index - 1;
-              _applyPreset(
-                _availablePresets[_currentPresetIndex],
-                showControls: false,
-              );
-            }
-            _showControls = !_showControls;
-            if (!_showControls) {
-              _showAspectSliders = false;
-            }
-          });
-        },
-        child: _buildShaderEffectForPreset(preset),
-      );
-    }
   }
 
   // Build shader effect for a specific preset
@@ -1244,18 +1201,21 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     // Make sure we're using the sort method from the current preset
     _ensurePresetsUseSavedSortMethod();
 
-    // Calculate total count including current state
-    final int totalCount = _availablePresets.length + 1;
-    if (totalCount <= 1) return; // No presets to navigate to
+    // Filter out presets hidden from slideshow
+    final visiblePresets = _availablePresets
+        .where((preset) => !preset.isHiddenFromSlideshow)
+        .toList();
+
+    if (visiblePresets.isEmpty) return; // No presets to navigate to
 
     // Get the current page from controller
     final int currentPage = _pageController.page?.round() ?? 0;
 
     // Calculate the target page with proper wraparound
-    int targetPage = (currentPage - 1) % totalCount;
+    int targetPage = (currentPage - 1) % visiblePresets.length;
 
     // Handle negative modulo properly
-    if (targetPage < 0) targetPage += totalCount;
+    if (targetPage < 0) targetPage += visiblePresets.length;
 
     // Use the PageController to animate to the previous page
     _isScrolling = true;
@@ -1281,15 +1241,18 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     // Make sure we're using the sort method from the current preset
     _ensurePresetsUseSavedSortMethod();
 
-    // Calculate total count including current state
-    final int totalCount = _availablePresets.length + 1;
-    if (totalCount <= 1) return; // No presets to navigate to
+    // Filter out presets hidden from slideshow
+    final visiblePresets = _availablePresets
+        .where((preset) => !preset.isHiddenFromSlideshow)
+        .toList();
+
+    if (visiblePresets.isEmpty) return; // No presets to navigate to
 
     // Get the current page from controller
     final int currentPage = _pageController.page?.round() ?? 0;
 
     // Calculate target page with proper wraparound
-    int targetPage = (currentPage + 1) % totalCount;
+    int targetPage = (currentPage + 1) % visiblePresets.length;
 
     // Use the PageController to animate to the next page
     _isScrolling = true;
@@ -1350,5 +1313,146 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     } catch (e) {
       _log('Error loading music tracks: $e', level: LogLevel.error);
     }
+  }
+
+  // Add a method to save the current edited state as an untitled preset
+  Future<ShaderPreset?> _saveUntitledPreset() async {
+    try {
+      // Generate a name like "Untitled 1", "Untitled 2", etc.
+      final presetName = await _generateUntitledName();
+
+      // Save as a new preset
+      final newPreset = await PresetController.savePreset(
+        name: presetName,
+        settings: _shaderSettings,
+        imagePath: _selectedImage,
+        previewKey: _previewKey,
+      );
+
+      // Force reload of presets to include the new one
+      setState(() {
+        _presetsLoaded = false;
+      });
+      await _loadAvailablePresets();
+
+      // Set this new preset as the current one
+      _currentPresetIndex = _availablePresets.indexWhere(
+        (p) => p.id == newPreset.id,
+      );
+
+      return newPreset;
+    } catch (e) {
+      debugPrint('Error saving untitled preset: $e');
+      return null;
+    }
+  }
+
+  // Generate a unique name for untitled presets
+  Future<String> _generateUntitledName() async {
+    final presets = await PresetController.getAllPresets();
+
+    // Find all preset names that match the pattern "Untitled N"
+    final regex = RegExp(r'^Untitled (\d+)$');
+    final usedNumbers = <int>[];
+
+    for (final preset in presets) {
+      final match = regex.firstMatch(preset.name);
+      if (match != null) {
+        final number = int.tryParse(match.group(1) ?? '');
+        if (number != null) {
+          usedNumbers.add(number);
+        }
+      }
+    }
+
+    // Find the next available number
+    int nextNumber = 1;
+    if (usedNumbers.isNotEmpty) {
+      usedNumbers.sort();
+      // Find first gap or use the next number after the highest
+      for (int i = 0; i < usedNumbers.length; i++) {
+        if (i + 1 < usedNumbers[i]) {
+          nextNumber = i + 1;
+          break;
+        }
+      }
+      if (nextNumber == 1) {
+        // No gaps found, use next number
+        nextNumber = usedNumbers.last + 1;
+      }
+    }
+
+    return 'Untitled $nextNumber';
+  }
+
+  // Check if current settings have been modified from the current preset
+  bool _hasUnsavedChanges() {
+    // If we're not on a preset, always consider as having changes
+    if (_currentPresetIndex < 0 ||
+        _currentPresetIndex >= _availablePresets.length) {
+      return true;
+    }
+
+    final currentPreset = _availablePresets[_currentPresetIndex];
+
+    // Compare image path - most basic check
+    if (_selectedImage != currentPreset.imagePath) {
+      return true;
+    }
+
+    // Compare important settings that would be visually noticeable
+    // This is a simplified comparison that only checks key properties
+
+    // Check color settings
+    if (_shaderSettings.colorEnabled != currentPreset.settings.colorEnabled) {
+      return true;
+    }
+
+    // Check blur settings
+    if (_shaderSettings.blurEnabled != currentPreset.settings.blurEnabled) {
+      return true;
+    }
+
+    // Check noise settings
+    if (_shaderSettings.noiseEnabled != currentPreset.settings.noiseEnabled) {
+      return true;
+    }
+
+    // Check chromatic settings
+    if (_shaderSettings.chromaticEnabled !=
+        currentPreset.settings.chromaticEnabled) {
+      return true;
+    }
+
+    // Check ripple settings
+    if (_shaderSettings.rippleEnabled != currentPreset.settings.rippleEnabled) {
+      return true;
+    }
+
+    // Check text settings - important for visual appearance
+    if (_shaderSettings.textEnabled != currentPreset.settings.textEnabled) {
+      return true;
+    }
+
+    if (_shaderSettings.textEnabled) {
+      // Compare text content if text is enabled
+      if (_shaderSettings.textLayoutSettings.textTitle !=
+          currentPreset.settings.textLayoutSettings.textTitle) {
+        return true;
+      }
+
+      if (_shaderSettings.textLayoutSettings.textSubtitle !=
+          currentPreset.settings.textLayoutSettings.textSubtitle) {
+        return true;
+      }
+
+      if (_shaderSettings.textLayoutSettings.textArtist !=
+          currentPreset.settings.textLayoutSettings.textArtist) {
+        return true;
+      }
+    }
+
+    // If we reach here, we consider settings as not significantly changed
+    return false;
   }
 }
