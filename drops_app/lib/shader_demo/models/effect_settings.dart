@@ -11,6 +11,7 @@ import 'rain_settings.dart';
 import 'chromatic_settings.dart';
 import 'ripple_settings.dart';
 import 'music_settings.dart';
+import 'cymatics_settings.dart';
 
 // Class to store all shader effect settings
 class ShaderSettings {
@@ -24,6 +25,7 @@ class ShaderSettings {
   ChromaticSettings _chromaticSettings;
   RippleSettings _rippleSettings;
   MusicSettings _musicSettings;
+  CymaticsSettings _cymaticsSettings;
 
   // Flag to control logging
   static bool enableLogging = false;
@@ -38,6 +40,7 @@ class ShaderSettings {
   ChromaticSettings get chromaticSettings => _chromaticSettings;
   RippleSettings get rippleSettings => _rippleSettings;
   MusicSettings get musicSettings => _musicSettings;
+  CymaticsSettings get cymaticsSettings => _cymaticsSettings;
 
   // Convenience getters for most commonly used properties
   // These delegate to the specialized settings classes
@@ -119,6 +122,17 @@ class ShaderSettings {
     _musicSettings.musicAnimated = value;
   }
 
+  // Cymatics settings
+  bool get cymaticsEnabled => _cymaticsSettings.cymaticsEnabled;
+  set cymaticsEnabled(bool value) {
+    _cymaticsSettings.cymaticsEnabled = value;
+  }
+
+  bool get cymaticsAnimated => _cymaticsSettings.cymaticsAnimated;
+  set cymaticsAnimated(bool value) {
+    _cymaticsSettings.cymaticsAnimated = value;
+  }
+
   // Text effect settings
   bool get textfxEnabled => _textfxSettings.textfxEnabled;
   set textfxEnabled(bool value) {
@@ -153,6 +167,7 @@ class ShaderSettings {
     ChromaticSettings.enableLogging = enabled;
     RippleSettings.enableLogging = enabled;
     MusicSettings.enableLogging = enabled;
+    CymaticsSettings.enableLogging = enabled;
   }
 
   ShaderSettings({
@@ -166,6 +181,7 @@ class ShaderSettings {
     ChromaticSettings? chromaticSettings,
     RippleSettings? rippleSettings,
     MusicSettings? musicSettings,
+    CymaticsSettings? cymaticsSettings,
   }) : _colorSettings = colorSettings ?? ColorSettings(),
        _blurSettings = blurSettings ?? BlurSettings(),
        _noiseSettings = noiseSettings ?? NoiseSettings(),
@@ -174,7 +190,8 @@ class ShaderSettings {
        _rainSettings = rainSettings ?? RainSettings(),
        _chromaticSettings = chromaticSettings ?? ChromaticSettings(),
        _rippleSettings = rippleSettings ?? RippleSettings(),
-       _musicSettings = musicSettings ?? MusicSettings() {
+       _musicSettings = musicSettings ?? MusicSettings(),
+       _cymaticsSettings = cymaticsSettings ?? CymaticsSettings() {
     if (enableLogging) print("SETTINGS: ShaderSettings initialized");
   }
 
@@ -191,6 +208,7 @@ class ShaderSettings {
         'chromaticSettings': _chromaticSettings.toMap(),
         'rippleSettings': _rippleSettings.toMap(),
         'musicSettings': _musicSettings.toMap(),
+        'cymaticsSettings': _cymaticsSettings.toMap(),
       };
     } catch (e) {
       print('Error serializing ShaderSettings: $e');
@@ -205,6 +223,7 @@ class ShaderSettings {
         'chromaticSettings': ChromaticSettings().toMap(),
         'rippleSettings': RippleSettings().toMap(),
         'musicSettings': MusicSettings().toMap(),
+        'cymaticsSettings': CymaticsSettings().toMap(),
       };
     }
   }
@@ -250,6 +269,11 @@ class ShaderSettings {
       musicSettings: map['musicSettings'] != null
           ? MusicSettings.fromMap(
               Map<String, dynamic>.from(map['musicSettings']),
+            )
+          : null,
+      cymaticsSettings: map['cymaticsSettings'] != null
+          ? CymaticsSettings.fromMap(
+              Map<String, dynamic>.from(map['cymaticsSettings']),
             )
           : null,
     );
@@ -346,6 +370,23 @@ class ShaderSettings {
         rippleAnimOptions: map['rippleAnimOptions'] != null
             ? AnimationOptions.fromMap(
                 Map<String, dynamic>.from(map['rippleAnimOptions']),
+              )
+            : null,
+      ),
+      cymaticsSettings: CymaticsSettings(
+        cymaticsEnabled: map['cymaticsEnabled'] ?? false,
+        intensity: map['cymaticsIntensity'] ?? 0.5,
+        frequency: map['cymaticsFrequency'] ?? 0.5,
+        amplitude: map['cymaticsAmplitude'] ?? 0.5,
+        complexity: map['cymaticsComplexity'] ?? 0.5,
+        speed: map['cymaticsSpeed'] ?? 0.5,
+        colorIntensity: map['cymaticsColorIntensity'] ?? 0.5,
+        audioReactive: map['cymaticsAudioReactive'] ?? true,
+        audioSensitivity: map['cymaticsAudioSensitivity'] ?? 0.7,
+        cymaticsAnimated: map['cymaticsAnimated'] ?? false,
+        animOptions: map['cymaticsAnimOptions'] != null
+            ? AnimationOptions.fromMap(
+                Map<String, dynamic>.from(map['cymaticsAnimOptions']),
               )
             : null,
       ),

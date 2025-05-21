@@ -90,8 +90,10 @@ class ImagePanel extends StatelessWidget {
           groupValue: settings.fillScreen,
           onChanged: (value) {
             if (value != null) {
-              settings.fillScreen = value;
-              onSettingsChanged(settings);
+              // Create a deep copy to avoid mutation issues
+              final updatedSettings = ShaderSettings.fromMap(settings.toMap());
+              updatedSettings.fillScreen = value;
+              onSettingsChanged(updatedSettings);
             }
           },
           title: Text(
@@ -106,8 +108,10 @@ class ImagePanel extends StatelessWidget {
           groupValue: settings.fillScreen,
           onChanged: (value) {
             if (value != null) {
-              settings.fillScreen = value;
-              onSettingsChanged(settings);
+              // Create a deep copy to avoid mutation issues
+              final updatedSettings = ShaderSettings.fromMap(settings.toMap());
+              updatedSettings.fillScreen = value;
+              onSettingsChanged(updatedSettings);
             }
           },
           title: Text(
@@ -117,30 +121,66 @@ class ImagePanel extends StatelessWidget {
           activeColor: sliderColor,
           contentPadding: EdgeInsets.zero,
         ),
+
+        // Show margin slider only when in Fit to Screen mode
+        if (!settings.fillScreen) ...[
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Text(
+                'Margin: ',
+                style: TextStyle(color: sliderColor, fontSize: 14),
+              ),
+              Text(
+                '${settings.textLayoutSettings.fitScreenMargin.toStringAsFixed(1)}',
+                style: TextStyle(color: sliderColor, fontSize: 14),
+              ),
+            ],
+          ),
+          Slider(
+            value: settings.textLayoutSettings.fitScreenMargin,
+            min: 0.0,
+            max: 100.0,
+            divisions: 100,
+            activeColor: sliderColor,
+            inactiveColor: sliderColor.withOpacity(0.3),
+            onChanged: (value) {
+              // Create a deep copy to avoid mutation issues
+              final updatedSettings = ShaderSettings.fromMap(settings.toMap());
+              updatedSettings.textLayoutSettings.fitScreenMargin = value;
+              onSettingsChanged(updatedSettings);
+            },
+          ),
+        ],
       ],
     );
   }
 
   void _resetImage() {
-    settings.fillScreen = false;
-    settings.textLayoutSettings.fitScreenMargin = 30.0;
+    // Create a deep copy of the settings to ensure changes are properly tracked
+    final updatedSettings = ShaderSettings.fromMap(settings.toMap());
+    updatedSettings.fillScreen = false;
+    updatedSettings.textLayoutSettings.fitScreenMargin = 30.0;
 
     // Reset all effect targeting flags to default values (true)
-    settings.colorSettings.applyToImage = true;
-    settings.blurSettings.applyToImage = true;
-    settings.noiseSettings.applyToImage = true;
-    settings.rainSettings.applyToImage = true;
-    settings.chromaticSettings.applyToImage = true;
-    settings.rippleSettings.applyToImage = true;
+    updatedSettings.colorSettings.applyToImage = true;
+    updatedSettings.blurSettings.applyToImage = true;
+    updatedSettings.noiseSettings.applyToImage = true;
+    updatedSettings.rainSettings.applyToImage = true;
+    updatedSettings.chromaticSettings.applyToImage = true;
+    updatedSettings.rippleSettings.applyToImage = true;
 
-    onSettingsChanged(settings);
+    onSettingsChanged(updatedSettings);
   }
 
   void _applyPreset(Map<String, dynamic> presetData) {
-    settings.fillScreen = presetData['fillScreen'] ?? settings.fillScreen;
-    settings.textLayoutSettings.fitScreenMargin =
+    // Create a deep copy of the settings to ensure changes are properly tracked
+    final updatedSettings = ShaderSettings.fromMap(settings.toMap());
+    updatedSettings.fillScreen =
+        presetData['fillScreen'] ?? updatedSettings.fillScreen;
+    updatedSettings.textLayoutSettings.fitScreenMargin =
         presetData['fitScreenMargin'] ?? 30.0;
-    onSettingsChanged(settings);
+    onSettingsChanged(updatedSettings);
   }
 
   Future<void> _savePresetForAspect(ShaderAspect aspect, String name) async {

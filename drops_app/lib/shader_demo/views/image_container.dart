@@ -21,41 +21,37 @@ class ImageContainer extends StatelessWidget {
 
         // Use the margin setting from textLayoutSettings when in Fit mode
         final bool isFitMode = !settings.textLayoutSettings.fillScreen;
-        final double margin = isFitMode ? 30.0 : 0.0;
+        // Always read margin directly from settings
+        final double margin = isFitMode
+            ? settings.textLayoutSettings.fitScreenMargin
+            : 0.0;
 
-        // Create the image widget for both sizes
+        // Calculate image dimensions accounting for margins
+        final double imageWidth = isFitMode
+            ? screenWidth - (margin * 2)
+            : screenWidth;
+        final double imageHeight = isFitMode
+            ? screenHeight - (margin * 2)
+            : screenHeight;
+
+        // Create the image widget
         Widget imageWidget = imagePath.isEmpty
-            ? SizedBox(width: screenWidth, height: screenHeight)
+            ? SizedBox(width: imageWidth, height: imageHeight)
             : Image.asset(
                 imagePath,
                 fit: settings.textLayoutSettings.fillScreen
                     ? BoxFit.cover
                     : BoxFit.contain,
-                width: screenWidth,
-                height: screenHeight,
+                width: imageWidth,
+                height: imageHeight,
               );
 
-        // Use Stack to ensure proper layout
+        // Create a container with the proper size and padding
         return Container(
           width: screenWidth,
           height: screenHeight,
           color: Colors.black,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              // Use Positioned.fill to ensure the image remains full-sized
-              Positioned.fill(
-                child: Center(
-                  child: Container(
-                    width: screenWidth,
-                    height: screenHeight,
-                    padding: EdgeInsets.all(isFitMode ? margin : 0),
-                    child: imageWidget,
-                  ),
-                ),
-              ),
-            ],
-          ),
+          child: Center(child: imageWidget),
         );
       },
     );

@@ -492,6 +492,9 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                                   case ShaderAspect.music:
                                     _shaderSettings.musicEnabled = enabled;
                                     break;
+                                  case ShaderAspect.cymatics:
+                                    _shaderSettings.cymaticsEnabled = enabled;
+                                    break;
                                 }
                               });
                               _saveShaderSettings();
@@ -719,17 +722,41 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
         builder: (context, _) {
           final double animationValue = _controller.value;
 
-          // Apply effects using the preset's settings
-          Widget effectsWidget = Container(
-            width: width,
-            height: height,
-            alignment: Alignment.center,
-            child: EffectController.applyEffects(
-              child: Image.asset(preset.imagePath, fit: BoxFit.cover),
-              settings: presetSettings,
-              animationValue: animationValue,
-            ),
+          // Use ImageContainer to properly respect margin settings
+          // instead of directly using Image.asset with BoxFit.cover
+          Widget baseImage = ImageContainer(
+            imagePath: preset.imagePath,
+            settings: presetSettings,
           );
+
+          // Check if any effect is targeted to image
+          final bool shouldApplyEffectsToImage =
+              (presetSettings.colorEnabled &&
+                  presetSettings.colorSettings.applyToImage) ||
+              (presetSettings.blurEnabled &&
+                  presetSettings.blurSettings.applyToImage) ||
+              (presetSettings.noiseEnabled &&
+                  presetSettings.noiseSettings.applyToImage) ||
+              (presetSettings.rainEnabled &&
+                  presetSettings.rainSettings.applyToImage) ||
+              (presetSettings.chromaticEnabled &&
+                  presetSettings.chromaticSettings.applyToImage) ||
+              (presetSettings.rippleEnabled &&
+                  presetSettings.rippleSettings.applyToImage);
+
+          // Apply effects using the preset's settings
+          Widget effectsWidget = shouldApplyEffectsToImage
+              ? Container(
+                  width: width,
+                  height: height,
+                  alignment: Alignment.center,
+                  child: EffectController.applyEffects(
+                    child: baseImage,
+                    settings: presetSettings,
+                    animationValue: animationValue,
+                  ),
+                )
+              : baseImage; // Don't apply effects if none target the image
 
           // Add text overlay if enabled in the preset
           List<Widget> stackChildren = [Positioned.fill(child: effectsWidget)];

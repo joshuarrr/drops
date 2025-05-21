@@ -327,6 +327,19 @@ class EffectController {
           );
         }
 
+        // Apply cymatics effect if enabled and targeted to the current content type
+        if (settings.cymaticsEnabled &&
+            ((isTextContent && settings.cymaticsSettings.applyToText) ||
+                (!isTextContent && settings.cymaticsSettings.applyToImage))) {
+          result = _applyCymaticsEffect(
+            child: result,
+            settings: settings,
+            animationValue: animationValue,
+            preserveTransparency: preserveTransparency,
+            isTextContent: isTextContent,
+          );
+        }
+
         // Apply chromatic aberration effect if targeted to the current content type
         // Without checking chromaticEnabled flag
         if ((isTextContent && settings.chromaticSettings.applyToText) ||
@@ -545,6 +558,34 @@ class EffectController {
 
     // Use shader directly without additional wrapping
     return ChromaticEffectShader(
+      settings: settings,
+      animationValue: animationValue,
+      child: child,
+      preserveTransparency: preserveTransparency,
+      isTextContent: isTextContent,
+    );
+  }
+
+  // Helper method to apply cymatics effect using custom shader
+  static Widget _applyCymaticsEffect({
+    required Widget child,
+    required ShaderSettings settings,
+    required double animationValue,
+    bool preserveTransparency = false,
+    bool isTextContent = false,
+  }) {
+    // Skip if cymatics settings are minimal and no animation
+    if (settings.cymaticsSettings.intensity <= 0.0 &&
+        settings.cymaticsSettings.frequency <= 0.0 &&
+        settings.cymaticsSettings.amplitude <= 0.0 &&
+        settings.cymaticsSettings.complexity <= 0.0 &&
+        settings.cymaticsSettings.speed <= 0.0 &&
+        !settings.cymaticsSettings.cymaticsAnimated) {
+      return child;
+    }
+
+    // Use custom shader implementation
+    return CymaticsEffectShader(
       settings: settings,
       animationValue: animationValue,
       child: child,

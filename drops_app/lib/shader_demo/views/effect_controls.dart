@@ -21,6 +21,7 @@ import '../controllers/effect_controller.dart';
 import '../controllers/music_controller.dart';
 import 'dart:io';
 import 'dart:math';
+import '../widgets/cymatics_panel.dart';
 
 // Enum for identifying each text line (outside class for reuse)
 enum TextLine { title, subtitle, artist }
@@ -424,6 +425,20 @@ class EffectControls {
               },
               onTap: onAspectSelected,
             ),
+            // Add Cymatics toggle
+            AspectToggle(
+              aspect: ShaderAspect.cymatics,
+              isEnabled: settings.cymaticsEnabled,
+              isCurrentImageDark: isCurrentImageDark,
+              onToggled: (aspect, enabled) {
+                _log(
+                  'Cymatics aspect toggled: $enabled',
+                  level: LogLevel.debug,
+                );
+                onAspectToggled(aspect, enabled);
+              },
+              onTap: onAspectSelected,
+            ),
           ],
         ),
       ),
@@ -620,6 +635,22 @@ class EffectControls {
             onPlay: playMusic,
             onPause: pauseMusic,
             onSeek: seekMusic,
+          ),
+        ];
+
+      case ShaderAspect.cymatics:
+        return [
+          CymaticsPanel(
+            settings: settings,
+            onSettingsChanged: (updatedSettings) {
+              _log(
+                'Cymatics panel settings changed - Cymatics enabled: ${updatedSettings.cymaticsEnabled}',
+                level: LogLevel.debug,
+              );
+              onSettingsChanged(updatedSettings);
+            },
+            sliderColor: sliderColor,
+            context: context,
           ),
         ];
     }
