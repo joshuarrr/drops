@@ -16,7 +16,11 @@ import '../widgets/text_fx_panel.dart';
 import '../widgets/rain_panel.dart';
 import '../widgets/chromatic_panel.dart';
 import '../widgets/ripple_panel.dart';
+import '../widgets/music_panel.dart';
 import '../controllers/effect_controller.dart';
+import '../controllers/music_controller.dart';
+import 'dart:io';
+import 'dart:math';
 
 // Enum for identifying each text line (outside class for reuse)
 enum TextLine { title, subtitle, artist }
@@ -63,6 +67,163 @@ class EffectControls {
 
   // Add a counter to force refresh of preset bar
   static int presetsRefreshCounter = 0;
+
+  // Store list of music tracks
+  static List<String> musicTracks = [];
+
+  // Reference to the music controller
+  static MusicController? _musicController;
+
+  // Initialize music controller
+  static void initMusicController({
+    required ShaderSettings settings,
+    required Function(ShaderSettings) onSettingsChanged,
+  }) {
+    _log('Initializing music controller');
+    _musicController = MusicController.getInstance(
+      settings: settings,
+      onSettingsChanged: onSettingsChanged,
+    );
+  }
+
+  // Function to load music tracks from assets folder or directory
+  static Future<List<String>> loadMusicTracks(
+    String directory, {
+    Function(List<String>)? onTracksLoaded,
+  }) async {
+    _log('Loading music tracks from directory: $directory');
+
+    if (_musicController == null) {
+      _log('Music controller not initialized', level: LogLevel.warning);
+      return [];
+    }
+
+    try {
+      final tracks = await _musicController!.loadTracks(directory);
+      musicTracks = tracks;
+
+      if (tracks.isNotEmpty) {
+        _log('Loaded ${tracks.length} music tracks');
+
+        // If there's a callback, notify with the loaded tracks
+        onTracksLoaded?.call(tracks);
+      } else {
+        _log('No music tracks found', level: LogLevel.warning);
+      }
+
+      return tracks;
+    } catch (e) {
+      _log('Error loading music tracks: $e', level: LogLevel.error);
+      return [];
+    }
+  }
+
+  // Music control methods that will be passed to the MusicPanel
+  static void playMusic() {
+    _log('Play music requested');
+    if (_musicController == null) {
+      _log('Music controller not initialized', level: LogLevel.warning);
+      return;
+    }
+
+    // First check if music is enabled
+    if (!_musicController!.getMusicEnabledState()) {
+      _log('Music is disabled, cannot play', level: LogLevel.warning);
+      return;
+    }
+
+    if (musicTracks.isEmpty) {
+      _log('No music tracks available', level: LogLevel.warning);
+      return;
+    }
+
+    // Check if there's a track selected
+    final bool hasTrack = _musicController!.hasTrackSelected();
+    _log('Has track selected: $hasTrack');
+
+    // If no track is selected, set the first one from our list
+    if (!hasTrack && musicTracks.isNotEmpty) {
+      _log('No track selected, selecting first track: ${musicTracks[0]}');
+      selectMusicTrack(musicTracks[0]);
+    } else {
+      // Track is already selected, just play it
+      _log(
+        'Playing currently selected track: ${_musicController!.currentTrack}',
+      );
+      _musicController?.play();
+    }
+  }
+
+  static void pauseMusic() {
+    _log('Pause music requested');
+
+    if (_musicController == null) {
+      _log('Music controller not initialized', level: LogLevel.warning);
+      return;
+    }
+
+    // First, update the settings to reflect paused state
+    if (_musicController!.isPlaying()) {
+      final updatedSettings = _musicController!.getCurrentSettings();
+      updatedSettings.musicSettings.isPlaying = false;
+      _musicController!.onSettingsChanged(updatedSettings);
+
+      // Then pause the actual playback
+      _log('Pausing audio playback');
+      _musicController?.pause();
+    } else {
+      _log('Music already paused, no action needed');
+    }
+  }
+
+  static void seekMusic(double position) {
+    _log('Seek music requested: $position seconds');
+    _musicController?.seek(position);
+  }
+
+  static void selectMusicTrack(String track) {
+    _log('Select music track requested: $track');
+    if (_musicController == null) {
+      _log('Music controller not initialized', level: LogLevel.warning);
+      return;
+    }
+
+    if (track.isEmpty) {
+      _log('Empty track path provided', level: LogLevel.warning);
+      return;
+    }
+
+    // Ensure the track exists in our list
+    if (!musicTracks.contains(track) && musicTracks.isNotEmpty) {
+      _log(
+        'Track not found in available tracks, using first available track instead',
+        level: LogLevel.warning,
+      );
+      track = musicTracks[0];
+    }
+
+    // Check the current musicEnabled state in the copy we have access to
+    final bool musicEnabled = _musicController!.getMusicEnabledState();
+    final bool wasPlaying = _musicController!.isPlaying();
+
+    _log(
+      'Selecting track: $track (music enabled: $musicEnabled, was playing: $wasPlaying)',
+    );
+
+    if (musicEnabled) {
+      // If music is enabled, fully switch tracks (will stop current and play new)
+      _musicController!.selectTrack(track);
+    } else {
+      // If music is disabled, just update the selection without playing
+      _musicController!.updateTrackWithoutPlaying(track);
+    }
+  }
+
+  // Add a method to set volume directly on the controller
+  static void setMusicVolume(double volume) {
+    _log('Set volume requested: $volume');
+    _musicController?.setVolume(volume);
+  }
 
   // Add a method to load presets for a specific aspect
   static Future<Map<String, dynamic>> loadPresetsForAspect(
@@ -132,7 +293,23 @@ class EffectControls {
           spacing: 16,
           runSpacing: 8,
           children: [
-            // Image toggle first for quick access
+            // Music toggle first
+            AspectToggle(
+              aspect: ShaderAspect.music,
+              isEnabled: settings.musicEnabled,
+              isCurrentImageDark: isCurrentImageDark,
+              onToggled: (aspect, enabled) {
+                _log('Music aspect toggled: $enabled', level: LogLevel.debug);
+                onAspectToggled(aspect, enabled);
+
+                // If music is being disabled, pause playback
+                if (!enabled && settings.musicSettings.isPlaying) {
+                  pauseMusic();
+                }
+              },
+              onTap: onAspectSelected,
+            ),
+            // Image toggle now second
             AspectToggle(
               aspect: ShaderAspect.image,
               isEnabled: true,
@@ -424,6 +601,27 @@ class EffectControls {
             context: context,
           ),
         ];
+
+      case ShaderAspect.music:
+        return [
+          MusicPanel(
+            settings: settings,
+            onSettingsChanged: (updatedSettings) {
+              _log(
+                'Music panel settings changed - Music enabled: ${updatedSettings.musicEnabled}',
+                level: LogLevel.debug,
+              );
+              onSettingsChanged(updatedSettings);
+            },
+            sliderColor: sliderColor,
+            context: context,
+            musicTracks: musicTracks,
+            onTrackSelected: selectMusicTrack,
+            onPlay: playMusic,
+            onPause: pauseMusic,
+            onSeek: seekMusic,
+          ),
+        ];
     }
   }
 
@@ -480,6 +678,15 @@ class EffectControls {
       refreshPresets: refreshPresets,
       refreshCounter: presetsRefreshCounter,
     );
+  }
+
+  // Cleanup resources
+  static void dispose() {
+    _log('Disposing EffectControls');
+
+    // Dispose music controller if it exists
+    _musicController?.dispose();
+    _musicController = null;
   }
 
   // Helper function to limit string length

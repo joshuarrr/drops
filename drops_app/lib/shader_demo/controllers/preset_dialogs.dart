@@ -12,6 +12,7 @@ class PresetDialogs {
     required ShaderSettings settings,
     required String imagePath,
     required GlobalKey previewKey,
+    ShaderPreset? currentPreset,
   }) {
     // Store a reference to the scaffold context before showing the dialog
     final scaffoldContext = context;
@@ -22,27 +23,59 @@ class PresetDialogs {
       builder: (context) => SavePresetDialog(
         onSave: (name) async {
           try {
-            final preset = await PresetController.savePreset(
-              name: name,
-              settings: settings,
-              imagePath: imagePath,
-              previewKey: previewKey,
-            );
+            // If we have a current preset and the name matches, update instead of creating new
+            if (currentPreset != null && currentPreset.name == name) {
+              await PresetController.updatePreset(
+                id: currentPreset.id,
+                settings: settings,
+                previewKey: previewKey,
+              );
 
-            // Use the stored scaffold context instead of the dialog context
-            ScaffoldMessenger.of(scaffoldContext).showSnackBar(
-              SnackBar(
-                content: Text('Preset "$name" saved successfully'),
-                behavior: SnackBarBehavior.floating,
-                duration: const Duration(seconds: 2),
-              ),
-            );
+              // Show success message
+              ScaffoldMessenger.of(scaffoldContext).showSnackBar(
+                SnackBar(
+                  content: Text('Preset "$name" updated successfully'),
+                  behavior: SnackBarBehavior.floating,
+                  duration: const Duration(seconds: 2),
+                  backgroundColor: Theme.of(
+                    scaffoldContext,
+                  ).colorScheme.surface,
+                  elevation: 6,
+                ),
+              );
+            } else {
+              // Create a new preset
+              await PresetController.savePreset(
+                name: name,
+                settings: settings,
+                imagePath: imagePath,
+                previewKey: previewKey,
+              );
+
+              // Show success message
+              ScaffoldMessenger.of(scaffoldContext).showSnackBar(
+                SnackBar(
+                  content: Text('Preset "$name" saved successfully'),
+                  behavior: SnackBarBehavior.floating,
+                  duration: const Duration(seconds: 2),
+                  backgroundColor: Theme.of(
+                    scaffoldContext,
+                  ).colorScheme.surface,
+                  elevation: 6,
+                ),
+              );
+            }
           } catch (e) {
             debugPrint('Error saving preset: $e');
             // Use the stored scaffold context instead of the dialog context
             ScaffoldMessenger.of(scaffoldContext).showSnackBar(
               SnackBar(
-                content: Text('Error saving preset: ${e.toString()}'),
+                content: Text(
+                  'Error saving preset: ${e.toString()}',
+                  style: TextStyle(
+                    color: Theme.of(scaffoldContext).colorScheme.onError,
+                  ),
+                ),
                 backgroundColor: Theme.of(scaffoldContext).colorScheme.error,
                 behavior: SnackBarBehavior.floating,
                 duration: const Duration(seconds: 4),
@@ -50,6 +83,86 @@ class PresetDialogs {
             );
           }
         },
+        initialName: currentPreset?.name,
+        isUpdate: currentPreset != null,
+      ),
+    );
+  }
+
+  /// Show dialog to update an existing preset
+  static Future<void> showUpdatePresetDialog({
+    required BuildContext context,
+    required ShaderPreset preset,
+    required ShaderSettings newSettings,
+    required GlobalKey previewKey,
+  }) {
+    // Store a reference to the scaffold context before showing the dialog
+    final scaffoldContext = context;
+
+    return showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.5),
+      builder: (context) => AlertDialog(
+        title: const Text('Update Preset'),
+        content: Text(
+          'Do you want to update "${preset.name}" with the current settings?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              try {
+                // Update the preset
+                await PresetController.updatePreset(
+                  id: preset.id,
+                  settings: newSettings,
+                  previewKey: previewKey,
+                );
+
+                Navigator.pop(context);
+
+                // Show success message
+                ScaffoldMessenger.of(scaffoldContext).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Preset "${preset.name}" updated successfully',
+                    ),
+                    behavior: SnackBarBehavior.floating,
+                    duration: const Duration(seconds: 2),
+                    backgroundColor: Theme.of(
+                      scaffoldContext,
+                    ).colorScheme.surface,
+                    elevation: 6,
+                  ),
+                );
+              } catch (e) {
+                debugPrint('Error updating preset: $e');
+                Navigator.pop(context);
+
+                // Show error message
+                ScaffoldMessenger.of(scaffoldContext).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Error updating preset: ${e.toString()}',
+                      style: TextStyle(
+                        color: Theme.of(scaffoldContext).colorScheme.onError,
+                      ),
+                    ),
+                    backgroundColor: Theme.of(
+                      scaffoldContext,
+                    ).colorScheme.error,
+                    behavior: SnackBarBehavior.floating,
+                    duration: const Duration(seconds: 4),
+                  ),
+                );
+              }
+            },
+            child: const Text('Update'),
+          ),
+        ],
       ),
     );
   }
@@ -77,6 +190,8 @@ class PresetDialogs {
               content: Text('Preset "${preset.name}" loaded'),
               behavior: SnackBarBehavior.floating,
               duration: const Duration(seconds: 2),
+              backgroundColor: Theme.of(scaffoldContext).colorScheme.surface,
+              elevation: 6,
             ),
           );
         },

@@ -2,6 +2,9 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'effect_settings.dart';
 
+/// Enum representing different sort methods for presets
+enum PresetSortMethod { dateNewest, alphabetical, reverseAlphabetical, random }
+
 /// Model for storing shader presets with a thumbnail
 class ShaderPreset {
   /// Unique identifier for this preset
@@ -22,6 +25,12 @@ class ShaderPreset {
   /// Optional thumbnail image data
   final Uint8List? thumbnailData;
 
+  /// Current sort method applied when this preset was selected
+  final PresetSortMethod? sortMethod;
+
+  /// Whether this preset should be hidden from slideshows
+  final bool isHiddenFromSlideshow;
+
   const ShaderPreset({
     required this.id,
     required this.name,
@@ -29,6 +38,8 @@ class ShaderPreset {
     required this.settings,
     required this.imagePath,
     this.thumbnailData,
+    this.sortMethod,
+    this.isHiddenFromSlideshow = false,
   });
 
   /// Create a map representation for storage
@@ -43,6 +54,8 @@ class ShaderPreset {
         'createdAt': createdAt.millisecondsSinceEpoch,
         'settings': settingsMap,
         'imagePath': imagePath,
+        'sortMethod': sortMethod?.index,
+        'isHiddenFromSlideshow': isHiddenFromSlideshow,
         // Thumbnail is stored separately
       };
     } catch (e) {
@@ -54,6 +67,7 @@ class ShaderPreset {
         'createdAt': createdAt.millisecondsSinceEpoch,
         'settings': {'textEnabled': false}, // Minimal fallback
         'imagePath': imagePath,
+        'isHiddenFromSlideshow': isHiddenFromSlideshow,
       };
     }
   }
@@ -63,6 +77,12 @@ class ShaderPreset {
     Map<String, dynamic> map, {
     Uint8List? thumbnail,
   }) {
+    // Convert the sort method index to enum value if it exists
+    PresetSortMethod? sortMethod;
+    if (map['sortMethod'] != null) {
+      sortMethod = PresetSortMethod.values[map['sortMethod'] as int];
+    }
+
     return ShaderPreset(
       id: map['id'] as String,
       name: map['name'] as String,
@@ -72,6 +92,8 @@ class ShaderPreset {
       ),
       imagePath: map['imagePath'] as String,
       thumbnailData: thumbnail,
+      sortMethod: sortMethod,
+      isHiddenFromSlideshow: map['isHiddenFromSlideshow'] as bool? ?? false,
     );
   }
 
@@ -83,6 +105,8 @@ class ShaderPreset {
     ShaderSettings? settings,
     String? imagePath,
     Uint8List? thumbnailData,
+    PresetSortMethod? sortMethod,
+    bool? isHiddenFromSlideshow,
   }) {
     return ShaderPreset(
       id: id ?? this.id,
@@ -91,6 +115,9 @@ class ShaderPreset {
       settings: settings ?? this.settings,
       imagePath: imagePath ?? this.imagePath,
       thumbnailData: thumbnailData ?? this.thumbnailData,
+      sortMethod: sortMethod ?? this.sortMethod,
+      isHiddenFromSlideshow:
+          isHiddenFromSlideshow ?? this.isHiddenFromSlideshow,
     );
   }
 }

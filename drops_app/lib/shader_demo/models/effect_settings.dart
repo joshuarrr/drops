@@ -10,6 +10,7 @@ import 'text_layout_settings.dart';
 import 'rain_settings.dart';
 import 'chromatic_settings.dart';
 import 'ripple_settings.dart';
+import 'music_settings.dart';
 
 // Class to store all shader effect settings
 class ShaderSettings {
@@ -22,6 +23,7 @@ class ShaderSettings {
   RainSettings _rainSettings;
   ChromaticSettings _chromaticSettings;
   RippleSettings _rippleSettings;
+  MusicSettings _musicSettings;
 
   // Flag to control logging
   static bool enableLogging = false;
@@ -35,6 +37,7 @@ class ShaderSettings {
   RainSettings get rainSettings => _rainSettings;
   ChromaticSettings get chromaticSettings => _chromaticSettings;
   RippleSettings get rippleSettings => _rippleSettings;
+  MusicSettings get musicSettings => _musicSettings;
 
   // Convenience getters for most commonly used properties
   // These delegate to the specialized settings classes
@@ -105,6 +108,17 @@ class ShaderSettings {
     _rippleSettings.rippleAnimated = value;
   }
 
+  // Music settings
+  bool get musicEnabled => _musicSettings.musicEnabled;
+  set musicEnabled(bool value) {
+    _musicSettings.musicEnabled = value;
+  }
+
+  bool get musicAnimated => _musicSettings.musicAnimated;
+  set musicAnimated(bool value) {
+    _musicSettings.musicAnimated = value;
+  }
+
   // Text effect settings
   bool get textfxEnabled => _textfxSettings.textfxEnabled;
   set textfxEnabled(bool value) {
@@ -138,6 +152,7 @@ class ShaderSettings {
     RainSettings.enableLogging = enabled;
     ChromaticSettings.enableLogging = enabled;
     RippleSettings.enableLogging = enabled;
+    MusicSettings.enableLogging = enabled;
   }
 
   ShaderSettings({
@@ -150,6 +165,7 @@ class ShaderSettings {
     RainSettings? rainSettings,
     ChromaticSettings? chromaticSettings,
     RippleSettings? rippleSettings,
+    MusicSettings? musicSettings,
   }) : _colorSettings = colorSettings ?? ColorSettings(),
        _blurSettings = blurSettings ?? BlurSettings(),
        _noiseSettings = noiseSettings ?? NoiseSettings(),
@@ -157,7 +173,8 @@ class ShaderSettings {
        _textLayoutSettings = textLayoutSettings ?? TextLayoutSettings(),
        _rainSettings = rainSettings ?? RainSettings(),
        _chromaticSettings = chromaticSettings ?? ChromaticSettings(),
-       _rippleSettings = rippleSettings ?? RippleSettings() {
+       _rippleSettings = rippleSettings ?? RippleSettings(),
+       _musicSettings = musicSettings ?? MusicSettings() {
     if (enableLogging) print("SETTINGS: ShaderSettings initialized");
   }
 
@@ -173,6 +190,7 @@ class ShaderSettings {
         'rainSettings': _rainSettings.toMap(),
         'chromaticSettings': _chromaticSettings.toMap(),
         'rippleSettings': _rippleSettings.toMap(),
+        'musicSettings': _musicSettings.toMap(),
       };
     } catch (e) {
       print('Error serializing ShaderSettings: $e');
@@ -186,6 +204,7 @@ class ShaderSettings {
         'rainSettings': RainSettings().toMap(),
         'chromaticSettings': ChromaticSettings().toMap(),
         'rippleSettings': RippleSettings().toMap(),
+        'musicSettings': MusicSettings().toMap(),
       };
     }
   }
@@ -226,6 +245,11 @@ class ShaderSettings {
       rippleSettings: map['rippleSettings'] != null
           ? RippleSettings.fromMap(
               Map<String, dynamic>.from(map['rippleSettings']),
+            )
+          : null,
+      musicSettings: map['musicSettings'] != null
+          ? MusicSettings.fromMap(
+              Map<String, dynamic>.from(map['musicSettings']),
             )
           : null,
     );
@@ -445,6 +469,19 @@ class ShaderSettings {
         lyricsHAlign: map['lyricsHAlign'] ?? 0,
         lyricsVAlign: map['lyricsVAlign'] ?? 0,
         lyricsLineHeight: map['lyricsLineHeight'] ?? 1.2,
+      ),
+      musicSettings: MusicSettings(
+        musicEnabled: map['musicEnabled'] ?? false,
+        currentTrack: map['currentTrack'] ?? '',
+        volume: map['volume'] ?? 0.8,
+        loop: map['loop'] ?? true,
+        autoplay: map['autoplay'] ?? false,
+        musicAnimated: map['musicAnimated'] ?? false,
+        musicAnimOptions: map['musicAnimOptions'] != null
+            ? AnimationOptions.fromMap(
+                Map<String, dynamic>.from(map['musicAnimOptions']),
+              )
+            : null,
       ),
     );
   }

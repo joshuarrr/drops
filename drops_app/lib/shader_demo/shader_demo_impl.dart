@@ -1,31 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:convert';
-import 'dart:math';
-import 'dart:ui' as ui;
 import 'package:google_fonts/google_fonts.dart';
-import 'dart:developer' as developer;
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'dart:async';
-import 'dart:math' as math;
+import 'dart:convert';
+import 'dart:developer' as developer;
+import 'dart:math';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'utils/animation_utils.dart';
 import 'utils/logging_utils.dart' as logging;
 import 'controllers/effect_controller.dart';
 import 'controllers/preset_dialogs.dart';
+import 'controllers/preset_controller.dart';
+import 'controllers/custom_shader_widgets.dart';
 
 import '../common/app_scaffold.dart';
 import 'models/shader_effect.dart';
 import 'models/effect_settings.dart';
 import 'models/shader_preset.dart';
-import 'controllers/preset_controller.dart';
+import 'models/image_category.dart';
+
 import 'views/effect_controls.dart';
 import 'views/panel_container.dart';
 import 'views/image_container.dart';
 import 'views/text_overlay.dart';
 import 'widgets/image_panel.dart';
-import 'models/image_category.dart';
-import 'controllers/custom_shader_widgets.dart';
 
 // Set true to enable additional debug logging
 bool _enableDebugLogging = true;
@@ -192,6 +194,19 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     _shaderSettings.rippleSettings.applyToImage = true;
     _shaderSettings.rippleSettings.applyToText = true;
 
+    // Initialize music controller
+    EffectControls.initMusicController(
+      settings: _shaderSettings,
+      onSettingsChanged: (updatedSettings) {
+        setState(() {
+          _shaderSettings = updatedSettings;
+        });
+      },
+    );
+
+    // Load music tracks from the assets directory
+    _loadMusicTracks();
+
     // Load persisted settings (if any) before building UI
     _loadShaderSettings();
 
@@ -222,6 +237,8 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
   void dispose() {
     _controller.dispose();
     _pageController.dispose();
+    // Clean up the effect controls resources
+    EffectControls.dispose();
     // Restore system UI when we leave this screen
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
@@ -263,6 +280,25 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                 });
                 _loadAvailablePresets();
               });
+            } else if (value == 'update_preset') {
+              // Make sure we have a current preset to update
+              if (_currentPresetIndex >= 0 &&
+                  _currentPresetIndex < _availablePresets.length) {
+                final currentPreset = _availablePresets[_currentPresetIndex];
+
+                PresetDialogs.showUpdatePresetDialog(
+                  context: context,
+                  preset: currentPreset,
+                  newSettings: _shaderSettings,
+                  previewKey: _previewKey,
+                ).then((_) {
+                  // Reload available presets immediately after updating
+                  setState(() {
+                    _presetsLoaded = false; // Force reload of presets
+                  });
+                  _loadAvailablePresets();
+                });
+              }
             } else if (value == 'load_preset') {
               setState(() {
                 _isPresetDialogOpen = true;
@@ -288,28 +324,53 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
               });
             }
           },
-          itemBuilder: (context) => [
-            const PopupMenuItem<String>(
-              value: 'save_preset',
-              child: Row(
-                children: [
-                  Icon(Icons.save),
-                  SizedBox(width: 8),
-                  Text('Save Preset'),
-                ],
+          itemBuilder: (context) {
+            List<PopupMenuItem<String>> items = [
+              const PopupMenuItem<String>(
+                value: 'save_preset',
+                child: Row(
+                  children: [
+                    Icon(Icons.save),
+                    SizedBox(width: 8),
+                    Text('Save Preset'),
+                  ],
+                ),
               ),
-            ),
-            const PopupMenuItem<String>(
-              value: 'load_preset',
-              child: Row(
-                children: [
-                  Icon(Icons.photo_library),
-                  SizedBox(width: 8),
-                  Text('Load Preset'),
-                ],
+            ];
+
+            // Only show the Update option if we have a current preset selected
+            if (_currentPresetIndex >= 0 &&
+                _currentPresetIndex < _availablePresets.length) {
+              items.add(
+                const PopupMenuItem<String>(
+                  value: 'update_preset',
+                  child: Row(
+                    children: [
+                      Icon(Icons.update),
+                      SizedBox(width: 8),
+                      Text('Update Current Preset'),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            // Add the load preset option
+            items.add(
+              const PopupMenuItem<String>(
+                value: 'load_preset',
+                child: Row(
+                  children: [
+                    Icon(Icons.photo_library),
+                    SizedBox(width: 8),
+                    Text('Load Preset'),
+                  ],
+                ),
               ),
-            ),
-          ],
+            );
+
+            return items;
+          },
         ),
       ],
       body: GestureDetector(
@@ -344,7 +405,33 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
             if (!_showControls && !_isPresetDialogOpen)
               _buildPresetPageView()
             else
-              RepaintBoundary(key: _previewKey, child: _buildShaderEffect()),
+              RepaintBoundary(
+                key: _previewKey,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    _buildShaderEffect(),
+                    // Explicitly add text overlay to ensure it's captured in thumbnails
+                    if (_shaderSettings.textLayoutSettings.textEnabled &&
+                        (_shaderSettings
+                                .textLayoutSettings
+                                .textTitle
+                                .isNotEmpty ||
+                            _shaderSettings
+                                .textLayoutSettings
+                                .textSubtitle
+                                .isNotEmpty ||
+                            _shaderSettings
+                                .textLayoutSettings
+                                .textArtist
+                                .isNotEmpty))
+                      TextOverlay(
+                        settings: _shaderSettings,
+                        animationValue: _controller.value,
+                      ),
+                  ],
+                ),
+              ),
 
             // Controls overlay that can be toggled
             if (_showControls && !_isPresetDialogOpen)
@@ -402,6 +489,9 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                                   case ShaderAspect.ripple:
                                     _shaderSettings.rippleEnabled = enabled;
                                     break;
+                                  case ShaderAspect.music:
+                                    _shaderSettings.musicEnabled = enabled;
+                                    break;
                                 }
                               });
                               _saveShaderSettings();
@@ -455,8 +545,11 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
       _loadAvailablePresets();
 
       // Show a loading indicator while presets are being loaded
-      return Center(child: CircularProgressIndicator());
+      return const Center(child: CircularProgressIndicator());
     }
+
+    // Apply sort method before building PageView to ensure consistent ordering
+    _ensurePresetsUseSavedSortMethod();
 
     // Create a temporary current-state preset using always current settings
     // rather than unsaved settings (which might be null)
@@ -474,11 +567,27 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     // Adjust current preset index to account for the added current state
     int adjustedIndex = _currentPresetIndex < 0 ? 0 : _currentPresetIndex + 1;
 
-    // Initialize page controller to current preset index if needed
-    if (!_isScrolling) {
+    // CRITICAL: Force rebuild of PageController if the index has changed significantly
+    // This ensures we can always navigate the full list in both directions
+    if (_pageController.hasClients &&
+        (_pageController.page?.round() ?? 0) != adjustedIndex) {
+      // Dispose old controller
+      final oldController = _pageController;
+
+      // Create a new controller at the correct index
+      _pageController = PageController(initialPage: adjustedIndex);
+
+      // Schedule disposal after this frame to avoid build errors
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_pageController.hasClients) {
-          // Start with current page (0 for edited state, or adjustedIndex for a preset)
+        oldController.dispose();
+      });
+    }
+    // Initialize page controller to current preset index if needed
+    else if (!_isScrolling && _pageController.hasClients) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        // Start with current page (0 for edited state, or adjustedIndex for a preset)
+        // Only do this if we're not already scrolling to avoid interrupting animations
+        if (!_isScrolling) {
           _pageController.jumpToPage(
             _currentPresetIndex < 0 ? 0 : adjustedIndex,
           );
@@ -489,11 +598,15 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     return PageView.builder(
       scrollDirection: Axis.vertical,
       controller: _pageController,
+      // Set these properties to enable smooth circular scrolling
+      allowImplicitScrolling: true,
+      padEnds: false,
       onPageChanged: (index) {
         if (!_isScrolling) {
           setState(() {
             if (index == 0) {
               // Returning to current edited state - restore unsaved changes
+              _currentPresetIndex = -1;
               if (_unsavedSettings != null) {
                 _shaderSettings = _unsavedSettings!;
                 _selectedImage = _unsavedImage!;
@@ -510,9 +623,15 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
               }
 
               // Apply one of the saved presets (adjust index to account for current state)
-              _currentPresetIndex = index - 1;
+              // Important: Do NOT reassign _currentPresetIndex here for Random sort to maintain consistent order
+              // Only update for non-random sort or if sort information isn't available
+              final targetPresetIndex = index - 1;
+
+              // Always update the current preset index to maintain correct navigation
+              _currentPresetIndex = targetPresetIndex;
+
               _applyPreset(
-                _availablePresets[_currentPresetIndex],
+                _availablePresets[targetPresetIndex],
                 showControls: false,
               );
             }
@@ -577,10 +696,7 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
             }
           });
         },
-        child: Container(
-          color: Colors.black,
-          child: Image.asset(preset.imagePath, fit: BoxFit.cover),
-        ),
+        child: _buildShaderEffectForPreset(preset),
       );
     }
   }
@@ -692,27 +808,13 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                 )
               : baseImage!; // Don't apply effects if none target the image
 
-          // Compose text overlay if enabled
-          List<Widget> stackChildren = [Positioned.fill(child: effectsWidget)];
-
-          if (_shaderSettings.textLayoutSettings.textEnabled &&
-              (_shaderSettings.textLayoutSettings.textTitle.isNotEmpty ||
-                  _shaderSettings.textLayoutSettings.textSubtitle.isNotEmpty ||
-                  _shaderSettings.textLayoutSettings.textArtist.isNotEmpty)) {
-            stackChildren.add(
-              TextOverlay(
-                settings: _shaderSettings,
-                animationValue: animationValue,
-              ),
-            );
-          }
-
-          // Use Container with explicit dimensions to ensure full-size rendering
+          // Build only the image with effects, text overlay is added separately
+          // in the RepaintBoundary wrapper to ensure thumbnails capture it correctly
           return Container(
             color: Colors.black,
             width: width,
             height: height,
-            child: Stack(fit: StackFit.expand, children: stackChildren),
+            child: effectsWidget,
           );
         },
       ),
@@ -798,6 +900,17 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
   }
 
   void _applyPreset(ShaderPreset preset, {bool showControls = true}) {
+    // Check if this preset has a sort method that should be applied
+    PresetSortMethod? sortMethodToApply = preset.sortMethod;
+
+    // Debug logging for text settings
+    _log(
+      "Applying preset '${preset.name}' with text enabled: ${preset.settings.textLayoutSettings.textEnabled}",
+    );
+    _log(
+      "Text content - Title: '${preset.settings.textLayoutSettings.textTitle}', Subtitle: '${preset.settings.textLayoutSettings.textSubtitle}', Artist: '${preset.settings.textLayoutSettings.textArtist}'",
+    );
+
     // Force a rebuild with new settings
     setState(() {
       // Apply all settings from the preset
@@ -837,6 +950,13 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
 
     // Save changes to persistent storage
     _saveShaderSettings();
+
+    // If a preset with random sort method was loaded, we need to immediately sort the presets
+    // This ensures the PageView is built with the correct order when first viewing the preset
+    if (sortMethodToApply == PresetSortMethod.random) {
+      // Force re-loading and sorting of presets to ensure correct order for navigation
+      _reloadAndSortPresets(preset);
+    }
   }
 
   Future<void> _loadImageAssets() async {
@@ -987,34 +1107,135 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     }
   }
 
-  // Navigate to the next preset - modified to use PageController
-  void _navigateToNextPreset() {
-    // Always include the current state, even if there are no saved presets
+  // Ensure presets are sorted according to the current preset's saved sort method
+  void _ensurePresetsUseSavedSortMethod() {
+    // If we're on a preset (not current state) and it has a sort method, apply it
+    if (_currentPresetIndex >= 0 &&
+        _currentPresetIndex < _availablePresets.length) {
+      final currentPreset = _availablePresets[_currentPresetIndex];
+      if (currentPreset.sortMethod != null) {
+        // Save the current preset ID to restore the correct index after sorting
+        final String currentPresetId = currentPreset.id;
 
+        // Sort the presets according to the preset's sort method
+        switch (currentPreset.sortMethod!) {
+          case PresetSortMethod.dateNewest:
+            _availablePresets.sort(
+              (a, b) => b.createdAt.compareTo(a.createdAt),
+            );
+            break;
+          case PresetSortMethod.alphabetical:
+            _availablePresets.sort(
+              (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+            );
+            break;
+          case PresetSortMethod.reverseAlphabetical:
+            _availablePresets.sort(
+              (a, b) => b.name.toLowerCase().compareTo(a.name.toLowerCase()),
+            );
+            break;
+          case PresetSortMethod.random:
+            // For random, we need to use a fixed seed to ensure consistent order during swiping
+            // We'll use the preset's creation timestamp as the seed
+            final random = Random(
+              currentPreset.createdAt.millisecondsSinceEpoch,
+            );
+            // Fisher-Yates shuffle
+            for (var i = _availablePresets.length - 1; i > 0; i--) {
+              var j = random.nextInt(i + 1);
+              var temp = _availablePresets[i];
+              _availablePresets[i] = _availablePresets[j];
+              _availablePresets[j] = temp;
+            }
+            break;
+        }
+
+        // Find the index of the current preset in the sorted/shuffled list
+        _currentPresetIndex = _availablePresets.indexWhere(
+          (p) => p.id == currentPresetId,
+        );
+
+        // In case the preset was somehow removed
+        if (_currentPresetIndex < 0 && _availablePresets.isNotEmpty) {
+          _currentPresetIndex = 0;
+        }
+      }
+    }
+  }
+
+  // Add a new method to reload and sort presets based on a specific preset's sort method
+  Future<void> _reloadAndSortPresets(ShaderPreset preset) async {
+    if (!_presetsLoaded || preset.sortMethod == null) return;
+
+    try {
+      // Use the preset's sort method to re-sort presets
+      // For random sort, we'll use the preset's creation timestamp as the seed
+      final allPresets = await PresetController.getAllPresets();
+
+      if (preset.sortMethod == PresetSortMethod.random) {
+        final random = Random(preset.createdAt.millisecondsSinceEpoch);
+        // Fisher-Yates shuffle with consistent seed
+        for (var i = allPresets.length - 1; i > 0; i--) {
+          var j = random.nextInt(i + 1);
+          var temp = allPresets[i];
+          allPresets[i] = allPresets[j];
+          allPresets[j] = temp;
+        }
+      } else if (preset.sortMethod == PresetSortMethod.dateNewest) {
+        allPresets.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      } else if (preset.sortMethod == PresetSortMethod.alphabetical) {
+        allPresets.sort(
+          (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+        );
+      } else if (preset.sortMethod == PresetSortMethod.reverseAlphabetical) {
+        allPresets.sort(
+          (a, b) => b.name.toLowerCase().compareTo(a.name.toLowerCase()),
+        );
+      }
+
+      setState(() {
+        _availablePresets = allPresets;
+        // Find the current preset's index in the sorted list
+        _currentPresetIndex = allPresets.indexWhere((p) => p.id == preset.id);
+        if (_currentPresetIndex < 0 && allPresets.isNotEmpty) {
+          _currentPresetIndex = 0;
+        }
+      });
+    } catch (e) {
+      debugPrint('Error reloading presets for sort method: $e');
+    }
+  }
+
+  // Fix navigation method to apply preset without recalculating index
+  void _navigateToPreviousPreset() {
     // Ensure presets are loaded
     if (!_presetsLoaded) {
-      _loadAvailablePresets().then((_) => _navigateToNextPreset());
+      _loadAvailablePresets().then((_) => _navigateToPreviousPreset());
       return;
     }
 
-    // Calculate target page - add 1 to include current state at index 0
-    int nextIndex =
-        _currentPresetIndex +
-        2; // +1 for next preset, +1 for current state offset
+    // Make sure we're using the sort method from the current preset
+    _ensurePresetsUseSavedSortMethod();
 
-    // Total count includes current state + all available presets
-    int totalCount = _availablePresets.length + 1;
+    // Calculate total count including current state
+    final int totalCount = _availablePresets.length + 1;
+    if (totalCount <= 1) return; // No presets to navigate to
 
-    if (nextIndex >= totalCount) {
-      nextIndex = 0; // Wrap around to current state
-    }
+    // Get the current page from controller
+    final int currentPage = _pageController.page?.round() ?? 0;
 
-    // Use the PageController to animate to the next page
+    // Calculate the target page with proper wraparound
+    int targetPage = (currentPage - 1) % totalCount;
+
+    // Handle negative modulo properly
+    if (targetPage < 0) targetPage += totalCount;
+
+    // Use the PageController to animate to the previous page
     _isScrolling = true;
     _pageController
         .animateToPage(
-          nextIndex,
-          duration: Duration(milliseconds: 300),
+          targetPage,
+          duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
         )
         .then((_) {
@@ -1022,46 +1243,85 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
         });
   }
 
-  // Navigate to the previous preset - modified to use PageController
-  void _navigateToPreviousPreset() {
-    // Always include the current state, even if there are no saved presets
-
+  // Fix navigation method to apply preset without recalculating index
+  void _navigateToNextPreset() {
     // Ensure presets are loaded
     if (!_presetsLoaded) {
-      _loadAvailablePresets().then((_) => _navigateToPreviousPreset());
+      _loadAvailablePresets().then((_) => _navigateToNextPreset());
       return;
     }
 
-    // Calculate target page - account for current state at index 0
-    int prevIndex = _currentPresetIndex; // current index in saved presets
+    // Make sure we're using the sort method from the current preset
+    _ensurePresetsUseSavedSortMethod();
 
-    // If we're viewing a saved preset, we need to offset it to account for current state
-    if (prevIndex > 0) {
-      prevIndex--; // Go to previous preset
-    } else {
-      // We're at the first preset, go to the last
-      prevIndex = _availablePresets.length - 1;
-    }
+    // Calculate total count including current state
+    final int totalCount = _availablePresets.length + 1;
+    if (totalCount <= 1) return; // No presets to navigate to
 
-    // Add 1 to account for current state at index 0
-    prevIndex++;
+    // Get the current page from controller
+    final int currentPage = _pageController.page?.round() ?? 0;
 
-    // If we're at the beginning, wrap to the end
-    if (prevIndex < 0) {
-      prevIndex = _availablePresets
-          .length; // Wrap to the last preset including current state
-    }
+    // Calculate target page with proper wraparound
+    int targetPage = (currentPage + 1) % totalCount;
 
-    // Use the PageController to animate to the previous page
+    // Use the PageController to animate to the next page
     _isScrolling = true;
     _pageController
         .animateToPage(
-          prevIndex,
-          duration: Duration(milliseconds: 300),
+          targetPage,
+          duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
         )
         .then((_) {
           _isScrolling = false;
         });
+  }
+
+  // Load music tracks from assets directory
+  Future<void> _loadMusicTracks() async {
+    _log('Loading music tracks from assets directory');
+    try {
+      // Load tracks from assets directory with a callback
+      const musicPath = 'assets/music';
+      await EffectControls.loadMusicTracks(
+        musicPath,
+        onTracksLoaded: (tracks) {
+          if (tracks.isNotEmpty) {
+            _log('Found ${tracks.length} music tracks:');
+            for (final track in tracks) {
+              _log('  - ${track.split('/').last}');
+            }
+
+            // Select the first track by default but don't play it if music is disabled
+            final firstTrack = tracks[0];
+            _log('Setting initial track: $firstTrack');
+
+            // Important: Update settings BEFORE calling selectMusicTrack
+            final updatedSettings = ShaderSettings.fromMap(
+              _shaderSettings.toMap(),
+            );
+            updatedSettings.musicSettings.currentTrack = firstTrack;
+
+            // Important: Apply the settings first to ensure the controller knows about the track
+            setState(() {
+              _shaderSettings = updatedSettings;
+            });
+
+            // Only select the track, our modified selectMusicTrack will
+            // check if music is enabled before playing
+            Future.microtask(() {
+              EffectControls.selectMusicTrack(firstTrack);
+            });
+          } else {
+            _log(
+              'No music tracks found in assets directory',
+              level: LogLevel.warning,
+            );
+          }
+        },
+      );
+    } catch (e) {
+      _log('Error loading music tracks: $e', level: LogLevel.error);
+    }
   }
 }

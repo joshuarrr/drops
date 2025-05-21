@@ -13,8 +13,15 @@ import '../controllers/effect_controller.dart';
 /// Dialog for saving a new preset
 class SavePresetDialog extends StatefulWidget {
   final Function(String) onSave;
+  final String? initialName;
+  final bool isUpdate;
 
-  const SavePresetDialog({Key? key, required this.onSave}) : super(key: key);
+  const SavePresetDialog({
+    Key? key,
+    required this.onSave,
+    this.initialName,
+    this.isUpdate = false,
+  }) : super(key: key);
 
   @override
   State<SavePresetDialog> createState() => _SavePresetDialogState();
@@ -29,7 +36,12 @@ class _SavePresetDialogState extends State<SavePresetDialog> {
   @override
   void initState() {
     super.initState();
-    _loadAutomaticName();
+    if (widget.initialName != null) {
+      _nameController.text = widget.initialName!;
+      _isLoading = false;
+    } else {
+      _loadAutomaticName();
+    }
   }
 
   Future<void> _loadAutomaticName() async {
@@ -83,9 +95,9 @@ class _SavePresetDialogState extends State<SavePresetDialog> {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Save Preset',
-                            style: TextStyle(
+                          Text(
+                            widget.isUpdate ? 'Update Preset' : 'Save Preset',
+                            style: const TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
                             ),
@@ -156,7 +168,9 @@ class _SavePresetDialogState extends State<SavePresetDialog> {
                                     Navigator.pop(context);
                                   }
                                 },
-                                child: const Text('Save'),
+                                child: Text(
+                                  widget.isUpdate ? 'Update' : 'Save',
+                                ),
                               ),
                             ],
                           ),
@@ -173,6 +187,20 @@ class _SavePresetDialogState extends State<SavePresetDialog> {
 
 // Sorting options
 enum SortMethod { dateNewest, alphabetical, reverseAlphabetical, random }
+
+// Convert between local SortMethod and PresetSortMethod
+PresetSortMethod _convertToPresetSortMethod(SortMethod sortMethod) {
+  switch (sortMethod) {
+    case SortMethod.dateNewest:
+      return PresetSortMethod.dateNewest;
+    case SortMethod.alphabetical:
+      return PresetSortMethod.alphabetical;
+    case SortMethod.reverseAlphabetical:
+      return PresetSortMethod.reverseAlphabetical;
+    case SortMethod.random:
+      return PresetSortMethod.random;
+  }
+}
 
 /// Dialog for displaying and loading presets
 class PresetsDialog extends StatefulWidget {
@@ -261,8 +289,15 @@ class _PresetsDialogState extends State<PresetsDialog> {
     // First create a clean deep copy of the preset settings to avoid reference issues
     final cleanSettings = ShaderSettings.fromMap(preset.settings.toMap());
 
-    // Now call the onLoad callback with the clean settings
-    widget.onLoad(preset.copyWith(settings: cleanSettings));
+    // Now include the current sort method when loading the preset
+    final presetSortMethod = _convertToPresetSortMethod(_currentSort);
+    final presetWithSort = preset.copyWith(
+      settings: cleanSettings,
+      sortMethod: presetSortMethod,
+    );
+
+    // Now call the onLoad callback with the clean settings and current sort method
+    widget.onLoad(presetWithSort);
 
     // Close the dialog
     Navigator.pop(context);
@@ -444,10 +479,13 @@ class _PresetsDialogState extends State<PresetsDialog> {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // Background image
-            preset.thumbnailData != null
-                ? Image.memory(preset.thumbnailData!, fit: BoxFit.cover)
-                : Image.asset(preset.imagePath, fit: BoxFit.cover),
+            // Background image with opacity reduction for hidden presets
+            Opacity(
+              opacity: preset.isHiddenFromSlideshow ? 0.25 : 1.0,
+              child: preset.thumbnailData != null
+                  ? Image.memory(preset.thumbnailData!, fit: BoxFit.cover)
+                  : Image.asset(preset.imagePath, fit: BoxFit.cover),
+            ),
 
             // Overlay with name and delete button at the bottom
             Positioned(
@@ -477,43 +515,114 @@ class _PresetsDialogState extends State<PresetsDialog> {
                       ),
                     ),
 
-                    // Delete button
-                    InkWell(
-                      borderRadius: BorderRadius.circular(16),
-                      onTap: () async {
-                        final confirm = await showDialog<bool>(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: const Text('Delete Preset'),
-                            content: Text(
-                              'Are you sure you want to delete "${preset.name}"?',
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, false),
-                                child: const Text('Cancel'),
-                              ),
-                              FilledButton(
-                                onPressed: () => Navigator.pop(context, true),
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: Colors.red,
+                    // Row of action buttons
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Slideshow visibility toggle button
+                        InkWell(
+                          borderRadius: BorderRadius.circular(16),
+                          onTap: () async {
+                            try {
+                              // Toggle visibility and refresh list
+                              await PresetController.toggleHiddenState(
+                                preset.id,
+                              );
+                              _loadPresets(); // Refresh the list
+                            } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Error updating preset: $e',
+                                    style: TextStyle(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onError,
+                                    ),
+                                  ),
+                                  behavior: SnackBarBehavior.floating,
+                                  backgroundColor: Theme.of(
+                                    context,
+                                  ).colorScheme.error,
                                 ),
-                                child: const Text('Delete'),
+                              );
+                            }
+                          },
+                          child: Tooltip(
+                            message: preset.isHiddenFromSlideshow
+                                ? 'Show in slideshow'
+                                : 'Hide from slideshow',
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6.0,
                               ),
-                            ],
+                              child: Icon(
+                                preset.isHiddenFromSlideshow
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                                size: 18,
+                                color: Colors.white,
+                              ),
+                            ),
                           ),
-                        );
+                        ),
 
-                        if (confirm == true) {
-                          await PresetController.deletePreset(preset.id);
-                          _loadPresets();
-                        }
-                      },
-                      child: const Icon(
-                        Icons.delete,
-                        size: 18,
-                        color: Colors.white,
-                      ),
+                        // Delete button
+                        InkWell(
+                          borderRadius: BorderRadius.circular(16),
+                          onTap: () async {
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Delete Preset'),
+                                content: Text(
+                                  'Are you sure you want to delete "${preset.name}"?',
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, false),
+                                    child: const Text('Cancel'),
+                                  ),
+                                  FilledButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, true),
+                                    style: FilledButton.styleFrom(
+                                      backgroundColor: Colors.red,
+                                    ),
+                                    child: const Text('Delete'),
+                                  ),
+                                ],
+                              ),
+                            );
+
+                            if (confirm == true) {
+                              await PresetController.deletePreset(preset.id);
+                              _loadPresets();
+
+                              // Show confirmation message
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Preset "${preset.name}" deleted',
+                                  ),
+                                  behavior: SnackBarBehavior.floating,
+                                  duration: const Duration(seconds: 2),
+                                  backgroundColor: Theme.of(
+                                    context,
+                                  ).colorScheme.surface,
+                                  elevation: 6,
+                                ),
+                              );
+                            }
+                          },
+                          child: const Icon(
+                            Icons.delete,
+                            size: 18,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
