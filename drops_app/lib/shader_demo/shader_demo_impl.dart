@@ -374,7 +374,9 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
         ),
       ],
       body: GestureDetector(
+        // Main screen tap handler for toggling control panels
         onTap: () async {
+          // Note: Handling of aspect sliders is now done in their own overlay
           // First, save the current edited state if we have unsaved changes
           if (_showControls && _hasUnsavedChanges()) {
             // Save current state as untitled preset
@@ -398,6 +400,10 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
               _showAspectSliders = false;
               // Save current shader settings when hiding controls
               _saveShaderSettings();
+
+              // CRITICAL FIX: Also save immediately to current preset before entering slideshow mode
+              // This ensures all changes (especially margin settings) will be preserved
+              _saveChangesImmediately();
             }
           });
         },
@@ -552,9 +558,51 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                 ),
               ),
 
-            // Aspect parameter sliders for the selected aspect
+            // Modal overlay when control panel is shown
             if (_showControls && _showAspectSliders && !_isPresetDialogOpen)
-              _buildAspectParameterSliders(),
+              Positioned.fill(
+                child: GestureDetector(
+                  // Use a specific hit test behavior that allows taps to go through to children
+                  behavior: HitTestBehavior.deferToChild,
+                  onTap: () {
+                    debugPrint("DEBUG: MODAL BARRIER TAPPED!");
+                    setState(() {
+                      _showAspectSliders = false;
+                    });
+                    _saveShaderSettings();
+                    if (_hasUnsavedChanges()) {
+                      _saveUntitledPreset();
+                    }
+                  },
+                  child: Container(color: Colors.black.withOpacity(0.1)),
+                ),
+              ),
+
+            // The actual control panel
+            if (_showControls && _showAspectSliders && !_isPresetDialogOpen)
+              Positioned(
+                top: 100,
+                left: 0,
+                right: 0,
+                bottom:
+                    20, // Add a bottom constraint to ensure panel can expand properly
+                child: Center(
+                  child: Container(
+                    width: MediaQuery.of(context).size.width * 0.8,
+                    // Remove any height constraint to allow scrolling
+                    constraints: BoxConstraints(
+                      maxHeight:
+                          MediaQuery.of(context).size.height -
+                          150, // Leave some padding at top and bottom
+                    ),
+                    child: Card(
+                      color: Colors.transparent,
+                      elevation: 0,
+                      child: _buildAspectParameterSliders(),
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -651,6 +699,8 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
 
             // Apply the selected preset
             if (_currentPresetIndex >= 0) {
+              // We'll apply the preset immediately, no need to wait for _saveChangesImmediately
+              // as we're just switching between existing presets in slideshow mode
               _applyPreset(
                 _availablePresets[_currentPresetIndex],
                 showControls: false,
@@ -687,6 +737,21 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
 
     // Create a temporary settings object for this preset to avoid modifying the main one
     final presetSettings = preset.settings;
+
+    // CRITICAL FIX: Apply margin from specificSettings if available
+    if (preset.specificSettings != null &&
+        preset.specificSettings!.containsKey('fitScreenMargin')) {
+      // Update the margin in the settings to match the stored specific setting
+      presetSettings.textLayoutSettings.fitScreenMargin =
+          (preset.specificSettings!['fitScreenMargin'] as num).toDouble();
+    }
+
+    // Apply fillScreen setting if available in specificSettings
+    if (preset.specificSettings != null &&
+        preset.specificSettings!.containsKey('fillScreen')) {
+      presetSettings.fillScreen =
+          preset.specificSettings!['fillScreen'] as bool;
+    }
 
     return SizedBox(
       width: width,
@@ -824,76 +889,86 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
 
   // Build parameter sliders for the selected aspect
   Widget _buildAspectParameterSliders() {
+    debugPrint("DEBUG: Building aspect parameter sliders");
     final theme = Theme.of(context);
-    final double screenWidth = MediaQuery.of(context).size.width;
     final Color sliderColor = theme.colorScheme.onSurface;
 
-    return Center(
-      child: SizedBox(
-        width: screenWidth * 0.8,
-        child: PanelContainer(
-          isDark: theme.brightness == Brightness.dark,
-          margin: const EdgeInsets.only(top: 100),
-          child: SingleChildScrollView(
-            physics: BouncingScrollPhysics(),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (_selectedAspect == ShaderAspect.image) ...[
-                  // Use ImagePanel widget here instead of building controls directly
-                  ImagePanel(
-                    settings: _shaderSettings,
-                    onSettingsChanged: (settings) {
-                      setState(() {
-                        _shaderSettings = settings;
-                      });
-                      _saveShaderSettings();
-                    },
-                    sliderColor: sliderColor,
-                    context: context,
-                    coverImages: _coverImages,
-                    artistImages: _artistImages,
-                    selectedImage: _selectedImage,
-                    imageCategory: _imageCategory,
-                    onImageSelected: (path) {
-                      setState(() {
-                        _selectedImage = path;
-                      });
-                      _saveShaderSettings();
-                    },
-                    onCategoryChanged: (category) {
-                      setState(() {
-                        _imageCategory = category;
+    return PanelContainer(
+      isDark: theme.brightness == Brightness.dark,
+      margin: EdgeInsets.zero,
+      child: Material(
+        color: Colors.transparent,
+        child: SingleChildScrollView(
+          // Use AlwaysScrollableScrollPhysics to ensure scrolling works even with small content
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: ClampingScrollPhysics(),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (_selectedAspect == ShaderAspect.image) ...[
+                // Use ImagePanel widget here instead of building controls directly
+                ImagePanel(
+                  settings: _shaderSettings,
+                  onSettingsChanged: (settings) {
+                    setState(() {
+                      _shaderSettings = settings;
+                    });
+                    // Save to shared preferences
+                    _saveShaderSettings();
 
-                        // Ensure selected image belongs to category
-                        final images = _getCurrentImages();
-                        if (!images.contains(_selectedImage) &&
-                            images.isNotEmpty) {
-                          _selectedImage = images.first;
-                        }
-                      });
-                      _saveShaderSettings();
-                    },
-                  ),
-                ],
-                if (_selectedAspect != ShaderAspect.image) ...[
-                  ...EffectControls.buildSlidersForAspect(
-                    aspect: _selectedAspect,
-                    settings: _shaderSettings,
-                    onSettingsChanged: (settings) {
-                      setState(() {
-                        _shaderSettings = settings;
-                      });
-                      _saveShaderSettings();
-                    },
-                    sliderColor: sliderColor,
-                    context: context,
-                  ),
-                ],
-                // Blur animation controls are now integrated in EffectControls
-                const SizedBox(height: 12),
+                    // CRITICAL FIX: Immediately save changes to current preset or create a new untitled preset
+                    // This ensures margin settings are preserved when entering slideshow mode
+                    _saveChangesImmediately();
+                  },
+                  sliderColor: sliderColor,
+                  context: context,
+                  coverImages: _coverImages,
+                  artistImages: _artistImages,
+                  selectedImage: _selectedImage,
+                  imageCategory: _imageCategory,
+                  onImageSelected: (path) {
+                    setState(() {
+                      _selectedImage = path;
+                    });
+                    _saveShaderSettings();
+                    // Also save immediately to preset
+                    _saveChangesImmediately();
+                  },
+                  onCategoryChanged: (category) {
+                    setState(() {
+                      _imageCategory = category;
+
+                      // Ensure selected image belongs to category
+                      final images = _getCurrentImages();
+                      if (!images.contains(_selectedImage) &&
+                          images.isNotEmpty) {
+                        _selectedImage = images.first;
+                      }
+                    });
+                    _saveShaderSettings();
+                    // Also save immediately to preset
+                    _saveChangesImmediately();
+                  },
+                ),
               ],
-            ),
+              if (_selectedAspect != ShaderAspect.image) ...[
+                ...EffectControls.buildSlidersForAspect(
+                  aspect: _selectedAspect,
+                  settings: _shaderSettings,
+                  onSettingsChanged: (settings) {
+                    setState(() {
+                      _shaderSettings = settings;
+                    });
+                    _saveShaderSettings();
+                  },
+                  sliderColor: sliderColor,
+                  context: context,
+                ),
+              ],
+              // Blur animation controls are now integrated in EffectControls
+              const SizedBox(height: 12),
+            ],
           ),
         ),
       ),
@@ -912,10 +987,37 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
       "Text content - Title: '${preset.settings.textLayoutSettings.textTitle}', Subtitle: '${preset.settings.textLayoutSettings.textSubtitle}', Artist: '${preset.settings.textLayoutSettings.textArtist}'",
     );
 
+    // Log specific settings if available
+    if (preset.specificSettings != null) {
+      _log("Specific settings: ${preset.specificSettings!.keys.join(', ')}");
+      if (preset.specificSettings!.containsKey('fitScreenMargin')) {
+        _log("  Margin: ${preset.specificSettings!['fitScreenMargin']}");
+      }
+      if (preset.specificSettings!.containsKey('fillScreen')) {
+        _log("  Fill Screen: ${preset.specificSettings!['fillScreen']}");
+      }
+    }
+
     // Force a rebuild with new settings
     setState(() {
       // Apply all settings from the preset
       _shaderSettings = preset.settings;
+
+      // CRITICAL FIX: Apply margin from specificSettings if available
+      if (preset.specificSettings != null) {
+        // Apply margin setting if available
+        if (preset.specificSettings!.containsKey('fitScreenMargin')) {
+          _shaderSettings.textLayoutSettings.fitScreenMargin =
+              (preset.specificSettings!['fitScreenMargin'] as num).toDouble();
+        }
+
+        // Apply fillScreen setting if available
+        if (preset.specificSettings!.containsKey('fillScreen')) {
+          _shaderSettings.fillScreen =
+              preset.specificSettings!['fillScreen'] as bool;
+        }
+      }
+
       _selectedImage = preset.imagePath;
 
       // Update image category based on the loaded image
@@ -1338,13 +1440,48 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
       // Generate a name like "Untitled 1", "Untitled 2", etc.
       final presetName = await _generateUntitledName();
 
-      // Save as a new preset
+      // CRITICAL FIX: Extract and log important settings that need to be directly accessible
+      // Ensure we're getting the current values for margin and fillScreen
+      final double currentMargin =
+          _shaderSettings.textLayoutSettings.fitScreenMargin;
+      final bool currentFillScreen = _shaderSettings.fillScreen;
+
+      final Map<String, dynamic> specificSettings = {
+        'fillScreen': currentFillScreen,
+        'fitScreenMargin': currentMargin,
+      };
+
+      debugPrint('SAVE UNTITLED PRESET:');
+      debugPrint('  currentMargin: $currentMargin');
+      debugPrint('  fillScreen: $currentFillScreen');
+      debugPrint(
+        '  specificSettings keys: ${specificSettings.keys.join(', ')}',
+      );
+
+      // Save as a new preset with the specific settings
       final newPreset = await PresetController.savePreset(
         name: presetName,
         settings: _shaderSettings,
         imagePath: _selectedImage,
         previewKey: _previewKey,
+        specificSettings: specificSettings,
       );
+
+      debugPrint('PRESET SAVED: ${newPreset.name}');
+      if (newPreset.specificSettings != null) {
+        debugPrint(
+          '  Has specificSettings: ${newPreset.specificSettings!.keys.join(', ')}',
+        );
+        if (newPreset.specificSettings!.containsKey('fitScreenMargin')) {
+          debugPrint(
+            '  margin set to: ${newPreset.specificSettings!['fitScreenMargin']}',
+          );
+        } else {
+          debugPrint('  NO margin in specificSettings!');
+        }
+      } else {
+        debugPrint('  NO specificSettings on saved preset!');
+      }
 
       // Force reload of presets to include the new one
       setState(() {
@@ -1358,8 +1495,9 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
       );
 
       return newPreset;
-    } catch (e) {
+    } catch (e, stack) {
       debugPrint('Error saving untitled preset: $e');
+      debugPrint(stack.toString());
       return null;
     }
   }
@@ -1400,6 +1538,65 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     }
 
     return 'Untitled $nextNumber';
+  }
+
+  // Immediately save current changes to either the current preset or create a new untitled preset
+  Future<void> _saveChangesImmediately() async {
+    try {
+      // If we don't have a preset selected or if we have unsaved changes, create a new untitled preset
+      if (_currentPresetIndex < 0 ||
+          _currentPresetIndex >= _availablePresets.length ||
+          _hasUnsavedChanges()) {
+        // Debug log
+        debugPrint('SAVING IMMEDIATE CHANGES TO NEW UNTITLED PRESET');
+
+        // Create a new untitled preset
+        final newPreset = await _saveUntitledPreset();
+        if (newPreset != null) {
+          _currentPresetIndex = _availablePresets.indexWhere(
+            (p) => p.id == newPreset.id,
+          );
+
+          // Clear unsaved settings since we've now saved to a preset
+          _unsavedSettings = null;
+          _unsavedImage = null;
+          _unsavedCategory = null;
+
+          debugPrint('Created new preset with index: $_currentPresetIndex');
+
+          // Make sure the specificSettings include current margin and fillScreen values
+          if (newPreset.specificSettings != null) {
+            final currentMargin =
+                _shaderSettings.textLayoutSettings.fitScreenMargin;
+            final currentFillScreen = _shaderSettings.fillScreen;
+
+            debugPrint(
+              'Saved margin: $currentMargin, fillScreen: $currentFillScreen',
+            );
+          }
+        }
+      } else {
+        // We have an existing preset, update it if necessary
+        final currentPreset = _availablePresets[_currentPresetIndex];
+
+        debugPrint('UPDATING EXISTING PRESET: ${currentPreset.name}');
+
+        // Update the existing preset with current settings
+        await PresetController.updatePreset(
+          id: currentPreset.id,
+          settings: _shaderSettings,
+          previewKey: _previewKey,
+        );
+
+        // Force reload presets to ensure we have the latest version
+        setState(() {
+          _presetsLoaded = false;
+        });
+        await _loadAvailablePresets();
+      }
+    } catch (e) {
+      debugPrint('Error saving changes immediately: $e');
+    }
   }
 
   // Check if current settings have been modified from the current preset

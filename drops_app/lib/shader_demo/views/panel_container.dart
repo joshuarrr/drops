@@ -36,6 +36,8 @@ class PanelContainer extends StatelessWidget {
     return Container(
       padding: padding,
       margin: margin,
+      clipBehavior:
+          Clip.antiAlias, // Ensure content doesn't overflow rounded corners
       decoration: BoxDecoration(
         // Use a more transparent background, reduce the alpha from 0.3 to 0.1
         color: isDark

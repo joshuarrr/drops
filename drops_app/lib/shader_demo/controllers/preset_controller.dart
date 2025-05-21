@@ -127,6 +127,7 @@ class PresetController {
     required String imagePath,
     required GlobalKey previewKey,
     PresetSortMethod? sortMethod,
+    Map<String, dynamic>? specificSettings,
   }) async {
     try {
       // Log text settings to help debug
@@ -163,6 +164,7 @@ class PresetController {
         imagePath: imagePath,
         thumbnailData: thumbnailData,
         sortMethod: sortMethod,
+        specificSettings: specificSettings,
       );
 
       // Save preset data - handle Color serialization
@@ -185,6 +187,8 @@ class PresetController {
             'settings': {'textEnabled': false},
             'imagePath': preset.imagePath,
             'sortMethod': sortMethod?.index,
+            // Include any specific settings if available
+            if (specificSettings != null) ...specificSettings,
           };
           presetJson = jsonEncode(fallbackMap);
         }

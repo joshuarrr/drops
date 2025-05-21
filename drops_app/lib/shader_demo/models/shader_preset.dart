@@ -31,7 +31,10 @@ class ShaderPreset {
   /// Whether this preset should be hidden from slideshows
   final bool isHiddenFromSlideshow;
 
-  const ShaderPreset({
+  /// Additional settings that need to be directly accessible
+  final Map<String, dynamic>? specificSettings;
+
+  ShaderPreset({
     required this.id,
     required this.name,
     required this.createdAt,
@@ -40,7 +43,24 @@ class ShaderPreset {
     this.thumbnailData,
     this.sortMethod,
     this.isHiddenFromSlideshow = false,
-  });
+    this.specificSettings,
+  }) {
+    // Debug print to track preset creation
+    debugPrint('Creating ShaderPreset: $name');
+    if (specificSettings != null) {
+      debugPrint(
+        '  with specificSettings: ${specificSettings!.keys.join(', ')}',
+      );
+      if (specificSettings!.containsKey('fitScreenMargin')) {
+        debugPrint('  margin: ${specificSettings!['fitScreenMargin']}');
+      }
+      if (specificSettings!.containsKey('fillScreen')) {
+        debugPrint('  fillScreen: ${specificSettings!['fillScreen']}');
+      }
+    } else {
+      debugPrint('  NO specificSettings');
+    }
+  }
 
   /// Create a map representation for storage
   Map<String, dynamic> toMap() {
@@ -48,7 +68,8 @@ class ShaderPreset {
       // First get the settings map, which now safely handles Color objects
       final settingsMap = settings.toMap();
 
-      return {
+      // Start with the base map
+      final resultMap = {
         'id': id,
         'name': name,
         'createdAt': createdAt.millisecondsSinceEpoch,
@@ -58,6 +79,22 @@ class ShaderPreset {
         'isHiddenFromSlideshow': isHiddenFromSlideshow,
         // Thumbnail is stored separately
       };
+
+      // Add any specific settings that should be directly accessible
+      if (specificSettings != null) {
+        resultMap.addAll(specificSettings!);
+        debugPrint('ShaderPreset.toMap: Adding specificSettings to $name:');
+        if (specificSettings!.containsKey('fitScreenMargin')) {
+          debugPrint('  margin: ${specificSettings!['fitScreenMargin']}');
+        }
+        if (specificSettings!.containsKey('fillScreen')) {
+          debugPrint('  fillScreen: ${specificSettings!['fillScreen']}');
+        }
+      } else {
+        debugPrint('ShaderPreset.toMap: NO specificSettings for $name');
+      }
+
+      return resultMap;
     } catch (e) {
       debugPrint('Error serializing ShaderPreset: $e');
       // Return minimal data to avoid complete failure
@@ -83,6 +120,21 @@ class ShaderPreset {
       sortMethod = PresetSortMethod.values[map['sortMethod'] as int];
     }
 
+    // Extract specific settings (filtering out known keys)
+    final knownKeys = [
+      'id',
+      'name',
+      'createdAt',
+      'settings',
+      'imagePath',
+      'sortMethod',
+      'isHiddenFromSlideshow',
+    ];
+
+    final specificSettings = Map<String, dynamic>.fromEntries(
+      map.entries.where((entry) => !knownKeys.contains(entry.key)),
+    );
+
     return ShaderPreset(
       id: map['id'] as String,
       name: map['name'] as String,
@@ -94,6 +146,7 @@ class ShaderPreset {
       thumbnailData: thumbnail,
       sortMethod: sortMethod,
       isHiddenFromSlideshow: map['isHiddenFromSlideshow'] as bool? ?? false,
+      specificSettings: specificSettings.isNotEmpty ? specificSettings : null,
     );
   }
 
@@ -107,6 +160,7 @@ class ShaderPreset {
     Uint8List? thumbnailData,
     PresetSortMethod? sortMethod,
     bool? isHiddenFromSlideshow,
+    Map<String, dynamic>? specificSettings,
   }) {
     return ShaderPreset(
       id: id ?? this.id,
@@ -118,6 +172,7 @@ class ShaderPreset {
       sortMethod: sortMethod ?? this.sortMethod,
       isHiddenFromSlideshow:
           isHiddenFromSlideshow ?? this.isHiddenFromSlideshow,
+      specificSettings: specificSettings ?? this.specificSettings,
     );
   }
 }
