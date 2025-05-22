@@ -355,52 +355,131 @@ class PresetController {
     }
   }
 
-  /// Update an existing preset with new settings
+  /// Get a preset by ID
+  static Future<ShaderPreset?> getPresetById(String id) async {
+    final prefs = await SharedPreferences.getInstance();
+    final presetJson = prefs.getString('$_presetPrefix$id');
+    final thumbData = prefs.getString('$_thumbnailPrefix$id');
+
+    if (presetJson != null) {
+      final presetMap = jsonDecode(presetJson) as Map<String, dynamic>;
+      Uint8List? thumbnail;
+
+      if (thumbData != null) {
+        try {
+          thumbnail = base64Decode(thumbData);
+        } catch (e) {
+          debugPrint('Failed to decode thumbnail: $e');
+        }
+      }
+
+      return ShaderPreset.fromMap(presetMap, thumbnail: thumbnail);
+    }
+
+    return null;
+  }
+
+  /// Update an existing preset
   static Future<ShaderPreset> updatePreset({
     required String id,
     required ShaderSettings settings,
     required GlobalKey previewKey,
+    String? imagePath,
+    PresetSortMethod? sortMethod,
+    Map<String, dynamic>? specificSettings,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
-
-    // Get the existing preset data
-    final presetJson = prefs.getString('$_presetPrefix$id');
-    if (presetJson == null) {
-      throw Exception('Preset not found');
-    }
-
-    // Parse the preset
-    final presetMap = jsonDecode(presetJson) as Map<String, dynamic>;
-    final existing = ShaderPreset.fromMap(presetMap);
-
-    // Capture a new thumbnail
-    final Uint8List? thumbnailData = await _capturePreview(previewKey);
-
-    // Make sure the text settings are enabled if they were enabled in the existing preset
-    // This ensures we don't lose text settings when updating
-    if (existing.settings.textLayoutSettings.textEnabled) {
-      settings.textLayoutSettings.textEnabled = true;
-    }
-
-    // Create updated preset with new settings but keeping the same ID, name, etc.
-    final updatedPreset = existing.copyWith(
-      settings: settings,
-      thumbnailData: thumbnailData,
-    );
-
-    // Save the updated preset
     try {
-      final Map<String, dynamic> updatedMap = updatedPreset.toMap();
-      final updatedJson = jsonEncode(updatedMap);
-      await prefs.setString('$_presetPrefix$id', updatedJson);
+      // Get existing preset
+      final existing = await getPresetById(id);
+      if (existing == null) {
+        throw Exception('Preset not found: $id');
+      }
 
-      // Update the thumbnail if available
+      // Capture a thumbnail if the preview key is provided
+      Uint8List? thumbnailData;
+      if (previewKey.currentContext != null) {
+        try {
+          final boundary =
+              previewKey.currentContext!.findRenderObject()
+                  as RenderRepaintBoundary;
+          debugPrint('Starting capture of preview with key: $previewKey');
+
+          // Add a delay to ensure rendering is complete
+          await Future.delayed(const Duration(milliseconds: 200));
+          debugPrint('Capturing preview after delay');
+
+          final ui.Image image = await boundary.toImage(pixelRatio: 0.5);
+          final ByteData? byteData = await image.toByteData(
+            format: ui.ImageByteFormat.png,
+          );
+
+          if (byteData != null) {
+            thumbnailData = byteData.buffer.asUint8List();
+            debugPrint(
+              'Successfully captured image: ${image.width}x${image.height}',
+            );
+            debugPrint(
+              'Captured preview successfully: ${thumbnailData.length} bytes',
+            );
+          }
+        } catch (e) {
+          debugPrint('Error capturing preview: $e');
+        }
+      }
+
+      // Use existing or provided values
+      final updatedImagePath = imagePath ?? existing.imagePath;
+      final updatedSortMethod = sortMethod ?? existing.sortMethod;
+
+      // Create updated preset
+      final preset = existing.copyWith(
+        settings: settings,
+        imagePath: updatedImagePath,
+        thumbnailData: thumbnailData ?? existing.thumbnailData,
+        sortMethod: updatedSortMethod,
+        specificSettings: specificSettings,
+      );
+
+      // Save to storage
+      final prefs = await SharedPreferences.getInstance();
+      try {
+        // Convert Color objects to integer values in settings before serializing
+        final Map<String, dynamic> presetMap = preset.toMap();
+
+        // Use a separate try block specifically for JSON encoding
+        String presetJson;
+        try {
+          presetJson = jsonEncode(presetMap);
+        } catch (jsonError) {
+          debugPrint('JSON encoding error: $jsonError');
+
+          // Create a simpler version without any complex objects
+          final fallbackMap = {
+            'id': preset.id,
+            'name': preset.name,
+            'createdAt': preset.createdAt.millisecondsSinceEpoch,
+            'settings': {'textEnabled': false},
+            'imagePath': updatedImagePath,
+            'sortMethod': updatedSortMethod?.index,
+            // Include any specific settings if available
+            if (specificSettings != null) ...specificSettings,
+          };
+          presetJson = jsonEncode(fallbackMap);
+        }
+
+        await prefs.setString('$_presetPrefix$id', presetJson);
+      } catch (e) {
+        debugPrint('Error saving preset: $e');
+        throw Exception('Failed to update preset: $e');
+      }
+
+      // Save thumbnail separately (if available)
       if (thumbnailData != null) {
         final thumbBase64 = base64Encode(thumbnailData);
         await prefs.setString('$_thumbnailPrefix$id', thumbBase64);
       }
 
-      return updatedPreset;
+      return preset;
     } catch (e) {
       debugPrint('Error updating preset: $e');
       throw Exception('Failed to update preset: $e');

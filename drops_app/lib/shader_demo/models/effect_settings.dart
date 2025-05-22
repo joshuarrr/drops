@@ -526,4 +526,9 @@ class ShaderSettings {
       ),
     );
   }
+
+  // Create a deep copy of the settings
+  ShaderSettings copy() {
+    return ShaderSettings.fromMap(this.toMap());
+  }
 }

@@ -3,6 +3,7 @@ import '../models/shader_effect.dart';
 import '../models/effect_settings.dart';
 import '../models/presets_manager.dart';
 import '../models/image_category.dart';
+import '../state/shader_demo_state.dart';
 import 'enhanced_panel_header.dart';
 import '../views/effect_controls.dart';
 import 'image_selector.dart';
@@ -172,8 +173,11 @@ class ImagePanel extends StatelessWidget {
   void _resetImage() {
     // Create a deep copy of the settings to ensure changes are properly tracked
     final updatedSettings = ShaderSettings.fromMap(settings.toMap());
-    updatedSettings.fillScreen = false;
-    updatedSettings.textLayoutSettings.fitScreenMargin = 30.0;
+
+    // Use the shared app constants for consistent default values
+    updatedSettings.fillScreen = ShaderDemoState.defaultFillScreen;
+    updatedSettings.textLayoutSettings.fitScreenMargin =
+        ShaderDemoState.defaultMargin;
 
     // Reset all effect targeting flags to default values (true)
     updatedSettings.colorSettings.applyToImage = true;
