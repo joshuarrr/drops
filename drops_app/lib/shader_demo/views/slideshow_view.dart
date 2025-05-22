@@ -68,11 +68,6 @@ class SlideshowView extends StatelessWidget {
     double margin = preset.getMargin();
     bool fillScreen = preset.getFillScreen();
 
-    // Log once with consolidated information
-    debugPrint(
-      'Using specificSettings - margin: $margin, fillScreen: $fillScreen',
-    );
-
     // Apply the settings directly
     presetSettings.fillScreen = fillScreen;
     presetSettings.textLayoutSettings.fitScreenMargin = margin;

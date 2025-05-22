@@ -3,16 +3,18 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/effect_settings.dart';
+import '../services/audio_analyzer_service.dart';
 import 'effect_controller.dart';
 
 /// Controller for handling music playback in the shader demo app.
 ///
 /// This controller integrates with the audioplayers package and keeps
 /// the music settings model in sync with the actual audio playback state.
-class MusicController {
+class MusicController with WidgetsBindingObserver {
   // Logging
   static const String _logTag = 'MusicController';
   static bool enableLogging = true;
@@ -22,6 +24,9 @@ class MusicController {
 
   // Store current source to avoid recreating it unnecessarily
   Source? _currentSource;
+
+  // Audio analyzer for frequency analysis
+  late AudioAnalyzerService _audioAnalyzer;
 
   // Track the current position with a stream subscriptions
   StreamSubscription<Duration>? _positionSubscription;
@@ -50,6 +55,8 @@ class MusicController {
     required this.onSettingsChanged,
   }) : _settings = settings {
     _initPlayer();
+    // Register for app lifecycle events
+    WidgetsBinding.instance.addObserver(this);
   }
 
   // Singleton instance
@@ -74,12 +81,67 @@ class MusicController {
     return _instance!;
   }
 
+  // Handle app lifecycle changes
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _log('App lifecycle state changed to: $state', level: LogLevel.info);
+
+    switch (state) {
+      case AppLifecycleState.paused:
+      case AppLifecycleState.detached:
+      case AppLifecycleState.hidden:
+        // App is in background or being restarted, stop playback
+        _stopAndSavePlaybackState();
+        break;
+      case AppLifecycleState.resumed:
+        // App resumed, optionally restore playback if needed
+        // (Leaving this empty to prevent auto-resuming on app restart)
+        break;
+      case AppLifecycleState.inactive:
+        // App is inactive but still visible
+        break;
+    }
+  }
+
+  // Stop playback and save current state
+  void _stopAndSavePlaybackState() {
+    _log('Stopping playback due to app lifecycle change', level: LogLevel.info);
+
+    if (_audioPlayer.state == PlayerState.playing) {
+      // Save current position before stopping
+      _audioPlayer
+          .getCurrentPosition()
+          .then((position) {
+            if (position != null) {
+              final updatedSettings = ShaderSettings.fromMap(_settings.toMap());
+              updatedSettings.musicSettings.playbackPosition = position
+                  .inSeconds
+                  .toDouble();
+              updatedSettings.musicSettings.isPlaying = false;
+              _settings = updatedSettings;
+              onSettingsChanged(updatedSettings);
+
+              // Now stop the player
+              _audioPlayer.stop();
+            }
+          })
+          .catchError((_) {
+            // If we can't get position, just stop
+            _audioPlayer.stop();
+          });
+    }
+  }
+
   // Initialize the audio player
   void _initPlayer() {
     if (_initialized) return;
 
     _log('Initializing audio player');
     _audioPlayer = AudioPlayer();
+
+    // Initialize audio analyzer
+    _audioAnalyzer = AudioAnalyzerService.getInstance();
+    _audioAnalyzer.initialize();
 
     // Configure audio context for better control across platforms
     _configureAudioContext();
@@ -119,6 +181,12 @@ class MusicController {
 
             updatedSettings.musicSettings.playbackPosition = currentPosition
                 .toDouble();
+
+            // Update audio analyzer with current position and playing state
+            _audioAnalyzer.updateAudioPosition(
+              currentPosition.toDouble(),
+              true, // Must be playing to be in this code path
+            );
 
             // Ensure state synchronization - if the player is playing, settings should reflect that
             if (updatedSettings.musicSettings.isPlaying != true) {
@@ -180,6 +248,25 @@ class MusicController {
         updatedSettings.musicSettings.isPlaying = playing;
         _settings = updatedSettings;
         onSettingsChanged(updatedSettings);
+
+        // Update audio analyzer playing state
+        _audioPlayer
+            .getCurrentPosition()
+            .then((position) {
+              if (position != null) {
+                _audioAnalyzer.updateAudioPosition(
+                  position.inSeconds.toDouble(),
+                  playing,
+                );
+              }
+            })
+            .catchError((_) {
+              // If we can't get position, still update playing state with current position
+              _audioAnalyzer.updateAudioPosition(
+                updatedSettings.musicSettings.playbackPosition,
+                playing,
+              );
+            });
       }
     });
 
@@ -728,33 +815,24 @@ class MusicController {
     return ShaderSettings.fromMap(_settings.toMap());
   }
 
-  // Cleanup resources
+  // Properly dispose of resources
   void dispose() {
-    _log('Disposing music controller');
+    _log('Disposing music controller', level: LogLevel.info);
 
-    try {
-      // First try to stop any playback to release audio hardware
-      _audioPlayer.stop().catchError((e) {
-        _log(
-          'Error stopping playback during dispose: $e',
-          level: LogLevel.warning,
-        );
-      });
+    // Remove lifecycle observer
+    WidgetsBinding.instance.removeObserver(this);
 
-      // Cancel all stream subscriptions
-      _positionSubscription?.cancel();
-      _durationSubscription?.cancel();
-      _playerStateSubscription?.cancel();
+    // Cancel all stream subscriptions
+    _positionSubscription?.cancel();
+    _durationSubscription?.cancel();
+    _playerStateSubscription?.cancel();
 
-      // Finally dispose the audio player
-      _audioPlayer.dispose();
+    // Stop and release the audio player
+    _audioPlayer.stop();
+    _audioPlayer.release();
+    _audioPlayer.dispose();
 
-      _log('Successfully disposed audio player and canceled all subscriptions');
-    } catch (e) {
-      _log('Error during dispose: $e', level: LogLevel.error);
-    }
-
-    _initialized = false;
+    // Reset singleton instance
     _instance = null;
   }
 
@@ -1073,4 +1151,18 @@ class MusicController {
       }
     }
   }
+
+  // Get current audio frequency data for shaders
+  Map<String, double> getAudioFrequencyData() {
+    return {
+      'bassLevel': _audioAnalyzer.bassLevel,
+      'midLevel': _audioAnalyzer.midLevel,
+      'trebleLevel': _audioAnalyzer.trebleLevel,
+    };
+  }
+
+  // Get individual frequency components
+  double getBassLevel() => _audioAnalyzer.bassLevel;
+  double getMidLevel() => _audioAnalyzer.midLevel;
+  double getTrebleLevel() => _audioAnalyzer.trebleLevel;
 }

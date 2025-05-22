@@ -148,7 +148,7 @@ class PresetService {
     try {
       // If we don't have unsaved changes, nothing to do
       if (!hasUnsavedChanges) {
-        EffectLogger.log('No changes detected, skipping save');
+        // Don't log this message as it appears too frequently
         return;
       }
 

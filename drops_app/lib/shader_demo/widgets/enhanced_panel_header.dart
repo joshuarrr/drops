@@ -18,8 +18,10 @@ class EnhancedPanelHeader extends StatelessWidget {
   // New parameters for apply to image/text
   final bool applyToImage;
   final bool applyToText;
+  final bool applyToBackground;
   final Function(bool) onApplyToImageChanged;
   final Function(bool) onApplyToTextChanged;
+  final Function(bool) onApplyToBackgroundChanged;
 
   const EnhancedPanelHeader({
     Key? key,
@@ -34,9 +36,14 @@ class EnhancedPanelHeader extends StatelessWidget {
     required this.refreshCounter,
     required this.applyToImage,
     required this.applyToText,
+    this.applyToBackground = false,
     required this.onApplyToImageChanged,
     required this.onApplyToTextChanged,
+    this.onApplyToBackgroundChanged = _defaultBoolCallback,
   }) : super(key: key);
+
+  // Default callback for optional function parameters
+  static void _defaultBoolCallback(bool value) {}
 
   @override
   Widget build(BuildContext context) {
@@ -72,8 +79,10 @@ class EnhancedPanelHeader extends StatelessWidget {
                 onReset: onReset,
                 applyToImage: applyToImage,
                 applyToText: applyToText,
+                applyToBackground: applyToBackground,
                 onApplyToImageChanged: onApplyToImageChanged,
                 onApplyToTextChanged: onApplyToTextChanged,
+                onApplyToBackgroundChanged: onApplyToBackgroundChanged,
               ),
             ],
           ),

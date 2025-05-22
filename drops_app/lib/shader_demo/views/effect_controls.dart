@@ -40,8 +40,8 @@ extension TextLineExt on TextLine {
 }
 
 class EffectControls {
-  // Control logging verbosity - set this to false to disable logs
-  static bool enableLogging = false;
+  // Control logging verbosity - set this to true to enable logs
+  static bool enableLogging = true;
   static const String _logTag = 'EffectControls';
 
   // Custom log function that uses both dart:developer and debugPrint for visibility
@@ -119,11 +119,35 @@ class EffectControls {
 
   // Method for cleaning up music resources during hot restart
   static void cleanupMusicResources() {
-    _log('Cleaning up music resources for hot restart');
+    // Only log if there's an error or if logging is specifically enabled
     if (_musicController != null) {
-      pauseMusic();
-      _musicController?.dispose();
-      _musicController = null;
+      // Try to stop any playing music and release resources
+      try {
+        _log('Stopping and releasing music resources', level: LogLevel.info);
+
+        // First get current position if needed for future restart
+        if (_musicController!.isPlaying()) {
+          try {
+            // Try to save current state
+            final settings = _musicController!.getCurrentSettings();
+            // Position is already stored in settings, just mark as not playing
+            settings.musicSettings.isPlaying = false;
+            _musicController!.onSettingsChanged(settings);
+          } catch (_) {
+            // Ignore errors during position fetch
+          }
+        }
+
+        // Force stop (not just pause) to ensure audio is fully stopped
+        _musicController!.stop();
+
+        // Release all resources and dispose the controller
+        _musicController!.dispose();
+        _musicController = null;
+      } catch (e) {
+        // Only log errors
+        _log('Error cleaning up music resources: $e', level: LogLevel.error);
+      }
     }
   }
 
@@ -257,10 +281,8 @@ class EffectControls {
       'Selecting track: $track (music enabled: $musicEnabled, was playing: $wasPlaying)',
     );
 
-    // CRITICAL FIX: Always update settings with the current track first
-    final updatedSettings = _musicController!.getCurrentSettings();
-    updatedSettings.musicSettings.currentTrack = track;
-    _musicController!.onSettingsChanged(updatedSettings);
+    // FIXED: Don't update settings here, let the music controller methods handle it
+    // This avoids the double "Current track set to" log messages
 
     if (musicEnabled) {
       // If music is enabled, fully switch tracks (will stop current and play new)
@@ -694,11 +716,38 @@ class EffectControls {
           CymaticsPanel(
             settings: settings,
             onSettingsChanged: (updatedSettings) {
+              // Log all the cymatics settings values to diagnose issues
               _log(
-                'Cymatics panel settings changed - Cymatics enabled: ${updatedSettings.cymaticsEnabled}',
-                level: LogLevel.debug,
+                'Cymatics panel settings changed - Cymatics enabled: ${updatedSettings.cymaticsEnabled}, ' +
+                    'Intensity: ${updatedSettings.cymaticsSettings.intensity.toStringAsFixed(2)}, ' +
+                    'Frequency: ${updatedSettings.cymaticsSettings.frequency.toStringAsFixed(2)}, ' +
+                    'Amplitude: ${updatedSettings.cymaticsSettings.amplitude.toStringAsFixed(2)}, ' +
+                    'Speed: ${updatedSettings.cymaticsSettings.speed.toStringAsFixed(2)}, ' +
+                    'Audio Sensitivity: ${updatedSettings.cymaticsSettings.audioSensitivity.toStringAsFixed(2)}',
+                level: LogLevel.info,
               );
+
+              // Ensure the changes are properly applied
+              _log(
+                "Original settings hash before: ${settings.hashCode}, Updated hash: ${updatedSettings.hashCode}",
+              );
+
+              // Apply the settings changes
               onSettingsChanged(updatedSettings);
+
+              // For debugging, log the current settings after they've been applied
+              Future.microtask(() {
+                // This would only work if the updated settings object is the same
+                // reference that was passed to onSettingsChanged, which might not
+                // be the case depending on how the parent component handles updates
+                _log(
+                  'After update, cymatics enabled: ${settings.cymaticsEnabled}, ' +
+                      'Intensity: ${settings.cymaticsSettings.intensity.toStringAsFixed(2)}, ' +
+                      'Frequency: ${settings.cymaticsSettings.frequency.toStringAsFixed(2)}, ' +
+                      'Amplitude: ${settings.cymaticsSettings.amplitude.toStringAsFixed(2)}',
+                  level: LogLevel.debug,
+                );
+              });
             },
             sliderColor: sliderColor,
             context: context,

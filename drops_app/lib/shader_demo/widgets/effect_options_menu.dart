@@ -24,11 +24,20 @@ class EffectOptionsMenu extends StatelessWidget {
   /// Whether this effect is applied to text
   final bool applyToText;
 
+  /// Whether this effect is applied to background (for cymatics)
+  final bool applyToBackground;
+
   /// Callback when the apply to image setting changes
   final Function(bool) onApplyToImageChanged;
 
   /// Callback when the apply to text setting changes
   final Function(bool) onApplyToTextChanged;
+
+  /// Callback when the apply to background setting changes
+  final Function(bool) onApplyToBackgroundChanged;
+
+  // Default callback for optional function parameters
+  static void _defaultBoolCallback(bool value) {}
 
   const EffectOptionsMenu({
     Key? key,
@@ -38,8 +47,10 @@ class EffectOptionsMenu extends StatelessWidget {
     required this.onReset,
     required this.applyToImage,
     required this.applyToText,
+    this.applyToBackground = false,
     required this.onApplyToImageChanged,
     required this.onApplyToTextChanged,
+    this.onApplyToBackgroundChanged = _defaultBoolCallback,
   }) : super(key: key);
 
   @override
@@ -50,7 +61,9 @@ class EffectOptionsMenu extends StatelessWidget {
         aspect != ShaderAspect.text &&
         aspect != ShaderAspect.textfx &&
         aspect != ShaderAspect.image; // Also hide for image aspect
-    final bool showDivider = showApplyToImage || showApplyToText;
+    final bool showApplyToBackground = aspect == ShaderAspect.cymatics;
+    final bool showDivider =
+        showApplyToImage || showApplyToText || showApplyToBackground;
 
     return PopupMenuButton<String>(
       icon: Icon(Icons.more_vert, color: textColor, size: 20),
@@ -64,24 +77,43 @@ class EffectOptionsMenu extends StatelessWidget {
         if (showApplyToImage) {
           items.add(
             PopupMenuItem<String>(
-              enabled: false,
+              enabled: false, // Keep disabled to prevent menu auto-closing
               height: 40,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-              child: Row(
-                children: [
-                  Text('Apply to Image', style: TextStyle(color: textColor)),
-                  const Spacer(),
-                  Checkbox(
-                    value: applyToImage,
-                    activeColor: textColor,
-                    onChanged: (value) {
-                      if (value != null) {
-                        onApplyToImageChanged(value);
-                        Navigator.pop(context);
-                      }
-                    },
+              padding:
+                  EdgeInsets.zero, // Remove padding for the gesture detector
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    // Toggle the value when tapped
+                    onApplyToImageChanged(!applyToImage);
+                    debugPrint(
+                      "[EffectOptionsMenu] Apply to Image toggled to: ${!applyToImage}",
+                    );
+                    Navigator.pop(context);
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 0,
+                    ),
+                    child: Row(
+                      children: [
+                        Text(
+                          'Apply to Image',
+                          style: TextStyle(color: textColor),
+                        ),
+                        const Spacer(),
+                        Checkbox(
+                          value: applyToImage,
+                          activeColor: textColor,
+                          onChanged:
+                              null, // Disable checkbox interaction, use inkwell instead
+                        ),
+                      ],
+                    ),
                   ),
-                ],
+                ),
               ),
             ),
           );
@@ -93,22 +125,81 @@ class EffectOptionsMenu extends StatelessWidget {
             PopupMenuItem<String>(
               enabled: false,
               height: 40,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-              child: Row(
-                children: [
-                  Text('Apply to Text', style: TextStyle(color: textColor)),
-                  const Spacer(),
-                  Checkbox(
-                    value: applyToText,
-                    activeColor: textColor,
-                    onChanged: (value) {
-                      if (value != null) {
-                        onApplyToTextChanged(value);
-                        Navigator.pop(context);
-                      }
-                    },
+              padding: EdgeInsets.zero,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    onApplyToTextChanged(!applyToText);
+                    debugPrint(
+                      "[EffectOptionsMenu] Apply to Text toggled to: ${!applyToText}",
+                    );
+                    Navigator.pop(context);
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 0,
+                    ),
+                    child: Row(
+                      children: [
+                        Text(
+                          'Apply to Text',
+                          style: TextStyle(color: textColor),
+                        ),
+                        const Spacer(),
+                        Checkbox(
+                          value: applyToText,
+                          activeColor: textColor,
+                          onChanged: null,
+                        ),
+                      ],
+                    ),
                   ),
-                ],
+                ),
+              ),
+            ),
+          );
+        }
+
+        // Add Apply to Background option for cymatics
+        if (showApplyToBackground) {
+          items.add(
+            PopupMenuItem<String>(
+              enabled: false,
+              height: 40,
+              padding: EdgeInsets.zero,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    onApplyToBackgroundChanged(!applyToBackground);
+                    debugPrint(
+                      "[EffectOptionsMenu] Apply to Background toggled to: ${!applyToBackground}",
+                    );
+                    Navigator.pop(context);
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 0,
+                    ),
+                    child: Row(
+                      children: [
+                        Text(
+                          'Apply to Background',
+                          style: TextStyle(color: textColor),
+                        ),
+                        const Spacer(),
+                        Checkbox(
+                          value: applyToBackground,
+                          activeColor: textColor,
+                          onChanged: null,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ),
           );

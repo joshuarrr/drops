@@ -45,6 +45,8 @@ class MusicPanel extends StatefulWidget {
 }
 
 class _MusicPanelState extends State<MusicPanel> {
+  bool _hasPrintedDurationSource = false;
+
   @override
   void initState() {
     super.initState();
@@ -376,10 +378,12 @@ class _MusicPanelState extends State<MusicPanel> {
                           (debugState['settings_duration'] as num) > 0) {
                         displayDuration =
                             (debugState['settings_duration'] as num).toDouble();
-                        if (kDebugMode) {
+                        // FIXED: Limit debug prints to once
+                        if (kDebugMode && !_hasPrintedDurationSource) {
                           print(
                             '👉 Using debug state duration for slider: $displayDuration',
                           );
+                          _hasPrintedDurationSource = true;
                         }
                       } else if (debugState.containsKey('known_duration') &&
                           debugState['known_duration'] is num &&
@@ -387,10 +391,13 @@ class _MusicPanelState extends State<MusicPanel> {
                         // Try to get duration from known_duration in debug state
                         displayDuration = (debugState['known_duration'] as num)
                             .toDouble();
-                        if (kDebugMode) {
+                        // FIXED: Remove repetitive debug log that spams the console
+                        // We'll log this at most once when the panel is built
+                        if (kDebugMode && !_hasPrintedDurationSource) {
                           print(
                             '👉 Using known cached duration from controller: $displayDuration',
                           );
+                          _hasPrintedDurationSource = true;
                         }
                       }
                     }
@@ -399,10 +406,12 @@ class _MusicPanelState extends State<MusicPanel> {
                     // without any specific track hardcoding
                     if (displayDuration <= 0) {
                       displayDuration = 100.0; // Generic default
-                      if (kDebugMode) {
+                      // FIXED: Limit debug prints to once
+                      if (kDebugMode && !_hasPrintedDurationSource) {
                         print(
                           '👉 Using generic slider default: $displayDuration',
                         );
+                        _hasPrintedDurationSource = true;
                       }
                     }
 
@@ -467,12 +476,14 @@ class _MusicPanelState extends State<MusicPanel> {
                             displayDuration =
                                 (debugState['settings_duration'] as num)
                                     .toDouble();
+                            // No need to log this - it's just for the text display
                           } else if (debugState.containsKey('known_duration') &&
                               debugState['known_duration'] is num &&
                               (debugState['known_duration'] as num) > 0) {
                             displayDuration =
                                 (debugState['known_duration'] as num)
                                     .toDouble();
+                            // No need to log this - it's just for the text display
                           }
                         }
 

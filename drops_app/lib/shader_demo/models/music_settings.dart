@@ -19,6 +19,15 @@ class MusicSettings extends ChangeNotifier {
   // Logging flag
   static bool enableLogging = true;
 
+  // Throttle log variables
+  static DateTime? _lastPlayStateLogTime;
+  static int _playStateLogsThisSession = 0;
+  static const int _maxPlayStateLogsPerSession = 2;
+
+  // Track logging variables
+  static String? _lastLoggedTrack;
+  static bool _durationLoggedForCurrentTrack = false;
+
   // Getters
   bool get musicEnabled => _musicEnabled;
   String get currentTrack => _currentTrack;
@@ -44,6 +53,10 @@ class MusicSettings extends ChangeNotifier {
     if (_currentTrack != value) {
       _currentTrack = value;
       if (enableLogging) print("SETTINGS: Current track set to $value");
+
+      // Reset duration logging flag when track changes
+      _durationLoggedForCurrentTrack = false;
+
       notifyListeners();
     }
   }
@@ -84,7 +97,17 @@ class MusicSettings extends ChangeNotifier {
   set duration(double value) {
     if (_duration != value) {
       _duration = value;
-      if (enableLogging) print("SETTINGS: Duration set to $value");
+
+      // Only log the duration once per track
+      if (enableLogging &&
+          !_durationLoggedForCurrentTrack &&
+          _currentTrack.isNotEmpty) {
+        print(
+          "SETTINGS: Duration for track '${_currentTrack.split('/').last}' set to $value",
+        );
+        _durationLoggedForCurrentTrack = true;
+      }
+
       notifyListeners();
     }
   }
@@ -92,7 +115,20 @@ class MusicSettings extends ChangeNotifier {
   set isPlaying(bool value) {
     if (_isPlaying != value) {
       _isPlaying = value;
-      if (enableLogging) print("SETTINGS: Playing state set to $value");
+
+      // Very aggressive throttling:
+      // 1. Only log if we're outside the throttle period (10 seconds)
+      // 2. Only log a maximum number of times per session
+      final now = DateTime.now();
+
+      if (_playStateLogsThisSession < _maxPlayStateLogsPerSession &&
+          (_lastPlayStateLogTime == null ||
+              now.difference(_lastPlayStateLogTime!).inSeconds > 10)) {
+        if (enableLogging) print("SETTINGS: Playing state set to $value");
+        _lastPlayStateLogTime = now;
+        _playStateLogsThisSession++;
+      }
+
       notifyListeners();
     }
   }

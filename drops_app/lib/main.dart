@@ -62,11 +62,12 @@ void main() async {
   if (kDebugMode) {
     // This will run whenever the app rebuilds, including during hot restarts
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Clean up music resources
-      print("Hot restart detected: Checking for audio resources to clean up");
-
-      // Use the public method to clean up music resources
-      EffectControls.cleanupMusicResources();
+      // Clean up music resources without logging unless there's a problem
+      try {
+        EffectControls.cleanupMusicResources();
+      } catch (e) {
+        print("Hot restart cleanup error: $e");
+      }
     });
   }
 
@@ -90,20 +91,65 @@ class MyApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeProvider.themeMode,
-      home: const AnimatedThemeBuilder(),
+      home: const AppLifecycleManager(child: AnimatedThemeBuilder()),
       onGenerateRoute: (settings) {
         // Handle main route with initialIndex parameter
         if (settings.name == '/') {
           final int initialIndex = settings.arguments as int? ?? 1;
           return MaterialPageRoute(
-            builder: (context) =>
-                AnimatedThemeBuilder(initialIndex: initialIndex),
+            builder: (context) => AppLifecycleManager(
+              child: AnimatedThemeBuilder(initialIndex: initialIndex),
+            ),
           );
         }
         return null;
       },
       debugShowCheckedModeBanner: false,
     );
+  }
+}
+
+/// A widget that manages app lifecycle events to ensure proper cleanup
+class AppLifecycleManager extends StatefulWidget {
+  final Widget child;
+
+  const AppLifecycleManager({super.key, required this.child});
+
+  @override
+  State<AppLifecycleManager> createState() => _AppLifecycleManagerState();
+}
+
+class _AppLifecycleManagerState extends State<AppLifecycleManager>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.detached ||
+        state == AppLifecycleState.paused) {
+      // App is being terminated or sent to background
+      // Stop music and release resources
+      try {
+        EffectControls.cleanupMusicResources();
+      } catch (e) {
+        print("Error cleaning up music resources: $e");
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return widget.child;
   }
 }
 

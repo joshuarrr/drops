@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'effect_settings.dart';
 
 /// Enum representing different sort methods for presets
@@ -46,10 +47,15 @@ class ShaderPreset {
     this.specificSettings,
   }) {
     // Only log preset creation when it has specific settings
-    // to avoid excessive logging during bulk loading
+    // and is not the "Untitled" preset to avoid excessive logging
     assert(() {
-      if (specificSettings != null) {
+      if (specificSettings != null && name != "Untitled") {
         debugPrint('Creating ShaderPreset: $name');
+        debugPrint(
+          '  with specificSettings: ${specificSettings!.keys.join(', ')}',
+        );
+      } else if (specificSettings != null && kDebugMode) {
+        // Just log that we're updating the Untitled preset, without the full creation message
         debugPrint(
           '  with specificSettings: ${specificSettings!.keys.join(', ')}',
         );

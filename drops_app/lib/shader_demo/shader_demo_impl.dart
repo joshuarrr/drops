@@ -184,16 +184,8 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
         final firstTrack = tracks[0];
         logging.EffectLogger.log('Setting initial track: $firstTrack');
 
-        // Update settings BEFORE calling selectMusicTrack
-        final updatedSettings = ShaderSettings.fromMap(
-          _state.shaderSettings.toMap(),
-        );
-        updatedSettings.musicSettings.currentTrack = firstTrack;
-
-        // Apply the settings first to ensure the controller knows about the track
-        setState(() {
-          _state.shaderSettings = updatedSettings;
-        });
+        // FIXED: Don't update settings directly here, let the selectMusicTrack handle it
+        // This avoids the double "Current track set to" log messages
 
         // CRITICAL FIX: Make sure the track is properly selected even if music is disabled
         Future.microtask(() {

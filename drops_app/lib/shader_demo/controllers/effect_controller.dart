@@ -11,8 +11,8 @@ import 'custom_shader_widgets.dart';
 enum LogLevel { debug, info, warning, error }
 
 class EffectLogger {
-  // Set to warning to filter out most logs except warnings and errors
-  static LogLevel currentLevel = LogLevel.warning;
+  // Set to info to show all info logs including slider changes
+  static LogLevel currentLevel = LogLevel.info;
   static bool enableEffectLogs = true;
   static const String _logTag = 'EffectController';
 
@@ -585,13 +585,41 @@ class EffectController {
       return child;
     }
 
+    // Ensure valid settings - for the background-based approach, we need higher
+    // intensity values to show the effect clearly
+    var modifiedSettings = ShaderSettings.fromMap(settings.toMap());
+
+    // Ensure minimum values for key parameters to make the effect visible
+    if (modifiedSettings.cymaticsSettings.intensity < 0.1) {
+      modifiedSettings.cymaticsSettings.intensity = 0.1;
+    }
+    if (modifiedSettings.cymaticsSettings.amplitude < 0.1) {
+      modifiedSettings.cymaticsSettings.amplitude = 0.1;
+    }
+
+    // Determine background color based on app theme or settings
+    Color backgroundColor = const Color(0xFF1A237E); // Default deep blue
+
+    // If color effect is enabled, use its overlay color as base
+    if (settings.colorEnabled && settings.colorSettings.overlayOpacity > 0.3) {
+      // Create color from overlay hue
+      final hue = settings.colorSettings.overlayHue;
+      backgroundColor = HSLColor.fromAHSL(
+        1.0,
+        hue * 360,
+        0.7, // Higher saturation for more vibrant background
+        0.3, // Darker for better pattern visibility
+      ).toColor();
+    }
+
     // Use custom shader implementation
     return CymaticsEffectShader(
-      settings: settings,
+      settings: modifiedSettings,
       animationValue: animationValue,
       child: child,
       preserveTransparency: preserveTransparency,
       isTextContent: isTextContent,
+      backgroundColor: backgroundColor,
     );
   }
 }

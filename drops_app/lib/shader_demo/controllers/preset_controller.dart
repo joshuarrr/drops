@@ -1,9 +1,13 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:ui' as ui;
 import 'dart:typed_data';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
@@ -250,37 +254,49 @@ class PresetController {
         return null;
       }
 
-      // Wait longer to ensure all animations, text, and shader effects are properly rendered
-      // This is especially important for text layers which may need extra time to render
-      await Future.delayed(const Duration(milliseconds: 300));
-      debugPrint('Capturing preview after delay');
+      // Instead of a fixed delay, use SchedulerBinding to capture after the next frame
+      // This ensures we capture after all rendering is complete
+      final completer = Completer<Uint8List?>();
 
-      // Instead of using an arbitrary fractional pixelRatio (which can lead to
-      // cropped output on some iOS devices – see Flutter issue #131738), use
-      // the device‐native devicePixelRatio. This keeps the raster size an
-      // integer multiple of the logical size and eliminates the top-left crop
-      // bug observed on iOS simulators.
+      SchedulerBinding.instance.addPostFrameCallback((_) async {
+        try {
+          debugPrint('Capturing preview on next frame');
 
-      final double dpr = ui.window.devicePixelRatio;
+          // Instead of using an arbitrary fractional pixelRatio (which can lead to
+          // cropped output on some iOS devices – see Flutter issue #131738), use
+          // the device‐native devicePixelRatio. This keeps the raster size an
+          // integer multiple of the logical size and eliminates the top-left crop
+          // bug observed on iOS simulators.
+          final double dpr = ui.window.devicePixelRatio;
 
-      // Capture the repaint boundary at the device pixel ratio so the whole
-      // screen is included without artefacts.
-      final ui.Image image = await boundary.toImage(pixelRatio: dpr);
+          // Capture the repaint boundary at the device pixel ratio so the whole
+          // screen is included without artefacts.
+          final ui.Image image = await boundary.toImage(pixelRatio: dpr);
 
-      debugPrint('Successfully captured image: ${image.width}x${image.height}');
+          debugPrint(
+            'Successfully captured image: ${image.width}x${image.height}',
+          );
 
-      final ByteData? byteData = await image.toByteData(
-        format: ui.ImageByteFormat.png,
-      );
+          final ByteData? byteData = await image.toByteData(
+            format: ui.ImageByteFormat.png,
+          );
 
-      if (byteData == null) {
-        debugPrint('Could not convert image to bytes');
-        return null;
-      }
+          if (byteData == null) {
+            debugPrint('Could not convert image to bytes');
+            completer.complete(null);
+            return;
+          }
 
-      final result = byteData.buffer.asUint8List();
-      debugPrint('Captured preview successfully: ${result.length} bytes');
-      return result;
+          final result = byteData.buffer.asUint8List();
+          debugPrint('Captured preview successfully: ${result.length} bytes');
+          completer.complete(result);
+        } catch (e) {
+          debugPrint('Error capturing preview in post-frame: $e');
+          completer.complete(null);
+        }
+      });
+
+      return completer.future;
     } catch (e) {
       debugPrint('Error capturing preview: $e');
       return null;
@@ -404,24 +420,37 @@ class PresetController {
                   as RenderRepaintBoundary;
           debugPrint('Starting capture of preview with key: $previewKey');
 
-          // Add a delay to ensure rendering is complete
-          await Future.delayed(const Duration(milliseconds: 200));
-          debugPrint('Capturing preview after delay');
+          // Use SchedulerBinding instead of delay
+          final completer = Completer<Uint8List?>();
 
-          final ui.Image image = await boundary.toImage(pixelRatio: 0.5);
-          final ByteData? byteData = await image.toByteData(
-            format: ui.ImageByteFormat.png,
-          );
+          SchedulerBinding.instance.addPostFrameCallback((_) async {
+            try {
+              debugPrint('Capturing preview on next frame');
 
-          if (byteData != null) {
-            thumbnailData = byteData.buffer.asUint8List();
-            debugPrint(
-              'Successfully captured image: ${image.width}x${image.height}',
-            );
-            debugPrint(
-              'Captured preview successfully: ${thumbnailData.length} bytes',
-            );
-          }
+              final ui.Image image = await boundary.toImage(pixelRatio: 0.5);
+              final ByteData? byteData = await image.toByteData(
+                format: ui.ImageByteFormat.png,
+              );
+
+              if (byteData != null) {
+                final Uint8List bytes = byteData.buffer.asUint8List();
+                debugPrint(
+                  'Successfully captured image: ${image.width}x${image.height}',
+                );
+                debugPrint(
+                  'Captured preview successfully: ${bytes.length} bytes',
+                );
+                completer.complete(bytes);
+              } else {
+                completer.complete(null);
+              }
+            } catch (e) {
+              debugPrint('Error capturing preview in post-frame: $e');
+              completer.complete(null);
+            }
+          });
+
+          thumbnailData = await completer.future;
         } catch (e) {
           debugPrint('Error capturing preview: $e');
         }

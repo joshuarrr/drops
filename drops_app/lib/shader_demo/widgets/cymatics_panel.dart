@@ -36,9 +36,131 @@ class _CymaticsPanelState extends State<CymaticsPanel> {
 
   // Helper to update settings
   void _updateSettings(Function(CymaticsSettings) updateFunc) {
+    // Create a deep copy of the current settings
     final updatedSettings = ShaderSettings.fromMap(widget.settings.toMap());
+
+    // Capture the previous values for logging changes
+    final prevSettings = updatedSettings.cymaticsSettings;
+    final double prevIntensity = prevSettings.intensity;
+    final double prevFrequency = prevSettings.frequency;
+    final double prevAmplitude = prevSettings.amplitude;
+    final double prevComplexity = prevSettings.complexity;
+    final double prevSpeed = prevSettings.speed;
+    final double prevColorIntensity = prevSettings.colorIntensity;
+    final double prevAudioSensitivity = prevSettings.audioSensitivity;
+    final bool prevCymaticsAnimated = prevSettings.cymaticsAnimated;
+    final bool prevApplyToImage = prevSettings.applyToImage;
+    final bool prevApplyToText = prevSettings.applyToText;
+    final bool prevApplyToBackground = prevSettings.applyToBackground;
+
+    // Debug current object references
+    _log(
+      "Before update - Original settings hash: ${widget.settings.hashCode}, Copy hash: ${updatedSettings.hashCode}",
+    );
+
+    // Apply the update to our copy
     updateFunc(updatedSettings.cymaticsSettings);
+
+    // Enable cymatics if it's not already enabled (so changes are visible)
+    if (!updatedSettings.cymaticsSettings.cymaticsEnabled) {
+      updatedSettings.cymaticsSettings.cymaticsEnabled = true;
+      _log("Auto-enabling cymatics effect to make changes visible");
+    }
+
+    // Log changes for debugging
+    final newSettings = updatedSettings.cymaticsSettings;
+    if (prevIntensity != newSettings.intensity) {
+      _log(
+        "Changed intensity: ${prevIntensity.toStringAsFixed(2)} → ${newSettings.intensity.toStringAsFixed(2)}",
+      );
+    }
+    if (prevFrequency != newSettings.frequency) {
+      _log(
+        "Changed frequency: ${prevFrequency.toStringAsFixed(2)} → ${newSettings.frequency.toStringAsFixed(2)}",
+      );
+    }
+    if (prevAmplitude != newSettings.amplitude) {
+      _log(
+        "Changed amplitude: ${prevAmplitude.toStringAsFixed(2)} → ${newSettings.amplitude.toStringAsFixed(2)}",
+      );
+    }
+    if (prevComplexity != newSettings.complexity) {
+      _log(
+        "Changed complexity: ${prevComplexity.toStringAsFixed(2)} → ${newSettings.complexity.toStringAsFixed(2)}",
+      );
+    }
+    if (prevSpeed != newSettings.speed) {
+      _log(
+        "Changed speed: ${prevSpeed.toStringAsFixed(2)} → ${newSettings.speed.toStringAsFixed(2)}",
+      );
+    }
+    if (prevColorIntensity != newSettings.colorIntensity) {
+      _log(
+        "Changed color intensity: ${prevColorIntensity.toStringAsFixed(2)} → ${newSettings.colorIntensity.toStringAsFixed(2)}",
+      );
+    }
+    if (prevAudioSensitivity != newSettings.audioSensitivity) {
+      _log(
+        "Changed audio sensitivity: ${prevAudioSensitivity.toStringAsFixed(2)} → ${newSettings.audioSensitivity.toStringAsFixed(2)}",
+      );
+    }
+    if (prevCymaticsAnimated != newSettings.cymaticsAnimated) {
+      _log(
+        "Changed animation enabled: $prevCymaticsAnimated → ${newSettings.cymaticsAnimated}",
+      );
+    }
+    if (prevApplyToImage != newSettings.applyToImage) {
+      _log(
+        "Changed apply to image: $prevApplyToImage → ${newSettings.applyToImage}",
+      );
+    }
+    if (prevApplyToText != newSettings.applyToText) {
+      _log(
+        "Changed apply to text: $prevApplyToText → ${newSettings.applyToText}",
+      );
+    }
+    if (prevApplyToBackground != newSettings.applyToBackground) {
+      _log(
+        "Changed apply to background: $prevApplyToBackground → ${newSettings.applyToBackground}",
+      );
+    }
+
+    // SIMPLIFIED UPDATE MECHANISM
+    // Directly update the settings instead of using a two-step process
+    _log("Applying settings update directly");
     widget.onSettingsChanged(updatedSettings);
+  }
+
+  // Helper to handle Apply to Image changes
+  void _handleApplyToImageChanged(bool value) {
+    _log("Apply to Image checkbox clicked: $value");
+    _updateSettings((s) {
+      s.applyToImage = value;
+
+      // If turning off apply to image, make sure background is enabled
+      if (!value && !s.applyToBackground) {
+        s.applyToBackground = true;
+        _log(
+          "Auto-enabling Apply to Background since Apply to Image was disabled",
+        );
+      }
+    });
+  }
+
+  // Helper to handle Apply to Background changes
+  void _handleApplyToBackgroundChanged(bool value) {
+    _log("Apply to Background checkbox clicked: $value");
+    _updateSettings((s) {
+      s.applyToBackground = value;
+
+      // If turning off apply to background, make sure image is enabled
+      if (!value && !s.applyToImage) {
+        s.applyToImage = true;
+        _log(
+          "Auto-enabling Apply to Image since Apply to Background was disabled",
+        );
+      }
+    });
   }
 
   // Static methods for preset management
@@ -75,8 +197,9 @@ class _CymaticsPanelState extends State<CymaticsPanel> {
 
     // Create a new CymaticsSettings instance with default values
     final defaultCymaticsSettings = CymaticsSettings(
-      applyToImage: true,
+      applyToImage: false, // Default to background only
       applyToText: false,
+      applyToBackground: true,
     );
 
     // Use the constructor to update settings properly
@@ -147,6 +270,17 @@ class _CymaticsPanelState extends State<CymaticsPanel> {
   Widget build(BuildContext context) {
     final cymaticsSettings = widget.settings.cymaticsSettings;
 
+    // Log current settings state when the panel is rebuilt
+    _log(
+      "CymaticsPanel.build: settings hash=${widget.settings.hashCode}, " +
+          "intensity=${cymaticsSettings.intensity.toStringAsFixed(2)}, " +
+          "frequency=${cymaticsSettings.frequency.toStringAsFixed(2)}, " +
+          "amplitude=${cymaticsSettings.amplitude.toStringAsFixed(2)}, " +
+          "speed=${cymaticsSettings.speed.toStringAsFixed(2)}, " +
+          "applyToImage=${cymaticsSettings.applyToImage}, " +
+          "applyToBackground=${cymaticsSettings.applyToBackground}",
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -163,44 +297,31 @@ class _CymaticsPanelState extends State<CymaticsPanel> {
           refreshCounter: _refreshCounter,
           applyToImage: cymaticsSettings.applyToImage,
           applyToText: cymaticsSettings.applyToText,
-          onApplyToImageChanged: (value) =>
-              _updateSettings((s) => s.applyToImage = value),
+          applyToBackground: cymaticsSettings.applyToBackground,
+          onApplyToImageChanged: _handleApplyToImageChanged,
           onApplyToTextChanged: (value) =>
               _updateSettings((s) => s.applyToText = value),
+          onApplyToBackgroundChanged: _handleApplyToBackgroundChanged,
         ),
 
         const SizedBox(height: 16),
 
-        // Audio reactivity toggle
+        // Audio sensitivity slider (always shown now)
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: LabeledSwitch(
-            label: 'React to Audio',
-            value: cymaticsSettings.audioReactive,
+          child: LabeledSlider(
+            label: 'Audio Sensitivity',
+            value: cymaticsSettings.audioSensitivity,
+            min: 0.0,
+            max: 1.0,
+            divisions: 20,
+            displayValue:
+                '${(cymaticsSettings.audioSensitivity * 100).round()}%',
+            activeColor: widget.sliderColor,
             onChanged: (value) =>
-                _updateSettings((s) => s.audioReactive = value),
+                _updateSettings((s) => s.audioSensitivity = value),
           ),
         ),
-
-        const SizedBox(height: 8),
-
-        // Audio sensitivity slider (only shown when audioReactive is true)
-        if (cymaticsSettings.audioReactive)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: LabeledSlider(
-              label: 'Audio Sensitivity',
-              value: cymaticsSettings.audioSensitivity,
-              min: 0.0,
-              max: 1.0,
-              divisions: 20,
-              displayValue:
-                  '${(cymaticsSettings.audioSensitivity * 100).round()}%',
-              activeColor: widget.sliderColor,
-              onChanged: (value) =>
-                  _updateSettings((s) => s.audioSensitivity = value),
-            ),
-          ),
 
         const SizedBox(height: 16),
 
@@ -364,7 +485,7 @@ class _CymaticsPanelState extends State<CymaticsPanel> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
-            'Cymatics visualizes sound waves as patterns. It reacts to music when audio reactive mode is enabled.',
+            'Cymatics visualizes sound waves as patterns. It automatically reacts to music playback.',
             style: TextStyle(
               fontSize: 12,
               fontStyle: FontStyle.italic,

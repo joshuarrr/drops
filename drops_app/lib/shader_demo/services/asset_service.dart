@@ -80,9 +80,6 @@ class AssetService {
 
       if (musicTracks.isNotEmpty) {
         EffectLogger.log('Found ${musicTracks.length} music tracks:');
-        for (final track in musicTracks) {
-          EffectLogger.log('  - ${track.split('/').last}');
-        }
       } else {
         EffectLogger.log(
           'No music tracks found in assets directory',

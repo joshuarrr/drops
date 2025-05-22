@@ -9,6 +9,7 @@ class CymaticsSettings extends ChangeNotifier {
   bool _cymaticsEnabled = false;
   bool _applyToText = false;
   bool _applyToImage = true;
+  bool _applyToBackground = true;
 
   // Effect parameters
   double _intensity = 0.5; // Overall intensity of the effect
@@ -25,12 +26,13 @@ class CymaticsSettings extends ChangeNotifier {
   AnimationOptions _animOptions = AnimationOptions();
 
   // Logging flag
-  static bool enableLogging = false;
+  static bool enableLogging = true;
 
   // Getters
   bool get cymaticsEnabled => _cymaticsEnabled;
   bool get applyToText => _applyToText;
   bool get applyToImage => _applyToImage;
+  bool get applyToBackground => _applyToBackground;
   double get intensity => _intensity;
   double get frequency => _frequency;
   double get amplitude => _amplitude;
@@ -65,6 +67,15 @@ class CymaticsSettings extends ChangeNotifier {
       _applyToImage = value;
       if (enableLogging)
         print("SETTINGS: Apply cymatics to image set to $value");
+      notifyListeners();
+    }
+  }
+
+  set applyToBackground(bool value) {
+    if (_applyToBackground != value) {
+      _applyToBackground = value;
+      if (enableLogging)
+        print("SETTINGS: Apply cymatics to background set to $value");
       notifyListeners();
     }
   }
@@ -155,6 +166,7 @@ class CymaticsSettings extends ChangeNotifier {
     bool cymaticsEnabled = false,
     bool applyToText = false,
     bool applyToImage = true,
+    bool applyToBackground = true,
     double intensity = 0.5,
     double frequency = 0.5,
     double amplitude = 0.5,
@@ -168,6 +180,7 @@ class CymaticsSettings extends ChangeNotifier {
   }) : _cymaticsEnabled = cymaticsEnabled,
        _applyToText = applyToText,
        _applyToImage = applyToImage,
+       _applyToBackground = applyToBackground,
        _intensity = intensity,
        _frequency = frequency,
        _amplitude = amplitude,
@@ -185,6 +198,7 @@ class CymaticsSettings extends ChangeNotifier {
       'cymaticsEnabled': _cymaticsEnabled,
       'applyToText': _applyToText,
       'applyToImage': _applyToImage,
+      'applyToBackground': _applyToBackground,
       'intensity': _intensity,
       'frequency': _frequency,
       'amplitude': _amplitude,
@@ -203,6 +217,7 @@ class CymaticsSettings extends ChangeNotifier {
       cymaticsEnabled: map['cymaticsEnabled'] ?? false,
       applyToText: map['applyToText'] ?? false,
       applyToImage: map['applyToImage'] ?? true,
+      applyToBackground: map['applyToBackground'] ?? true,
       intensity: map['intensity'] ?? 0.5,
       frequency: map['frequency'] ?? 0.5,
       amplitude: map['amplitude'] ?? 0.5,
@@ -226,6 +241,7 @@ class CymaticsSettings extends ChangeNotifier {
       cymaticsEnabled: _cymaticsEnabled,
       applyToText: _applyToText,
       applyToImage: _applyToImage,
+      applyToBackground: _applyToBackground,
       intensity: _intensity,
       frequency: _frequency,
       amplitude: _amplitude,
