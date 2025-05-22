@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 
 import '../models/effect_settings.dart';
 import '../models/music_settings.dart';
@@ -44,10 +45,16 @@ class MusicPanel extends StatefulWidget {
 }
 
 class _MusicPanelState extends State<MusicPanel> {
-  // Add a simple log method
-  void _log(String message, {LogLevel level = LogLevel.info}) {
-    // Use the EffectLogger to log messages
-    EffectLogger.log('[MusicPanel] $message', level: level);
+  @override
+  void initState() {
+    super.initState();
+    // No timers needed - UI will update when settings change
+  }
+
+  @override
+  void dispose() {
+    // No timer to clean up
+    super.dispose();
   }
 
   // Format duration as MM:SS
@@ -58,9 +65,25 @@ class _MusicPanelState extends State<MusicPanel> {
     return '$minutes:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 
+  // Add a simple log method
+  void _log(String message, {LogLevel level = LogLevel.info}) {
+    // Use the EffectLogger to log messages
+    EffectLogger.log('[MusicPanel] $message', level: level);
+  }
+
   @override
   Widget build(BuildContext context) {
     final musicSettings = widget.settings.musicSettings;
+
+    // CRITICAL FIX: Get the actual player state if available, otherwise use UI state
+    bool isPlaying = musicSettings.isPlaying;
+    if (EffectControls.debugMusicControllerState != null) {
+      final debugState = EffectControls.debugMusicControllerState!();
+      // Look for the player state first, which is the actual truth
+      if (debugState.containsKey('player_state')) {
+        isPlaying = debugState['player_state'].toString().contains('playing');
+      }
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -199,7 +222,7 @@ class _MusicPanelState extends State<MusicPanel> {
               IconButton(
                 iconSize: 48,
                 icon: Icon(
-                  musicSettings.isPlaying
+                  isPlaying // Use the forced state variable
                       ? Icons.pause_circle_filled
                       : Icons.play_circle_filled,
                 ),
@@ -208,22 +231,49 @@ class _MusicPanelState extends State<MusicPanel> {
                         !widget.settings.musicEnabled
                     ? null
                     : () {
-                        // Update the state before calling the method
-                        final updatedSettings = ShaderSettings.fromMap(
-                          widget.settings.toMap(),
+                        // Debug logs for audioplayer state
+                        print(
+                          '👉 AUDIOPLAYER DEBUG LOGS - DIRECTLY FROM BUTTON PRESS',
                         );
-                        final bool shouldPlay = !musicSettings.isPlaying;
-                        updatedSettings.musicSettings.isPlaying = shouldPlay;
-                        widget.onSettingsChanged(updatedSettings);
+                        print('👉 UI isPlaying state: $isPlaying');
+                        print(
+                          '👉 Settings isPlaying state: ${musicSettings.isPlaying}',
+                        );
+                        print('👉 Track: ${musicSettings.currentTrack}');
+                        print('👉 Duration: ${musicSettings.duration}');
+                        print('👉 Position: ${musicSettings.playbackPosition}');
+                        print(
+                          '👉 Music enabled: ${widget.settings.musicEnabled}',
+                        );
 
-                        // Now directly call the play/pause method
-                        if (shouldPlay) {
-                          _log('Play button pressed, calling onPlay');
+                        if (EffectControls.debugMusicControllerState != null) {
+                          final debugState =
+                              EffectControls.debugMusicControllerState!();
+
+                          // Log all debug state keys and values
+                          print('👉 DETAILED AUDIOPLAYER STATE:');
+                          debugState.forEach((key, value) {
+                            print('👉  - $key: $value');
+                          });
+
+                          print('👉 ===============================');
+                        } else {
+                          print('👉 No debug state available');
+                          print('👉 ===============================');
+                        }
+
+                        // Now directly call the play/pause method based on current state
+                        if (!isPlaying) {
+                          print(
+                            '👉 Calling onPlay because isPlaying is currently false',
+                          );
                           if (widget.onPlay != null) {
                             widget.onPlay!();
                           }
                         } else {
-                          _log('Pause button pressed, calling onPause');
+                          print(
+                            '👉 Calling onPause because isPlaying is currently true',
+                          );
                           if (widget.onPause != null) {
                             widget.onPause!();
                           }
@@ -270,21 +320,78 @@ class _MusicPanelState extends State<MusicPanel> {
                   inactiveTrackColor: widget.sliderColor.withOpacity(0.3),
                   thumbColor: widget.sliderColor,
                 ),
-                child: Slider(
-                  value: musicSettings.duration > 0
-                      ? musicSettings.playbackPosition.clamp(
-                          0,
-                          musicSettings.duration,
-                        )
-                      : 0,
-                  min: 0,
-                  max: musicSettings.duration > 0
-                      ? musicSettings.duration
-                      : 100,
-                  onChanged: (double value) {
-                    if (widget.onSeek != null && musicSettings.duration > 0) {
-                      widget.onSeek!(value);
+                child: Builder(
+                  builder: (context) {
+                    // SIMPLIFIED: Use a single source of truth for duration and position
+                    double displayDuration = musicSettings.duration;
+                    double currentPosition = musicSettings.playbackPosition;
+
+                    // Only if we have debug state and no duration, try to get it from there
+                    if (displayDuration <= 0 &&
+                        EffectControls.debugMusicControllerState != null) {
+                      final debugState =
+                          EffectControls.debugMusicControllerState!();
+
+                      // Get duration from debug state if available
+                      if (debugState.containsKey('settings_duration') &&
+                          debugState['settings_duration'] is num &&
+                          (debugState['settings_duration'] as num) > 0) {
+                        displayDuration =
+                            (debugState['settings_duration'] as num).toDouble();
+                        if (kDebugMode) {
+                          print(
+                            '👉 Using debug state duration for slider: $displayDuration',
+                          );
+                        }
+                      } else if (debugState.containsKey('known_duration') &&
+                          debugState['known_duration'] is num &&
+                          (debugState['known_duration'] as num) > 0) {
+                        // Try to get duration from known_duration in debug state
+                        displayDuration = (debugState['known_duration'] as num)
+                            .toDouble();
+                        if (kDebugMode) {
+                          print(
+                            '👉 Using known cached duration from controller: $displayDuration',
+                          );
+                        }
+                      }
                     }
+
+                    // If we still don't have a duration, use a reasonable default
+                    // without any specific track hardcoding
+                    if (displayDuration <= 0) {
+                      displayDuration = 100.0; // Generic default
+                      if (kDebugMode) {
+                        print(
+                          '👉 Using generic slider default: $displayDuration',
+                        );
+                      }
+                    }
+
+                    // Clamp position to valid range to prevent slider errors
+                    currentPosition = currentPosition.clamp(
+                      0.0,
+                      displayDuration > 0 ? displayDuration : 100.0,
+                    );
+
+                    return Slider(
+                      value: currentPosition,
+                      min: 0,
+                      max: displayDuration > 0 ? displayDuration : 100,
+                      onChanged: (double value) {
+                        if (widget.onSeek != null && displayDuration > 0) {
+                          // Log seek attempt for debugging
+                          if (kDebugMode) {
+                            print(
+                              '👉 SEEKING: Attempting to seek to position: $value',
+                            );
+                          }
+
+                          // Call the seek function directly - the controller will handle UI updates
+                          widget.onSeek!(value);
+                        }
+                      },
+                    );
                   },
                 ),
               ),
@@ -293,15 +400,51 @@ class _MusicPanelState extends State<MusicPanel> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      musicSettings.duration > 0
-                          ? _formatDuration(musicSettings.playbackPosition)
-                          : '0:00',
+                    // Current position display
+                    Builder(
+                      builder: (context) {
+                        // Get the position from settings - keep it simple
+                        double position = musicSettings.playbackPosition;
+                        return Text(
+                          _formatDuration(position),
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        );
+                      },
                     ),
-                    Text(
-                      musicSettings.duration > 0
-                          ? _formatDuration(musicSettings.duration)
-                          : '0:00',
+
+                    // Total duration display
+                    Builder(
+                      builder: (context) {
+                        double displayDuration = musicSettings.duration;
+
+                        // Try to get duration from debug state if available
+                        if (displayDuration <= 0 &&
+                            EffectControls.debugMusicControllerState != null) {
+                          final debugState =
+                              EffectControls.debugMusicControllerState!();
+
+                          if (debugState.containsKey('settings_duration') &&
+                              debugState['settings_duration'] is num &&
+                              (debugState['settings_duration'] as num) > 0) {
+                            displayDuration =
+                                (debugState['settings_duration'] as num)
+                                    .toDouble();
+                          } else if (debugState.containsKey('known_duration') &&
+                              debugState['known_duration'] is num &&
+                              (debugState['known_duration'] as num) > 0) {
+                            displayDuration =
+                                (debugState['known_duration'] as num)
+                                    .toDouble();
+                          }
+                        }
+
+                        return Text(
+                          displayDuration > 0
+                              ? _formatDuration(displayDuration)
+                              : '0:00',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -359,22 +502,6 @@ class _MusicPanelState extends State<MusicPanel> {
                 widget.settings.toMap(),
               );
               updatedSettings.musicSettings.loop = value;
-              widget.onSettingsChanged(updatedSettings);
-            },
-          ),
-        ),
-
-        // Autoplay control
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: LabeledSwitch(
-            label: 'Autoplay',
-            value: musicSettings.autoplay,
-            onChanged: (value) {
-              final updatedSettings = ShaderSettings.fromMap(
-                widget.settings.toMap(),
-              );
-              updatedSettings.musicSettings.autoplay = value;
               widget.onSettingsChanged(updatedSettings);
             },
           ),

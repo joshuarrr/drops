@@ -40,8 +40,8 @@ extension TextLineExt on TextLine {
 }
 
 class EffectControls {
-  // Control logging verbosity
-  static bool enableLogging = true;
+  // Control logging verbosity - set this to false to disable logs
+  static bool enableLogging = false;
   static const String _logTag = 'EffectControls';
 
   // Custom log function that uses both dart:developer and debugPrint for visibility
@@ -75,6 +75,9 @@ class EffectControls {
   // Reference to the music controller
   static MusicController? _musicController;
 
+  // Debug function to provide information about the music controller state
+  static Map<String, dynamic> Function()? debugMusicControllerState;
+
   // Initialize music controller
   static void initMusicController({
     required ShaderSettings settings,
@@ -85,6 +88,43 @@ class EffectControls {
       settings: settings,
       onSettingsChanged: onSettingsChanged,
     );
+
+    // Initialize the debug function
+    debugMusicControllerState = () {
+      if (_musicController == null) {
+        return {'state': 'Not initialized', 'source': 'None'};
+      }
+
+      // Get the detailed player state information using the new method
+      try {
+        return _musicController!.getDebugInfo();
+      } catch (e) {
+        return {
+          'state': _musicController!.isPlaying() ? 'playing' : 'paused',
+          'source': _musicController!.currentTrack,
+          'duration': _musicController!
+              .getCurrentSettings()
+              .musicSettings
+              .duration,
+          'position': _musicController!
+              .getCurrentSettings()
+              .musicSettings
+              .playbackPosition,
+          'enabled': _musicController!.getMusicEnabledState(),
+          'error': e.toString(),
+        };
+      }
+    };
+  }
+
+  // Method for cleaning up music resources during hot restart
+  static void cleanupMusicResources() {
+    _log('Cleaning up music resources for hot restart');
+    if (_musicController != null) {
+      pauseMusic();
+      _musicController?.dispose();
+      _musicController = null;
+    }
   }
 
   // Function to load music tracks from assets folder or directory

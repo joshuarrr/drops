@@ -7,7 +7,7 @@ class MusicSettings extends ChangeNotifier {
   String _currentTrack = '';
   double _volume = 0.8;
   bool _loop = false;
-  bool _autoplay = false;
+  bool _autoplay = true;
   double _playbackPosition = 0.0;
   double _duration = 0.0;
   bool _isPlaying = false;
@@ -17,7 +17,7 @@ class MusicSettings extends ChangeNotifier {
   AnimationOptions _musicAnimOptions = AnimationOptions();
 
   // Logging flag
-  static bool enableLogging = false;
+  static bool enableLogging = true;
 
   // Getters
   bool get musicEnabled => _musicEnabled;
@@ -75,8 +75,9 @@ class MusicSettings extends ChangeNotifier {
   set playbackPosition(double value) {
     if (_playbackPosition != value) {
       _playbackPosition = value;
-      // Don't notify listeners for position updates
-      // as they happen frequently during playback
+      // Notify listeners for position updates
+      // This is necessary for the UI to reflect position changes
+      notifyListeners();
     }
   }
 
@@ -120,7 +121,7 @@ class MusicSettings extends ChangeNotifier {
     String currentTrack = '',
     double volume = 0.8,
     bool loop = false,
-    bool autoplay = false,
+    bool autoplay = true,
     double playbackPosition = 0.0,
     double duration = 0.0,
     bool isPlaying = false,
@@ -156,7 +157,7 @@ class MusicSettings extends ChangeNotifier {
       currentTrack: map['currentTrack'] ?? '',
       volume: map['volume'] ?? 0.8,
       loop: map['loop'] ?? false,
-      autoplay: map['autoplay'] ?? false,
+      autoplay: map['autoplay'] ?? true,
       musicAnimated: map['musicAnimated'] ?? false,
       musicAnimOptions: map['musicAnimOptions'] != null
           ? AnimationOptions.fromMap(

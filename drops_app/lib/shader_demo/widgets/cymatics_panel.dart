@@ -6,7 +6,9 @@ import '../controllers/effect_controller.dart';
 import '../models/animation_options.dart';
 import 'labeled_slider.dart';
 import 'labeled_switch.dart';
-import 'panel_header.dart';
+import 'enhanced_panel_header.dart';
+import '../models/presets_manager.dart';
+import '../views/effect_controls.dart';
 
 class CymaticsPanel extends StatefulWidget {
   final ShaderSettings settings;
@@ -39,6 +41,108 @@ class _CymaticsPanelState extends State<CymaticsPanel> {
     widget.onSettingsChanged(updatedSettings);
   }
 
+  // Static methods for preset management
+  static Map<ShaderAspect, Map<String, dynamic>> _cachedPresets = {};
+  static int _refreshCounter = 0;
+
+  static Future<Map<String, dynamic>> _loadPresetsForAspect(
+    ShaderAspect aspect,
+  ) async {
+    if (!_cachedPresets.containsKey(aspect)) {
+      _cachedPresets[aspect] = await PresetsManager.getPresetsForAspect(aspect);
+    }
+    return _cachedPresets[aspect] ?? {};
+  }
+
+  static void _refreshPresets() {
+    _refreshCounter++;
+    EffectControls.refreshPresets();
+  }
+
+  static Future<bool> _deletePresetAndUpdate(
+    ShaderAspect aspect,
+    String name,
+  ) async {
+    final success = await PresetsManager.deletePreset(aspect, name);
+    if (success) {
+      _cachedPresets[aspect] = await PresetsManager.getPresetsForAspect(aspect);
+    }
+    return success;
+  }
+
+  void _resetCymatics() {
+    final updatedSettings = ShaderSettings.fromMap(widget.settings.toMap());
+
+    // Create a new CymaticsSettings instance with default values
+    final defaultCymaticsSettings = CymaticsSettings(
+      applyToImage: true,
+      applyToText: false,
+    );
+
+    // Use the constructor to update settings properly
+    final fixedSettings = ShaderSettings(
+      colorSettings: updatedSettings.colorSettings,
+      blurSettings: updatedSettings.blurSettings,
+      noiseSettings: updatedSettings.noiseSettings,
+      textfxSettings: updatedSettings.textfxSettings,
+      textLayoutSettings: updatedSettings.textLayoutSettings,
+      rainSettings: updatedSettings.rainSettings,
+      chromaticSettings: updatedSettings.chromaticSettings,
+      rippleSettings: updatedSettings.rippleSettings,
+      musicSettings: updatedSettings.musicSettings,
+      cymaticsSettings: defaultCymaticsSettings,
+    );
+
+    widget.onSettingsChanged(fixedSettings);
+  }
+
+  void _applyCymaticsPreset(Map<String, dynamic> presetData) {
+    final updatedSettings = ShaderSettings.fromMap(widget.settings.toMap());
+
+    if (presetData.containsKey('cymaticsSettings') &&
+        presetData['cymaticsSettings'] is Map<String, dynamic>) {
+      final cymaticsMap =
+          presetData['cymaticsSettings'] as Map<String, dynamic>;
+
+      // Create a new CymaticsSettings from the map
+      final updatedCymaticsSettings = CymaticsSettings.fromMap(cymaticsMap);
+
+      // Create a new ShaderSettings with the updated cymatics settings
+      final fixedSettings = ShaderSettings(
+        colorSettings: updatedSettings.colorSettings,
+        blurSettings: updatedSettings.blurSettings,
+        noiseSettings: updatedSettings.noiseSettings,
+        textfxSettings: updatedSettings.textfxSettings,
+        textLayoutSettings: updatedSettings.textLayoutSettings,
+        rainSettings: updatedSettings.rainSettings,
+        chromaticSettings: updatedSettings.chromaticSettings,
+        rippleSettings: updatedSettings.rippleSettings,
+        musicSettings: updatedSettings.musicSettings,
+        cymaticsSettings: updatedCymaticsSettings,
+      );
+
+      widget.onSettingsChanged(fixedSettings);
+      return;
+    }
+
+    widget.onSettingsChanged(updatedSettings);
+  }
+
+  Future<void> _saveCymaticsPreset(ShaderAspect aspect, String name) async {
+    final cymaticsSettings = widget.settings.cymaticsSettings;
+
+    Map<String, dynamic> presetData = {
+      'cymaticsSettings': cymaticsSettings.toMap(),
+    };
+
+    bool success = await PresetsManager.savePreset(aspect, name, presetData);
+
+    if (success) {
+      _cachedPresets[aspect] = await PresetsManager.getPresetsForAspect(aspect);
+      _refreshPresets();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final cymaticsSettings = widget.settings.cymaticsSettings;
@@ -46,57 +150,23 @@ class _CymaticsPanelState extends State<CymaticsPanel> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Panel header
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            'Cymatics Controls',
-            style: TextStyle(
-              color: widget.sliderColor,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-
-        const SizedBox(height: 16),
-
-        // Target selection (apply to text/image)
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Apply To:',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: LabeledSwitch(
-                      label: 'Image',
-                      value: cymaticsSettings.applyToImage,
-                      onChanged: (value) =>
-                          _updateSettings((s) => s.applyToImage = value),
-                    ),
-                  ),
-                  Expanded(
-                    child: LabeledSwitch(
-                      label: 'Text',
-                      value: cymaticsSettings.applyToText,
-                      onChanged: (value) =>
-                          _updateSettings((s) => s.applyToText = value),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+        // Enhanced panel header
+        EnhancedPanelHeader(
+          aspect: ShaderAspect.cymatics,
+          onPresetSelected: _applyCymaticsPreset,
+          onReset: _resetCymatics,
+          onSavePreset: _saveCymaticsPreset,
+          sliderColor: widget.sliderColor,
+          loadPresets: _loadPresetsForAspect,
+          deletePreset: _deletePresetAndUpdate,
+          refreshPresets: _refreshPresets,
+          refreshCounter: _refreshCounter,
+          applyToImage: cymaticsSettings.applyToImage,
+          applyToText: cymaticsSettings.applyToText,
+          onApplyToImageChanged: (value) =>
+              _updateSettings((s) => s.applyToImage = value),
+          onApplyToTextChanged: (value) =>
+              _updateSettings((s) => s.applyToText = value),
         ),
 
         const SizedBox(height: 16),

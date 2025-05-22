@@ -11,7 +11,8 @@ import 'custom_shader_widgets.dart';
 enum LogLevel { debug, info, warning, error }
 
 class EffectLogger {
-  static LogLevel currentLevel = LogLevel.info;
+  // Set to warning to filter out most logs except warnings and errors
+  static LogLevel currentLevel = LogLevel.warning;
   static bool enableEffectLogs = true;
   static const String _logTag = 'EffectController';
 

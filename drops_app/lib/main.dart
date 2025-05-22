@@ -11,6 +11,7 @@ import 'shader_demo/controllers/effect_controller.dart';
 import 'shader_demo/controllers/custom_shader_widgets.dart';
 import 'shader_demo/controllers/preset_initializer.dart';
 import 'theme/custom_fonts.dart';
+import 'shader_demo/views/effect_controls.dart';
 
 // Conditionally import web-specific code
 import 'theme/web_fonts.dart'
@@ -56,6 +57,18 @@ void main() async {
 
   // Initialize default shader presets
   await PresetInitializer.initializeDefaultPresets();
+
+  // Hot restart detection and cleanup
+  if (kDebugMode) {
+    // This will run whenever the app rebuilds, including during hot restarts
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Clean up music resources
+      print("Hot restart detected: Checking for audio resources to clean up");
+
+      // Use the public method to clean up music resources
+      EffectControls.cleanupMusicResources();
+    });
+  }
 
   runApp(
     ChangeNotifierProvider(

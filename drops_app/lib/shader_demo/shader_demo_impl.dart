@@ -173,6 +173,9 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
   late PageController _pageController;
   bool _isScrolling = false;
 
+  // Add a variable to track the current session's untitled preset ID
+  String? _currentUntitledPresetId;
+
   @override
   void initState() {
     super.initState();
@@ -227,6 +230,9 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Set up system UI to be fully immersive
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+
+      // Clean up any duplicate "Untitled" presets
+      _cleanupDuplicateUntitledPresets();
     });
 
     // Load all available presets
@@ -889,7 +895,6 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
 
   // Build parameter sliders for the selected aspect
   Widget _buildAspectParameterSliders() {
-    debugPrint("DEBUG: Building aspect parameter sliders");
     final theme = Theme.of(context);
     final Color sliderColor = theme.colorScheme.onSurface;
 
@@ -1437,8 +1442,8 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
   // Add a method to save the current edited state as an untitled preset
   Future<ShaderPreset?> _saveUntitledPreset() async {
     try {
-      // Generate a name like "Untitled 1", "Untitled 2", etc.
-      final presetName = await _generateUntitledName();
+      // Use a fixed name "Untitled" for the session preset
+      const String presetName = "Untitled";
 
       // CRITICAL FIX: Extract and log important settings that need to be directly accessible
       // Ensure we're getting the current values for margin and fillScreen
@@ -1458,43 +1463,83 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
         '  specificSettings keys: ${specificSettings.keys.join(', ')}',
       );
 
-      // Save as a new preset with the specific settings
-      final newPreset = await PresetController.savePreset(
-        name: presetName,
-        settings: _shaderSettings,
-        imagePath: _selectedImage,
-        previewKey: _previewKey,
-        specificSettings: specificSettings,
-      );
+      // Get all existing presets to check if "Untitled" already exists
+      final allPresets = await PresetController.getAllPresets();
+      final existingUntitledPreset = allPresets
+          .where((p) => p.name == presetName)
+          .toList();
 
-      debugPrint('PRESET SAVED: ${newPreset.name}');
-      if (newPreset.specificSettings != null) {
+      // If an "Untitled" preset already exists, update it instead of creating a new one
+      if (existingUntitledPreset.isNotEmpty) {
         debugPrint(
-          '  Has specificSettings: ${newPreset.specificSettings!.keys.join(', ')}',
+          'Found existing untitled preset - updating instead of creating new',
         );
-        if (newPreset.specificSettings!.containsKey('fitScreenMargin')) {
-          debugPrint(
-            '  margin set to: ${newPreset.specificSettings!['fitScreenMargin']}',
-          );
-        } else {
-          debugPrint('  NO margin in specificSettings!');
-        }
+        final preset = existingUntitledPreset.first;
+        _currentUntitledPresetId = preset.id;
+
+        // Update the existing preset
+        final updatedPreset = await _updatePresetWithImagePath(
+          id: preset.id,
+          settings: _shaderSettings,
+          imagePath: _selectedImage,
+          previewKey: _previewKey,
+        );
+
+        // Force reload of presets
+        setState(() {
+          _presetsLoaded = false;
+        });
+        await _loadAvailablePresets();
+
+        // Set this as the current preset
+        _currentPresetIndex = _availablePresets.indexWhere(
+          (p) => p.id == updatedPreset.id,
+        );
+
+        return updatedPreset;
       } else {
-        debugPrint('  NO specificSettings on saved preset!');
+        debugPrint('No existing untitled preset found - creating new');
+        // Save as a new preset with the specific settings
+        final newPreset = await PresetController.savePreset(
+          name: presetName,
+          settings: _shaderSettings,
+          imagePath: _selectedImage,
+          previewKey: _previewKey,
+          specificSettings: specificSettings,
+        );
+
+        // Store the ID of this untitled preset for future updates
+        _currentUntitledPresetId = newPreset.id;
+
+        debugPrint('PRESET SAVED: ${newPreset.name}');
+        if (newPreset.specificSettings != null) {
+          debugPrint(
+            '  Has specificSettings: ${newPreset.specificSettings!.keys.join(', ')}',
+          );
+          if (newPreset.specificSettings!.containsKey('fitScreenMargin')) {
+            debugPrint(
+              '  margin set to: ${newPreset.specificSettings!['fitScreenMargin']}',
+            );
+          } else {
+            debugPrint('  NO margin in specificSettings!');
+          }
+        } else {
+          debugPrint('  NO specificSettings on saved preset!');
+        }
+
+        // Force reload of presets to include the new one
+        setState(() {
+          _presetsLoaded = false;
+        });
+        await _loadAvailablePresets();
+
+        // Set this new preset as the current one
+        _currentPresetIndex = _availablePresets.indexWhere(
+          (p) => p.id == newPreset.id,
+        );
+
+        return newPreset;
       }
-
-      // Force reload of presets to include the new one
-      setState(() {
-        _presetsLoaded = false;
-      });
-      await _loadAvailablePresets();
-
-      // Set this new preset as the current one
-      _currentPresetIndex = _availablePresets.indexWhere(
-        (p) => p.id == newPreset.id,
-      );
-
-      return newPreset;
     } catch (e, stack) {
       debugPrint('Error saving untitled preset: $e');
       debugPrint(stack.toString());
@@ -1502,97 +1547,146 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     }
   }
 
-  // Generate a unique name for untitled presets
-  Future<String> _generateUntitledName() async {
-    final presets = await PresetController.getAllPresets();
+  // Add a helper method to handle updating a preset with image path changes
+  Future<ShaderPreset> _updatePresetWithImagePath({
+    required String id,
+    required ShaderSettings settings,
+    required String imagePath,
+    required GlobalKey previewKey,
+  }) async {
+    // Get the existing preset data
+    final prefs = await SharedPreferences.getInstance();
+    final presetJson = prefs.getString('shader_preset_$id');
 
-    // Find all preset names that match the pattern "Untitled N"
-    final regex = RegExp(r'^Untitled (\d+)$');
-    final usedNumbers = <int>[];
-
-    for (final preset in presets) {
-      final match = regex.firstMatch(preset.name);
-      if (match != null) {
-        final number = int.tryParse(match.group(1) ?? '');
-        if (number != null) {
-          usedNumbers.add(number);
-        }
-      }
+    if (presetJson == null) {
+      throw Exception('Preset not found');
     }
 
-    // Find the next available number
-    int nextNumber = 1;
-    if (usedNumbers.isNotEmpty) {
-      usedNumbers.sort();
-      // Find first gap or use the next number after the highest
-      for (int i = 0; i < usedNumbers.length; i++) {
-        if (i + 1 < usedNumbers[i]) {
-          nextNumber = i + 1;
-          break;
-        }
-      }
-      if (nextNumber == 1) {
-        // No gaps found, use next number
-        nextNumber = usedNumbers.last + 1;
-      }
+    // Parse the preset
+    final presetMap = jsonDecode(presetJson) as Map<String, dynamic>;
+    final existing = ShaderPreset.fromMap(presetMap);
+
+    // Extract current margin and fillScreen values to ensure they're preserved
+    Map<String, dynamic> specificSettings = {};
+
+    // Preserve existing specificSettings if available
+    if (existing.specificSettings != null) {
+      specificSettings.addAll(existing.specificSettings!);
     }
 
-    return 'Untitled $nextNumber';
+    // Update with current values to ensure they're preserved
+    specificSettings['fitScreenMargin'] =
+        settings.textLayoutSettings.fitScreenMargin;
+    specificSettings['fillScreen'] = settings.fillScreen;
+
+    debugPrint('Updating preset with specificSettings:');
+    debugPrint('  margin: ${settings.textLayoutSettings.fitScreenMargin}');
+    debugPrint('  fillScreen: ${settings.fillScreen}');
+
+    // Create updated preset with new settings, image path and specific settings
+    final updatedPreset = existing.copyWith(
+      settings: settings,
+      imagePath: imagePath,
+      specificSettings: specificSettings,
+    );
+
+    // Call the original updatePreset method to handle thumbnail capture and saving
+    await PresetController.updatePreset(
+      id: id,
+      settings: settings,
+      previewKey: previewKey,
+    );
+
+    // Save the updated preset with new image path and specific settings
+    try {
+      final Map<String, dynamic> updatedMap = updatedPreset.toMap();
+      final updatedJson = jsonEncode(updatedMap);
+      await prefs.setString('shader_preset_$id', updatedJson);
+      return updatedPreset;
+    } catch (e) {
+      debugPrint('Error updating preset with image path: $e');
+      throw Exception('Failed to update preset with new image path: $e');
+    }
   }
 
   // Immediately save current changes to either the current preset or create a new untitled preset
   Future<void> _saveChangesImmediately() async {
     try {
-      // If we don't have a preset selected or if we have unsaved changes, create a new untitled preset
-      if (_currentPresetIndex < 0 ||
-          _currentPresetIndex >= _availablePresets.length ||
-          _hasUnsavedChanges()) {
-        // Debug log
-        debugPrint('SAVING IMMEDIATE CHANGES TO NEW UNTITLED PRESET');
+      // If we have a current preset selected and no unsaved changes, nothing to do
+      if (_currentPresetIndex >= 0 &&
+          _currentPresetIndex < _availablePresets.length &&
+          !_hasUnsavedChanges()) {
+        debugPrint('No changes detected, skipping save');
+        return;
+      }
 
-        // Create a new untitled preset
-        final newPreset = await _saveUntitledPreset();
-        if (newPreset != null) {
-          _currentPresetIndex = _availablePresets.indexWhere(
-            (p) => p.id == newPreset.id,
+      // If we already have a current untitled preset for this session, update it
+      if (_currentUntitledPresetId != null) {
+        debugPrint(
+          'UPDATING EXISTING UNTITLED PRESET: $_currentUntitledPresetId',
+        );
+
+        // Find the preset with this ID
+        final existingPresetIndex = _availablePresets.indexWhere(
+          (p) => p.id == _currentUntitledPresetId,
+        );
+
+        if (existingPresetIndex >= 0) {
+          final existingPreset = _availablePresets[existingPresetIndex];
+
+          // Update the existing untitled preset
+          await _updatePresetWithImagePath(
+            id: existingPreset.id,
+            settings: _shaderSettings,
+            imagePath: _selectedImage,
+            previewKey: _previewKey,
           );
+
+          // Set as current preset
+          _currentPresetIndex = existingPresetIndex;
 
           // Clear unsaved settings since we've now saved to a preset
           _unsavedSettings = null;
           _unsavedImage = null;
           _unsavedCategory = null;
 
-          debugPrint('Created new preset with index: $_currentPresetIndex');
-
-          // Make sure the specificSettings include current margin and fillScreen values
-          if (newPreset.specificSettings != null) {
-            final currentMargin =
-                _shaderSettings.textLayoutSettings.fitScreenMargin;
-            final currentFillScreen = _shaderSettings.fillScreen;
-
-            debugPrint(
-              'Saved margin: $currentMargin, fillScreen: $currentFillScreen',
-            );
-          }
+          // Force reload presets to ensure we have the latest version
+          setState(() {
+            _presetsLoaded = false;
+          });
+          await _loadAvailablePresets();
+          return;
         }
-      } else {
-        // We have an existing preset, update it if necessary
-        final currentPreset = _availablePresets[_currentPresetIndex];
+      }
 
-        debugPrint('UPDATING EXISTING PRESET: ${currentPreset.name}');
+      // If we don't have a current untitled preset for this session, create one
+      debugPrint('CREATING NEW UNTITLED PRESET FOR SESSION');
+      final newPreset = await _saveUntitledPreset();
+      if (newPreset != null) {
+        // Store the ID of the untitled preset for this session
+        _currentUntitledPresetId = newPreset.id;
 
-        // Update the existing preset with current settings
-        await PresetController.updatePreset(
-          id: currentPreset.id,
-          settings: _shaderSettings,
-          previewKey: _previewKey,
+        _currentPresetIndex = _availablePresets.indexWhere(
+          (p) => p.id == newPreset.id,
         );
 
-        // Force reload presets to ensure we have the latest version
-        setState(() {
-          _presetsLoaded = false;
-        });
-        await _loadAvailablePresets();
+        // Clear unsaved settings since we've now saved to a preset
+        _unsavedSettings = null;
+        _unsavedImage = null;
+        _unsavedCategory = null;
+
+        debugPrint('Created new preset with index: $_currentPresetIndex');
+
+        // Make sure the specificSettings include current margin and fillScreen values
+        if (newPreset.specificSettings != null) {
+          final currentMargin =
+              _shaderSettings.textLayoutSettings.fitScreenMargin;
+          final currentFillScreen = _shaderSettings.fillScreen;
+
+          debugPrint(
+            'Saved margin: $currentMargin, fillScreen: $currentFillScreen',
+          );
+        }
       }
     } catch (e) {
       debugPrint('Error saving changes immediately: $e');
@@ -1668,5 +1762,53 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
 
     // If we reach here, we consider settings as not significantly changed
     return false;
+  }
+
+  // Method to find and clean up duplicate "Untitled" presets
+  Future<void> _cleanupDuplicateUntitledPresets() async {
+    try {
+      // Get all existing presets
+      final allPresets = await PresetController.getAllPresets();
+
+      // Find all presets named "Untitled"
+      final untitledPresets = allPresets
+          .where((p) => p.name == "Untitled")
+          .toList();
+
+      debugPrint('Found ${untitledPresets.length} "Untitled" presets');
+
+      // If we have more than one, keep only the most recent one
+      if (untitledPresets.length > 1) {
+        // Sort by creation date (newest first)
+        untitledPresets.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+        // Keep the first one (most recent)
+        final keepPreset = untitledPresets.first;
+
+        // Store its ID as the current session's untitled preset
+        _currentUntitledPresetId = keepPreset.id;
+
+        debugPrint('Keeping most recent "Untitled" preset: ${keepPreset.id}');
+
+        // Delete all others
+        for (int i = 1; i < untitledPresets.length; i++) {
+          final toDelete = untitledPresets[i];
+          debugPrint('Deleting duplicate "Untitled" preset: ${toDelete.id}');
+          await PresetController.deletePreset(toDelete.id);
+        }
+
+        // Force reload of presets
+        setState(() {
+          _presetsLoaded = false;
+        });
+        await _loadAvailablePresets();
+      } else if (untitledPresets.length == 1) {
+        // If we have exactly one, store its ID
+        _currentUntitledPresetId = untitledPresets.first.id;
+        debugPrint('Found one "Untitled" preset: ${untitledPresets.first.id}');
+      }
+    } catch (e) {
+      debugPrint('Error cleaning up duplicate presets: $e');
+    }
   }
 }
