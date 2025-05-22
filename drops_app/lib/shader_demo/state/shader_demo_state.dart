@@ -147,20 +147,9 @@ class ShaderDemoState {
     // Apply all settings from the preset
     shaderSettings = preset.settings;
 
-    // Apply margin from specificSettings if available
-    if (preset.specificSettings != null) {
-      // Apply margin setting if available
-      if (preset.specificSettings!.containsKey('fitScreenMargin')) {
-        shaderSettings.textLayoutSettings.fitScreenMargin =
-            (preset.specificSettings!['fitScreenMargin'] as num).toDouble();
-      }
-
-      // Apply fillScreen setting if available
-      if (preset.specificSettings!.containsKey('fillScreen')) {
-        shaderSettings.fillScreen =
-            preset.specificSettings!['fillScreen'] as bool;
-      }
-    }
+    // Apply margin and fillScreen using consistent helper methods
+    shaderSettings.textLayoutSettings.fitScreenMargin = preset.getMargin();
+    shaderSettings.fillScreen = preset.getFillScreen();
 
     selectedImage = preset.imagePath;
 

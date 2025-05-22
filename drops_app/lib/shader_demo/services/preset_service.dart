@@ -32,18 +32,13 @@ class PresetService {
       // Use a fixed name "Untitled" for the session preset
       const String presetName = "Untitled";
 
-      // Extract important settings that need to be directly accessible
-      final double currentMargin = settings.textLayoutSettings.fitScreenMargin;
-      final bool currentFillScreen = settings.fillScreen;
-
-      // Use provided specificSettings or create a new one with default values
+      // Create specific settings with current values if not provided
       final Map<String, dynamic> actualSpecificSettings =
           specificSettings ??
-          {'fillScreen': currentFillScreen, 'fitScreenMargin': currentMargin};
-
-      EffectLogger.log(
-        'Saving untitled preset with margin: ${actualSpecificSettings['fitScreenMargin']}, fillScreen: ${actualSpecificSettings['fillScreen']}',
-      );
+          {
+            'fillScreen': settings.fillScreen,
+            'fitScreenMargin': settings.textLayoutSettings.fitScreenMargin,
+          };
 
       // Get all existing presets to check if "Untitled" already exists
       final allPresets = await PresetController.getAllPresets();
@@ -108,7 +103,7 @@ class PresetService {
       throw Exception('Preset not found: $id');
     }
 
-    // Extract current margin and fillScreen values to ensure they're preserved
+    // Merge existing specificSettings with new ones
     Map<String, dynamic> updatedSpecificSettings = {};
 
     // Preserve existing specificSettings if available
@@ -121,14 +116,10 @@ class PresetService {
       updatedSpecificSettings.addAll(specificSettings);
     }
 
-    // Always ensure critical values are set
+    // Always ensure critical values are set from current settings
     updatedSpecificSettings['fitScreenMargin'] =
         settings.textLayoutSettings.fitScreenMargin;
     updatedSpecificSettings['fillScreen'] = settings.fillScreen;
-
-    EffectLogger.log(
-      'Updating preset with specific settings: margin=${updatedSpecificSettings['fitScreenMargin']}, fillScreen=${updatedSpecificSettings['fillScreen']}',
-    );
 
     // Update the preset using the new method that accepts imagePath and specificSettings
     final updatedPreset = await PresetController.updatePreset(

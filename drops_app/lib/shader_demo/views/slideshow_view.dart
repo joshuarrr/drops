@@ -64,30 +64,14 @@ class SlideshowView extends StatelessWidget {
     // Create a deep copy of the settings to avoid modification issues
     final presetSettings = preset.settings.copy();
 
-    // Extract margin and fillScreen settings with a single log to avoid loops
-    double margin = ShaderDemoState.defaultMargin;
-    bool fillScreen = ShaderDemoState.defaultFillScreen;
+    // Get margin and fillScreen using the helper methods
+    double margin = preset.getMargin();
+    bool fillScreen = preset.getFillScreen();
 
-    // Check if we have specificSettings and extract values without repeated logging
-    if (preset.specificSettings != null) {
-      if (preset.specificSettings!.containsKey('fitScreenMargin')) {
-        margin = (preset.specificSettings!['fitScreenMargin'] as num)
-            .toDouble();
-      }
-
-      if (preset.specificSettings!.containsKey('fillScreen')) {
-        fillScreen = preset.specificSettings!['fillScreen'] as bool;
-      }
-
-      // Log once with consolidated information
-      debugPrint(
-        'Using specificSettings - margin: $margin, fillScreen: $fillScreen',
-      );
-    } else {
-      debugPrint(
-        'No specificSettings found - using defaults - margin: $margin, fillScreen: $fillScreen',
-      );
-    }
+    // Log once with consolidated information
+    debugPrint(
+      'Using specificSettings - margin: $margin, fillScreen: $fillScreen',
+    );
 
     // Apply the settings directly
     presetSettings.fillScreen = fillScreen;

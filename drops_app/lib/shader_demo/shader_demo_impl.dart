@@ -462,16 +462,12 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
       // First save current shader settings to shared preferences
       _state.saveShaderSettings();
 
-      // Force save with proper margin and fillScreen values to ensure they're preserved
+      // Store current values in specificSettings to ensure they're preserved
       final Map<String, dynamic> specificSettings = {
         'fillScreen': _state.shaderSettings.fillScreen,
         'fitScreenMargin':
             _state.shaderSettings.textLayoutSettings.fitScreenMargin,
       };
-
-      logging.EffectLogger.log(
-        'Saving current settings before entering slideshow - margin: ${specificSettings['fitScreenMargin']}, fillScreen: ${specificSettings['fillScreen']}',
-      );
 
       // Save current state as untitled preset
       final newPreset = await PresetService.saveUntitledPreset(
@@ -606,43 +602,10 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     // Check if this preset has a sort method that should be applied
     PresetSortMethod? sortMethodToApply = preset.sortMethod;
 
-    // Log the specificSettings before applying them
-    if (preset.specificSettings != null) {
-      logging.EffectLogger.log(
-        "Preset '${preset.name}' specificSettings: ${preset.specificSettings!.keys.join(', ')}",
-      );
-
-      if (preset.specificSettings!.containsKey('fitScreenMargin')) {
-        logging.EffectLogger.log(
-          "Preset margin: ${preset.specificSettings!['fitScreenMargin']}",
-        );
-      }
-
-      if (preset.specificSettings!.containsKey('fillScreen')) {
-        logging.EffectLogger.log(
-          "Preset fillScreen: ${preset.specificSettings!['fillScreen']}",
-        );
-      }
-    } else {
-      logging.EffectLogger.log(
-        "Preset '${preset.name}' has NO specificSettings",
-      );
-    }
-
-    logging.EffectLogger.log(
-      "Applying preset '${preset.name}' with text enabled: ${preset.settings.textLayoutSettings.textEnabled}",
-    );
-
     // Apply the preset using our state manager
     setState(() {
       _state.applyPreset(preset, showControlsAfter: showControls);
     });
-
-    // Verify that the margin was applied correctly
-    logging.EffectLogger.log(
-      "After applying preset: margin=${_state.shaderSettings.textLayoutSettings.fitScreenMargin}, " +
-          "fillScreen=${_state.shaderSettings.fillScreen}",
-    );
 
     // Force controller to restart animation to ensure effects are visible
     _controller.reset();

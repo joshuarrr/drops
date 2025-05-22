@@ -58,6 +58,26 @@ class ShaderPreset {
     }());
   }
 
+  /// Get margin value with consistent fallback
+  double getMargin() {
+    if (specificSettings != null &&
+        specificSettings!.containsKey('fitScreenMargin')) {
+      return (specificSettings!['fitScreenMargin'] as num).toDouble();
+    }
+    // Default to settings value if no specific override
+    return settings.textLayoutSettings.fitScreenMargin;
+  }
+
+  /// Get fillScreen value with consistent fallback
+  bool getFillScreen() {
+    if (specificSettings != null &&
+        specificSettings!.containsKey('fillScreen')) {
+      return specificSettings!['fillScreen'] as bool;
+    }
+    // Default to settings value if no specific override
+    return settings.fillScreen;
+  }
+
   /// Create a map representation for storage
   Map<String, dynamic> toMap() {
     try {
