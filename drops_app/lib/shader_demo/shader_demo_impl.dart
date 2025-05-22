@@ -172,6 +172,13 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     try {
       final tracks = await AssetService.loadMusicTracks();
 
+      // CRITICAL FIX: Update the shared tracks list in EffectControls
+      EffectControls.musicTracks = tracks;
+
+      setState(() {
+        // This will trigger a UI update with the new tracks
+      });
+
       if (tracks.isNotEmpty) {
         // Select the first track by default but don't play it if music is disabled
         final firstTrack = tracks[0];
@@ -188,10 +195,15 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
           _state.shaderSettings = updatedSettings;
         });
 
-        // Only select the track, our modified selectMusicTrack will
-        // check if music is enabled before playing
+        // CRITICAL FIX: Make sure the track is properly selected even if music is disabled
         Future.microtask(() {
+          // Call the select track method which properly handles the track selection
           EffectControls.selectMusicTrack(firstTrack);
+
+          // Only play if music is enabled
+          if (_state.shaderSettings.musicEnabled) {
+            EffectControls.playMusic();
+          }
         });
       }
     } catch (e) {
@@ -832,7 +844,13 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                                   .musicSettings
                                   .currentTrack
                                   .isNotEmpty) {
-                            // When music is enabled and there's a track selected but not playing, start playback
+                            // CRITICAL FIX: When music is enabled and there's a track selected but not playing,
+                            // first update state to ensure we have a valid track
+                            EffectControls.selectMusicTrack(
+                              _state.shaderSettings.musicSettings.currentTrack,
+                            );
+
+                            // Now play the track
                             EffectControls.playMusic();
                           }
                           break;

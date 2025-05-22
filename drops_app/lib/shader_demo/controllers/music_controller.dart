@@ -394,6 +394,15 @@ class MusicController {
       await _audioPlayer.setVolume(_settings.musicSettings.volume);
       _log('Set volume to: ${_settings.musicSettings.volume}');
 
+      // CRITICAL FIX: Force reset _currentSource if source doesn't match track
+      if (_currentSource == null ||
+          (_currentSource.toString() != trackPath &&
+              !_currentSource.toString().contains(
+                trackPath.replaceFirst('assets/', ''),
+              ))) {
+        _currentSource = null;
+      }
+
       // Check if we need to create a new source
       Source? source = _currentSource;
       if (source == null) {
@@ -819,8 +828,7 @@ class MusicController {
       updatedSettings.musicSettings.duration = previousDuration;
     }
 
-    // Only set isPlaying to false if we're changing tracks
-    // If it's the same track and was playing, we'll restart it
+    // CRITICAL FIX: Make sure the isPlaying state is set to false until we actually start playing
     updatedSettings.musicSettings.isPlaying = false;
 
     // Store the changes locally and notify listeners
@@ -845,13 +853,7 @@ class MusicController {
     if (wasPlaying || (!sameTrack && _settings.musicSettings.autoplay)) {
       try {
         _log('Attempting to play track: $trackPath');
-        // Set isPlaying to true before playing to ensure UI reflects correct state
-        final playSettings = ShaderSettings.fromMap(_settings.toMap());
-        playSettings.musicSettings.isPlaying = true;
-        _settings = playSettings;
-        onSettingsChanged(playSettings);
-
-        // Now actually play
+        // CRITICAL FIX: Set isPlaying to true only after successful playback
         await play();
       } catch (e) {
         _log('Error playing track after selection: $e', level: LogLevel.error);

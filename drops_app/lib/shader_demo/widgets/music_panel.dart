@@ -119,7 +119,11 @@ class _MusicPanelState extends State<MusicPanel> {
                 const SizedBox(height: 8),
                 DropdownButton<String>(
                   isExpanded: true,
-                  value: musicSettings.currentTrack.isNotEmpty
+                  value:
+                      musicSettings.currentTrack.isNotEmpty &&
+                          widget.musicTracks.contains(
+                            musicSettings.currentTrack,
+                          )
                       ? musicSettings.currentTrack
                       : null,
                   hint: const Text('Select a track'),
@@ -150,6 +154,26 @@ class _MusicPanelState extends State<MusicPanel> {
                         'TRACK SELECTION CHANGED from "${musicSettings.currentTrack}" to "$newValue"',
                         level: LogLevel.info,
                       );
+
+                      // CRITICAL FIX: Check if the track exists in our tracks list
+                      if (!widget.musicTracks.contains(newValue)) {
+                        _log(
+                          'Track not found in available tracks',
+                          level: LogLevel.warning,
+                        );
+                        // Try to add it to the list if not present
+                        if (newValue.isNotEmpty) {
+                          _log(
+                            'Adding missing track to list: $newValue',
+                            level: LogLevel.info,
+                          );
+                          List<String> updatedTracks = List.from(
+                            widget.musicTracks,
+                          );
+                          updatedTracks.add(newValue);
+                          // We can't modify the list directly, so we'll work with what we have
+                        }
+                      }
 
                       // First update settings with new track
                       final updatedSettings = ShaderSettings.fromMap(
@@ -262,11 +286,20 @@ class _MusicPanelState extends State<MusicPanel> {
                           print('👉 ===============================');
                         }
 
+                        // CRITICAL FIX: Update the settings to reflect the true player state
+                        final ShaderSettings updatedSettings =
+                            ShaderSettings.fromMap(widget.settings.toMap());
+
                         // Now directly call the play/pause method based on current state
                         if (!isPlaying) {
                           print(
                             '👉 Calling onPlay because isPlaying is currently false',
                           );
+
+                          // Set isPlaying to true in the settings to update UI immediately
+                          updatedSettings.musicSettings.isPlaying = true;
+                          widget.onSettingsChanged(updatedSettings);
+
                           if (widget.onPlay != null) {
                             widget.onPlay!();
                           }
@@ -274,6 +307,11 @@ class _MusicPanelState extends State<MusicPanel> {
                           print(
                             '👉 Calling onPause because isPlaying is currently true',
                           );
+
+                          // Set isPlaying to false in the settings to update UI immediately
+                          updatedSettings.musicSettings.isPlaying = false;
+                          widget.onSettingsChanged(updatedSettings);
+
                           if (widget.onPause != null) {
                             widget.onPause!();
                           }

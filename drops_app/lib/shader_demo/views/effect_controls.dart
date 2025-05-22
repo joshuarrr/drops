@@ -240,6 +240,15 @@ class EffectControls {
       track = musicTracks[0];
     }
 
+    // CRITICAL FIX: Make sure we have a valid track in musicTracks
+    if (musicTracks.isEmpty) {
+      _log(
+        'Music tracks list is empty, trying to add current track',
+        level: LogLevel.warning,
+      );
+      musicTracks.add(track);
+    }
+
     // Check the current musicEnabled state in the copy we have access to
     final bool musicEnabled = _musicController!.getMusicEnabledState();
     final bool wasPlaying = _musicController!.isPlaying();
@@ -247,6 +256,11 @@ class EffectControls {
     _log(
       'Selecting track: $track (music enabled: $musicEnabled, was playing: $wasPlaying)',
     );
+
+    // CRITICAL FIX: Always update settings with the current track first
+    final updatedSettings = _musicController!.getCurrentSettings();
+    updatedSettings.musicSettings.currentTrack = track;
+    _musicController!.onSettingsChanged(updatedSettings);
 
     if (musicEnabled) {
       // If music is enabled, fully switch tracks (will stop current and play new)
