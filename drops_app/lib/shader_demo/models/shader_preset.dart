@@ -45,22 +45,14 @@ class ShaderPreset {
     this.isHiddenFromSlideshow = false,
     this.specificSettings,
   }) {
-    // Debug print to track preset creation, but only in debug mode and only with essential info
+    // Only log preset creation when it has specific settings
+    // to avoid excessive logging during bulk loading
     assert(() {
-      debugPrint('Creating ShaderPreset: $name');
       if (specificSettings != null) {
+        debugPrint('Creating ShaderPreset: $name');
         debugPrint(
           '  with specificSettings: ${specificSettings!.keys.join(', ')}',
         );
-        // Only log these values during development as needed
-        // if (specificSettings!.containsKey('fitScreenMargin')) {
-        //   debugPrint('  margin: ${specificSettings!['fitScreenMargin']}');
-        // }
-        // if (specificSettings!.containsKey('fillScreen')) {
-        //   debugPrint('  fillScreen: ${specificSettings!['fillScreen']}');
-        // }
-      } else {
-        debugPrint('  NO specificSettings');
       }
       return true;
     }());
@@ -87,6 +79,7 @@ class ShaderPreset {
       // Add any specific settings that should be directly accessible
       if (specificSettings != null) {
         resultMap.addAll(specificSettings!);
+        // Only log when specificSettings exist to reduce log noise
         debugPrint('ShaderPreset.toMap: Adding specificSettings to $name:');
         if (specificSettings!.containsKey('fitScreenMargin')) {
           debugPrint('  margin: ${specificSettings!['fitScreenMargin']}');
@@ -94,8 +87,6 @@ class ShaderPreset {
         if (specificSettings!.containsKey('fillScreen')) {
           debugPrint('  fillScreen: ${specificSettings!['fillScreen']}');
         }
-      } else {
-        debugPrint('ShaderPreset.toMap: NO specificSettings for $name');
       }
 
       return resultMap;

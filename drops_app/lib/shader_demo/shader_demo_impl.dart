@@ -56,6 +56,9 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
   static const int _maxDurationMs =
       ShaderAnimationUtils.maxDurationMs; // fastest
 
+  // Flag to track if presets have been loaded at startup
+  bool _presetsLoadedAtStartup = false;
+
   @override
   void initState() {
     super.initState();
@@ -225,6 +228,9 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
           _state.presetsLoaded = true;
           _state.findCurrentPresetIndex();
         });
+
+        // Set a flag to indicate we've already loaded presets at startup
+        _presetsLoadedAtStartup = true;
       } else {
         // Fallback to loading presets if something went wrong
         await _loadAvailablePresets();
@@ -241,6 +247,9 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
 
   // Save changes immediately to prevent loss when entering slideshow mode
   Future<void> _saveChangesImmediately() async {
+    // Don't trigger reload if we're still initializing
+    final shouldReloadPresets = _presetsLoadedAtStartup;
+
     await PresetService.saveChangesImmediately(
       settings: _state.shaderSettings,
       imagePath: _state.selectedImage,
@@ -259,10 +268,13 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
         });
       },
       onPresetsReloaded: () {
-        setState(() {
-          _state.presetsLoaded = false;
-        });
-        _loadAvailablePresets();
+        // Only reload if we should - avoids redundant calls during initialization
+        if (shouldReloadPresets) {
+          setState(() {
+            _state.presetsLoaded = false;
+          });
+          _loadAvailablePresets();
+        }
       },
     );
   }
@@ -1041,17 +1053,5 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
         ),
       ),
     );
-  }
-
-  // Clean up duplicate untitled presets
-  Future<void> _cleanupDuplicateUntitledPresets() async {
-    final id = await PresetService.cleanupDuplicateUntitledPresets();
-    if (id != null) {
-      setState(() {
-        _state.currentUntitledPresetId = id;
-      });
-      // Don't load presets here, we already did it above
-      // await _loadAvailablePresets();
-    }
   }
 }

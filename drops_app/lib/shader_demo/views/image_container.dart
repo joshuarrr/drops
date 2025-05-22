@@ -10,6 +10,14 @@ class ImageContainer extends StatelessWidget {
   final double? cachedMargin;
   final bool? cachedFillScreen;
 
+  // Static variables to track last logged values to avoid duplicate logging
+  static double? _lastLoggedMargin;
+  static bool? _lastLoggedFillScreen;
+  static DateTime? _lastLogTime;
+
+  // Minimum time between logs of the same values (milliseconds)
+  static const int _logThrottleMs = 500;
+
   const ImageContainer({
     Key? key,
     required this.imagePath,
@@ -36,12 +44,31 @@ class ImageContainer extends StatelessWidget {
 
         // Only log in debug mode and avoid excessive logging
         assert(() {
-          // Only log if the values are different from cached values or cache is not available
-          if (cachedMargin != margin ||
-              cachedFillScreen != settings.fillScreen) {
+          // Get current time
+          final now = DateTime.now();
+
+          // Check if values have changed from cached or static last logged values
+          final valuesChanged =
+              cachedMargin != margin || cachedFillScreen != settings.fillScreen;
+
+          // Check if we're outside the throttle period or values have changed
+          final shouldLog =
+              valuesChanged &&
+              (_lastLogTime == null ||
+                  _lastLoggedMargin != margin ||
+                  _lastLoggedFillScreen != settings.fillScreen ||
+                  now.difference(_lastLogTime!).inMilliseconds >
+                      _logThrottleMs);
+
+          if (shouldLog) {
             debugPrint(
               'ImageContainer: applying margin=${margin.toStringAsFixed(1)}, fillScreen=${settings.fillScreen}',
             );
+
+            // Update last logged values
+            _lastLoggedMargin = margin;
+            _lastLoggedFillScreen = settings.fillScreen;
+            _lastLogTime = now;
           }
           return true;
         }());
