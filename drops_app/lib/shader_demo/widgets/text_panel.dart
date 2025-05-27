@@ -708,7 +708,7 @@ class _TextPanelState extends State<TextPanel> {
   }
 
   void _resetText() {
-    final defaults = ShaderSettings();
+    final defaults = ShaderSettings.defaults;
     // Create a copy of the current settings and reset only text properties
     final resetSettings = ShaderSettings.fromMap(widget.settings.toMap())
       ..textLayoutSettings.textEnabled = false

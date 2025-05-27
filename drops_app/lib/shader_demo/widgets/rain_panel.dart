@@ -156,7 +156,7 @@ class RainPanel extends StatelessWidget {
   }
 
   void _resetRain() {
-    final defaults = ShaderSettings();
+    final defaults = ShaderSettings.defaults;
     settings.rainEnabled = false;
     settings.rainSettings.rainIntensity = defaults.rainSettings.rainIntensity;
     settings.rainSettings.dropSize = defaults.rainSettings.dropSize;

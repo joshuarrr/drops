@@ -202,21 +202,33 @@ class _CymaticsPanelState extends State<CymaticsPanel> {
       applyToBackground: true,
     );
 
-    // Use the constructor to update settings properly
-    final fixedSettings = ShaderSettings(
-      colorSettings: updatedSettings.colorSettings,
-      blurSettings: updatedSettings.blurSettings,
-      noiseSettings: updatedSettings.noiseSettings,
-      textfxSettings: updatedSettings.textfxSettings,
-      textLayoutSettings: updatedSettings.textLayoutSettings,
-      rainSettings: updatedSettings.rainSettings,
-      chromaticSettings: updatedSettings.chromaticSettings,
-      rippleSettings: updatedSettings.rippleSettings,
-      musicSettings: updatedSettings.musicSettings,
-      cymaticsSettings: defaultCymaticsSettings,
-    );
+    // Update cymatics settings directly
+    updatedSettings.cymaticsSettings.cymaticsEnabled = false;
+    updatedSettings.cymaticsSettings.intensity =
+        defaultCymaticsSettings.intensity;
+    updatedSettings.cymaticsSettings.frequency =
+        defaultCymaticsSettings.frequency;
+    updatedSettings.cymaticsSettings.amplitude =
+        defaultCymaticsSettings.amplitude;
+    updatedSettings.cymaticsSettings.complexity =
+        defaultCymaticsSettings.complexity;
+    updatedSettings.cymaticsSettings.speed = defaultCymaticsSettings.speed;
+    updatedSettings.cymaticsSettings.colorIntensity =
+        defaultCymaticsSettings.colorIntensity;
+    updatedSettings.cymaticsSettings.audioReactive =
+        defaultCymaticsSettings.audioReactive;
+    updatedSettings.cymaticsSettings.audioSensitivity =
+        defaultCymaticsSettings.audioSensitivity;
+    updatedSettings.cymaticsSettings.cymaticsAnimated =
+        defaultCymaticsSettings.cymaticsAnimated;
+    updatedSettings.cymaticsSettings.applyToImage =
+        defaultCymaticsSettings.applyToImage;
+    updatedSettings.cymaticsSettings.applyToText =
+        defaultCymaticsSettings.applyToText;
+    updatedSettings.cymaticsSettings.applyToBackground =
+        defaultCymaticsSettings.applyToBackground;
 
-    widget.onSettingsChanged(fixedSettings);
+    widget.onSettingsChanged(updatedSettings);
   }
 
   void _applyCymaticsPreset(Map<String, dynamic> presetData) {
@@ -230,21 +242,34 @@ class _CymaticsPanelState extends State<CymaticsPanel> {
       // Create a new CymaticsSettings from the map
       final updatedCymaticsSettings = CymaticsSettings.fromMap(cymaticsMap);
 
-      // Create a new ShaderSettings with the updated cymatics settings
-      final fixedSettings = ShaderSettings(
-        colorSettings: updatedSettings.colorSettings,
-        blurSettings: updatedSettings.blurSettings,
-        noiseSettings: updatedSettings.noiseSettings,
-        textfxSettings: updatedSettings.textfxSettings,
-        textLayoutSettings: updatedSettings.textLayoutSettings,
-        rainSettings: updatedSettings.rainSettings,
-        chromaticSettings: updatedSettings.chromaticSettings,
-        rippleSettings: updatedSettings.rippleSettings,
-        musicSettings: updatedSettings.musicSettings,
-        cymaticsSettings: updatedCymaticsSettings,
-      );
+      // Copy individual properties instead of trying to assign the whole object
+      updatedSettings.cymaticsSettings.cymaticsEnabled =
+          updatedCymaticsSettings.cymaticsEnabled;
+      updatedSettings.cymaticsSettings.intensity =
+          updatedCymaticsSettings.intensity;
+      updatedSettings.cymaticsSettings.frequency =
+          updatedCymaticsSettings.frequency;
+      updatedSettings.cymaticsSettings.amplitude =
+          updatedCymaticsSettings.amplitude;
+      updatedSettings.cymaticsSettings.complexity =
+          updatedCymaticsSettings.complexity;
+      updatedSettings.cymaticsSettings.speed = updatedCymaticsSettings.speed;
+      updatedSettings.cymaticsSettings.colorIntensity =
+          updatedCymaticsSettings.colorIntensity;
+      updatedSettings.cymaticsSettings.audioReactive =
+          updatedCymaticsSettings.audioReactive;
+      updatedSettings.cymaticsSettings.audioSensitivity =
+          updatedCymaticsSettings.audioSensitivity;
+      updatedSettings.cymaticsSettings.cymaticsAnimated =
+          updatedCymaticsSettings.cymaticsAnimated;
+      updatedSettings.cymaticsSettings.applyToImage =
+          updatedCymaticsSettings.applyToImage;
+      updatedSettings.cymaticsSettings.applyToText =
+          updatedCymaticsSettings.applyToText;
+      updatedSettings.cymaticsSettings.applyToBackground =
+          updatedCymaticsSettings.applyToBackground;
 
-      widget.onSettingsChanged(fixedSettings);
+      widget.onSettingsChanged(updatedSettings);
       return;
     }
 

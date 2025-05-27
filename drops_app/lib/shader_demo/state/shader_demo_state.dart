@@ -192,6 +192,17 @@ class ShaderDemoState {
       return true;
     }
 
+    // Compare background settings
+    if (shaderSettings.backgroundEnabled !=
+        currentPreset.settings.backgroundEnabled) {
+      return true;
+    }
+
+    if (shaderSettings.backgroundSettings.backgroundColor.value !=
+        currentPreset.settings.backgroundSettings.backgroundColor.value) {
+      return true;
+    }
+
     // Compare important settings that would be visually noticeable
     if (shaderSettings.colorEnabled != currentPreset.settings.colorEnabled) {
       return true;
@@ -211,6 +222,19 @@ class ShaderDemoState {
     }
 
     if (shaderSettings.rippleEnabled != currentPreset.settings.rippleEnabled) {
+      return true;
+    }
+
+    if (shaderSettings.rainEnabled != currentPreset.settings.rainEnabled) {
+      return true;
+    }
+
+    if (shaderSettings.musicEnabled != currentPreset.settings.musicEnabled) {
+      return true;
+    }
+
+    if (shaderSettings.cymaticsEnabled !=
+        currentPreset.settings.cymaticsEnabled) {
       return true;
     }
 

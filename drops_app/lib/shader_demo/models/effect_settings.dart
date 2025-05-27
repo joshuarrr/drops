@@ -30,7 +30,7 @@ class ShaderSettings {
   BackgroundSettings _backgroundSettings;
 
   // Flag to control logging
-  static bool enableLogging = false;
+  static bool enableLogging = true;
 
   // Expose settings objects
   ColorSettings get colorSettings => _colorSettings;
@@ -57,6 +57,15 @@ class ShaderSettings {
   bool get backgroundAnimated => _backgroundSettings.backgroundAnimated;
   set backgroundAnimated(bool value) {
     _backgroundSettings.backgroundAnimated = value;
+  }
+
+  // Image settings (simple boolean flag)
+  bool _imageEnabled = true; // Default to true for backward compatibility
+
+  bool get imageEnabled => _imageEnabled;
+  set imageEnabled(bool value) {
+    _imageEnabled = value;
+    if (enableLogging) print("SETTINGS: imageEnabled set to $value");
   }
 
   // Color settings
@@ -185,6 +194,26 @@ class ShaderSettings {
     BackgroundSettings.enableLogging = enabled;
   }
 
+  // Static default instance to avoid creating new instances just for default values
+  static final ShaderSettings _defaults = ShaderSettings._internal();
+  static ShaderSettings get defaults => _defaults;
+
+  // Private constructor for default instance
+  ShaderSettings._internal()
+    : _colorSettings = ColorSettings(),
+      _blurSettings = BlurSettings(),
+      _noiseSettings = NoiseSettings(),
+      _textfxSettings = TextFXSettings(),
+      _textLayoutSettings = TextLayoutSettings(),
+      _rainSettings = RainSettings(),
+      _chromaticSettings = ChromaticSettings(),
+      _rippleSettings = RippleSettings(),
+      _musicSettings = MusicSettings(),
+      _cymaticsSettings = CymaticsSettings(),
+      _backgroundSettings = BackgroundSettings() {
+    // No logging for the static default instance
+  }
+
   ShaderSettings({
     // Specialized settings
     ColorSettings? colorSettings,
@@ -198,6 +227,8 @@ class ShaderSettings {
     MusicSettings? musicSettings,
     CymaticsSettings? cymaticsSettings,
     BackgroundSettings? backgroundSettings,
+    bool skipLogging =
+        false, // Add parameter to skip logging when loading presets
   }) : _colorSettings = colorSettings ?? ColorSettings(),
        _blurSettings = blurSettings ?? BlurSettings(),
        _noiseSettings = noiseSettings ?? NoiseSettings(),
@@ -209,13 +240,15 @@ class ShaderSettings {
        _musicSettings = musicSettings ?? MusicSettings(),
        _cymaticsSettings = cymaticsSettings ?? CymaticsSettings(),
        _backgroundSettings = backgroundSettings ?? BackgroundSettings() {
-    if (enableLogging) print("SETTINGS: ShaderSettings initialized");
+    if (enableLogging && !skipLogging)
+      print("SETTINGS: ShaderSettings initialized");
   }
 
   // Serialization helper for persistence
   Map<String, dynamic> toMap() {
     try {
       return {
+        'imageEnabled': _imageEnabled,
         'colorSettings': _colorSettings.toMap(),
         'blurSettings': _blurSettings.toMap(),
         'noiseSettings': _noiseSettings.toMap(),
@@ -232,6 +265,7 @@ class ShaderSettings {
       print('Error serializing ShaderSettings: $e');
       // Return empty settings to prevent serialization errors
       return {
+        'imageEnabled': true,
         'colorSettings': ColorSettings().toMap(),
         'blurSettings': BlurSettings().toMap(),
         'noiseSettings': NoiseSettings().toMap(),
@@ -248,7 +282,7 @@ class ShaderSettings {
   }
 
   factory ShaderSettings.fromMap(Map<String, dynamic> map) {
-    return ShaderSettings(
+    final settings = ShaderSettings(
       colorSettings: map['colorSettings'] != null
           ? ColorSettings.fromMap(
               Map<String, dynamic>.from(map['colorSettings']),
@@ -300,13 +334,19 @@ class ShaderSettings {
               Map<String, dynamic>.from(map['backgroundSettings']),
             )
           : null,
+      skipLogging: true, // Skip logging when loading from map (preset loading)
     );
+
+    // Set imageEnabled after creating the instance
+    settings._imageEnabled = map['imageEnabled'] ?? true;
+
+    return settings;
   }
 
   // For backward compatibility with the old settings format
   factory ShaderSettings.fromLegacyMap(Map<String, dynamic> map) {
     // Create settings using individual fields from the old map format
-    return ShaderSettings(
+    final settings = ShaderSettings(
       colorSettings: ColorSettings(
         colorEnabled: map['colorEnabled'] ?? false,
         hue: map['hue'] ?? 0.0,
@@ -560,7 +600,13 @@ class ShaderSettings {
               )
             : null,
       ),
+      skipLogging: true, // Skip logging when loading legacy presets
     );
+
+    // Set imageEnabled for legacy maps
+    settings._imageEnabled = map['imageEnabled'] ?? true;
+
+    return settings;
   }
 
   // Create a deep copy of the settings

@@ -150,7 +150,7 @@ class NoisePanel extends StatelessWidget {
   }
 
   void _resetNoise() {
-    final defaults = ShaderSettings();
+    final defaults = ShaderSettings.defaults;
     settings.noiseEnabled = false;
     settings.noiseSettings.noiseScale = defaults.noiseSettings.noiseScale;
     settings.noiseSettings.noiseSpeed = defaults.noiseSettings.noiseSpeed;

@@ -188,7 +188,7 @@ class PresetController {
             'id': preset.id,
             'name': preset.name,
             'createdAt': preset.createdAt.millisecondsSinceEpoch,
-            'settings': {'textEnabled': false},
+            'settings': preset.settings.toMap(), // Preserve all settings!
             'imagePath': preset.imagePath,
             'sortMethod': sortMethod?.index,
             // Include any specific settings if available
@@ -487,8 +487,8 @@ class PresetController {
             'id': preset.id,
             'name': preset.name,
             'createdAt': preset.createdAt.millisecondsSinceEpoch,
-            'settings': {'textEnabled': false},
-            'imagePath': updatedImagePath,
+            'settings': preset.settings.toMap(), // Preserve all settings!
+            'imagePath': preset.imagePath,
             'sortMethod': updatedSortMethod?.index,
             // Include any specific settings if available
             if (specificSettings != null) ...specificSettings,

@@ -15,7 +15,7 @@ class BackgroundSettings {
   AnimationOptions _backgroundAnimOptions;
 
   // Flag to control logging
-  static bool enableLogging = false;
+  static bool enableLogging = true;
 
   // Property getters and setters
   bool get backgroundEnabled => _backgroundEnabled;
@@ -69,11 +69,19 @@ class BackgroundSettings {
 
   // Create settings from a map (deserialization)
   factory BackgroundSettings.fromMap(Map<String, dynamic> map) {
+    final backgroundColor = map['backgroundColor'] != null
+        ? Color(map['backgroundColor'])
+        : Colors.black;
+
+    if (enableLogging) {
+      print(
+        "SETTINGS: BackgroundSettings.fromMap loaded backgroundColor: 0x${backgroundColor.value.toRadixString(16).padLeft(8, '0')}",
+      );
+    }
+
     return BackgroundSettings(
       backgroundEnabled: map['backgroundEnabled'] ?? false,
-      backgroundColor: map['backgroundColor'] != null
-          ? Color(map['backgroundColor'])
-          : null,
+      backgroundColor: backgroundColor,
       backgroundAnimated: map['backgroundAnimated'] ?? false,
       backgroundAnimOptions: map['backgroundAnimOptions'] != null
           ? AnimationOptions.fromMap(

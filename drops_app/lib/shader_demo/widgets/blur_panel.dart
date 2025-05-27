@@ -205,7 +205,7 @@ class BlurPanel extends StatelessWidget {
   }
 
   void _resetBlur() {
-    final defaults = ShaderSettings();
+    final defaults = ShaderSettings.defaults;
     settings.blurEnabled = false;
     settings.blurSettings.blurAmount = defaults.blurSettings.blurAmount;
     settings.blurSettings.blurRadius = defaults.blurSettings.blurRadius;

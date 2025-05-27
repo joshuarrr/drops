@@ -401,7 +401,7 @@ class EffectControls {
             // Image toggle now third
             AspectToggle(
               aspect: ShaderAspect.image,
-              isEnabled: true,
+              isEnabled: settings.imageEnabled,
               isCurrentImageDark: isCurrentImageDark,
               onToggled: (aspect, enabled) {
                 _log('Image aspect toggled: $enabled', level: LogLevel.debug);

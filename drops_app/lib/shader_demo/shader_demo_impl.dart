@@ -1,3 +1,5 @@
+/* TODO: Before adding to this file, analyze and suggest refactor to reduce file size */
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -233,11 +235,40 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
           _state.findCurrentPresetIndex();
         });
 
-        // Set a flag to indicate we've already loaded presets at startup
-        _presetsLoadedAtStartup = true;
+        // CRITICAL FIX: Automatically apply the latest "Untitled" preset if it exists
+        // This ensures user's recent changes (like background color) are restored
+        if (result.id != null) {
+          final untitledPreset = _state.availablePresets.firstWhere(
+            (preset) => preset.id == result.id,
+            orElse: () => _state.availablePresets.first,
+          );
+
+          logging.EffectLogger.log(
+            'Auto-applying latest "Untitled" preset with background color: 0x${untitledPreset.settings.backgroundSettings.backgroundColor.value.toRadixString(16).padLeft(8, '0')}',
+          );
+
+          // CRITICAL FIX: Clear SharedPreferences first to prevent stale data loading
+          await _clearSharedPreferences();
+
+          // Apply the preset to restore the user's recent changes
+          setState(() {
+            _state.applyPreset(untitledPreset, showControlsAfter: true);
+          });
+
+          // Immediately save the applied settings to SharedPreferences to ensure consistency
+          await _state.saveShaderSettings();
+
+          logging.EffectLogger.log(
+            'Preset applied and saved to SharedPreferences with background color: 0x${_state.shaderSettings.backgroundSettings.backgroundColor.value.toRadixString(16).padLeft(8, '0')}',
+          );
+
+          // Set a flag to indicate we've already loaded presets at startup
+          _presetsLoadedAtStartup = true;
+        }
       } else {
         // Fallback to loading presets if something went wrong
         await _loadAvailablePresets();
+        _presetsLoadedAtStartup = true;
       }
     } catch (e) {
       logging.EffectLogger.log(
@@ -246,41 +277,8 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
       );
       // Still try to load presets as fallback
       await _loadAvailablePresets();
+      _presetsLoadedAtStartup = true;
     }
-  }
-
-  // Save changes immediately to prevent loss when entering slideshow mode
-  Future<void> _saveChangesImmediately() async {
-    // Don't trigger reload if we're still initializing
-    final shouldReloadPresets = _presetsLoadedAtStartup;
-
-    await PresetService.saveChangesImmediately(
-      settings: _state.shaderSettings,
-      imagePath: _state.selectedImage,
-      previewKey: _previewKey,
-      currentUntitledPresetId: _state.currentUntitledPresetId,
-      availablePresets: _state.availablePresets,
-      hasUnsavedChanges: _state.hasUnsavedChanges(),
-      onPresetIdChanged: (id) {
-        setState(() {
-          _state.currentUntitledPresetId = id;
-        });
-      },
-      onPresetIndexChanged: (index) {
-        setState(() {
-          _state.currentPresetIndex = index;
-        });
-      },
-      onPresetsReloaded: () {
-        // Only reload if we should - avoids redundant calls during initialization
-        if (shouldReloadPresets) {
-          setState(() {
-            _state.presetsLoaded = false;
-          });
-          _loadAvailablePresets();
-        }
-      },
-    );
   }
 
   @override
@@ -718,42 +716,56 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
       child: AnimatedBuilder(
         animation: _controller,
         // Use a child parameter to avoid rebuilding static parts of the tree
-        child: ImageContainer(
-          imagePath: _state.selectedImage,
-          settings: _state.shaderSettings,
-        ),
+        child: _state.shaderSettings.imageEnabled
+            ? ImageContainer(
+                imagePath: _state.selectedImage,
+                settings: _state.shaderSettings,
+              )
+            : null, // No image when disabled
         builder: (context, baseImage) {
           // Use the raw controller value as the base time
           final double animationValue = _controller.value;
 
-          // Check if any effect is targeted to image
-          final bool shouldApplyEffectsToImage =
-              (_state.shaderSettings.colorEnabled &&
-                  _state.shaderSettings.colorSettings.applyToImage) ||
-              (_state.shaderSettings.blurEnabled &&
-                  _state.shaderSettings.blurSettings.applyToImage) ||
-              (_state.shaderSettings.noiseEnabled &&
-                  _state.shaderSettings.noiseSettings.applyToImage) ||
-              (_state.shaderSettings.rainEnabled &&
-                  _state.shaderSettings.rainSettings.applyToImage) ||
-              (_state.shaderSettings.chromaticEnabled &&
-                  _state.shaderSettings.chromaticSettings.applyToImage) ||
-              (_state.shaderSettings.rippleEnabled &&
-                  _state.shaderSettings.rippleSettings.applyToImage);
+          Widget effectsWidget;
 
-          // Apply all enabled effects using the shared base time
-          Widget effectsWidget = shouldApplyEffectsToImage
-              ? Container(
-                  width: width,
-                  height: height,
-                  alignment: Alignment.center,
-                  child: EffectController.applyEffects(
-                    child: baseImage!,
-                    settings: _state.shaderSettings,
-                    animationValue: animationValue,
-                  ),
-                )
-              : baseImage!; // Don't apply effects if none target the image
+          // If image is disabled, just show background
+          if (!_state.shaderSettings.imageEnabled) {
+            effectsWidget = Container(
+              width: width,
+              height: height,
+              color: Colors
+                  .transparent, // Just transparent, background color will be applied below
+            );
+          } else {
+            // Check if any effect is targeted to image
+            final bool shouldApplyEffectsToImage =
+                (_state.shaderSettings.colorEnabled &&
+                    _state.shaderSettings.colorSettings.applyToImage) ||
+                (_state.shaderSettings.blurEnabled &&
+                    _state.shaderSettings.blurSettings.applyToImage) ||
+                (_state.shaderSettings.noiseEnabled &&
+                    _state.shaderSettings.noiseSettings.applyToImage) ||
+                (_state.shaderSettings.rainEnabled &&
+                    _state.shaderSettings.rainSettings.applyToImage) ||
+                (_state.shaderSettings.chromaticEnabled &&
+                    _state.shaderSettings.chromaticSettings.applyToImage) ||
+                (_state.shaderSettings.rippleEnabled &&
+                    _state.shaderSettings.rippleSettings.applyToImage);
+
+            // Apply all enabled effects using the shared base time
+            effectsWidget = shouldApplyEffectsToImage
+                ? Container(
+                    width: width,
+                    height: height,
+                    alignment: Alignment.center,
+                    child: EffectController.applyEffects(
+                      child: baseImage!,
+                      settings: _state.shaderSettings,
+                      animationValue: animationValue,
+                    ),
+                  )
+                : baseImage!; // Don't apply effects if none target the image
+          }
 
           // Build only the image with effects, text overlay is added separately
           return Container(
@@ -808,7 +820,7 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                           _state.shaderSettings.blurEnabled = enabled;
                           break;
                         case ShaderAspect.image:
-                          // No enable/disable for image aspect
+                          _state.shaderSettings.imageEnabled = enabled;
                           break;
                         case ShaderAspect.text:
                           _state.shaderSettings.textEnabled = enabled;
@@ -858,8 +870,34 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                     });
                     _state.saveShaderSettings();
 
-                    // Add this line to save changes to the preset immediately
-                    _saveChangesImmediately();
+                    // Save changes to the preset immediately
+                    PresetService.saveChangesImmediately(
+                      settings: _state.shaderSettings,
+                      imagePath: _state.selectedImage,
+                      previewKey: _previewKey,
+                      currentUntitledPresetId: _state.currentUntitledPresetId,
+                      availablePresets: _state.availablePresets,
+                      hasUnsavedChanges:
+                          true, // Force save since we know there are changes
+                      onPresetIdChanged: (id) {
+                        setState(() {
+                          _state.currentUntitledPresetId = id;
+                        });
+                      },
+                      onPresetIndexChanged: (index) {
+                        setState(() {
+                          _state.currentPresetIndex = index;
+                        });
+                      },
+                      onPresetsReloaded: () {
+                        if (_presetsLoadedAtStartup) {
+                          setState(() {
+                            _state.presetsLoaded = false;
+                          });
+                          _loadAvailablePresets();
+                        }
+                      },
+                    );
                   },
                   onAspectSelected: (aspect) {
                     setState(() {
@@ -976,12 +1014,37 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                     setState(() {
                       _state.shaderSettings = settings;
                     });
-                    // Save to shared preferences
                     _state.saveShaderSettings();
 
-                    // CRITICAL FIX: Immediately save changes to current preset or create a new untitled preset
-                    // This ensures margin settings are preserved when entering slideshow mode
-                    _saveChangesImmediately();
+                    // Save changes to the preset immediately
+                    PresetService.saveChangesImmediately(
+                      settings:
+                          settings, // Use the updated settings parameter, not _state.shaderSettings
+                      imagePath: _state.selectedImage,
+                      previewKey: _previewKey,
+                      currentUntitledPresetId: _state.currentUntitledPresetId,
+                      availablePresets: _state.availablePresets,
+                      hasUnsavedChanges:
+                          true, // Force save since we know there are changes
+                      onPresetIdChanged: (id) {
+                        setState(() {
+                          _state.currentUntitledPresetId = id;
+                        });
+                      },
+                      onPresetIndexChanged: (index) {
+                        setState(() {
+                          _state.currentPresetIndex = index;
+                        });
+                      },
+                      onPresetsReloaded: () {
+                        if (_presetsLoadedAtStartup) {
+                          setState(() {
+                            _state.presetsLoaded = false;
+                          });
+                          _loadAvailablePresets();
+                        }
+                      },
+                    );
                   },
                   sliderColor: sliderColor,
                   context: context,
@@ -995,7 +1058,32 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                     });
                     _state.saveShaderSettings();
                     // Also save immediately to preset
-                    _saveChangesImmediately();
+                    PresetService.saveChangesImmediately(
+                      settings: _state.shaderSettings,
+                      imagePath: path, // Use the new path
+                      previewKey: _previewKey,
+                      currentUntitledPresetId: _state.currentUntitledPresetId,
+                      availablePresets: _state.availablePresets,
+                      hasUnsavedChanges: true,
+                      onPresetIdChanged: (id) {
+                        setState(() {
+                          _state.currentUntitledPresetId = id;
+                        });
+                      },
+                      onPresetIndexChanged: (index) {
+                        setState(() {
+                          _state.currentPresetIndex = index;
+                        });
+                      },
+                      onPresetsReloaded: () {
+                        if (_presetsLoadedAtStartup) {
+                          setState(() {
+                            _state.presetsLoaded = false;
+                          });
+                          _loadAvailablePresets();
+                        }
+                      },
+                    );
                   },
                   onCategoryChanged: (category) {
                     setState(() {
@@ -1010,7 +1098,32 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                     });
                     _state.saveShaderSettings();
                     // Also save immediately to preset
-                    _saveChangesImmediately();
+                    PresetService.saveChangesImmediately(
+                      settings: _state.shaderSettings,
+                      imagePath: _state.selectedImage,
+                      previewKey: _previewKey,
+                      currentUntitledPresetId: _state.currentUntitledPresetId,
+                      availablePresets: _state.availablePresets,
+                      hasUnsavedChanges: true,
+                      onPresetIdChanged: (id) {
+                        setState(() {
+                          _state.currentUntitledPresetId = id;
+                        });
+                      },
+                      onPresetIndexChanged: (index) {
+                        setState(() {
+                          _state.currentPresetIndex = index;
+                        });
+                      },
+                      onPresetsReloaded: () {
+                        if (_presetsLoadedAtStartup) {
+                          setState(() {
+                            _state.presetsLoaded = false;
+                          });
+                          _loadAvailablePresets();
+                        }
+                      },
+                    );
                   },
                 ),
               ],
@@ -1024,8 +1137,35 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                     });
                     _state.saveShaderSettings();
 
-                    // Add this line to immediately save changes to the preset
-                    _saveChangesImmediately();
+                    // Save changes to the preset immediately
+                    PresetService.saveChangesImmediately(
+                      settings:
+                          settings, // Use the updated settings parameter, not _state.shaderSettings
+                      imagePath: _state.selectedImage,
+                      previewKey: _previewKey,
+                      currentUntitledPresetId: _state.currentUntitledPresetId,
+                      availablePresets: _state.availablePresets,
+                      hasUnsavedChanges:
+                          true, // Force save since we know there are changes
+                      onPresetIdChanged: (id) {
+                        setState(() {
+                          _state.currentUntitledPresetId = id;
+                        });
+                      },
+                      onPresetIndexChanged: (index) {
+                        setState(() {
+                          _state.currentPresetIndex = index;
+                        });
+                      },
+                      onPresetsReloaded: () {
+                        if (_presetsLoadedAtStartup) {
+                          setState(() {
+                            _state.presetsLoaded = false;
+                          });
+                          _loadAvailablePresets();
+                        }
+                      },
+                    );
                   },
                   sliderColor: sliderColor,
                   context: context,
@@ -1037,5 +1177,12 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
         ),
       ),
     );
+  }
+
+  // Clear SharedPreferences shader settings key only
+  Future<void> _clearSharedPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(ShaderDemoState.kShaderSettingsKey);
+    logging.EffectLogger.log('Cleared stale SharedPreferences shader settings');
   }
 }

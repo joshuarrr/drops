@@ -417,7 +417,7 @@ class _ColorPanelState extends State<ColorPanel> {
   }
 
   void _resetColor() {
-    final defaults = ShaderSettings();
+    final defaults = ShaderSettings.defaults;
     widget.settings.colorEnabled = false;
     widget.settings.colorSettings.hue = defaults.colorSettings.hue;
     widget.settings.colorSettings.saturation =

@@ -32,6 +32,11 @@ class PresetService {
       // Use a fixed name "Untitled" for the session preset
       const String presetName = "Untitled";
 
+      // Log the background color being saved
+      EffectLogger.log(
+        'Saving untitled preset with background color: 0x${settings.backgroundSettings.backgroundColor.value.toRadixString(16).padLeft(8, '0')}',
+      );
+
       // Create specific settings with current values if not provided
       final Map<String, dynamic> actualSpecificSettings =
           specificSettings ??
@@ -97,6 +102,11 @@ class PresetService {
     required GlobalKey previewKey,
     Map<String, dynamic>? specificSettings,
   }) async {
+    // Log the background color being updated
+    EffectLogger.log(
+      'Updating preset $id with background color: 0x${settings.backgroundSettings.backgroundColor.value.toRadixString(16).padLeft(8, '0')}',
+    );
+
     // Get the existing preset data
     final existing = await PresetController.getPresetById(id);
     if (existing == null) {

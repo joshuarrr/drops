@@ -21,7 +21,7 @@ extension ShaderAspectExtension on ShaderAspect {
   String get label {
     switch (this) {
       case ShaderAspect.background:
-        return 'Background';
+        return 'BG Color';
       case ShaderAspect.color:
         return 'Color';
       case ShaderAspect.blur:

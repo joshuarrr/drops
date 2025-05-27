@@ -80,43 +80,55 @@ class SlideshowView extends StatelessWidget {
         builder: (context, _) {
           final double animationValue = animationController.value;
 
-          // Use ImageContainer with proper key and cached values to prevent unnecessary rebuilds
-          Widget baseImage = ImageContainer(
-            key: ValueKey('image_${preset.id}_${margin}_${fillScreen}'),
-            imagePath: preset.imagePath,
-            settings: presetSettings,
-            cachedMargin: margin,
-            cachedFillScreen: fillScreen,
-          );
+          Widget effectsWidget;
 
-          // Check if any effect is targeted to image
-          final bool shouldApplyEffectsToImage =
-              (presetSettings.colorEnabled &&
-                  presetSettings.colorSettings.applyToImage) ||
-              (presetSettings.blurEnabled &&
-                  presetSettings.blurSettings.applyToImage) ||
-              (presetSettings.noiseEnabled &&
-                  presetSettings.noiseSettings.applyToImage) ||
-              (presetSettings.rainEnabled &&
-                  presetSettings.rainSettings.applyToImage) ||
-              (presetSettings.chromaticEnabled &&
-                  presetSettings.chromaticSettings.applyToImage) ||
-              (presetSettings.rippleEnabled &&
-                  presetSettings.rippleSettings.applyToImage);
+          // Check if image is enabled in the preset
+          if (!presetSettings.imageEnabled) {
+            // If image is disabled, just show transparent container
+            effectsWidget = Container(
+              width: width,
+              height: height,
+              color: Colors.transparent,
+            );
+          } else {
+            // Use ImageContainer with proper key and cached values to prevent unnecessary rebuilds
+            Widget baseImage = ImageContainer(
+              key: ValueKey('image_${preset.id}_${margin}_${fillScreen}'),
+              imagePath: preset.imagePath,
+              settings: presetSettings,
+              cachedMargin: margin,
+              cachedFillScreen: fillScreen,
+            );
 
-          // Apply effects using the preset's settings
-          Widget effectsWidget = shouldApplyEffectsToImage
-              ? Container(
-                  width: width,
-                  height: height,
-                  alignment: Alignment.center,
-                  child: EffectController.applyEffects(
-                    child: baseImage,
-                    settings: presetSettings,
-                    animationValue: animationValue,
-                  ),
-                )
-              : baseImage; // Don't apply effects if none target the image
+            // Check if any effect is targeted to image
+            final bool shouldApplyEffectsToImage =
+                (presetSettings.colorEnabled &&
+                    presetSettings.colorSettings.applyToImage) ||
+                (presetSettings.blurEnabled &&
+                    presetSettings.blurSettings.applyToImage) ||
+                (presetSettings.noiseEnabled &&
+                    presetSettings.noiseSettings.applyToImage) ||
+                (presetSettings.rainEnabled &&
+                    presetSettings.rainSettings.applyToImage) ||
+                (presetSettings.chromaticEnabled &&
+                    presetSettings.chromaticSettings.applyToImage) ||
+                (presetSettings.rippleEnabled &&
+                    presetSettings.rippleSettings.applyToImage);
+
+            // Apply effects using the preset's settings
+            effectsWidget = shouldApplyEffectsToImage
+                ? Container(
+                    width: width,
+                    height: height,
+                    alignment: Alignment.center,
+                    child: EffectController.applyEffects(
+                      child: baseImage,
+                      settings: presetSettings,
+                      animationValue: animationValue,
+                    ),
+                  )
+                : baseImage; // Don't apply effects if none target the image
+          }
 
           // Add text overlay if enabled in the preset
           List<Widget> stackChildren = [Positioned.fill(child: effectsWidget)];
@@ -134,7 +146,9 @@ class SlideshowView extends StatelessWidget {
           }
 
           return Container(
-            color: Colors.black,
+            color: presetSettings.backgroundEnabled
+                ? presetSettings.backgroundSettings.backgroundColor
+                : Colors.black,
             width: width,
             height: height,
             child: Stack(fit: StackFit.expand, children: stackChildren),
