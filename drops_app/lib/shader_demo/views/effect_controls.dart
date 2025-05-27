@@ -17,6 +17,7 @@ import '../widgets/rain_panel.dart';
 import '../widgets/chromatic_panel.dart';
 import '../widgets/ripple_panel.dart';
 import '../widgets/music_panel.dart';
+import '../widgets/background_panel.dart';
 import '../controllers/effect_controller.dart';
 import '../controllers/music_controller.dart';
 import 'dart:io';
@@ -383,7 +384,21 @@ class EffectControls {
               },
               onTap: onAspectSelected,
             ),
-            // Image toggle now second
+            // Background toggle before image toggle
+            AspectToggle(
+              aspect: ShaderAspect.background,
+              isEnabled: settings.backgroundEnabled,
+              isCurrentImageDark: isCurrentImageDark,
+              onToggled: (aspect, enabled) {
+                _log(
+                  'Background aspect toggled: $enabled',
+                  level: LogLevel.debug,
+                );
+                onAspectToggled(aspect, enabled);
+              },
+              onTap: onAspectSelected,
+            ),
+            // Image toggle now third
             AspectToggle(
               aspect: ShaderAspect.image,
               isEnabled: true,
@@ -551,6 +566,22 @@ class EffectControls {
     }
 
     switch (aspect) {
+      case ShaderAspect.background:
+        return [
+          BackgroundPanel(
+            settings: settings,
+            onSettingsChanged: (updatedSettings) {
+              _log(
+                'Background panel settings changed - Background enabled: ${updatedSettings.backgroundEnabled}',
+                level: LogLevel.debug,
+              );
+              onSettingsChanged(updatedSettings);
+            },
+            sliderColor: sliderColor,
+            context: context,
+          ),
+        ];
+
       case ShaderAspect.color:
         return [
           ColorPanel(

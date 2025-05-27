@@ -757,7 +757,9 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
 
           // Build only the image with effects, text overlay is added separately
           return Container(
-            color: Colors.black,
+            color: _state.shaderSettings.backgroundEnabled
+                ? _state.shaderSettings.backgroundSettings.backgroundColor
+                : Colors.black,
             width: width,
             height: height,
             child: effectsWidget,
@@ -796,6 +798,9 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                     setState(() {
                       // Toggle the enabled state of the selected aspect
                       switch (aspect) {
+                        case ShaderAspect.background:
+                          _state.shaderSettings.backgroundEnabled = enabled;
+                          break;
                         case ShaderAspect.color:
                           _state.shaderSettings.colorEnabled = enabled;
                           break;
@@ -866,6 +871,12 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                       // If selecting a new aspect, always show sliders
                       if (selectingNewAspect) {
                         _state.showAspectSliders = true;
+
+                        // Auto-enable background if selecting the Background aspect and it's not enabled
+                        if (aspect == ShaderAspect.background &&
+                            !_state.shaderSettings.backgroundEnabled) {
+                          _state.shaderSettings.backgroundEnabled = true;
+                        }
 
                         // Auto-enable text effects if selecting the TextFx aspect and text is enabled
                         if (aspect == ShaderAspect.textfx &&

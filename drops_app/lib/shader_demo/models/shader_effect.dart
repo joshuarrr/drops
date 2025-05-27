@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 // Enum representing shader aspects that can be toggled
 enum ShaderAspect {
+  background,
   color,
   blur,
   image,
@@ -19,6 +20,8 @@ enum ShaderAspect {
 extension ShaderAspectExtension on ShaderAspect {
   String get label {
     switch (this) {
+      case ShaderAspect.background:
+        return 'Background';
       case ShaderAspect.color:
         return 'Color';
       case ShaderAspect.blur:
@@ -46,6 +49,8 @@ extension ShaderAspectExtension on ShaderAspect {
 
   IconData get icon {
     switch (this) {
+      case ShaderAspect.background:
+        return Icons.wallpaper;
       case ShaderAspect.color:
         return Icons.color_lens;
       case ShaderAspect.blur:

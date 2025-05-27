@@ -12,6 +12,7 @@ import 'chromatic_settings.dart';
 import 'ripple_settings.dart';
 import 'music_settings.dart';
 import 'cymatics_settings.dart';
+import 'background_settings.dart';
 
 // Class to store all shader effect settings
 class ShaderSettings {
@@ -26,6 +27,7 @@ class ShaderSettings {
   RippleSettings _rippleSettings;
   MusicSettings _musicSettings;
   CymaticsSettings _cymaticsSettings;
+  BackgroundSettings _backgroundSettings;
 
   // Flag to control logging
   static bool enableLogging = false;
@@ -41,9 +43,21 @@ class ShaderSettings {
   RippleSettings get rippleSettings => _rippleSettings;
   MusicSettings get musicSettings => _musicSettings;
   CymaticsSettings get cymaticsSettings => _cymaticsSettings;
+  BackgroundSettings get backgroundSettings => _backgroundSettings;
 
   // Convenience getters for most commonly used properties
   // These delegate to the specialized settings classes
+
+  // Background settings
+  bool get backgroundEnabled => _backgroundSettings.backgroundEnabled;
+  set backgroundEnabled(bool value) {
+    _backgroundSettings.backgroundEnabled = value;
+  }
+
+  bool get backgroundAnimated => _backgroundSettings.backgroundAnimated;
+  set backgroundAnimated(bool value) {
+    _backgroundSettings.backgroundAnimated = value;
+  }
 
   // Color settings
   bool get colorEnabled => _colorSettings.colorEnabled;
@@ -168,6 +182,7 @@ class ShaderSettings {
     RippleSettings.enableLogging = enabled;
     MusicSettings.enableLogging = enabled;
     CymaticsSettings.enableLogging = enabled;
+    BackgroundSettings.enableLogging = enabled;
   }
 
   ShaderSettings({
@@ -182,6 +197,7 @@ class ShaderSettings {
     RippleSettings? rippleSettings,
     MusicSettings? musicSettings,
     CymaticsSettings? cymaticsSettings,
+    BackgroundSettings? backgroundSettings,
   }) : _colorSettings = colorSettings ?? ColorSettings(),
        _blurSettings = blurSettings ?? BlurSettings(),
        _noiseSettings = noiseSettings ?? NoiseSettings(),
@@ -191,7 +207,8 @@ class ShaderSettings {
        _chromaticSettings = chromaticSettings ?? ChromaticSettings(),
        _rippleSettings = rippleSettings ?? RippleSettings(),
        _musicSettings = musicSettings ?? MusicSettings(),
-       _cymaticsSettings = cymaticsSettings ?? CymaticsSettings() {
+       _cymaticsSettings = cymaticsSettings ?? CymaticsSettings(),
+       _backgroundSettings = backgroundSettings ?? BackgroundSettings() {
     if (enableLogging) print("SETTINGS: ShaderSettings initialized");
   }
 
@@ -209,6 +226,7 @@ class ShaderSettings {
         'rippleSettings': _rippleSettings.toMap(),
         'musicSettings': _musicSettings.toMap(),
         'cymaticsSettings': _cymaticsSettings.toMap(),
+        'backgroundSettings': _backgroundSettings.toMap(),
       };
     } catch (e) {
       print('Error serializing ShaderSettings: $e');
@@ -224,6 +242,7 @@ class ShaderSettings {
         'rippleSettings': RippleSettings().toMap(),
         'musicSettings': MusicSettings().toMap(),
         'cymaticsSettings': CymaticsSettings().toMap(),
+        'backgroundSettings': BackgroundSettings().toMap(),
       };
     }
   }
@@ -274,6 +293,11 @@ class ShaderSettings {
       cymaticsSettings: map['cymaticsSettings'] != null
           ? CymaticsSettings.fromMap(
               Map<String, dynamic>.from(map['cymaticsSettings']),
+            )
+          : null,
+      backgroundSettings: map['backgroundSettings'] != null
+          ? BackgroundSettings.fromMap(
+              Map<String, dynamic>.from(map['backgroundSettings']),
             )
           : null,
     );
@@ -521,6 +545,18 @@ class ShaderSettings {
         musicAnimOptions: map['musicAnimOptions'] != null
             ? AnimationOptions.fromMap(
                 Map<String, dynamic>.from(map['musicAnimOptions']),
+              )
+            : null,
+      ),
+      backgroundSettings: BackgroundSettings(
+        backgroundEnabled: map['backgroundEnabled'] ?? false,
+        backgroundColor: map['backgroundColor'] != null
+            ? Color(map['backgroundColor'])
+            : Colors.black,
+        backgroundAnimated: map['backgroundAnimated'] ?? false,
+        backgroundAnimOptions: map['backgroundAnimOptions'] != null
+            ? AnimationOptions.fromMap(
+                Map<String, dynamic>.from(map['backgroundAnimOptions']),
               )
             : null,
       ),

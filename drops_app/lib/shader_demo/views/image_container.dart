@@ -105,7 +105,6 @@ class ImageContainer extends StatelessWidget {
         return Container(
           width: screenWidth,
           height: screenHeight,
-          color: Colors.black,
           padding: isFitMode ? EdgeInsets.all(margin) : EdgeInsets.zero,
           child: Center(child: imageWidget),
         );

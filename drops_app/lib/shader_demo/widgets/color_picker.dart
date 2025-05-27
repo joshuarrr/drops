@@ -163,8 +163,8 @@ class _ColorPickerState extends State<ColorPicker> {
               return GestureDetector(
                 onTap: () {
                   _log(
-                    'Color selected: ${widget.label}',
-                    level: LogLevel.debug,
+                    'Color selected: ${widget.label} - 0x${color.value.toRadixString(16).padLeft(8, '0')}',
+                    level: LogLevel.info,
                   );
                   widget.onColorChanged(color);
                   _removeOverlay();
