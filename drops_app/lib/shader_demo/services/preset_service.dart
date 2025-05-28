@@ -107,6 +107,12 @@ class PresetService {
       'Updating preset $id with background color: 0x${settings.backgroundSettings.backgroundColor.value.toRadixString(16).padLeft(8, '0')}',
     );
 
+    // Also log the current image settings for debugging
+    EffectLogger.log(
+      '  with specificSettings: fillScreen=${settings.fillScreen}, fitScreenMargin=${settings.textLayoutSettings.fitScreenMargin}',
+      level: LogLevel.info,
+    );
+
     // Get the existing preset data
     final existing = await PresetController.getPresetById(id);
     if (existing == null) {
@@ -119,17 +125,33 @@ class PresetService {
     // Preserve existing specificSettings if available
     if (existing.specificSettings != null) {
       updatedSpecificSettings.addAll(existing.specificSettings!);
+      // Log what we're preserving
+      EffectLogger.log(
+        '  Preserving existing specificSettings: ${existing.specificSettings}',
+        level: LogLevel.debug,
+      );
     }
 
     // Add new specificSettings if provided
     if (specificSettings != null) {
       updatedSpecificSettings.addAll(specificSettings);
+      // Log what we're adding
+      EffectLogger.log(
+        '  Adding new specificSettings: $specificSettings',
+        level: LogLevel.debug,
+      );
     }
 
     // Always ensure critical values are set from current settings
     updatedSpecificSettings['fitScreenMargin'] =
         settings.textLayoutSettings.fitScreenMargin;
     updatedSpecificSettings['fillScreen'] = settings.fillScreen;
+
+    // Log the final settings being used
+    EffectLogger.log(
+      '  Final specificSettings: fillScreen=${updatedSpecificSettings['fillScreen']}, fitScreenMargin=${updatedSpecificSettings['fitScreenMargin']}',
+      level: LogLevel.info,
+    );
 
     // Update the preset using the new method that accepts imagePath and specificSettings
     final updatedPreset = await PresetController.updatePreset(
@@ -173,6 +195,7 @@ class PresetService {
 
       EffectLogger.log(
         'Updating preset with margin: $currentMargin, fillScreen: $currentFillScreen',
+        level: LogLevel.info,
       );
 
       // If we already have a current untitled preset for this session, update it

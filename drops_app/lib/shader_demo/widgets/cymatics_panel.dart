@@ -295,17 +295,6 @@ class _CymaticsPanelState extends State<CymaticsPanel> {
   Widget build(BuildContext context) {
     final cymaticsSettings = widget.settings.cymaticsSettings;
 
-    // Log current settings state when the panel is rebuilt
-    _log(
-      "CymaticsPanel.build: settings hash=${widget.settings.hashCode}, " +
-          "intensity=${cymaticsSettings.intensity.toStringAsFixed(2)}, " +
-          "frequency=${cymaticsSettings.frequency.toStringAsFixed(2)}, " +
-          "amplitude=${cymaticsSettings.amplitude.toStringAsFixed(2)}, " +
-          "speed=${cymaticsSettings.speed.toStringAsFixed(2)}, " +
-          "applyToImage=${cymaticsSettings.applyToImage}, " +
-          "applyToBackground=${cymaticsSettings.applyToBackground}",
-    );
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

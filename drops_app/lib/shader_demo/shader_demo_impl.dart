@@ -842,6 +842,14 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                           break;
                         case ShaderAspect.music:
                           _state.shaderSettings.musicEnabled = enabled;
+                          // Preserve the current image settings when toggling music
+                          final currentFillScreen =
+                              _state.shaderSettings.fillScreen;
+                          final currentMargin = _state
+                              .shaderSettings
+                              .textLayoutSettings
+                              .fitScreenMargin;
+
                           // When music is disabled, pause any currently playing music
                           if (!enabled &&
                               _state.shaderSettings.musicSettings.isPlaying) {
@@ -862,6 +870,14 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                             // Now play the track
                             EffectControls.playMusic();
                           }
+
+                          // Ensure we maintain the image settings after toggling music
+                          _state.shaderSettings.fillScreen = currentFillScreen;
+                          _state
+                                  .shaderSettings
+                                  .textLayoutSettings
+                                  .fitScreenMargin =
+                              currentMargin;
                           break;
                         case ShaderAspect.cymatics:
                           _state.shaderSettings.cymaticsEnabled = enabled;

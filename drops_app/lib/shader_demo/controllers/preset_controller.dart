@@ -188,7 +188,33 @@ class PresetController {
             'id': preset.id,
             'name': preset.name,
             'createdAt': preset.createdAt.millisecondsSinceEpoch,
-            'settings': preset.settings.toMap(), // Preserve all settings!
+            'settings': {
+              // Ensure we preserve critical settings with their actual values
+              'imageEnabled': settings.imageEnabled,
+              'backgroundSettings': {
+                'backgroundEnabled':
+                    settings.backgroundSettings.backgroundEnabled,
+                'backgroundColor':
+                    settings.backgroundSettings.backgroundColor.value,
+                'backgroundAnimated':
+                    settings.backgroundSettings.backgroundAnimated,
+                'backgroundAnimOptions': settings
+                    .backgroundSettings
+                    .backgroundAnimOptions
+                    .toMap(),
+              },
+              // Include other settings too
+              'colorSettings': settings.colorSettings.toMap(),
+              'blurSettings': settings.blurSettings.toMap(),
+              'noiseSettings': settings.noiseSettings.toMap(),
+              'textfxSettings': settings.textfxSettings.toMap(),
+              'textLayoutSettings': settings.textLayoutSettings.toMap(),
+              'rainSettings': settings.rainSettings.toMap(),
+              'chromaticSettings': settings.chromaticSettings.toMap(),
+              'rippleSettings': settings.rippleSettings.toMap(),
+              'musicSettings': settings.musicSettings.toMap(),
+              'cymaticsSettings': settings.cymaticsSettings.toMap(),
+            },
             'imagePath': preset.imagePath,
             'sortMethod': sortMethod?.index,
             // Include any specific settings if available
@@ -288,7 +314,8 @@ class PresetController {
           }
 
           final result = byteData.buffer.asUint8List();
-          debugPrint('Captured preview successfully: ${result.length} bytes');
+          // Commented out to reduce log spam when music is playing
+          // debugPrint('Captured preview successfully: ${result.length} bytes');
           completer.complete(result);
         } catch (e) {
           debugPrint('Error capturing preview in post-frame: $e');
@@ -437,9 +464,10 @@ class PresetController {
                 debugPrint(
                   'Successfully captured image: ${image.width}x${image.height}',
                 );
-                debugPrint(
-                  'Captured preview successfully: ${bytes.length} bytes',
-                );
+                // Commented out to reduce log spam when music is playing
+                // debugPrint(
+                //   'Captured preview successfully: ${bytes.length} bytes',
+                // );
                 completer.complete(bytes);
               } else {
                 completer.complete(null);
@@ -487,7 +515,33 @@ class PresetController {
             'id': preset.id,
             'name': preset.name,
             'createdAt': preset.createdAt.millisecondsSinceEpoch,
-            'settings': preset.settings.toMap(), // Preserve all settings!
+            'settings': {
+              // Ensure we preserve critical settings with their actual values
+              'imageEnabled': settings.imageEnabled,
+              'backgroundSettings': {
+                'backgroundEnabled':
+                    settings.backgroundSettings.backgroundEnabled,
+                'backgroundColor':
+                    settings.backgroundSettings.backgroundColor.value,
+                'backgroundAnimated':
+                    settings.backgroundSettings.backgroundAnimated,
+                'backgroundAnimOptions': settings
+                    .backgroundSettings
+                    .backgroundAnimOptions
+                    .toMap(),
+              },
+              // Include other settings too
+              'colorSettings': settings.colorSettings.toMap(),
+              'blurSettings': settings.blurSettings.toMap(),
+              'noiseSettings': settings.noiseSettings.toMap(),
+              'textfxSettings': settings.textfxSettings.toMap(),
+              'textLayoutSettings': settings.textLayoutSettings.toMap(),
+              'rainSettings': settings.rainSettings.toMap(),
+              'chromaticSettings': settings.chromaticSettings.toMap(),
+              'rippleSettings': settings.rippleSettings.toMap(),
+              'musicSettings': settings.musicSettings.toMap(),
+              'cymaticsSettings': settings.cymaticsSettings.toMap(),
+            },
             'imagePath': preset.imagePath,
             'sortMethod': updatedSortMethod?.index,
             // Include any specific settings if available

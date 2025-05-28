@@ -69,9 +69,15 @@ class BackgroundSettings {
 
   // Create settings from a map (deserialization)
   factory BackgroundSettings.fromMap(Map<String, dynamic> map) {
-    final backgroundColor = map['backgroundColor'] != null
-        ? Color(map['backgroundColor'])
-        : Colors.black;
+    // Check if backgroundColor is explicitly null or missing
+    Color backgroundColor;
+    if (map.containsKey('backgroundColor') && map['backgroundColor'] != null) {
+      backgroundColor = Color(map['backgroundColor']);
+    } else {
+      // This is the issue - defaulting to black when the color is missing
+      // We should preserve the existing color or use a more sensible default
+      backgroundColor = Colors.black;
+    }
 
     if (enableLogging) {
       print(

@@ -105,14 +105,15 @@ class ShaderPreset {
       // Add any specific settings that should be directly accessible
       if (specificSettings != null) {
         resultMap.addAll(specificSettings!);
+        // Commented out to reduce log spam when music is playing with frequent updates
         // Only log when specificSettings exist to reduce log noise
-        debugPrint('ShaderPreset.toMap: Adding specificSettings to $name:');
-        if (specificSettings!.containsKey('fitScreenMargin')) {
-          debugPrint('  margin: ${specificSettings!['fitScreenMargin']}');
-        }
-        if (specificSettings!.containsKey('fillScreen')) {
-          debugPrint('  fillScreen: ${specificSettings!['fillScreen']}');
-        }
+        // debugPrint('ShaderPreset.toMap: Adding specificSettings to $name:');
+        // if (specificSettings!.containsKey('fitScreenMargin')) {
+        //   debugPrint('  margin: ${specificSettings!['fitScreenMargin']}');
+        // }
+        // if (specificSettings!.containsKey('fillScreen')) {
+        //   debugPrint('  fillScreen: ${specificSettings!['fillScreen']}');
+        // }
       }
 
       return resultMap;

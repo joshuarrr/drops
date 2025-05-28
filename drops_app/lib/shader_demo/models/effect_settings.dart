@@ -263,21 +263,48 @@ class ShaderSettings {
       };
     } catch (e) {
       print('Error serializing ShaderSettings: $e');
-      // Return empty settings to prevent serialization errors
-      return {
-        'imageEnabled': true,
-        'colorSettings': ColorSettings().toMap(),
-        'blurSettings': BlurSettings().toMap(),
-        'noiseSettings': NoiseSettings().toMap(),
-        'textfxSettings': TextFXSettings().toMap(),
-        'textLayoutSettings': TextLayoutSettings().toMap(),
-        'rainSettings': RainSettings().toMap(),
-        'chromaticSettings': ChromaticSettings().toMap(),
-        'rippleSettings': RippleSettings().toMap(),
-        'musicSettings': MusicSettings().toMap(),
-        'cymaticsSettings': CymaticsSettings().toMap(),
-        'backgroundSettings': BackgroundSettings().toMap(),
-      };
+      // Return fallback settings but preserve current background color
+      try {
+        // Try to at least preserve the background settings
+        final backgroundMap = _backgroundSettings.toMap();
+        return {
+          'imageEnabled': _imageEnabled,
+          'colorSettings': ColorSettings().toMap(),
+          'blurSettings': BlurSettings().toMap(),
+          'noiseSettings': NoiseSettings().toMap(),
+          'textfxSettings': TextFXSettings().toMap(),
+          'textLayoutSettings': TextLayoutSettings().toMap(),
+          'rainSettings': RainSettings().toMap(),
+          'chromaticSettings': ChromaticSettings().toMap(),
+          'rippleSettings': RippleSettings().toMap(),
+          'musicSettings': MusicSettings().toMap(),
+          'cymaticsSettings': CymaticsSettings().toMap(),
+          'backgroundSettings':
+              backgroundMap, // Use the actual background settings
+        };
+      } catch (innerError) {
+        // If even that fails, return minimal settings but still try to preserve color
+        print('Critical error serializing ShaderSettings: $innerError');
+        return {
+          'imageEnabled': true,
+          'colorSettings': ColorSettings().toMap(),
+          'blurSettings': BlurSettings().toMap(),
+          'noiseSettings': NoiseSettings().toMap(),
+          'textfxSettings': TextFXSettings().toMap(),
+          'textLayoutSettings': TextLayoutSettings().toMap(),
+          'rainSettings': RainSettings().toMap(),
+          'chromaticSettings': ChromaticSettings().toMap(),
+          'rippleSettings': RippleSettings().toMap(),
+          'musicSettings': MusicSettings().toMap(),
+          'cymaticsSettings': CymaticsSettings().toMap(),
+          'backgroundSettings': {
+            'backgroundEnabled': _backgroundSettings.backgroundEnabled,
+            'backgroundColor': _backgroundSettings.backgroundColor.value,
+            'backgroundAnimated': false,
+            'backgroundAnimOptions': AnimationOptions().toMap(),
+          },
+        };
+      }
     }
   }
 

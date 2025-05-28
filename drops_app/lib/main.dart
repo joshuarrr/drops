@@ -12,6 +12,7 @@ import 'shader_demo/controllers/custom_shader_widgets.dart';
 import 'shader_demo/controllers/preset_initializer.dart';
 import 'theme/custom_fonts.dart';
 import 'shader_demo/views/effect_controls.dart';
+import 'shader_demo/utils/logging_config.dart';
 
 // Conditionally import web-specific code
 import 'theme/web_fonts.dart'
@@ -54,6 +55,9 @@ void main() async {
   if (enableShaderDebugLogs) {
     print("Shader debugging enabled");
   }
+
+  // Disable verbose logging for settings to prevent log spam when music plays
+  LoggingConfig.disableAllLogging();
 
   // Initialize default shader presets
   await PresetInitializer.initializeDefaultPresets();

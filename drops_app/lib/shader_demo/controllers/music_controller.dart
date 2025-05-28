@@ -17,7 +17,7 @@ import 'effect_controller.dart';
 class MusicController with WidgetsBindingObserver {
   // Logging
   static const String _logTag = 'MusicController';
-  static bool enableLogging = true;
+  static bool enableLogging = false;
 
   // Audio player instance
   late AudioPlayer _audioPlayer;
@@ -173,11 +173,11 @@ class MusicController with WidgetsBindingObserver {
               return;
             }
 
-            // Log position but only occasionally to reduce noise
-            if (currentPosition - lastLoggedPosition >= 5) {
-              _log('Position: ${currentPosition}s', level: LogLevel.info);
-              lastLoggedPosition = currentPosition;
-            }
+            // Comment out the position logging to reduce console noise
+            // if (currentPosition - lastLoggedPosition >= 5) {
+            //   _log('Position: ${currentPosition}s', level: LogLevel.info);
+            //   lastLoggedPosition = currentPosition;
+            // }
 
             updatedSettings.musicSettings.playbackPosition = currentPosition
                 .toDouble();
@@ -315,7 +315,7 @@ class MusicController with WidgetsBindingObserver {
       final audioContext = AudioContext(
         iOS: AudioContextIOS(
           category: AVAudioSessionCategory.playback,
-          options: [AVAudioSessionOptions.mixWithOthers],
+          options: {AVAudioSessionOptions.mixWithOthers},
         ),
         android: AudioContextAndroid(
           isSpeakerphoneOn: false,

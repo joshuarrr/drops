@@ -203,6 +203,13 @@ class ImagePanel extends StatelessWidget {
     // Create a deep copy of the settings to ensure changes are properly tracked
     final updatedSettings = ShaderSettings.fromMap(settings.toMap());
 
+    // Store current values for debugging
+    final originalFillScreen = updatedSettings.fillScreen;
+    final originalMargin = updatedSettings.textLayoutSettings.fitScreenMargin;
+    debugPrint(
+      '  Original values - fillScreen: $originalFillScreen, margin: $originalMargin',
+    );
+
     // Handle fillScreen setting - check direct presetData key
     if (presetData.containsKey('fillScreen')) {
       final bool fillScreenValue = presetData['fillScreen'] as bool;
@@ -258,7 +265,7 @@ class ImagePanel extends StatelessWidget {
     };
 
     debugPrint(
-      'Saving aspect preset with margin: ${presetData['fitScreenMargin']}',
+      'Saving aspect preset with fillScreen: ${settings.fillScreen}, margin: ${settings.textLayoutSettings.fitScreenMargin}',
     );
 
     bool success = await PresetsManager.savePreset(aspect, name, presetData);
