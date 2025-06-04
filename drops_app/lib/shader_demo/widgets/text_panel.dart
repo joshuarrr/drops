@@ -132,6 +132,7 @@ class _TextPanelState extends State<TextPanel> {
           }).toList(),
         ),
         TextInputField(
+          key: ValueKey('text_input_${selectedTextLine.toString()}'),
           label: '${selectedTextLine.label} Text',
           value: _getCurrentText(),
           onChanged: _setCurrentText,
@@ -345,6 +346,14 @@ class _TextPanelState extends State<TextPanel> {
         widget.settings.textLayoutSettings.textLyrics = v;
         break;
     }
+
+    // Ensure text is enabled when user types text
+    if (v.isNotEmpty && !widget.settings.textLayoutSettings.textEnabled) {
+      widget.settings.textLayoutSettings.textEnabled = true;
+    }
+
+    // Notify that settings have changed
+    widget.onSettingsChanged(widget.settings);
   }
 
   String _getCurrentFont() {

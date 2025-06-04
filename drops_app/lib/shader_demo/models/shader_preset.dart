@@ -78,9 +78,17 @@ class ShaderPreset {
   bool getFillScreen() {
     if (specificSettings != null &&
         specificSettings!.containsKey('fillScreen')) {
-      return specificSettings!['fillScreen'] as bool;
+      final bool value = specificSettings!['fillScreen'] as bool;
+      // Added debug logging to trace fillScreen retrieval
+      debugPrint(
+        'ShaderPreset.getFillScreen: Retrieved fillScreen=$value from specificSettings',
+      );
+      return value;
     }
     // Default to settings value if no specific override
+    debugPrint(
+      'ShaderPreset.getFillScreen: No specificSettings, using settings.fillScreen=${settings.fillScreen}',
+    );
     return settings.fillScreen;
   }
 

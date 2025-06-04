@@ -86,6 +86,11 @@ class TextLayoutSettings {
     return color?.value ?? Colors.white.value;
   }
 
+  // Helper to safely get a double value, replacing NaN with a default
+  double _safeDoubleValue(double value, double defaultValue) {
+    return value.isNaN || value.isInfinite ? defaultValue : value;
+  }
+
   // Image setting getter/setter
   bool get fillScreen => _fillScreen;
   set fillScreen(bool value) {
@@ -95,8 +100,9 @@ class TextLayoutSettings {
 
   double get fitScreenMargin => _fitScreenMargin;
   set fitScreenMargin(double value) {
-    _fitScreenMargin = value;
-    if (enableLogging) print("SETTINGS: fitScreenMargin set to $value");
+    _fitScreenMargin = _safeDoubleValue(value, 0.0);
+    if (enableLogging)
+      print("SETTINGS: fitScreenMargin set to $_fitScreenMargin");
   }
 
   // Text getters/setters
@@ -138,20 +144,20 @@ class TextLayoutSettings {
 
   double get textSize => _textSize;
   set textSize(double value) {
-    _textSize = value;
-    if (enableLogging) print("SETTINGS: textSize set to $value");
+    _textSize = _safeDoubleValue(value, 0.05);
+    if (enableLogging) print("SETTINGS: textSize set to $_textSize");
   }
 
   double get textPosX => _textPosX;
   set textPosX(double value) {
-    _textPosX = value;
-    if (enableLogging) print("SETTINGS: textPosX set to $value");
+    _textPosX = _safeDoubleValue(value, 0.1);
+    if (enableLogging) print("SETTINGS: textPosX set to $_textPosX");
   }
 
   double get textPosY => _textPosY;
   set textPosY(double value) {
-    _textPosY = value;
-    if (enableLogging) print("SETTINGS: textPosY set to $value");
+    _textPosY = _safeDoubleValue(value, 0.1);
+    if (enableLogging) print("SETTINGS: textPosY set to $_textPosY");
   }
 
   // Weight getters/setters
@@ -616,36 +622,36 @@ class TextLayoutSettings {
     return {
       'textEnabled': _textEnabled,
       'fillScreen': _fillScreen,
-      'fitScreenMargin': _fitScreenMargin,
+      'fitScreenMargin': _safeDoubleValue(_fitScreenMargin, 0.0),
       'textTitle': _textTitle,
       'textSubtitle': _textSubtitle,
       'textArtist': _textArtist,
       'textLyrics': _textLyrics,
       'textFont': _textFont,
-      'textSize': _textSize,
-      'textPosX': _textPosX,
-      'textPosY': _textPosY,
+      'textSize': _safeDoubleValue(_textSize, 0.05),
+      'textPosX': _safeDoubleValue(_textPosX, 0.1),
+      'textPosY': _safeDoubleValue(_textPosY, 0.1),
       'textColor': _safeColorValue(_textColor),
       'textWeight': _textWeight,
       'titleFont': _titleFont,
-      'titleSize': _titleSize,
-      'titlePosX': _titlePosX,
-      'titlePosY': _titlePosY,
+      'titleSize': _safeDoubleValue(_titleSize, 0.05),
+      'titlePosX': _safeDoubleValue(_titlePosX, 0.1),
+      'titlePosY': _safeDoubleValue(_titlePosY, 0.1),
       'titleColor': _safeColorValue(_titleColor),
       'subtitleFont': _subtitleFont,
-      'subtitleSize': _subtitleSize,
-      'subtitlePosX': _subtitlePosX,
-      'subtitlePosY': _subtitlePosY,
+      'subtitleSize': _safeDoubleValue(_subtitleSize, 0.04),
+      'subtitlePosX': _safeDoubleValue(_subtitlePosX, 0.1),
+      'subtitlePosY': _safeDoubleValue(_subtitlePosY, 0.18),
       'subtitleColor': _safeColorValue(_subtitleColor),
       'artistFont': _artistFont,
-      'artistSize': _artistSize,
-      'artistPosX': _artistPosX,
-      'artistPosY': _artistPosY,
+      'artistSize': _safeDoubleValue(_artistSize, 0.035),
+      'artistPosX': _safeDoubleValue(_artistPosX, 0.1),
+      'artistPosY': _safeDoubleValue(_artistPosY, 0.26),
       'artistColor': _safeColorValue(_artistColor),
       'lyricsFont': _lyricsFont,
-      'lyricsSize': _lyricsSize,
-      'lyricsPosX': _lyricsPosX,
-      'lyricsPosY': _lyricsPosY,
+      'lyricsSize': _safeDoubleValue(_lyricsSize, 0.03),
+      'lyricsPosX': _safeDoubleValue(_lyricsPosX, 0.1),
+      'lyricsPosY': _safeDoubleValue(_lyricsPosY, 0.34),
       'lyricsColor': _safeColorValue(_lyricsColor),
       'titleWeight': _titleWeight,
       'subtitleWeight': _subtitleWeight,
@@ -654,33 +660,33 @@ class TextLayoutSettings {
       'textFitToWidth': _textFitToWidth,
       'textHAlign': _textHAlign,
       'textVAlign': _textVAlign,
-      'textLineHeight': _textLineHeight,
+      'textLineHeight': _safeDoubleValue(_textLineHeight, 1.2),
       'titleFitToWidth': _titleFitToWidth,
       'titleHAlign': _titleHAlign,
       'titleVAlign': _titleVAlign,
-      'titleLineHeight': _titleLineHeight,
+      'titleLineHeight': _safeDoubleValue(_titleLineHeight, 1.2),
       'subtitleFitToWidth': _subtitleFitToWidth,
       'subtitleHAlign': _subtitleHAlign,
       'subtitleVAlign': _subtitleVAlign,
-      'subtitleLineHeight': _subtitleLineHeight,
+      'subtitleLineHeight': _safeDoubleValue(_subtitleLineHeight, 1.2),
       'artistFitToWidth': _artistFitToWidth,
       'artistHAlign': _artistHAlign,
       'artistVAlign': _artistVAlign,
-      'artistLineHeight': _artistLineHeight,
+      'artistLineHeight': _safeDoubleValue(_artistLineHeight, 1.2),
       'lyricsFitToWidth': _lyricsFitToWidth,
       'lyricsHAlign': _lyricsHAlign,
       'lyricsVAlign': _lyricsVAlign,
-      'lyricsLineHeight': _lyricsLineHeight,
-      'titleWidth': _titleWidth,
-      'subtitleWidth': _subtitleWidth,
-      'artistWidth': _artistWidth,
-      'lyricsWidth': _lyricsWidth,
-      'textWidth': _textWidth,
-      'titleContrast': _titleContrast,
-      'subtitleContrast': _subtitleContrast,
-      'artistContrast': _artistContrast,
-      'lyricsContrast': _lyricsContrast,
-      'textContrast': _textContrast,
+      'lyricsLineHeight': _safeDoubleValue(_lyricsLineHeight, 1.2),
+      'titleWidth': _safeDoubleValue(_titleWidth, 100.0),
+      'subtitleWidth': _safeDoubleValue(_subtitleWidth, 100.0),
+      'artistWidth': _safeDoubleValue(_artistWidth, 100.0),
+      'lyricsWidth': _safeDoubleValue(_lyricsWidth, 100.0),
+      'textWidth': _safeDoubleValue(_textWidth, 100.0),
+      'titleContrast': _safeDoubleValue(_titleContrast, 100.0),
+      'subtitleContrast': _safeDoubleValue(_subtitleContrast, 100.0),
+      'artistContrast': _safeDoubleValue(_artistContrast, 100.0),
+      'lyricsContrast': _safeDoubleValue(_lyricsContrast, 100.0),
+      'textContrast': _safeDoubleValue(_textContrast, 100.0),
     };
   }
 

@@ -13,6 +13,8 @@ import 'shader_demo/controllers/preset_initializer.dart';
 import 'theme/custom_fonts.dart';
 import 'shader_demo/views/effect_controls.dart';
 import 'shader_demo/utils/logging_config.dart';
+import 'shader_demo/utils/memory_profiler.dart';
+import 'cymatics_demo/cymatics_demo_impl.dart';
 
 // Conditionally import web-specific code
 import 'theme/web_fonts.dart'
@@ -62,6 +64,15 @@ void main() async {
   // Initialize default shader presets
   await PresetInitializer.initializeDefaultPresets();
 
+  // Start memory profiling in debug mode to prevent out-of-memory crashes
+  if (kDebugMode) {
+    MemoryProfiler.startMonitoring(
+      intervalMs: 10000,
+      verbose: false,
+    ); // Check every 10 seconds with minimal logging
+    print("Memory profiling enabled - monitoring effect cache");
+  }
+
   // Hot restart detection and cleanup
   if (kDebugMode) {
     // This will run whenever the app rebuilds, including during hot restarts
@@ -69,6 +80,8 @@ void main() async {
       // Clean up music resources without logging unless there's a problem
       try {
         EffectControls.cleanupMusicResources();
+        // Also clear effect cache
+        EffectController.clearEffectCache();
       } catch (e) {
         print("Hot restart cleanup error: $e");
       }
@@ -125,16 +138,40 @@ class AppLifecycleManager extends StatefulWidget {
 
 class _AppLifecycleManagerState extends State<AppLifecycleManager>
     with WidgetsBindingObserver {
+  bool _receivedMemoryWarning = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+
+    // Only start memory monitoring if it's not already running from debug mode
+    if (!kDebugMode) {
+      MemoryProfiler.startMonitoring();
+    }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+
+    // Stop memory monitoring
+    MemoryProfiler.stopMonitoring();
+
     super.dispose();
+  }
+
+  @override
+  void didHaveMemoryPressure() {
+    // Called when the system is under memory pressure
+    print("⚠️ MEMORY WARNING: System is under memory pressure");
+
+    // Enable high memory mode and clear caches
+    EffectController.setHighMemoryMode(true);
+    EffectController.clearEffectCache();
+
+    // Record that we received a memory warning
+    _receivedMemoryWarning = true;
   }
 
   @override
@@ -145,9 +182,27 @@ class _AppLifecycleManagerState extends State<AppLifecycleManager>
       // Stop music and release resources
       try {
         EffectControls.cleanupMusicResources();
+        // Also stop any playing cymatics demo audio
+        CymaticsDemoImpl.stopAudio();
+        // Clear caches when app goes to background
+        EffectController.clearEffectCache();
       } catch (e) {
-        print("Error cleaning up music resources: $e");
+        print("Error cleaning up resources: $e");
       }
+    } else if (state == AppLifecycleState.resumed) {
+      // App is coming back to foreground
+      // Clear caches to prevent memory issues
+      EffectController.clearEffectCache();
+
+      // If we previously received a memory warning, keep high memory mode enabled
+      if (_receivedMemoryWarning) {
+        print("Maintaining high memory mode due to previous memory warning");
+        EffectController.setHighMemoryMode(true);
+      }
+    } else if (state == AppLifecycleState.inactive) {
+      // App is inactive (e.g., when displaying system dialogs)
+      // Clear effect cache to free up memory
+      EffectController.clearEffectCache();
     }
   }
 

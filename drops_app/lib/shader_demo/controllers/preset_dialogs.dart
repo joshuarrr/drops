@@ -3,6 +3,7 @@ import '../models/shader_preset.dart';
 import '../models/effect_settings.dart';
 import '../views/preset_dialog.dart';
 import 'preset_controller.dart';
+import '../services/preset_service.dart';
 
 /// Handles showing dialogs for saving and loading shader presets
 class PresetDialogs {
@@ -11,7 +12,7 @@ class PresetDialogs {
     required BuildContext context,
     required ShaderSettings settings,
     required String imagePath,
-    required GlobalKey previewKey,
+    GlobalKey? previewKey,
     ShaderPreset? currentPreset,
   }) {
     // Store a reference to the scaffold context before showing the dialog
@@ -45,11 +46,14 @@ class PresetDialogs {
               );
             } else {
               // Create a new preset
+              // Always use PresetController.savePreset for user-initiated saves
+              // This ensures proper validation and error handling
               await PresetController.savePreset(
                 name: name,
                 settings: settings,
                 imagePath: imagePath,
-                previewKey: previewKey,
+                previewKey:
+                    previewKey, // This can be null - controller will handle it
               );
 
               // Show success message
@@ -94,7 +98,7 @@ class PresetDialogs {
     required BuildContext context,
     required ShaderPreset preset,
     required ShaderSettings newSettings,
-    required GlobalKey previewKey,
+    GlobalKey? previewKey,
   }) {
     // Store a reference to the scaffold context before showing the dialog
     final scaffoldContext = context;
@@ -116,11 +120,22 @@ class PresetDialogs {
             onPressed: () async {
               try {
                 // Update the preset
-                await PresetController.updatePreset(
-                  id: preset.id,
-                  settings: newSettings,
-                  previewKey: previewKey,
-                );
+                if (previewKey == null) {
+                  // Use the service method that handles null previewKey
+                  await PresetService.updatePresetWithImagePath(
+                    id: preset.id,
+                    settings: newSettings,
+                    imagePath: preset.imagePath,
+                    previewKey: null,
+                  );
+                } else {
+                  // Use the controller method with the previewKey
+                  await PresetController.updatePreset(
+                    id: preset.id,
+                    settings: newSettings,
+                    previewKey: previewKey,
+                  );
+                }
 
                 Navigator.pop(context);
 

@@ -1,8 +1,10 @@
 import 'dart:developer' as developer;
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_shaders/flutter_shaders.dart';
 
+import '../../models/animation_options.dart';
 import '../../models/effect_settings.dart';
 import '../../utils/animation_utils.dart';
 import 'debug_flags.dart';
@@ -89,25 +91,50 @@ class RippleEffectShader extends StatelessWidget {
 
           // Compute animation values if animation is enabled
           if (settings.rippleSettings.rippleAnimated) {
-            timeValue = ShaderAnimationUtils.computeAnimatedValue(
-              settings.rippleSettings.rippleAnimOptions,
-              animationValue,
-            );
+            if (settings.rippleSettings.rippleAnimOptions.mode ==
+                AnimationMode.pulse) {
+              // Simplified pulse animation - use raw animationValue to avoid memory issues
+              timeValue = animationValue;
+
+              // Create smooth pulse with optimized calculation
+              final double pulseTime =
+                  animationValue *
+                  settings.rippleSettings.rippleAnimOptions.speed *
+                  4.0;
+              final double pulse = (math.sin(pulseTime * math.pi) * 0.5 + 0.5)
+                  .abs();
+
+              // Apply pulse to ripple effect parameters
+              intensity = settings.rippleSettings.rippleIntensity * pulse;
+              speed = settings.rippleSettings.rippleSpeed * pulse;
+              opacity = settings.rippleSettings.rippleOpacity * pulse;
+              colorFactor = settings.rippleSettings.rippleColor * pulse;
+            } else {
+              // For non-pulse modes, use the standard animation utilities
+              final double animValue =
+                  ShaderAnimationUtils.computeAnimatedValue(
+                    settings.rippleSettings.rippleAnimOptions,
+                    animationValue,
+                  );
+              timeValue = animValue;
+            }
           }
 
           // Set uniforms using size from canvas rather than constraints
-          shader.setFloat(0, size.width);
-          shader.setFloat(1, size.height);
+          // CRITICAL FIX: Ensure size values are never zero to prevent shader issues
+          shader.setFloat(0, size.width > 0.0 ? size.width : 1.0);
+          shader.setFloat(1, size.height > 0.0 ? size.height : 1.0);
+          // Clamp all parameters to safe ranges to prevent NaN
           shader.setFloat(2, timeValue);
-          shader.setFloat(3, intensity);
-          shader.setFloat(4, rippleSize);
-          shader.setFloat(5, speed);
-          shader.setFloat(6, opacity);
-          shader.setFloat(7, colorFactor);
-          shader.setFloat(8, dropCount);
-          shader.setFloat(9, seed);
-          shader.setFloat(10, ovalness);
-          shader.setFloat(11, rotation);
+          shader.setFloat(3, intensity.clamp(0.0, 1.0));
+          shader.setFloat(4, rippleSize.clamp(0.0, 1.0));
+          shader.setFloat(5, speed.clamp(0.0, 5.0));
+          shader.setFloat(6, opacity.clamp(0.0, 1.0));
+          shader.setFloat(7, colorFactor.clamp(0.0, 1.0));
+          shader.setFloat(8, dropCount.clamp(1.0, 30.0));
+          shader.setFloat(9, seed.clamp(0.0, 100.0));
+          shader.setFloat(10, ovalness.clamp(0.0, 1.0));
+          shader.setFloat(11, rotation.clamp(0.0, 1.0));
 
           // Draw with shader using exact same approach as other shaders
           canvas.drawRect(Offset.zero & size, Paint()..shader = shader);

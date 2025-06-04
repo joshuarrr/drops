@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import '../models/shader_effect.dart';
 
-class TextInputField extends StatelessWidget {
+class TextInputField extends StatefulWidget {
   final String label;
   final String value;
   final Function(String) onChanged;
@@ -26,38 +25,101 @@ class TextInputField extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    // Use TextEditingController to properly update field when reset occurs
-    final controller = TextEditingController(text: value);
+  State<TextInputField> createState() => _TextInputFieldState();
+}
 
-    if (enableLogging) {
-      print('DEBUG: TextField initial value: "$value"');
+class _TextInputFieldState extends State<TextInputField> {
+  late TextEditingController _controller;
+  late FocusNode _focusNode;
+  String _lastValue = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _lastValue = widget.value;
+    _controller = TextEditingController(text: widget.value);
+    _focusNode = FocusNode();
+
+    if (widget.enableLogging) {
+      print('DEBUG: TextField initialized with value: "${widget.value}"');
     }
+  }
 
+  @override
+  void didUpdateWidget(TextInputField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // Only update the controller if the external value has actually changed
+    // and it's different from what we currently have
+    if (widget.value != _lastValue && widget.value != _controller.text) {
+      if (widget.enableLogging) {
+        print(
+          'DEBUG: External value changed from "$_lastValue" to "${widget.value}"',
+        );
+      }
+
+      _lastValue = widget.value;
+
+      // Only update if the field is not currently focused (to avoid interrupting user input)
+      if (!_focusNode.hasFocus) {
+        _controller.text = widget.value;
+        _controller.selection = TextSelection.collapsed(
+          offset: widget.value.length,
+        );
+      } else {
+        // If focused, be more careful about cursor position
+        final int cursorPos = _controller.selection.baseOffset;
+        _controller.text = widget.value;
+
+        // Try to restore cursor position, but clamp it to valid range
+        if (cursorPos >= 0 && cursorPos <= widget.value.length) {
+          _controller.selection = TextSelection.collapsed(offset: cursorPos);
+        } else {
+          _controller.selection = TextSelection.collapsed(
+            offset: widget.value.length,
+          );
+        }
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(color: textColor, fontSize: 14)),
+        Text(
+          widget.label,
+          style: TextStyle(color: widget.textColor, fontSize: 14),
+        ),
         const SizedBox(height: 4),
         Container(
           decoration: BoxDecoration(
-            color: textColor.withOpacity(0.1),
+            color: widget.textColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: TextFormField(
-            controller: controller,
-            style: TextStyle(color: textColor),
+            controller: _controller,
+            focusNode: _focusNode,
+            style: TextStyle(color: widget.textColor),
             textDirection: TextDirection.ltr,
             textAlign: TextAlign.left,
-            keyboardType: multiline
+            keyboardType: widget.multiline
                 ? TextInputType.multiline
                 : TextInputType.text,
-            maxLines: multiline ? maxLines : 1,
+            maxLines: widget.multiline ? widget.maxLines : 1,
             decoration: InputDecoration(
               isDense: true,
               contentPadding: EdgeInsets.symmetric(
                 horizontal: 8,
-                vertical: multiline ? 10 : 6,
+                vertical: widget.multiline ? 10 : 6,
               ),
               filled: false,
               border: InputBorder.none,
@@ -65,17 +127,18 @@ class TextInputField extends StatelessWidget {
               focusedBorder: InputBorder.none,
             ),
             onChanged: (txt) {
-              if (enableLogging) {
+              if (widget.enableLogging) {
                 print('DEBUG: onChanged received text: "$txt"');
               }
 
-              onChanged(txt);
+              _lastValue = txt;
+              widget.onChanged(txt);
 
               // Enable text effect if needed
-              if (isTextEnabled != null &&
-                  !isTextEnabled!() &&
-                  enableText != null) {
-                enableText!();
+              if (widget.isTextEnabled != null &&
+                  !widget.isTextEnabled!() &&
+                  widget.enableText != null) {
+                widget.enableText!();
               }
             },
           ),

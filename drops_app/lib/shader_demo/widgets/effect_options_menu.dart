@@ -56,11 +56,11 @@ class EffectOptionsMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Determine which targeting options to show
-    final bool showApplyToImage = aspect != ShaderAspect.image;
+    final bool showApplyToImage =
+        aspect != ShaderAspect.image && aspect != ShaderAspect.textfx;
     final bool showApplyToText =
         aspect != ShaderAspect.text &&
-        aspect != ShaderAspect.textfx &&
-        aspect != ShaderAspect.image; // Also hide for image aspect
+        aspect != ShaderAspect.image; // Show for textfx but not text or image
     final bool showApplyToBackground = aspect == ShaderAspect.cymatics;
     final bool showDivider =
         showApplyToImage || showApplyToText || showApplyToBackground;
@@ -121,6 +121,7 @@ class EffectOptionsMenu extends StatelessWidget {
 
         // Add Apply to Text option if needed
         if (showApplyToText) {
+          final bool isTextFx = aspect == ShaderAspect.textfx;
           items.add(
             PopupMenuItem<String>(
               enabled: false,
@@ -129,13 +130,15 @@ class EffectOptionsMenu extends StatelessWidget {
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  onTap: () {
-                    onApplyToTextChanged(!applyToText);
-                    debugPrint(
-                      "[EffectOptionsMenu] Apply to Text toggled to: ${!applyToText}",
-                    );
-                    Navigator.pop(context);
-                  },
+                  onTap: isTextFx
+                      ? null
+                      : () {
+                          onApplyToTextChanged(!applyToText);
+                          debugPrint(
+                            "[EffectOptionsMenu] Apply to Text toggled to: ${!applyToText}",
+                          );
+                          Navigator.pop(context);
+                        },
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
@@ -145,12 +148,26 @@ class EffectOptionsMenu extends StatelessWidget {
                       children: [
                         Text(
                           'Apply to Text',
-                          style: TextStyle(color: textColor),
+                          style: TextStyle(
+                            color: isTextFx
+                                ? textColor.withOpacity(0.5)
+                                : textColor,
+                          ),
                         ),
                         const Spacer(),
                         Checkbox(
-                          value: applyToText,
-                          activeColor: textColor,
+                          value: isTextFx ? true : applyToText,
+                          activeColor: isTextFx
+                              ? textColor.withOpacity(0.5)
+                              : textColor,
+                          fillColor: isTextFx
+                              ? WidgetStateProperty.all(
+                                  textColor.withOpacity(0.5),
+                                )
+                              : WidgetStateProperty.all(textColor),
+                          checkColor: isTextFx
+                              ? Colors.white.withOpacity(0.7)
+                              : Colors.white,
                           onChanged: null,
                         ),
                       ],

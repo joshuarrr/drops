@@ -14,6 +14,7 @@ import 'package:uuid/uuid.dart';
 import '../models/shader_preset.dart';
 import '../models/effect_settings.dart';
 import 'effect_controller.dart';
+import '../controllers/shaders/noise_effect_shader.dart';
 
 /// Controller for managing shader presets
 class PresetController {
@@ -124,16 +125,19 @@ class PresetController {
     return 'Preset $nextNumber';
   }
 
-  /// Save a new preset
+  /// Save a new preset with the given settings
   static Future<ShaderPreset> savePreset({
     required String name,
     required ShaderSettings settings,
     required String imagePath,
-    required GlobalKey previewKey,
+    required GlobalKey? previewKey,
     PresetSortMethod? sortMethod,
     Map<String, dynamic>? specificSettings,
   }) async {
     try {
+      // Enable memory protection for animated shaders during preset saving
+      NoiseEffectShader.setPresetSaving(true);
+
       // Log text settings to help debug
       debugPrint(
         'Saving preset with text enabled: ${settings.textLayoutSettings.textEnabled}',
@@ -246,6 +250,9 @@ class PresetController {
     } catch (e) {
       debugPrint('Error saving preset: $e');
       throw Exception('Failed to save preset: $e');
+    } finally {
+      // Always disable memory protection when done
+      NoiseEffectShader.setPresetSaving(false);
     }
   }
 
@@ -268,8 +275,18 @@ class PresetController {
   }
 
   /// Capture a preview of the current shader effect
-  static Future<Uint8List?> _capturePreview(GlobalKey key) async {
+  static Future<Uint8List?> _capturePreview(GlobalKey? key) async {
     try {
+      // Enable memory protection for animated shaders during thumbnail capture
+      NoiseEffectShader.setPresetSaving(true);
+      EffectController.setPresetCapturing(true);
+
+      // If no key provided, skip thumbnail capture
+      if (key == null) {
+        debugPrint('No preview key provided, skipping thumbnail capture');
+        return null;
+      }
+
       debugPrint('Starting capture of preview with key: ${key.toString()}');
 
       final RenderRepaintBoundary? boundary =
@@ -280,24 +297,21 @@ class PresetController {
         return null;
       }
 
+      // Use a higher pixel ratio for better quality thumbnails in the UI
+      // Increased from 0.25 to 2.0 for much better visual quality
+      const double pixelRatio = 2.0; // High resolution for UI thumbnails
+
       // Instead of a fixed delay, use SchedulerBinding to capture after the next frame
       // This ensures we capture after all rendering is complete
       final completer = Completer<Uint8List?>();
 
       SchedulerBinding.instance.addPostFrameCallback((_) async {
+        ui.Image? image;
         try {
           debugPrint('Capturing preview on next frame');
 
-          // Instead of using an arbitrary fractional pixelRatio (which can lead to
-          // cropped output on some iOS devices – see Flutter issue #131738), use
-          // the device‐native devicePixelRatio. This keeps the raster size an
-          // integer multiple of the logical size and eliminates the top-left crop
-          // bug observed on iOS simulators.
-          final double dpr = ui.window.devicePixelRatio;
-
-          // Capture the repaint boundary at the device pixel ratio so the whole
-          // screen is included without artefacts.
-          final ui.Image image = await boundary.toImage(pixelRatio: dpr);
+          // Capture at high resolution for quality thumbnails
+          image = await boundary.toImage(pixelRatio: pixelRatio);
 
           debugPrint(
             'Successfully captured image: ${image.width}x${image.height}',
@@ -314,12 +328,16 @@ class PresetController {
           }
 
           final result = byteData.buffer.asUint8List();
-          // Commented out to reduce log spam when music is playing
-          // debugPrint('Captured preview successfully: ${result.length} bytes');
           completer.complete(result);
         } catch (e) {
           debugPrint('Error capturing preview in post-frame: $e');
           completer.complete(null);
+        } finally {
+          // Manually dispose of the image to free memory
+          image?.dispose();
+
+          // Force a garbage collection after image capture
+          await Future.delayed(Duration.zero);
         }
       });
 
@@ -327,6 +345,10 @@ class PresetController {
     } catch (e) {
       debugPrint('Error capturing preview: $e');
       return null;
+    } finally {
+      // Always disable memory protection when done
+      NoiseEffectShader.setPresetSaving(false);
+      EffectController.setPresetCapturing(false);
     }
   }
 
@@ -423,69 +445,43 @@ class PresetController {
   }
 
   /// Update an existing preset
-  static Future<ShaderPreset> updatePreset({
+  static Future<ShaderPreset?> updatePreset({
     required String id,
     required ShaderSettings settings,
-    required GlobalKey previewKey,
     String? imagePath,
+    GlobalKey? previewKey,
     PresetSortMethod? sortMethod,
     Map<String, dynamic>? specificSettings,
   }) async {
     try {
+      // Enable memory protection for animated shaders during preset updating
+      NoiseEffectShader.setPresetSaving(true);
+
       // Get existing preset
       final existing = await getPresetById(id);
       if (existing == null) {
-        throw Exception('Preset not found: $id');
+        throw Exception('Preset not found');
       }
 
-      // Capture a thumbnail if the preview key is provided
+      // Capture new thumbnail if previewKey is provided
       Uint8List? thumbnailData;
-      if (previewKey.currentContext != null) {
-        try {
-          final boundary =
-              previewKey.currentContext!.findRenderObject()
-                  as RenderRepaintBoundary;
-          debugPrint('Starting capture of preview with key: $previewKey');
-
-          // Use SchedulerBinding instead of delay
-          final completer = Completer<Uint8List?>();
-
-          SchedulerBinding.instance.addPostFrameCallback((_) async {
-            try {
-              debugPrint('Capturing preview on next frame');
-
-              final ui.Image image = await boundary.toImage(pixelRatio: 0.5);
-              final ByteData? byteData = await image.toByteData(
-                format: ui.ImageByteFormat.png,
-              );
-
-              if (byteData != null) {
-                final Uint8List bytes = byteData.buffer.asUint8List();
-                debugPrint(
-                  'Successfully captured image: ${image.width}x${image.height}',
-                );
-                // Commented out to reduce log spam when music is playing
-                // debugPrint(
-                //   'Captured preview successfully: ${bytes.length} bytes',
-                // );
-                completer.complete(bytes);
-              } else {
-                completer.complete(null);
-              }
-            } catch (e) {
-              debugPrint('Error capturing preview in post-frame: $e');
-              completer.complete(null);
-            }
-          });
-
-          thumbnailData = await completer.future;
-        } catch (e) {
-          debugPrint('Error capturing preview: $e');
-        }
+      if (previewKey != null) {
+        thumbnailData = await _capturePreview(previewKey);
       }
 
-      // Use existing or provided values
+      // Use new imagePath if provided, otherwise keep existing
       final updatedImagePath = imagePath ?? existing.imagePath;
+
+      // Merge specificSettings properly
+      Map<String, dynamic> updatedSpecificSettings = {};
+      if (existing.specificSettings != null) {
+        updatedSpecificSettings.addAll(existing.specificSettings!);
+      }
+      if (specificSettings != null) {
+        updatedSpecificSettings.addAll(specificSettings);
+      }
+
+      // Use new sort method if provided, otherwise keep existing
       final updatedSortMethod = sortMethod ?? existing.sortMethod;
 
       // Create updated preset
@@ -494,7 +490,12 @@ class PresetController {
         imagePath: updatedImagePath,
         thumbnailData: thumbnailData ?? existing.thumbnailData,
         sortMethod: updatedSortMethod,
-        specificSettings: specificSettings,
+        specificSettings: updatedSpecificSettings,
+      );
+
+      // Debug to verify
+      debugPrint(
+        'Saving preset with fillScreen=${updatedSpecificSettings['fillScreen']}',
       );
 
       // Save to storage
@@ -543,7 +544,7 @@ class PresetController {
               'cymaticsSettings': settings.cymaticsSettings.toMap(),
             },
             'imagePath': preset.imagePath,
-            'sortMethod': updatedSortMethod?.index,
+            'sortMethod': sortMethod?.index,
             // Include any specific settings if available
             if (specificSettings != null) ...specificSettings,
           };
@@ -566,6 +567,115 @@ class PresetController {
     } catch (e) {
       debugPrint('Error updating preset: $e');
       throw Exception('Failed to update preset: $e');
+    } finally {
+      // Always disable memory protection when done
+      NoiseEffectShader.setPresetSaving(false);
+    }
+  }
+
+  /// Regenerate thumbnails for all existing presets with higher resolution
+  static Future<int> regenerateAllThumbnails({
+    required GlobalKey previewKey,
+    required Function(ShaderSettings, String) applyPresetSettings,
+    Function(int, int)? onProgress,
+  }) async {
+    try {
+      final presets = await getAllPresets();
+      int regeneratedCount = 0;
+
+      debugPrint(
+        'Starting thumbnail regeneration for ${presets.length} presets',
+      );
+
+      for (int i = 0; i < presets.length; i++) {
+        final preset = presets[i];
+
+        // Notify progress if callback provided
+        onProgress?.call(i + 1, presets.length);
+
+        try {
+          debugPrint('Regenerating thumbnail for preset: ${preset.name}');
+
+          // Apply the preset settings to the shader
+          applyPresetSettings(preset.settings, preset.imagePath);
+
+          // Wait a bit for the shader to render
+          await Future.delayed(const Duration(milliseconds: 500));
+
+          // Capture new high-resolution thumbnail
+          final newThumbnailData = await _capturePreview(previewKey);
+
+          if (newThumbnailData != null) {
+            // Save the new thumbnail
+            final prefs = await SharedPreferences.getInstance();
+            final thumbBase64 = base64Encode(newThumbnailData);
+            await prefs.setString('$_thumbnailPrefix${preset.id}', thumbBase64);
+
+            regeneratedCount++;
+            debugPrint('✓ Regenerated thumbnail for: ${preset.name}');
+          } else {
+            debugPrint('✗ Failed to capture thumbnail for: ${preset.name}');
+          }
+        } catch (e) {
+          debugPrint('Error regenerating thumbnail for ${preset.name}: $e');
+        }
+      }
+
+      debugPrint(
+        'Thumbnail regeneration complete: $regeneratedCount/${presets.length} updated',
+      );
+      return regeneratedCount;
+    } catch (e) {
+      debugPrint('Error during thumbnail regeneration: $e');
+      return 0;
+    }
+  }
+
+  /// Regenerate thumbnail for a specific preset
+  static Future<bool> regenerateThumbnail({
+    required String presetId,
+    required GlobalKey previewKey,
+    required Function(ShaderSettings, String) applyPresetSettings,
+  }) async {
+    try {
+      // Enable memory protection for animated shaders during thumbnail regeneration
+      NoiseEffectShader.setPresetSaving(true);
+
+      final preset = await getPresetById(presetId);
+      if (preset == null) {
+        debugPrint('Preset not found: $presetId');
+        return false;
+      }
+
+      debugPrint('Regenerating thumbnail for preset: ${preset.name}');
+
+      // Apply the preset settings to the shader
+      applyPresetSettings(preset.settings, preset.imagePath);
+
+      // Wait a bit for the shader to render
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // Capture new high-resolution thumbnail
+      final newThumbnailData = await _capturePreview(previewKey);
+
+      if (newThumbnailData != null) {
+        // Save the new thumbnail
+        final prefs = await SharedPreferences.getInstance();
+        final thumbBase64 = base64Encode(newThumbnailData);
+        await prefs.setString('$_thumbnailPrefix$presetId', thumbBase64);
+
+        debugPrint('✓ Successfully regenerated thumbnail for: ${preset.name}');
+        return true;
+      } else {
+        debugPrint('✗ Failed to capture thumbnail for: ${preset.name}');
+        return false;
+      }
+    } catch (e) {
+      debugPrint('Error regenerating thumbnail for preset $presetId: $e');
+      return false;
+    } finally {
+      // Always disable memory protection when done
+      NoiseEffectShader.setPresetSaving(false);
     }
   }
 }

@@ -148,8 +148,17 @@ class ShaderDemoState {
     shaderSettings = preset.settings;
 
     // Apply margin and fillScreen using consistent helper methods
-    shaderSettings.textLayoutSettings.fitScreenMargin = preset.getMargin();
-    shaderSettings.fillScreen = preset.getFillScreen();
+    final double margin = preset.getMargin();
+    final bool fillScreen = preset.getFillScreen();
+
+    shaderSettings.textLayoutSettings.fitScreenMargin = margin;
+    shaderSettings.fillScreen = fillScreen;
+
+    // Log to verify values
+    EffectLogger.log(
+      "Applied preset with margin=$margin, fillScreen=$fillScreen",
+      level: LogLevel.info,
+    );
 
     selectedImage = preset.imagePath;
 

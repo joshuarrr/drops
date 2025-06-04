@@ -2,6 +2,9 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import 'dart:developer' as developer;
+import 'package:flutter/services.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/foundation.dart';
 
 import '../models/effect_settings.dart';
 import '../models/shader_effect.dart';
@@ -117,6 +120,98 @@ class EffectController {
   // Cache for memoizing effect results
   static final Map<String, Widget> _effectCache = {};
 
+  // Track cache stats for debugging
+  static int _cacheHits = 0;
+  static int _cacheMisses = 0;
+
+  // Lower cache limits to prevent memory issues - FURTHER REDUCED
+  static const int _MAX_CACHE_SIZE = 5; // Reduced from 15
+  static const int _CACHE_CLEAR_THRESHOLD = 10; // Reduced from 25
+
+  // Track memory usage metrics
+  static int _totalCacheRequests = 0;
+  static bool _highMemoryMode = false;
+
+  // Static flag to track if we're currently capturing a preset
+  static bool _isPresetCapturing = false;
+
+  // Method to explicitly clear the effect cache
+  static void clearEffectCache() {
+    final cacheSize = _effectCache.length;
+
+    // Only log if there's something in the cache or we're in debug mode
+    if (cacheSize > 0 || kDebugMode) {
+      final hitRatio = _totalCacheRequests > 0
+          ? (_cacheHits / _totalCacheRequests) * 100
+          : 0;
+
+      debugPrint(
+        'EffectController: Clearing effect cache ($cacheSize items) - '
+        'Hit ratio: ${hitRatio.toStringAsFixed(1)}%, '
+        'Hits: $_cacheHits, Misses: $_cacheMisses, Total: $_totalCacheRequests',
+      );
+    }
+
+    _effectCache.clear();
+    _cacheHits = 0;
+    _cacheMisses = 0;
+    // Don't reset _totalCacheRequests to track across cache clears
+  }
+
+  // Set high memory mode to be even more aggressive with caching
+  static void setHighMemoryMode(bool enabled) {
+    if (_highMemoryMode != enabled) {
+      _highMemoryMode = enabled;
+      debugPrint(
+        'EffectController: High memory mode ${enabled ? 'enabled' : 'disabled'}',
+      );
+
+      // Clear cache immediately when entering high memory mode
+      if (enabled) {
+        clearEffectCache();
+
+        // Force lower texture resolution
+        _setLowTextureResolution();
+      }
+    }
+  }
+
+  // Force lower texture resolution to reduce memory usage
+  static void _setLowTextureResolution() {
+    try {
+      // Set texture quality to lower resolution
+      final platformDispatcher = ui.PlatformDispatcher.instance;
+      final window = platformDispatcher.views.first;
+
+      // Reduce device pixel ratio for textures and rendering to save memory
+      // Note: This is a private API and may change in future Flutter versions
+      // but it's effective for reducing memory pressure in emergency situations
+      if (window is ui.FlutterView) {
+        // Request the system to reduce memory usage for graphics
+        debugPrint('Requesting low memory graphics mode');
+        SystemChannels.skia.invokeMethod<void>(
+          'setResourceCacheMaxBytes',
+          10 * 1024 * 1024,
+        ); // 10MB limit
+      }
+
+      // Clear all caches
+      imageCache.clear();
+      imageCache.clearLiveImages();
+      PaintingBinding.instance.imageCache.clear();
+      PaintingBinding.instance.imageCache.clearLiveImages();
+
+      debugPrint('Set low texture resolution to reduce memory usage');
+    } catch (e) {
+      debugPrint('Error setting low texture resolution: $e');
+    }
+  }
+
+  // Get the current size of the effect cache
+  static int getEffectCacheSize() {
+    return _effectCache.length;
+  }
+
   // Generate a unique cache key for a settings configuration
   static String _generateCacheKey(
     ShaderSettings settings,
@@ -211,6 +306,18 @@ class EffectController {
 
     // If not animated, check cache for existing widget
     if (!isAnimated) {
+      // In high memory mode, skip caching entirely for non-animated effects
+      if (_highMemoryMode) {
+        _totalCacheRequests++;
+        return _buildEffectsWidget(
+          child: child,
+          settings: settings,
+          animationValue: animationValue,
+          preserveTransparency: preserveTransparency,
+          isTextContent: isTextContent,
+        );
+      }
+
       final cacheKey = _generateCacheKey(
         settings,
         animationValue,
@@ -218,10 +325,15 @@ class EffectController {
         isTextContent,
       );
 
+      _totalCacheRequests++;
+
       if (_effectCache.containsKey(cacheKey)) {
         // Use cached widget to avoid rebuilding
+        _cacheHits++;
         return _effectCache[cacheKey]!;
       }
+
+      _cacheMisses++;
 
       // Build and cache widget
       Widget result = _buildEffectsWidget(
@@ -232,13 +344,20 @@ class EffectController {
         isTextContent: isTextContent,
       );
 
-      // Only cache if we have less than 30 items to avoid memory issues
-      if (_effectCache.length < 30) {
+      // Only cache if we have less than MAX_CACHE_SIZE items to avoid memory issues
+      // AND we're not in high memory mode
+      if (_effectCache.length < _MAX_CACHE_SIZE) {
         _effectCache[cacheKey] = result;
       } else {
-        // Clear cache occasionally to prevent memory leaks
-        if (_effectCache.length > 50) {
-          _effectCache.clear();
+        // Clear cache when it exceeds the threshold to prevent memory leaks
+        if (_effectCache.length > _CACHE_CLEAR_THRESHOLD) {
+          clearEffectCache();
+
+          // In high memory mode, don't cache the new result
+          if (!_highMemoryMode) {
+            // Cache this result since we just cleared the cache
+            _effectCache[cacheKey] = result;
+          }
         }
       }
 
@@ -475,6 +594,24 @@ class EffectController {
       return child;
     }
 
+    // During high memory mode or when preset saving, use simplified noise effect
+    if (_highMemoryMode || _isPresetCapturing) {
+      // Return a simplified version that doesn't use AnimatedSampler
+      return Container(
+        decoration: BoxDecoration(
+          color: settings.noiseSettings.colorIntensity > 0.0
+              ? Color.fromRGBO(
+                  (242 * settings.noiseSettings.colorIntensity).round(),
+                  (143 * settings.noiseSettings.colorIntensity).round(),
+                  (202 * settings.noiseSettings.colorIntensity).round(),
+                  settings.noiseSettings.colorIntensity * 0.1,
+                )
+              : Colors.transparent,
+        ),
+        child: child,
+      );
+    }
+
     // Use custom shader implementation
     return NoiseEffectShader(
       settings: settings,
@@ -621,5 +758,14 @@ class EffectController {
       isTextContent: isTextContent,
       backgroundColor: backgroundColor,
     );
+  }
+
+  /// Set preset capturing mode to limit shader complexity
+  static void setPresetCapturing(bool capturing) {
+    _isPresetCapturing = capturing;
+    if (capturing) {
+      // Temporarily enable high memory mode during preset capture
+      setHighMemoryMode(true);
+    }
   }
 }

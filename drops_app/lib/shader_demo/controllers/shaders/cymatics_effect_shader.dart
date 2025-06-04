@@ -231,20 +231,22 @@ class CymaticsEffectShader extends StatelessWidget {
           }
 
           // Set uniforms
-          shader.setFloat(0, size.width);
-          shader.setFloat(1, size.height);
+          // CRITICAL FIX: Ensure size values are never zero to prevent shader issues
+          shader.setFloat(0, size.width > 0.0 ? size.width : 1.0);
+          shader.setFloat(1, size.height > 0.0 ? size.height : 1.0);
+          // Clamp all parameters to safe ranges to prevent NaN
           shader.setFloat(2, timeValue);
-          shader.setFloat(3, intensity);
-          shader.setFloat(4, frequency);
-          shader.setFloat(5, amplitude);
-          shader.setFloat(6, complexity);
-          shader.setFloat(7, speed);
-          shader.setFloat(8, colorIntensity);
-          shader.setFloat(9, audioReactive);
-          shader.setFloat(10, audioSensitivity);
-          shader.setFloat(11, bassLevel);
-          shader.setFloat(12, midLevel);
-          shader.setFloat(13, trebleLevel);
+          shader.setFloat(3, intensity.clamp(0.0, 1.0));
+          shader.setFloat(4, frequency.clamp(0.0, 10.0));
+          shader.setFloat(5, amplitude.clamp(0.0, 1.0));
+          shader.setFloat(6, complexity.clamp(0.0, 1.0));
+          shader.setFloat(7, speed.clamp(0.0, 5.0));
+          shader.setFloat(8, colorIntensity.clamp(0.0, 1.0));
+          shader.setFloat(9, audioReactive.clamp(0.0, 1.0));
+          shader.setFloat(10, audioSensitivity.clamp(0.0, 1.0));
+          shader.setFloat(11, bassLevel.clamp(0.0, 1.0));
+          shader.setFloat(12, midLevel.clamp(0.0, 1.0));
+          shader.setFloat(13, trebleLevel.clamp(0.0, 1.0));
 
           // Set background color uniforms
           if (isBackgroundOnly) {

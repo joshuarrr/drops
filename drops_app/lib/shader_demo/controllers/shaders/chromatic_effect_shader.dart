@@ -94,13 +94,21 @@ class ChromaticEffectShader extends StatelessWidget {
           }
 
           // Set uniforms for the shader
-          shader.setFloat(0, size.width); // iResolution.x
-          shader.setFloat(1, size.height); // iResolution.y
+          // CRITICAL FIX: Ensure size values are never zero to prevent shader issues
+          shader.setFloat(
+            0,
+            size.width > 0.0 ? size.width : 1.0,
+          ); // iResolution.x
+          shader.setFloat(
+            1,
+            size.height > 0.0 ? size.height : 1.0,
+          ); // iResolution.y
+          // Clamp all parameters to safe ranges to prevent NaN
           shader.setFloat(2, animationValue); // iTime
-          shader.setFloat(3, intensity); // iIntensity
-          shader.setFloat(4, amount); // iAmount
-          shader.setFloat(5, angle); // iAngle
-          shader.setFloat(6, spread); // iSpread
+          shader.setFloat(3, intensity.clamp(0.0, 1.0)); // iIntensity
+          shader.setFloat(4, amount.clamp(0.0, 1.0)); // iAmount
+          shader.setFloat(5, angle.clamp(0.0, 360.0)); // iAngle
+          shader.setFloat(6, spread.clamp(0.0, 1.0)); // iSpread
 
           // Draw with the shader, ensuring it covers the full area
           canvas.drawRect(Offset.zero & size, Paint()..shader = shader);

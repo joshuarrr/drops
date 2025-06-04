@@ -1,0 +1,6 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+avoid creating / adding to files over 500 lines long. notify me when you have encounter unreasonably large files.

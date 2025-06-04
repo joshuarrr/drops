@@ -86,33 +86,43 @@ class RainEffectShader extends StatelessWidget {
               // The fall speed to use, which can be 0 even when animated
               double fallSpeed = settings.rainSettings.fallSpeed;
 
-              // Compute animation values if animation is enabled
-              if (settings.rainSettings.rainAnimated) {
-                // Compute animated progress based on rain animation options
-                final double animValue =
-                    ShaderAnimationUtils.computeAnimatedValue(
-                      settings.rainSettings.rainAnimOptions,
-                      animationValue,
-                    );
-
-                // Use the animation value to control time
-                timeValue = animValue;
-
-                // Scale the fall speed based on animation options
-                if (settings.rainSettings.rainAnimOptions.mode ==
-                    AnimationMode.pulse) {
-                  // Add a breathing effect to the speed in pulse mode
-                  final double pulse = math.sin(animValue * 2 * math.pi);
-                  fallSpeed =
-                      settings.rainSettings.fallSpeed * (0.5 + 0.5 * pulse);
-                }
-              }
-
               // If preserveTransparency is enabled or this is text content, adjust rain settings
               double rainIntensity = settings.rainSettings.rainIntensity;
               double dropSize = settings.rainSettings.dropSize;
               double refraction = settings.rainSettings.refraction;
               double trailIntensity = settings.rainSettings.trailIntensity;
+
+              // Compute animation values if animation is enabled
+              if (settings.rainSettings.rainAnimated) {
+                if (settings.rainSettings.rainAnimOptions.mode ==
+                    AnimationMode.pulse) {
+                  // Simplified pulse animation - use raw animationValue to avoid memory issues
+                  timeValue = animationValue;
+
+                  // Create smooth pulse with optimized calculation
+                  final double pulseTime =
+                      animationValue *
+                      settings.rainSettings.rainAnimOptions.speed *
+                      4.0;
+                  final double pulse =
+                      (math.sin(pulseTime * math.pi) * 0.5 + 0.5).abs();
+
+                  // Apply pulse to all rain effect parameters
+                  fallSpeed = settings.rainSettings.fallSpeed * pulse;
+                  rainIntensity = settings.rainSettings.rainIntensity * pulse;
+                  dropSize = settings.rainSettings.dropSize * pulse;
+                  refraction = settings.rainSettings.refraction * pulse;
+                  trailIntensity = settings.rainSettings.trailIntensity * pulse;
+                } else {
+                  // For non-pulse modes, use the standard animation utilities
+                  final double animValue =
+                      ShaderAnimationUtils.computeAnimatedValue(
+                        settings.rainSettings.rainAnimOptions,
+                        animationValue,
+                      );
+                  timeValue = animValue;
+                }
+              }
 
               // CRITICAL FIX: Special handling for text content
               if (isTextContent) {
@@ -137,15 +147,31 @@ class RainEffectShader extends StatelessWidget {
 
               // Set uniforms after the texture sampler
               shader.setFloat(0, timeValue); // Time
+
+              // CRITICAL FIX: Prevent NaN values in aspect ratio calculation
+              double aspectRatio = 1.0; // Default fallback
+              if (size.height > 0.0 && size.width > 0.0) {
+                aspectRatio = size.width / size.height;
+                // Clamp to reasonable bounds to prevent extreme values
+                aspectRatio = aspectRatio.clamp(0.1, 10.0);
+              }
+              shader.setFloat(1, aspectRatio); // Resolution aspect ratio
+
+              // Clamp all shader parameters to safe ranges to prevent NaN
               shader.setFloat(
-                1,
-                size.width / size.height,
-              ); // Resolution aspect ratio
-              shader.setFloat(2, rainIntensity); // Rain intensity
-              shader.setFloat(3, dropSize); // Drop size
-              shader.setFloat(4, fallSpeed); // Fall speed
-              shader.setFloat(5, refraction); // Refraction amount
-              shader.setFloat(6, trailIntensity); // Trail intensity
+                2,
+                rainIntensity.clamp(0.0, 1.0),
+              ); // Rain intensity
+              shader.setFloat(3, dropSize.clamp(0.0, 1.0)); // Drop size
+              shader.setFloat(4, fallSpeed.clamp(0.0, 2.0)); // Fall speed
+              shader.setFloat(
+                5,
+                refraction.clamp(0.0, 1.0),
+              ); // Refraction amount
+              shader.setFloat(
+                6,
+                trailIntensity.clamp(0.0, 1.0),
+              ); // Trail intensity
               shader.setFloat(
                 7,
                 settings.rainSettings.rainAnimated ? 1.0 : 0.0,

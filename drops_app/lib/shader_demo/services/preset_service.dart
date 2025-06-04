@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:uuid/uuid.dart';
 
 import '../models/shader_effect.dart';
 import '../models/effect_settings.dart';
@@ -8,6 +9,7 @@ import '../models/shader_preset.dart';
 import '../models/image_category.dart';
 import '../controllers/preset_controller.dart';
 import '../utils/logging_utils.dart';
+import '../controllers/shaders/noise_effect_shader.dart';
 
 /// Result class for cleanup operation that returns both the ID and presets
 class CleanupResult {
@@ -21,14 +23,22 @@ class CleanupResult {
 class PresetService {
   static const String _logTag = "PresetService";
 
+  // Constants from PresetController for consistency
+  static const String _presetListKey = 'shader_presets_list';
+  static const String _presetPrefix = 'shader_preset_';
+  static const String _thumbnailPrefix = 'shader_preset_thumb_';
+
   /// Save current state as an untitled preset
   static Future<ShaderPreset?> saveUntitledPreset({
     required ShaderSettings settings,
     required String imagePath,
-    required GlobalKey previewKey,
+    GlobalKey? previewKey,
     Map<String, dynamic>? specificSettings,
   }) async {
     try {
+      // Enable memory protection for animated shaders during preset saving
+      NoiseEffectShader.setPresetSaving(true);
+
       // Use a fixed name "Untitled" for the session preset
       const String presetName = "Untitled";
 
@@ -70,27 +80,72 @@ class PresetService {
         return updatedPreset;
       } else {
         EffectLogger.log('No existing untitled preset found - creating new');
-        // Save as a new preset with the specific settings
-        final newPreset = await PresetController.savePreset(
-          name: presetName,
-          settings: settings,
-          imagePath: imagePath,
-          previewKey: previewKey,
-          specificSettings: actualSpecificSettings,
-        );
 
-        EffectLogger.log(
-          'New untitled preset created with ID: ${newPreset.id}',
-        );
-        return newPreset;
+        // If previewKey is null, skip thumbnail capture
+        if (previewKey == null) {
+          EffectLogger.log(
+            'Skipping thumbnail capture for memory optimization',
+          );
+
+          // Create a new preset with null thumbnail
+          final id = const Uuid().v4();
+          final now = DateTime.now();
+
+          // Create the preset with null thumbnail
+          final newPreset = ShaderPreset(
+            id: id,
+            name: presetName,
+            createdAt: now,
+            settings: settings,
+            imagePath: imagePath,
+            thumbnailData: null, // No thumbnail
+            specificSettings: actualSpecificSettings,
+          );
+
+          // Save to SharedPreferences without thumbnail
+          final prefs = await SharedPreferences.getInstance();
+          final presetMap = newPreset.toMap();
+          final presetJson = jsonEncode(presetMap);
+
+          // Save the preset data
+          await prefs.setString('$_presetPrefix$id', presetJson);
+
+          // Add to list of presets
+          final presetIds = prefs.getStringList(_presetListKey) ?? [];
+          if (!presetIds.contains(id)) {
+            presetIds.add(id);
+            await prefs.setStringList(_presetListKey, presetIds);
+          }
+
+          EffectLogger.log(
+            'New untitled preset created without thumbnail, ID: $id',
+          );
+          return newPreset;
+        } else {
+          // Save as a new preset with the specific settings and thumbnail
+          final newPreset = await PresetController.savePreset(
+            name: presetName,
+            settings: settings,
+            imagePath: imagePath,
+            previewKey: previewKey,
+            specificSettings: actualSpecificSettings,
+          );
+
+          EffectLogger.log(
+            'New untitled preset created with ID: ${newPreset.id}',
+          );
+          return newPreset;
+        }
       }
-    } catch (e, stack) {
+    } catch (e) {
       EffectLogger.log(
-        'Error saving untitled preset: $e',
+        'Error in saveUntitledPreset: $e',
         level: LogLevel.error,
       );
-      debugPrint(stack.toString());
       return null;
+    } finally {
+      // Always disable memory protection when done
+      NoiseEffectShader.setPresetSaving(false);
     }
   }
 
@@ -99,7 +154,7 @@ class PresetService {
     required String id,
     required ShaderSettings settings,
     required String imagePath,
-    required GlobalKey previewKey,
+    GlobalKey? previewKey,
     Map<String, dynamic>? specificSettings,
   }) async {
     // Log the background color being updated
@@ -107,9 +162,12 @@ class PresetService {
       'Updating preset $id with background color: 0x${settings.backgroundSettings.backgroundColor.value.toRadixString(16).padLeft(8, '0')}',
     );
 
+    // Save original fillScreen value before any operations
+    final bool originalFillScreen = settings.fillScreen;
+
     // Also log the current image settings for debugging
     EffectLogger.log(
-      '  with specificSettings: fillScreen=${settings.fillScreen}, fitScreenMargin=${settings.textLayoutSettings.fitScreenMargin}',
+      '  with specificSettings: fillScreen=${originalFillScreen}, fitScreenMargin=${settings.textLayoutSettings.fitScreenMargin}',
       level: LogLevel.info,
     );
 
@@ -142,10 +200,10 @@ class PresetService {
       );
     }
 
-    // Always ensure critical values are set from current settings
+    // Always ensure critical values are set from current settings and the original fillScreen value
     updatedSpecificSettings['fitScreenMargin'] =
         settings.textLayoutSettings.fitScreenMargin;
-    updatedSpecificSettings['fillScreen'] = settings.fillScreen;
+    updatedSpecificSettings['fillScreen'] = originalFillScreen;
 
     // Log the final settings being used
     EffectLogger.log(
@@ -153,23 +211,71 @@ class PresetService {
       level: LogLevel.info,
     );
 
-    // Update the preset using the new method that accepts imagePath and specificSettings
-    final updatedPreset = await PresetController.updatePreset(
-      id: id,
-      settings: settings,
-      previewKey: previewKey,
-      imagePath: imagePath,
-      specificSettings: updatedSpecificSettings,
-    );
+    // Create a copy of settings to avoid any side effects during preview capture
+    final settingsCopy = ShaderSettings.fromMap(settings.toMap());
 
-    return updatedPreset;
+    // Ensure fillScreen is correctly set in the copy
+    settingsCopy.fillScreen = originalFillScreen;
+
+    // If previewKey is null, skip thumbnail capture and keep existing thumbnail
+    if (previewKey == null) {
+      EffectLogger.log(
+        '  Skipping thumbnail capture and keeping existing thumbnail',
+        level: LogLevel.info,
+      );
+
+      // Manually update the preset JSON in SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+
+      // Get the existing preset JSON
+      final presetJson = prefs.getString('$_presetPrefix$id');
+      if (presetJson == null) {
+        throw Exception('Preset JSON not found: $id');
+      }
+
+      // Parse and update the preset data
+      final presetMap = jsonDecode(presetJson) as Map<String, dynamic>;
+
+      // Update settings in the map
+      presetMap['settings'] = settingsCopy.toMap();
+      presetMap['imagePath'] = imagePath;
+      presetMap['specificSettings'] = updatedSpecificSettings;
+
+      // Save the updated JSON
+      await prefs.setString('$_presetPrefix$id', jsonEncode(presetMap));
+
+      // Return the updated preset with the existing thumbnail
+      return ShaderPreset.fromMap(presetMap, thumbnail: existing.thumbnailData);
+    } else {
+      // Update the preset using the new method that accepts imagePath and specificSettings
+      final updatedPreset = await PresetController.updatePreset(
+        id: id,
+        settings: settingsCopy,
+        previewKey: previewKey,
+        imagePath: imagePath,
+        specificSettings: updatedSpecificSettings,
+      );
+
+      // Check if the update was successful
+      if (updatedPreset == null) {
+        throw Exception('Failed to update preset: $id');
+      }
+
+      // Verify the updated preset has the correct fillScreen value
+      EffectLogger.log(
+        '  Verified updated preset fillScreen=${updatedPreset.getFillScreen()}',
+        level: LogLevel.info,
+      );
+
+      return updatedPreset;
+    }
   }
 
   /// Save changes immediately to current preset or create a new untitled preset
   static Future<void> saveChangesImmediately({
     required ShaderSettings settings,
     required String imagePath,
-    required GlobalKey previewKey,
+    required GlobalKey? previewKey,
     required String? currentUntitledPresetId,
     required List<ShaderPreset> availablePresets,
     required bool hasUnsavedChanges,

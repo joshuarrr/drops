@@ -520,8 +520,8 @@ class _TextFxPanelState extends State<TextFxPanel>
                 'Glow Radius',
                 widget.settings.textfxSettings.textGlowBlur,
                 0.0,
-                20.0,
-                20,
+                50.0,
+                50,
                 '${widget.settings.textfxSettings.textGlowBlur.toStringAsFixed(1)}',
                 (value) {
                   final updatedSettings = widget.settings;
@@ -728,12 +728,28 @@ class _TextFxPanelState extends State<TextFxPanel>
               'Enable Outline',
               widget.settings.textfxSettings.textOutlineEnabled,
               (value) {
+                print('TextFxPanel: Outline toggle changed to $value');
+                print(
+                  '  Before - textfxEnabled: ${widget.settings.textfxSettings.textfxEnabled}',
+                );
+                print(
+                  '  Before - textOutlineEnabled: ${widget.settings.textfxSettings.textOutlineEnabled}',
+                );
+
                 final updatedSettings = widget.settings;
                 updatedSettings.textfxSettings.textOutlineEnabled = value;
                 // Make sure text effects are enabled when enabling a specific effect
                 if (value && !updatedSettings.textfxSettings.textfxEnabled) {
                   updatedSettings.textfxSettings.textfxEnabled = true;
                 }
+
+                print(
+                  '  After - textfxEnabled: ${updatedSettings.textfxSettings.textfxEnabled}',
+                );
+                print(
+                  '  After - textOutlineEnabled: ${updatedSettings.textfxSettings.textOutlineEnabled}',
+                );
+
                 widget.onSettingsChanged(updatedSettings);
                 _log('Outline effect toggled: $value');
               },

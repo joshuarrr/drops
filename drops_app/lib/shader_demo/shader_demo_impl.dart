@@ -61,6 +61,11 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
   // Flag to track if presets have been loaded at startup
   bool _presetsLoadedAtStartup = false;
 
+  // Flag to track if we just entered slideshow mode from main screen
+  bool _justEnteredSlideshowMode = false;
+
+  // ✅ Timer code removed - no longer needed since we don't generate thumbnails during editing
+
   @override
   void initState() {
     super.initState();
@@ -103,6 +108,9 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
 
       // Clean up duplicate presets then load all available presets once
       _cleanupDuplicateUntitledPresetsAndLoadPresets();
+
+      // Start with memory optimization mode enabled
+      _optimizeMemoryUsage();
     });
 
     // Don't load presets here, we'll do it after cleanup
@@ -111,12 +119,26 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
 
   @override
   void dispose() {
+    // Dispose animation controller
     _controller.dispose();
+
+    // Dispose slideshow controller
     _slideshowController.dispose();
+
+    // Explicitly clear effect cache
+    try {
+      EffectController.clearEffectCache();
+      print("Cleared effect cache on dispose");
+    } catch (e) {
+      print("Error clearing effect cache: $e");
+    }
+
     // Clean up the effect controls resources
     EffectControls.dispose();
+
     // Restore system UI when we leave this screen
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
     super.dispose();
   }
 
@@ -281,6 +303,65 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     }
   }
 
+  // Memory optimization helper
+  void _optimizeMemoryUsage() {
+    // Limit effect combinations
+    _limitActiveEffects();
+
+    // Clear caches
+    EffectController.clearEffectCache();
+
+    logging.EffectLogger.log(
+      'Applied memory optimizations: limited active effects and cleared caches',
+      level: logging.LogLevel.info,
+    );
+  }
+
+  // Limit the number of active effects to reduce memory usage
+  void _limitActiveEffects() {
+    int activeEffectCount = 0;
+
+    // Count active effects
+    if (_state.shaderSettings.colorEnabled) activeEffectCount++;
+    if (_state.shaderSettings.blurEnabled) activeEffectCount++;
+    if (_state.shaderSettings.noiseEnabled) activeEffectCount++;
+    if (_state.shaderSettings.rainEnabled) activeEffectCount++;
+    if (_state.shaderSettings.chromaticEnabled) activeEffectCount++;
+    if (_state.shaderSettings.rippleEnabled) activeEffectCount++;
+    if (_state.shaderSettings.cymaticsEnabled) activeEffectCount++;
+
+    // If too many effects are enabled, disable some lower priority ones
+    if (activeEffectCount > 3) {
+      logging.EffectLogger.log(
+        'Too many effects enabled ($activeEffectCount) - disabling some to save memory',
+        level: logging.LogLevel.warning,
+      );
+
+      // Disable effects in order of memory usage (highest first)
+      if (_state.shaderSettings.cymaticsEnabled) {
+        _state.shaderSettings.cymaticsEnabled = false;
+        activeEffectCount--;
+      }
+
+      if (activeEffectCount > 3 && _state.shaderSettings.rainEnabled) {
+        _state.shaderSettings.rainEnabled = false;
+        activeEffectCount--;
+      }
+
+      if (activeEffectCount > 3 && _state.shaderSettings.rippleEnabled) {
+        _state.shaderSettings.rippleEnabled = false;
+        activeEffectCount--;
+      }
+
+      if (activeEffectCount > 3 && _state.shaderSettings.noiseEnabled) {
+        _state.shaderSettings.noiseEnabled = false;
+        activeEffectCount--;
+      }
+
+      _state.saveShaderSettings();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -343,6 +424,8 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
           _handleUpdatePreset();
         } else if (value == 'load_preset') {
           _handleLoadPreset();
+        } else if (value == 'regenerate_thumbnails') {
+          _handleRegenerateThumbnails();
         }
       },
       itemBuilder: (context) {
@@ -390,6 +473,20 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
           ),
         );
 
+        // Add the regenerate thumbnails option
+        items.add(
+          const PopupMenuItem<String>(
+            value: 'regenerate_thumbnails',
+            child: Row(
+              children: [
+                Icon(Icons.refresh),
+                SizedBox(width: 8),
+                Text('Regenerate Thumbnails'),
+              ],
+            ),
+          ),
+        );
+
         return items;
       },
     );
@@ -397,17 +494,21 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
 
   // Handle save preset menu option
   void _handleSavePreset() {
+    // ✅ Simplified - always generate thumbnails for user-initiated saves
     PresetDialogs.showSavePresetDialog(
       context: context,
       settings: _state.shaderSettings,
       imagePath: _state.selectedImage,
-      previewKey: _previewKey,
+      previewKey: _previewKey, // Always capture thumbnail for saves
     ).then((_) {
       // Reload available presets immediately after saving
       setState(() {
         _state.presetsLoaded = false; // Force reload of presets
       });
       _loadAvailablePresets();
+
+      // Force a resource cleanup
+      EffectController.clearEffectCache();
     });
   }
 
@@ -418,17 +519,21 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
         _state.currentPresetIndex < _state.availablePresets.length) {
       final currentPreset = _state.availablePresets[_state.currentPresetIndex];
 
+      // ✅ Simplified - always generate thumbnails for user-initiated updates
       PresetDialogs.showUpdatePresetDialog(
         context: context,
         preset: currentPreset,
         newSettings: _state.shaderSettings,
-        previewKey: _previewKey,
+        previewKey: _previewKey, // Always capture thumbnail for updates
       ).then((_) {
         // Reload available presets immediately after updating
         setState(() {
           _state.presetsLoaded = false; // Force reload of presets
         });
         _loadAvailablePresets();
+
+        // Force a resource cleanup
+        EffectController.clearEffectCache();
       });
     }
   }
@@ -442,7 +547,12 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     PresetDialogs.showLoadPresetDialog(
       context: context,
       onPresetLoaded: (preset) {
+        // Apply the preset
         _applyPreset(preset);
+
+        // Ensure memory usage is optimized with new preset
+        _optimizeMemoryUsage();
+
         // Update the current preset index
         _state.findCurrentPresetIndex();
       },
@@ -457,10 +567,120 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     });
   }
 
+  // Handle regenerate thumbnails menu option
+  void _handleRegenerateThumbnails() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Regenerate Thumbnails'),
+        content: const Text(
+          'This will regenerate all preset thumbnails with higher resolution. '
+          'This process may take a few moments. Continue?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _startThumbnailRegeneration();
+            },
+            child: const Text('Regenerate'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Start the thumbnail regeneration process
+  void _startThumbnailRegeneration() async {
+    // Show progress dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Regenerating Thumbnails'),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Please wait while thumbnails are being regenerated...'),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      int regeneratedCount = await PresetController.regenerateAllThumbnails(
+        previewKey: _previewKey,
+        applyPresetSettings: (settings, imagePath) {
+          // Apply the preset settings to current state
+          setState(() {
+            _state.shaderSettings = settings;
+            _state.selectedImage = imagePath;
+          });
+        },
+        onProgress: (current, total) {
+          // Update progress in dialog if needed
+          debugPrint('Regenerating thumbnails: $current/$total');
+        },
+      );
+
+      // Close progress dialog
+      Navigator.pop(context);
+
+      // Reload presets to show updated thumbnails
+      setState(() {
+        _state.presetsLoaded = false;
+      });
+      _loadAvailablePresets();
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Successfully regenerated $regeneratedCount thumbnail${regeneratedCount != 1 ? 's' : ''}',
+          ),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    } catch (e) {
+      // Close progress dialog if still open
+      Navigator.pop(context);
+
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error regenerating thumbnails: $e'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
+  }
+
   // Handle main screen tap
   void _handleMainScreenTap() async {
     // Always save the current state when tapping the screen, regardless of hasUnsavedChanges()
     if (_state.showControls) {
+      // Debug logging for text FX settings before saving
+      print('_handleMainScreenTap: About to save current settings');
+      print(
+        '  textfxEnabled: ${_state.shaderSettings.textfxSettings.textfxEnabled}',
+      );
+      print(
+        '  textGlowEnabled: ${_state.shaderSettings.textfxSettings.textGlowEnabled}',
+      );
+      print(
+        '  textOutlineEnabled: ${_state.shaderSettings.textfxSettings.textOutlineEnabled}',
+      );
+      print('  Current settings will be saved as untitled preset');
+
       // First save current shader settings to shared preferences
       _state.saveShaderSettings();
 
@@ -471,15 +691,27 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
             _state.shaderSettings.textLayoutSettings.fitScreenMargin,
       };
 
+      // ✅ Simplified - no thumbnail generation for automatic untitled saves
       // Save current state as untitled preset
       final newPreset = await PresetService.saveUntitledPreset(
         settings: _state.shaderSettings,
         imagePath: _state.selectedImage,
-        previewKey: _previewKey,
+        previewKey: null, // Never generate thumbnails for automatic saves
         specificSettings: specificSettings, // Pass specific settings explicitly
       );
 
       if (newPreset != null) {
+        print('Successfully saved untitled preset: ${newPreset.id}');
+        print(
+          '  Saved textfxEnabled: ${newPreset.settings.textfxSettings.textfxEnabled}',
+        );
+        print(
+          '  Saved textGlowEnabled: ${newPreset.settings.textfxSettings.textGlowEnabled}',
+        );
+
+        // Reload presets to ensure we have the latest data BEFORE updating state
+        await _loadAvailablePresets();
+
         setState(() {
           _state.currentPresetIndex = _state.availablePresets.indexWhere(
             (p) => p.id == newPreset.id,
@@ -494,9 +726,23 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
           _state.currentUntitledPresetId = newPreset.id;
         });
 
-        // Reload presets to ensure we have the latest data
-        await _loadAvailablePresets();
+        // Verify the loaded preset has the correct settings
+        if (_state.currentPresetIndex >= 0) {
+          final loadedPreset =
+              _state.availablePresets[_state.currentPresetIndex];
+          print('Loaded preset from list:');
+          print(
+            '  Loaded textfxEnabled: ${loadedPreset.settings.textfxSettings.textfxEnabled}',
+          );
+          print(
+            '  Loaded textGlowEnabled: ${loadedPreset.settings.textfxSettings.textGlowEnabled}',
+          );
+        }
       }
+
+      // Force a resource cleanup to prevent memory issues
+      // after preset save operations
+      EffectController.clearEffectCache();
     }
 
     setState(() {
@@ -504,6 +750,9 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
       _state.showControls = !_state.showControls;
       if (!_state.showControls) {
         _state.showAspectSliders = false;
+        // Mark that we're entering slideshow mode from current settings
+        // This prevents slideshow from auto-applying preset settings
+        _justEnteredSlideshowMode = true;
       }
     });
   }
@@ -538,8 +787,28 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
     // Determine which preset to start with
     int startIndex = 0; // Default to first preset
 
-    // If we have a current preset selected, start with that
-    if (_state.currentPresetIndex >= 0 &&
+    print(
+      'Slideshow entry: untitledPresetId=${_state.currentUntitledPresetId}, visiblePresets=${visiblePresets.length}, currentPresetIndex=${_state.currentPresetIndex}',
+    );
+
+    // If we have a current untitled preset ID, prioritize that for slideshow entry
+    if (_state.currentUntitledPresetId != null) {
+      final untitledIndex = visiblePresets.indexWhere(
+        (p) => p.id == _state.currentUntitledPresetId,
+      );
+      if (untitledIndex >= 0) {
+        startIndex = untitledIndex;
+        // Update currentPresetIndex to match the untitled preset
+        _state.currentPresetIndex = _state.availablePresets.indexWhere(
+          (p) => p.id == _state.currentUntitledPresetId,
+        );
+        print(
+          'Slideshow starting with untitled preset: ${visiblePresets[startIndex].name} (textfxEnabled: ${visiblePresets[startIndex].settings.textfxSettings.textfxEnabled})',
+        );
+      }
+    }
+    // Fallback: If we have a current preset selected, start with that
+    else if (_state.currentPresetIndex >= 0 &&
         _state.currentPresetIndex < _state.availablePresets.length) {
       final currentPresetId =
           _state.availablePresets[_state.currentPresetIndex].id;
@@ -549,6 +818,9 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
       );
       if (visibleIndex >= 0) {
         startIndex = visibleIndex;
+        print(
+          'Slideshow starting with current preset: ${visiblePresets[startIndex].name} (textfxEnabled: ${visiblePresets[startIndex].settings.textfxSettings.textfxEnabled})',
+        );
       }
     }
 
@@ -585,13 +857,17 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
               (p) => p.id == selectedPresetId,
             );
 
-            // Apply the selected preset
-            if (_state.currentPresetIndex >= 0) {
+            // Only apply the preset if this is a real page change, not just entering slideshow mode
+            if (_state.currentPresetIndex >= 0 && !_justEnteredSlideshowMode) {
               // Apply the preset immediately, no need to wait
               _applyPreset(
                 _state.availablePresets[_state.currentPresetIndex],
                 showControls: false,
               );
+            } else if (_justEnteredSlideshowMode) {
+              // Reset the flag after handling the initial slideshow entry
+              _justEnteredSlideshowMode = false;
+              print('Entered slideshow mode - preserving current settings');
             }
           });
         }
@@ -675,31 +951,24 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
 
   // Build the preview with current settings
   Widget _buildPreviewWithCurrentSettings() {
-    return RepaintBoundary(
-      key: _previewKey,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          _buildShaderEffect(),
-          // Explicitly add text overlay to ensure it's captured in thumbnails
-          if (_state.shaderSettings.textLayoutSettings.textEnabled &&
-              (_state.shaderSettings.textLayoutSettings.textTitle.isNotEmpty ||
-                  _state
-                      .shaderSettings
-                      .textLayoutSettings
-                      .textSubtitle
-                      .isNotEmpty ||
-                  _state
-                      .shaderSettings
-                      .textLayoutSettings
-                      .textArtist
-                      .isNotEmpty))
-            TextOverlay(
-              settings: _state.shaderSettings,
-              animationValue: _controller.value,
-            ),
-        ],
-      ),
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        _buildShaderEffect(),
+        // Explicitly add text overlay to ensure it's captured in thumbnails
+        if (_state.shaderSettings.textLayoutSettings.textEnabled &&
+            (_state.shaderSettings.textLayoutSettings.textTitle.isNotEmpty ||
+                _state
+                    .shaderSettings
+                    .textLayoutSettings
+                    .textSubtitle
+                    .isNotEmpty ||
+                _state.shaderSettings.textLayoutSettings.textArtist.isNotEmpty))
+          TextOverlay(
+            settings: _state.shaderSettings,
+            animationValue: _controller.value,
+          ),
+      ],
     );
   }
 
@@ -890,11 +1159,11 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                     PresetService.saveChangesImmediately(
                       settings: _state.shaderSettings,
                       imagePath: _state.selectedImage,
-                      previewKey: _previewKey,
+                      previewKey:
+                          null, // ✅ Never generate thumbnails during editing
                       currentUntitledPresetId: _state.currentUntitledPresetId,
                       availablePresets: _state.availablePresets,
-                      hasUnsavedChanges:
-                          true, // Force save since we know there are changes
+                      hasUnsavedChanges: true,
                       onPresetIdChanged: (id) {
                         setState(() {
                           _state.currentUntitledPresetId = id;
@@ -969,7 +1238,7 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
             PresetService.saveUntitledPreset(
               settings: _state.shaderSettings,
               imagePath: _state.selectedImage,
-              previewKey: _previewKey,
+              previewKey: null, // ✅ Never generate thumbnails during editing
             );
           }
         },
@@ -1034,14 +1303,13 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
 
                     // Save changes to the preset immediately
                     PresetService.saveChangesImmediately(
-                      settings:
-                          settings, // Use the updated settings parameter, not _state.shaderSettings
+                      settings: settings,
                       imagePath: _state.selectedImage,
-                      previewKey: _previewKey,
+                      previewKey:
+                          null, // ✅ Never generate thumbnails during editing
                       currentUntitledPresetId: _state.currentUntitledPresetId,
                       availablePresets: _state.availablePresets,
-                      hasUnsavedChanges:
-                          true, // Force save since we know there are changes
+                      hasUnsavedChanges: true,
                       onPresetIdChanged: (id) {
                         setState(() {
                           _state.currentUntitledPresetId = id;
@@ -1077,7 +1345,8 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                     PresetService.saveChangesImmediately(
                       settings: _state.shaderSettings,
                       imagePath: path, // Use the new path
-                      previewKey: _previewKey,
+                      previewKey:
+                          null, // ✅ Never generate thumbnails during editing
                       currentUntitledPresetId: _state.currentUntitledPresetId,
                       availablePresets: _state.availablePresets,
                       hasUnsavedChanges: true,
@@ -1117,7 +1386,8 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
                     PresetService.saveChangesImmediately(
                       settings: _state.shaderSettings,
                       imagePath: _state.selectedImage,
-                      previewKey: _previewKey,
+                      previewKey:
+                          null, // ✅ Never generate thumbnails during editing
                       currentUntitledPresetId: _state.currentUntitledPresetId,
                       availablePresets: _state.availablePresets,
                       hasUnsavedChanges: true,
@@ -1155,14 +1425,13 @@ class _ShaderDemoImplState extends State<ShaderDemoImpl>
 
                     // Save changes to the preset immediately
                     PresetService.saveChangesImmediately(
-                      settings:
-                          settings, // Use the updated settings parameter, not _state.shaderSettings
+                      settings: settings,
                       imagePath: _state.selectedImage,
-                      previewKey: _previewKey,
+                      previewKey:
+                          null, // ✅ Never generate thumbnails during editing
                       currentUntitledPresetId: _state.currentUntitledPresetId,
                       availablePresets: _state.availablePresets,
-                      hasUnsavedChanges:
-                          true, // Force save since we know there are changes
+                      hasUnsavedChanges: true,
                       onPresetIdChanged: (id) {
                         setState(() {
                           _state.currentUntitledPresetId = id;

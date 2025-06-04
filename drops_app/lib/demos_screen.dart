@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'shader_demo/shader_demo.dart';
 import 'typography_demo.dart';
+import 'cymatics_demo.dart';
 import 'common/app_scaffold.dart';
 
 class DemosScreen extends StatelessWidget {
@@ -58,6 +59,21 @@ class DemosScreen extends StatelessWidget {
                     context,
                     MaterialPageRoute(
                       builder: (context) => const TypographyDemo(),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 20),
+              _buildDemoCard(
+                context,
+                'Cymatics',
+                'Visualize sound waves and patterns',
+                Icons.waves,
+                () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const CymaticsDemo(),
                     ),
                   );
                 },

@@ -503,7 +503,18 @@ class _TextOverlayState extends State<TextOverlay> {
   TextStyle _applyTextEffects(TextStyle baseStyle) {
     final fxSettings = widget.settings.textfxSettings;
 
+    // Debug logging to help diagnose text FX persistence issues
+    print('TextOverlay: _applyTextEffects called');
+    print('  textfxEnabled: ${fxSettings.textfxEnabled}');
+    print('  textGlowEnabled: ${fxSettings.textGlowEnabled}');
+    print('  textOutlineEnabled: ${fxSettings.textOutlineEnabled}');
+    print('  textShadowEnabled: ${fxSettings.textShadowEnabled}');
+    print('  textMetalEnabled: ${fxSettings.textMetalEnabled}');
+    print('  textGlassEnabled: ${fxSettings.textGlassEnabled}');
+    print('  textNeonEnabled: ${fxSettings.textNeonEnabled}');
+
     if (!fxSettings.textfxEnabled) {
+      print('  Early return: textfxEnabled is false');
       return baseStyle;
     }
 

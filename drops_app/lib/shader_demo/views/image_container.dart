@@ -16,10 +16,10 @@ class ImageContainer extends StatelessWidget {
   static DateTime? _lastLogTime;
   static String? _lastLoggedImagePath;
   static int _logsThisSession = 0;
-  static const int _maxLogsPerSession = 3;
+  static const int _maxLogsPerSession = 5; // Increased to help with debugging
 
-  // Minimum time between logs of the same values (milliseconds) - made even more aggressive
-  static const int _logThrottleMs = 30000; // 30 seconds
+  // Minimum time between logs of the same values (milliseconds) - reduced for debugging
+  static const int _logThrottleMs = 5000; // 5 seconds for debugging
 
   const ImageContainer({
     Key? key,
@@ -91,12 +91,17 @@ class ImageContainer extends StatelessWidget {
             ? screenHeight - (margin * 2)
             : screenHeight;
 
+        // Store BoxFit value to ensure consistency
+        final BoxFit imageFit = settings.fillScreen
+            ? BoxFit.cover
+            : BoxFit.contain;
+
         // Create the image widget
         Widget imageWidget = imagePath.isEmpty
             ? SizedBox(width: imageWidth, height: imageHeight)
             : Image.asset(
                 imagePath,
-                fit: settings.fillScreen ? BoxFit.cover : BoxFit.contain,
+                fit: imageFit,
                 width: imageWidth,
                 height: imageHeight,
               );

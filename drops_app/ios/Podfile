@@ -40,29 +40,21 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
     
-    # Fix for AudioplayersDarwinPlugin build issues
+    # Start of custom settings for Flutter modules and plugins
     target.build_configurations.each do |config|
-      # Ensure all pods can find the Flutter framework
+      # Fix for issues with Flutter.h not found
       config.build_settings['FRAMEWORK_SEARCH_PATHS'] ||= []
-      config.build_settings['FRAMEWORK_SEARCH_PATHS'] << "${PODS_ROOT}/../Flutter"
+      config.build_settings['FRAMEWORK_SEARCH_PATHS'] << '${PODS_CONFIGURATION_BUILD_DIR}/Flutter'
+      config.build_settings['FRAMEWORK_SEARCH_PATHS'] << '${PODS_ROOT}/../Flutter'
       
-      # Add header search paths for Flutter
       config.build_settings['HEADER_SEARCH_PATHS'] ||= []
-      config.build_settings['HEADER_SEARCH_PATHS'] << "${PODS_ROOT}/../Flutter"
+      config.build_settings['HEADER_SEARCH_PATHS'] << '${PODS_CONFIGURATION_BUILD_DIR}/Flutter/Flutter.framework/Headers'
+      config.build_settings['HEADER_SEARCH_PATHS'] << '${PODS_ROOT}/../Flutter'
       
-      # Add direct Flutter framework path
-      if config.build_settings['SWIFT_VERSION'].to_s.empty?
-        config.build_settings['OTHER_CFLAGS'] = [
-          '$(inherited)',
-          '-isystem "${PODS_ROOT}/../Flutter"'
-        ]
-      end
-      
-      # Fix for umbrella header issues
+      # Fix for umbrella header issues with audioplayers_darwin
       if target.name == 'audioplayers_darwin'
         config.build_settings['DEFINES_MODULE'] = 'YES'
         config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
-        config.build_settings['VALIDATE_WORKSPACE_SKIPPED_FRAMEWORK_REFERENCES'] = 'YES'
         config.build_settings['CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER'] = 'NO'
       end
     end

@@ -135,23 +135,27 @@ class BlurEffectShader extends StatelessWidget {
           // Compute animated amount if enabled
           double amount = settings.blurSettings.blurAmount;
           if (settings.blurSettings.blurAnimated) {
-            // Compute animated progress based on per-blur animation options.
+            if (settings.blurSettings.blurAnimOptions.mode ==
+                AnimationMode.pulse) {
+              // Simplified pulse animation - use raw animationValue to avoid memory issues
+              final double pulseTime =
+                  animationValue *
+                  settings.blurSettings.blurAnimOptions.speed *
+                  4.0;
+              final double pulse = (math.sin(pulseTime * math.pi) * 0.5 + 0.5)
+                  .abs();
 
-            // Reuse helper to obtain a 0-1 value taking speed/mode/easing into account.
-            final double animValue = ShaderAnimationUtils.computeAnimatedValue(
-              settings.blurSettings.blurAnimOptions,
-              animationValue,
-            );
-
-            // Map to a smooth pulse (same visual as before) for pulse mode or
-            // directly use the randomised value for the alternative mode.
-            final double intensity =
-                settings.blurSettings.blurAnimOptions.mode ==
-                    AnimationMode.pulse
-                ? (0.5 + 0.5 * math.sin(animValue * 2 * math.pi))
-                : animValue;
-
-            amount = amount * intensity;
+              // Apply pulse to blur amount
+              amount = settings.blurSettings.blurAmount * pulse;
+            } else {
+              // For non-pulse modes, use the standard animation utilities
+              final double animValue =
+                  ShaderAnimationUtils.computeAnimatedValue(
+                    settings.blurSettings.blurAnimOptions,
+                    animationValue,
+                  );
+              amount = settings.blurSettings.blurAmount * animValue;
+            }
           }
 
           // If preserveTransparency is enabled or this is text content, adjust blur settings
