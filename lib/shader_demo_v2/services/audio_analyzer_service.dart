@@ -230,5 +230,7 @@ class AudioAnalyzerService {
   // Logger
   void _log(String message) {
     if (!enableLogging) return;
+
+    print('[$_logTag] $message');
   }
 }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'shader_demo/shader_demo.dart';
 import 'shader_demo_v2/views/shader_demo_screen.dart';
+import 'shader_demo_v2/test_animation.dart';
+import 'shader_demo_v3/index.dart';
 import 'typography_demo.dart';
 import 'cymatics_demo.dart';
 import 'common/app_scaffold.dart';
@@ -58,7 +60,9 @@ class DemosScreen extends StatelessWidget {
                 () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const ShaderDemoScreen()),
+                    MaterialPageRoute(
+                      builder: (context) => const ShaderDemoScreen(),
+                    ),
                   );
                 },
               ),
@@ -88,6 +92,36 @@ class DemosScreen extends StatelessWidget {
                     context,
                     MaterialPageRoute(
                       builder: (context) => const CymaticsDemo(),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 20),
+              _buildDemoCard(
+                context,
+                'Shaders V3',
+                'Simplified shader animation demo',
+                Icons.animation,
+                () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ShaderDemoV3(),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 20),
+              _buildDemoCard(
+                context,
+                'Animation Test',
+                'Super simple animation test',
+                Icons.bug_report,
+                () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AnimationTestScreen(),
                     ),
                   );
                 },

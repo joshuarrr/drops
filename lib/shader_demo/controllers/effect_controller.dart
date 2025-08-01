@@ -139,8 +139,8 @@ class EffectController {
   static void clearEffectCache() {
     final cacheSize = _effectCache.length;
 
-    // Only log if there's something in the cache or we're in debug mode
-    if (cacheSize > 0 || kDebugMode) {
+    // Don't spam logs for empty cache clears
+    if (cacheSize > 0) {
       final hitRatio = _totalCacheRequests > 0
           ? (_cacheHits / _totalCacheRequests) * 100
           : 0;

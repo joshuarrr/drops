@@ -35,100 +35,68 @@ class RippleSettings with TargetableEffectSettings {
   bool get rippleEnabled => _rippleEnabled;
   set rippleEnabled(bool value) {
     _rippleEnabled = value;
-    if (enableLogging) print("SETTINGS: rippleEnabled set to $value");
   }
 
   double get rippleIntensity => _rippleIntensity;
   set rippleIntensity(double value) {
     _rippleIntensity = value;
-    if (enableLogging) {
-      print("SETTINGS: rippleIntensity set to ${value.toStringAsFixed(3)}");
-    }
   }
 
   double get rippleSize => _rippleSize;
   set rippleSize(double value) {
     _rippleSize = value;
-    if (enableLogging) {
-      print("SETTINGS: rippleSize set to ${value.toStringAsFixed(3)}");
-    }
   }
 
   double get rippleSpeed => _rippleSpeed;
   set rippleSpeed(double value) {
     _rippleSpeed = value;
-    if (enableLogging) {
-      print("SETTINGS: rippleSpeed set to ${value.toStringAsFixed(3)}");
-    }
   }
 
   double get rippleOpacity => _rippleOpacity;
   set rippleOpacity(double value) {
     _rippleOpacity = value;
-    if (enableLogging) {
-      print("SETTINGS: rippleOpacity set to ${value.toStringAsFixed(3)}");
-    }
   }
 
   double get rippleColor => _rippleColor;
   set rippleColor(double value) {
     _rippleColor = value;
-    if (enableLogging) {
-      print("SETTINGS: rippleColor set to ${value.toStringAsFixed(3)}");
-    }
   }
 
   int get rippleDropCount => _rippleDropCount;
   set rippleDropCount(int value) {
     _rippleDropCount = value;
-    if (enableLogging) {
-      print("SETTINGS: rippleDropCount set to $value");
-    }
   }
 
   double get rippleSeed => _rippleSeed;
   set rippleSeed(double value) {
     _rippleSeed = value;
-    if (enableLogging) {
-      print("SETTINGS: rippleSeed set to ${value.toStringAsFixed(3)}");
-    }
   }
 
   double get rippleOvalness => _rippleOvalness;
   set rippleOvalness(double value) {
     _rippleOvalness = value;
-    if (enableLogging) {
-      print("SETTINGS: rippleOvalness set to ${value.toStringAsFixed(3)}");
-    }
   }
 
   double get rippleRotation => _rippleRotation;
   set rippleRotation(double value) {
     _rippleRotation = value;
-    if (enableLogging) {
-      print("SETTINGS: rippleRotation set to ${value.toStringAsFixed(3)}");
-    }
   }
 
   // Generate a new random seed to randomize drop positions
   void randomizeDropPositions() {
     _rippleSeed = _random.nextDouble() * 1000.0;
-    if (enableLogging) {
-      print("SETTINGS: randomized drop positions with seed $_rippleSeed");
-    }
+    if (enableLogging) {}
   }
 
   // Ripple animation toggle with logging
   bool get rippleAnimated => _rippleAnimated;
   set rippleAnimated(bool value) {
     _rippleAnimated = value;
-    if (enableLogging) print("SETTINGS: rippleAnimated set to $value");
   }
 
   AnimationOptions get rippleAnimOptions => _rippleAnimOptions;
   set rippleAnimOptions(AnimationOptions value) {
     _rippleAnimOptions = value;
-    if (enableLogging) print("SETTINGS: rippleAnimOptions updated");
   }
 
   // Constructor with default values
@@ -162,8 +130,6 @@ class RippleSettings with TargetableEffectSettings {
     // Set the targeting flags
     this.applyToImage = applyToImage;
     this.applyToText = applyToText;
-
-    if (enableLogging) print("SETTINGS: RippleSettings initialized");
   }
 
   // Serialization helpers

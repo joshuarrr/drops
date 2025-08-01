@@ -32,16 +32,11 @@ class MemoryProfiler {
     }
 
     _verboseLogging = verbose;
-    print(
-      'Memory profiling ${verbose ? '(verbose)' : ''} - monitoring effect cache',
-    );
+    print('Memory profiling enabled - monitoring effect cache');
     _isMonitoring = true;
 
-    // Initial cache check
+    // Initial cache check without cleanup
     _checkCacheSize();
-
-    // Clear cache on startup
-    _triggerCleanup(reason: "startup");
 
     // Set up periodic monitoring
     _monitorTimer = Timer.periodic(Duration(milliseconds: intervalMs), (_) {
@@ -92,29 +87,25 @@ class MemoryProfiler {
       _triggerCleanup(reason: "threshold_exceeded");
     }
 
-    // Periodic cleanup regardless of size
-    final now = DateTime.now();
-    if (_lastCleanupTime != null &&
-        now.difference(_lastCleanupTime!).inSeconds > 30) {
-      _triggerCleanup(reason: "periodic");
-    }
+    // No more periodic cleanup - too spammy
   }
 
-  /// Trigger memory cleanup
+  /// Trigger memory cleanup (smart - only when needed)
   static void _triggerCleanup({required String reason}) {
     final effectCacheSize = EffectController.getEffectCacheSize();
 
-    // Only log if there's something to clean or we're in verbose mode
-    if (effectCacheSize > 0 || _verboseLogging) {
-      _log('Clearing cache ($effectCacheSize items) - reason: $reason');
+    // Only clear if there's actually something to clear
+    if (effectCacheSize > 0) {
+      _log('Smart cleanup: clearing $effectCacheSize items - reason: $reason');
+
+      // Record cleanup time and stats
+      _lastCleanupTime = DateTime.now();
+      _cacheCleanupCount++;
+
+      // Clear the effect cache
+      EffectController.clearEffectCache();
     }
-
-    // Record cleanup time
-    _lastCleanupTime = DateTime.now();
-    _cacheCleanupCount++;
-
-    // Clear the effect cache
-    EffectController.clearEffectCache();
+    // Don't spam logs or waste time clearing empty caches
   }
 
   /// Report memory statistics

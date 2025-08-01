@@ -33,17 +33,11 @@ class BlurSettings with TargetableEffectSettings {
   double get blurAmount => _blurAmount.clamp(0.0, 1.0);
   set blurAmount(double value) {
     _blurAmount = value.clamp(0.0, 1.0);
-    if (enableLogging) {
-      print("SETTINGS: blurAmount set to ${value.toStringAsFixed(3)}");
-    }
   }
 
   double get blurRadius => _blurRadius.clamp(0.0, 120.0);
   set blurRadius(double value) {
     _blurRadius = value.clamp(0.0, 120.0);
-    if (enableLogging) {
-      print("SETTINGS: blurRadius set to ${value.toStringAsFixed(3)}");
-    }
   }
 
   // Blur animation toggle with logging
@@ -57,9 +51,6 @@ class BlurSettings with TargetableEffectSettings {
   double get blurOpacity => _blurOpacity.clamp(0.0, 1.0);
   set blurOpacity(double value) {
     _blurOpacity = value.clamp(0.0, 1.0);
-    if (enableLogging) {
-      print("SETTINGS: blurOpacity set to ${value.toStringAsFixed(3)}");
-    }
   }
 
   int get blurBlendMode => _blurBlendMode;
@@ -72,17 +63,11 @@ class BlurSettings with TargetableEffectSettings {
   double get blurIntensity => _blurIntensity.clamp(0.0, 3.0);
   set blurIntensity(double value) {
     _blurIntensity = value.clamp(0.0, 3.0);
-    if (enableLogging) {
-      print("SETTINGS: blurIntensity set to ${value.toStringAsFixed(3)}");
-    }
   }
 
   double get blurContrast => _blurContrast.clamp(0.0, 2.0);
   set blurContrast(double value) {
     _blurContrast = value.clamp(0.0, 2.0);
-    if (enableLogging) {
-      print("SETTINGS: blurContrast set to ${value.toStringAsFixed(3)}");
-    }
   }
 
   AnimationOptions get blurAnimOptions => _blurAnimOptions;

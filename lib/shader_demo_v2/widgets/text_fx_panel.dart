@@ -37,11 +37,31 @@ class _TextFxPanelState extends State<TextFxPanel>
   static Map<ShaderAspect, Map<String, dynamic>> _cachedPresets = {};
   static int _refreshCounter = 0;
 
+  // Custom log function that uses both dart:developer and debugPrint for visibility
+  void _log(String message, {LogLevel level = LogLevel.info}) {
+    // Skip debug logs if we're running at a higher log level
+    if (level == LogLevel.debug &&
+        EffectLogger.currentLevel.index > LogLevel.debug.index) {
+      return;
+    }
+
+    developer.log(message, name: _logTag);
+
+    // Only print to console for info level and above
+    if (level.index >= LogLevel.info.index) {
+      debugPrint('[$_logTag] $message');
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 6, vsync: this);
     _animationEnabled = widget.settings.textfxSettings.textfxAnimated;
+    _log(
+      'TextFxPanel initialized - TextFx enabled: ${widget.settings.textfxSettings.textfxEnabled}',
+      level: LogLevel.debug,
+    );
   }
 
   @override
@@ -65,6 +85,8 @@ class _TextFxPanelState extends State<TextFxPanel>
 
   @override
   Widget build(BuildContext context) {
+    _log('Building TextFxPanel', level: LogLevel.debug);
+
     return Column(
       children: [
         // Panel header with animation toggle, presets, and options
@@ -378,6 +400,7 @@ class _TextFxPanelState extends State<TextFxPanel>
                   updatedSettings.textfxSettings.textfxEnabled = true;
                 }
                 widget.onSettingsChanged(updatedSettings);
+                _log('Shadow effect toggled: $value');
               },
             ),
             const SizedBox(height: 16),
@@ -449,6 +472,7 @@ class _TextFxPanelState extends State<TextFxPanel>
                 'Shadow Color',
                 widget.settings.textfxSettings.textShadowColor,
                 (color) {
+                  _log('Shadow color changed', level: LogLevel.debug);
                   final updatedSettings = widget.settings;
                   updatedSettings.textfxSettings.textShadowColor = color;
                   // Ensure this change only affects text effects, not color overlay
@@ -484,6 +508,7 @@ class _TextFxPanelState extends State<TextFxPanel>
                   updatedSettings.textfxSettings.textfxEnabled = true;
                 }
                 widget.onSettingsChanged(updatedSettings);
+                _log('Glow effect toggled: $value');
               },
             ),
             const SizedBox(height: 16),
@@ -525,6 +550,7 @@ class _TextFxPanelState extends State<TextFxPanel>
                 'Glow Color',
                 widget.settings.textfxSettings.textGlowColor,
                 (color) {
+                  _log('Glow color changed', level: LogLevel.debug);
                   final updatedSettings = widget.settings;
                   updatedSettings.textfxSettings.textGlowColor = color;
                   // Ensure this change only affects text effects, not color overlay
@@ -561,6 +587,10 @@ class _TextFxPanelState extends State<TextFxPanel>
           (_sliderValues[sliderKey]! - newValue).abs() > 0.05;
 
       if (hasChanged) {
+        _log(
+          '$label slider changed to: ${newValue.toStringAsFixed(2)}',
+          level: LogLevel.debug,
+        );
         _sliderValues[sliderKey] = newValue;
       }
 
@@ -622,6 +652,10 @@ class _TextFxPanelState extends State<TextFxPanel>
     final bool isNewColor =
         !_lastColors.containsKey(label) || _lastColors[label] != color;
     if (isNewColor) {
+      _log(
+        '$label color: 0x${color.value.toRadixString(16).padLeft(8, '0')}',
+        level: LogLevel.debug,
+      );
       _lastColors[label] = color;
     }
 
@@ -630,6 +664,8 @@ class _TextFxPanelState extends State<TextFxPanel>
       label: label,
       currentColor: color,
       onColorChanged: (newColor) {
+        _log('$label color changed', level: LogLevel.debug);
+
         // Apply color change to the settings
         onColorChanged(newColor);
 
@@ -648,6 +684,7 @@ class _TextFxPanelState extends State<TextFxPanel>
     if (!settings.colorEnabled) {
       // If color effect was disabled, ensure it stays that way
       settings.colorEnabled = false;
+      _log('Keeping color effects disabled', level: LogLevel.debug);
     } else {
       // If color was enabled, we need to make sure the overlay settings don't
       // get inadvertently triggered by color changes in text effects
@@ -659,10 +696,16 @@ class _TextFxPanelState extends State<TextFxPanel>
 
       // If overlay wasn't already active, ensure it stays inactive
       if (!wasOverlayActive) {
+        _log('Preserving inactive overlay state', level: LogLevel.debug);
         // Set overlay intensity/opacity to 0 to prevent inadvertent overlay effects
         // This is especially important when switching between tabs
         settings.colorSettings.overlayOpacity = 0.0;
         settings.colorSettings.overlayIntensity = 0.0;
+      } else {
+        _log(
+          'Overlay was already active, leaving settings as is',
+          level: LogLevel.debug,
+        );
       }
     }
   }
@@ -693,6 +736,7 @@ class _TextFxPanelState extends State<TextFxPanel>
                 }
 
                 widget.onSettingsChanged(updatedSettings);
+                _log('Outline effect toggled: $value');
               },
             ),
             const SizedBox(height: 16),
@@ -719,6 +763,7 @@ class _TextFxPanelState extends State<TextFxPanel>
                 'Outline Color',
                 widget.settings.textfxSettings.textOutlineColor,
                 (color) {
+                  _log('Outline color changed', level: LogLevel.debug);
                   final updatedSettings = widget.settings;
                   updatedSettings.textfxSettings.textOutlineColor = color;
                   // Ensure this change only affects text effects, not color overlay
@@ -754,6 +799,7 @@ class _TextFxPanelState extends State<TextFxPanel>
                   updatedSettings.textfxSettings.textfxEnabled = true;
                 }
                 widget.onSettingsChanged(updatedSettings);
+                _log('Metal effect toggled: $value');
               },
             ),
             const SizedBox(height: 16),
@@ -810,6 +856,7 @@ class _TextFxPanelState extends State<TextFxPanel>
                 'Base Color',
                 widget.settings.textfxSettings.textMetalBaseColor,
                 (color) {
+                  _log('Metal base color changed', level: LogLevel.debug);
                   final updatedSettings = widget.settings;
                   updatedSettings.textfxSettings.textMetalBaseColor = color;
                   // Ensure this change only affects text effects, not color overlay
@@ -825,6 +872,7 @@ class _TextFxPanelState extends State<TextFxPanel>
                 'Shine Color',
                 widget.settings.textfxSettings.textMetalShineColor,
                 (color) {
+                  _log('Metal shine color changed', level: LogLevel.debug);
                   final updatedSettings = widget.settings;
                   updatedSettings.textfxSettings.textMetalShineColor = color;
                   // Ensure this change only affects text effects, not color overlay
@@ -846,6 +894,7 @@ class _TextFxPanelState extends State<TextFxPanel>
   ) {
     return InkWell(
       onTap: () {
+        _log('Metal preset selected: $label', level: LogLevel.debug);
         final updatedSettings = widget.settings;
         updatedSettings.textfxSettings.textMetalBaseColor = baseColor;
         updatedSettings.textfxSettings.textMetalShineColor = shineColor;
@@ -909,6 +958,7 @@ class _TextFxPanelState extends State<TextFxPanel>
                   updatedSettings.textfxSettings.textfxEnabled = true;
                 }
                 widget.onSettingsChanged(updatedSettings);
+                _log('Glass effect toggled: $value');
               },
             ),
             const SizedBox(height: 16),
@@ -965,6 +1015,7 @@ class _TextFxPanelState extends State<TextFxPanel>
                 'Tint Color',
                 widget.settings.textfxSettings.textGlassColor,
                 (color) {
+                  _log('Glass tint color changed', level: LogLevel.debug);
                   final updatedSettings = widget.settings;
                   updatedSettings.textfxSettings.textGlassColor = color;
                   // Ensure this change only affects text effects, not color overlay
@@ -1000,6 +1051,7 @@ class _TextFxPanelState extends State<TextFxPanel>
                   updatedSettings.textfxSettings.textfxEnabled = true;
                 }
                 widget.onSettingsChanged(updatedSettings);
+                _log('Neon effect toggled: $value');
               },
             ),
             const SizedBox(height: 16),
@@ -1041,6 +1093,7 @@ class _TextFxPanelState extends State<TextFxPanel>
                 'Neon Color',
                 widget.settings.textfxSettings.textNeonColor,
                 (color) {
+                  _log('Neon color changed', level: LogLevel.debug);
                   final updatedSettings = widget.settings;
                   updatedSettings.textfxSettings.textNeonColor = color;
                   // Ensure this change only affects text effects, not color overlay
@@ -1056,6 +1109,7 @@ class _TextFxPanelState extends State<TextFxPanel>
                 'Outer Glow',
                 widget.settings.textfxSettings.textNeonOuterColor,
                 (color) {
+                  _log('Neon outer glow color changed', level: LogLevel.debug);
                   final updatedSettings = widget.settings;
                   updatedSettings.textfxSettings.textNeonOuterColor = color;
                   // Ensure this change only affects text effects, not color overlay

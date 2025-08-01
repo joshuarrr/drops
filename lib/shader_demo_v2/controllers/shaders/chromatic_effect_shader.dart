@@ -39,12 +39,33 @@ class ChromaticEffectShader extends StatelessWidget {
     this.isTextContent = false,
   });
 
+  // Custom log function that uses both dart:developer and debugPrint for visibility
+  void _log(String message) {
+    if (!enableShaderDebugLogs) return;
+
+    // Skip if this is the same message that was just logged
+    if (message == _lastLogMessage) return;
+
+    // Throttle logs to avoid excessive output
+    final now = DateTime.now();
+    if (now.difference(_lastLogTime) < _logThrottleInterval) {
+      return;
+    }
+
+    _lastLogTime = now;
+    _lastLogMessage = message;
+
+    developer.log(message, name: _logTag);
+    debugPrint('[$_logTag] $message');
+  }
+
   @override
   Widget build(BuildContext context) {
     if (enableShaderDebugLogs) {
       final String logMessage =
           "Building ChromaticEffectShader with intensity=${settings.chromaticSettings.intensity.toStringAsFixed(2)} "
           "(animated: ${settings.chromaticSettings.chromaticAnimated})";
+      _log(logMessage);
     }
 
     // Use ShaderBuilder with AnimatedSampler for the effect
@@ -169,6 +190,7 @@ class ChromaticEffectShader extends StatelessWidget {
           // Draw with the shader, ensuring it covers the full area
           canvas.drawRect(Offset.zero & size, Paint()..shader = shader);
         } catch (e) {
+          _log("ERROR: $e");
           // Fall back to drawing the original image
           canvas.drawImageRect(
             image,

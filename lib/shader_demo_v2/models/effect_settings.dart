@@ -239,10 +239,7 @@ class ShaderSettings {
        _rippleSettings = rippleSettings ?? RippleSettings(),
        _musicSettings = musicSettings ?? MusicSettings(),
        _cymaticsSettings = cymaticsSettings ?? CymaticsSettings(),
-       _backgroundSettings = backgroundSettings ?? BackgroundSettings() {
-    if (enableLogging && !skipLogging)
-      print("SETTINGS: ShaderSettings initialized");
-  }
+       _backgroundSettings = backgroundSettings ?? BackgroundSettings() {}
 
   // Serialization helper for persistence
   Map<String, dynamic> toMap() {

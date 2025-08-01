@@ -13,7 +13,7 @@ import 'shader_demo/controllers/preset_initializer.dart';
 import 'theme/custom_fonts.dart';
 import 'shader_demo/views/effect_controls.dart';
 import 'shader_demo/utils/logging_config.dart';
-import 'shader_demo/utils/memory_profiler.dart';
+import 'shader_demo/utils/memory_profiler.dart'; // V1 profiler - superior with trend analysis & smart cleanup
 import 'cymatics_demo/cymatics_demo_impl.dart';
 
 // Conditionally import web-specific code
@@ -70,7 +70,6 @@ void main() async {
       intervalMs: 10000,
       verbose: false,
     ); // Check every 10 seconds with minimal logging
-    print("Memory profiling enabled - monitoring effect cache");
   }
 
   // Hot restart detection and cleanup

@@ -55,6 +55,7 @@ class _EffectControlsV2State extends State<EffectControlsV2> {
         });
       }
     } catch (e) {
+      print('Error loading image assets: $e');
       if (mounted) {
         setState(() {
           _imagesLoaded = true; // Mark as loaded even if failed
@@ -401,6 +402,7 @@ class _EffectControlsV2State extends State<EffectControlsV2> {
 
       return musicController;
     } catch (e) {
+      print('Error initializing music controller: $e');
       return null;
     }
   }

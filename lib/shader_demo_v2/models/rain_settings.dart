@@ -26,60 +26,42 @@ class RainSettings with TargetableEffectSettings {
   bool get rainEnabled => _rainEnabled;
   set rainEnabled(bool value) {
     _rainEnabled = value;
-    if (enableLogging) print("SETTINGS: rainEnabled set to $value");
   }
 
   double get rainIntensity => _rainIntensity;
   set rainIntensity(double value) {
     _rainIntensity = value;
-    if (enableLogging) {
-      print("SETTINGS: rainIntensity set to ${value.toStringAsFixed(3)}");
-    }
   }
 
   double get dropSize => _dropSize;
   set dropSize(double value) {
     _dropSize = value;
-    if (enableLogging) {
-      print("SETTINGS: dropSize set to ${value.toStringAsFixed(3)}");
-    }
   }
 
   double get fallSpeed => _fallSpeed;
   set fallSpeed(double value) {
     _fallSpeed = value;
-    if (enableLogging) {
-      print("SETTINGS: fallSpeed set to ${value.toStringAsFixed(3)}");
-    }
   }
 
   double get refraction => _refraction;
   set refraction(double value) {
     _refraction = value;
-    if (enableLogging) {
-      print("SETTINGS: refraction set to ${value.toStringAsFixed(3)}");
-    }
   }
 
   double get trailIntensity => _trailIntensity;
   set trailIntensity(double value) {
     _trailIntensity = value;
-    if (enableLogging) {
-      print("SETTINGS: trailIntensity set to ${value.toStringAsFixed(3)}");
-    }
   }
 
   // Rain animation toggle with logging
   bool get rainAnimated => _rainAnimated;
   set rainAnimated(bool value) {
     _rainAnimated = value;
-    if (enableLogging) print("SETTINGS: rainAnimated set to $value");
   }
 
   AnimationOptions get rainAnimOptions => _rainAnimOptions;
   set rainAnimOptions(AnimationOptions value) {
     _rainAnimOptions = value;
-    if (enableLogging) print("SETTINGS: rainAnimOptions updated");
   }
 
   // Constructor with default values
@@ -105,8 +87,6 @@ class RainSettings with TargetableEffectSettings {
     // Set the targeting flags
     this.applyToImage = applyToImage;
     this.applyToText = applyToText;
-
-    if (enableLogging) print("SETTINGS: RainSettings initialized");
   }
 
   // Serialization helpers

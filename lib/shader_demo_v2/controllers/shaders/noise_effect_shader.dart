@@ -38,8 +38,34 @@ class NoiseEffectShader extends StatelessWidget {
     this.isTextContent = false,
   });
 
+  // Custom log function that uses both dart:developer and debugPrint for visibility
+  void _log(String message) {
+    if (!enableShaderDebugLogs) return;
+
+    // Skip if this is the same message that was just logged
+    if (message == _lastLogMessage) return;
+
+    // Throttle logs to avoid excessive output
+    final now = DateTime.now();
+    if (now.difference(_lastLogTime) < _logThrottleInterval) {
+      return;
+    }
+
+    _lastLogTime = now;
+    _lastLogMessage = message;
+
+    developer.log(message, name: _logTag);
+    debugPrint('[$_logTag] $message');
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (enableShaderDebugLogs) {
+      _log(
+        "Building NoiseEffectShader with scale=${settings.noiseSettings.noiseScale.toStringAsFixed(2)}, wave=${settings.noiseSettings.waveAmount.toStringAsFixed(3)} (animated: ${settings.noiseSettings.noiseAnimated})",
+      );
+    }
+
     // Use animated shader when animation is enabled, static when disabled
     if (settings.noiseSettings.noiseAnimated) {
       return _buildAnimatedShader();
@@ -59,6 +85,7 @@ class NoiseEffectShader extends StatelessWidget {
         try {
           _renderShader(shader, image, size, canvas);
         } catch (e) {
+          _log("ERROR in animated shader: $e");
           _fallbackRender(image, size, canvas);
         }
       }, child: this.child);
@@ -77,6 +104,7 @@ class NoiseEffectShader extends StatelessWidget {
         try {
           _renderShader(shader, image, size, canvas);
         } catch (e) {
+          _log("ERROR in static shader: $e");
           _fallbackRender(image, size, canvas);
         }
       }, child: this.child);
@@ -261,6 +289,12 @@ class NoiseEffectShader extends StatelessWidget {
       colorIntensity = colorIntensity * 0.1; // Much more reduction for text
       waveAmount =
           waveAmount * 0.1; // Dramatically reduce wave distortion for text
+
+      if (enableShaderDebugLogs) {
+        _log(
+          "Reducing effects for text content - original colorIntensity=$colorIntensity, waveAmount=$waveAmount",
+        );
+      }
     }
     // Less aggressive adjustments for general transparency preservation
     else if (preserveTransparency) {

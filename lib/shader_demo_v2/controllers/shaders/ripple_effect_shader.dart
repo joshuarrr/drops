@@ -30,8 +30,28 @@ class RippleEffectShader extends StatelessWidget {
     this.isTextContent = false,
   }) : super(key: key);
 
+  // Custom log function that uses both dart:developer and debugPrint for visibility
+  void _log(String message) {
+    if (!enableShaderDebugLogs) return;
+    developer.log(message, name: _logTag);
+    debugPrint('[$_logTag] $message');
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (enableShaderDebugLogs) {
+      _log(
+        "Building RippleEffectShader with intensity=${settings.rippleSettings.rippleIntensity.toStringAsFixed(2)}, "
+        "size=${settings.rippleSettings.rippleSize.toStringAsFixed(2)}, "
+        "speed=${settings.rippleSettings.rippleSpeed.toStringAsFixed(2)}, "
+        "dropCount=${settings.rippleSettings.rippleDropCount}, "
+        "seed=${settings.rippleSettings.rippleSeed.toStringAsFixed(2)}, "
+        "ovalness=${settings.rippleSettings.rippleOvalness.toStringAsFixed(2)}, "
+        "rotation=${settings.rippleSettings.rippleRotation.toStringAsFixed(2)} "
+        "(animated: ${settings.rippleSettings.rippleAnimated})",
+      );
+    }
+
     // Simplified shader structure - no LayoutBuilder, matching ChromaticEffectShader
     return ShaderBuilder(assetKey: 'assets/shaders/ripple_effect.frag', (
       context,
@@ -40,6 +60,12 @@ class RippleEffectShader extends StatelessWidget {
     ) {
       return AnimatedSampler((image, size, canvas) {
         try {
+          if (enableVerboseRippleLogging) {
+            _log(
+              "RIPPLE SAMPLER: image=${image.width}x${image.height}, canvas=${size.width}x${size.height}",
+            );
+          }
+
           // Set the texture sampler first - match ChromaticEffectShader naming
           shader.setImageSampler(0, image);
 
@@ -115,6 +141,7 @@ class RippleEffectShader extends StatelessWidget {
           // Draw with shader using exact same approach as other shaders
           canvas.drawRect(Offset.zero & size, Paint()..shader = shader);
         } catch (e) {
+          _log("ERROR: $e");
           // Fall back to drawing original image
           canvas.drawImageRect(
             image,

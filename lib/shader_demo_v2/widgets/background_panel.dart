@@ -36,11 +36,20 @@ class _BackgroundPanelState extends State<BackgroundPanel> {
   // Track last color to avoid redundant logs
   Color? _lastColor;
 
+  void _log(String message, {LogLevel level = LogLevel.info}) {
+    // Skip debug logs if current level is higher
+    if (level == LogLevel.debug &&
+        EffectLogger.currentLevel.index > LogLevel.debug.index) {
+      return;
+    }
 
+    // Log using the effect logger
+    EffectLogger.log('$_logTag: $message', level: level);
+  }
 
   // Apply a preset to the background settings
   void _applyPreset(Map<String, dynamic> preset) {
-    // _log('Applying background preset', level: LogLevel.debug);
+    _log('Applying background preset', level: LogLevel.debug);
 
     final updatedSettings = widget.settings;
 
@@ -64,7 +73,7 @@ class _BackgroundPanelState extends State<BackgroundPanel> {
 
   // Reset background to default values
   void _resetBackground() {
-    // _log('Resetting background settings', level: LogLevel.debug);
+    _log('Resetting background settings', level: LogLevel.debug);
 
     final updatedSettings = widget.settings;
 
@@ -79,7 +88,7 @@ class _BackgroundPanelState extends State<BackgroundPanel> {
 
   // Save current background settings as a preset
   void _savePresetForAspect(ShaderAspect aspect, String name) async {
-    // _log('Saving background preset: $name', level: LogLevel.info);
+    _log('Saving background preset: $name', level: LogLevel.info);
 
     // Get current background settings
     final presetData = widget.settings.backgroundSettings.toMap();
@@ -88,10 +97,10 @@ class _BackgroundPanelState extends State<BackgroundPanel> {
     final success = await PresetsManager.savePreset(aspect, name, presetData);
 
     if (success) {
-      // _log('Successfully saved background preset: $name');
+      _log('Successfully saved background preset: $name');
       _refreshPresets();
     } else {
-      // _log('Failed to save background preset: $name', level: LogLevel.warning);
+      _log('Failed to save background preset: $name', level: LogLevel.warning);
     }
   }
 
@@ -127,7 +136,7 @@ class _BackgroundPanelState extends State<BackgroundPanel> {
         _lastColor == null || _lastColor != currentColor;
 
     if (hasColorChanged) {
-      // _log(
+      _log(
         'Background color: 0x${currentColor.value.toRadixString(16).padLeft(8, '0')}',
         level: LogLevel.debug,
       );
@@ -171,7 +180,7 @@ class _BackgroundPanelState extends State<BackgroundPanel> {
             label: 'Background Color',
             currentColor: currentColor,
             onColorChanged: (newColor) {
-              // _log(
+              _log(
                 'Background color changed to: 0x${newColor.value.toRadixString(16).padLeft(8, '0')}',
                 level: LogLevel.info,
               );
@@ -182,7 +191,7 @@ class _BackgroundPanelState extends State<BackgroundPanel> {
 
               // Make sure background is enabled when changing colors
               updatedSettings.backgroundEnabled = true;
-              // _log(
+              _log(
                 'Background enabled: ${updatedSettings.backgroundEnabled}',
                 level: LogLevel.info,
               );

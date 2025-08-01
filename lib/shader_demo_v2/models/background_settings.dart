@@ -27,9 +27,6 @@ class BackgroundSettings {
   Color get backgroundColor => _backgroundColor;
   set backgroundColor(Color value) {
     _backgroundColor = value;
-    if (enableLogging) {
-      print("SETTINGS: backgroundColor set to ${value.toString()}");
-    }
   }
 
   // Background animation toggle with logging

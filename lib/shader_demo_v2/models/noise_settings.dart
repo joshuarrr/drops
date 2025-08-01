@@ -24,7 +24,6 @@ class NoiseSettings with TargetableEffectSettings {
   bool get noiseEnabled => _noiseEnabled;
   set noiseEnabled(bool value) {
     _noiseEnabled = value;
-    if (enableLogging) print("SETTINGS: noiseEnabled set to $value");
   }
 
   // Noise effect getters and setters
@@ -72,13 +71,11 @@ class NoiseSettings with TargetableEffectSettings {
   bool get noiseAnimated => _noiseAnimated;
   set noiseAnimated(bool value) {
     _noiseAnimated = value;
-    if (enableLogging) print("SETTINGS: noiseAnimated set to $value");
   }
 
   AnimationOptions get noiseAnimOptions => _noiseAnimOptions;
   set noiseAnimOptions(AnimationOptions value) {
     _noiseAnimOptions = value;
-    if (enableLogging) print("SETTINGS: noiseAnimOptions updated");
   }
 
   NoiseSettings({
@@ -101,8 +98,6 @@ class NoiseSettings with TargetableEffectSettings {
     // Set the targeting flags
     this.applyToImage = applyToImage;
     this.applyToText = applyToText;
-
-    if (enableLogging) print("SETTINGS: NoiseSettings initialized");
   }
 
   // Serialization helpers

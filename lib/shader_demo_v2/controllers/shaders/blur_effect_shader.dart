@@ -1,14 +1,11 @@
-import 'dart:math' as math;
 import 'dart:developer' as developer;
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_shaders/flutter_shaders.dart';
 
 import '../../models/effect_settings.dart';
-import '../../models/animation_options.dart';
-import '../../utils/animation_utils.dart';
 import '../animation_state_manager.dart';
-import 'debug_flags.dart'; // Import the shared debug flag
 
 /// Controls debug logging for shaders (external reference)
 bool enableShaderDebugLogs = false;
@@ -37,7 +34,6 @@ class BlurEffectShader extends StatelessWidget {
   static int _lastBlendMode = -1;
   static double _lastIntensity = -1;
   static double _lastContrast = -1;
-  static bool _settingsChanged = true;
 
   const BlurEffectShader({
     super.key,
@@ -47,6 +43,26 @@ class BlurEffectShader extends StatelessWidget {
     this.preserveTransparency = false,
     this.isTextContent = false,
   });
+
+  // Custom log function that uses both dart:developer and debugPrint for visibility
+  void _log(String message) {
+    if (!enableShaderDebugLogs) return;
+
+    // Skip if this is the same message that was just logged
+    if (message == _lastLogMessage) return;
+
+    // Throttle logs to avoid excessive output
+    final now = DateTime.now();
+    if (now.difference(_lastLogTime) < _logThrottleInterval) {
+      return;
+    }
+
+    _lastLogTime = now;
+    _lastLogMessage = message;
+
+    developer.log(message, name: _logTag);
+    debugPrint('[$_logTag] $message');
+  }
 
   // Check if shader settings have meaningfully changed
   bool _haveSettingsChanged() {
@@ -75,9 +91,12 @@ class BlurEffectShader extends StatelessWidget {
       _lastBlendMode = blendMode;
       _lastIntensity = intensity;
       _lastContrast = contrast;
-      _settingsChanged = true;
-    } else {
-      _settingsChanged = false;
+
+      if (enableShaderDebugLogs) {
+        _log(
+          "Settings changed - amount:$amount radius:$radius opacity:$opacity blend:$blendMode intensity:$intensity contrast:$contrast",
+        );
+      }
     }
 
     return changed;
@@ -88,102 +107,148 @@ class BlurEffectShader extends StatelessWidget {
     // Check if settings have changed to avoid unnecessary logging
     final bool settingsChanged = _haveSettingsChanged();
 
+    if (enableShaderDebugLogs && settingsChanged) {
+      _log(
+        "Building BlurEffectShader with amount=${settings.blurSettings.blurAmount.toStringAsFixed(2)} "
+        "opacity=${settings.blurSettings.blurOpacity.toStringAsFixed(2)} "
+        "(animated: ${settings.blurSettings.blurAnimated})",
+      );
+    }
+
     // Simplified approach using AnimatedSampler with ShaderBuilder
-    return ShaderBuilder(assetKey: 'assets/shaders/blur_effect.frag', (
-      context,
-      shader,
-      child,
-    ) {
-      return AnimatedSampler((image, size, canvas) {
-        try {
-          // Set the texture sampler first
-          shader.setImageSampler(0, image);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return ShaderBuilder(assetKey: 'assets/shaders/blur_effect.frag', (
+          context,
+          shader,
+          child,
+        ) {
+          return SizedBox(
+            width: constraints.maxWidth,
+            height: constraints.maxHeight,
+            // CRITICAL: ALWAYS force shader to rebuild on EVERY frame
+            key: ValueKey(DateTime.now().millisecondsSinceEpoch),
+            child: AnimatedSampler((image, size, canvas) {
+              try {
+                // Set the texture sampler first
+                shader.setImageSampler(0, image);
 
-          // Compute animated amount if enabled
-          double amount = settings.blurSettings.blurAmount;
-          if (settings.blurSettings.blurAnimated) {
-            final animManager = AnimationStateManager();
-
-            if (settings.blurSettings.blurAnimOptions.mode ==
-                AnimationMode.pulse) {
-              // FIX B: Use consistent pulse calculation for shatter effect
-              final double pulse = ShaderAnimationUtils.computePulseValue(
-                settings.blurSettings.blurAnimOptions,
-                animationValue,
-              );
-
-              // Apply pulse to blur amount and report animated value
-              amount = settings.blurSettings.blurAmount * pulse;
-              animManager.updateAnimatedValue(ParameterIds.blurAmount, amount);
-            } else {
-              // For non-pulse modes, use the standard animation utilities
-              final double animValue =
-                  ShaderAnimationUtils.computeAnimatedValue(
-                    settings.blurSettings.blurAnimOptions,
-                    animationValue,
+                // Compute animated amount if enabled - V3 style direct approach
+                double amount = settings.blurSettings.blurAmount;
+                if (settings.blurSettings.blurAnimated) {
+                  // CRITICAL DEBUG: Log animation frame
+                  print(
+                    "[V3-STYLE] BlurEffectShader with animationValue=${animationValue.toStringAsFixed(3)}",
                   );
-              amount = settings.blurSettings.blurAmount * animValue;
-              animManager.updateAnimatedValue(ParameterIds.blurAmount, amount);
-            }
-          } else {
-            // Clear animated value when animation is disabled
-            final animManager = AnimationStateManager();
-            animManager.clearAnimatedValue(ParameterIds.blurAmount);
-          }
 
-          // If preserveTransparency is enabled or this is text content, adjust blur settings
-          double opacity = settings.blurSettings.blurOpacity;
-          double intensity = settings.blurSettings.blurIntensity;
-          double contrast = settings.blurSettings.blurContrast;
+                  // V3-style direct animation approach
+                  // Simple sin wave oscillation for clear visual effect
+                  // Use math library for sin calculation
+                  final double animFactor = math
+                      .sin(animationValue * math.pi)
+                      .abs();
 
-          // Performance tweak: reduce blur radius for text-only layers to
-          // minimise the number of kernel samples.  A 40-50 % cut keeps most
-          // of the shatter look but greatly improves frame rate.
-          double effectiveRadius = settings.blurSettings.blurRadius;
+                  // Apply extreme animation for maximum visibility
+                  // Use a high base amount to ensure the effect is visible
+                  final double baseAmount =
+                      settings.blurSettings.blurAmount > 0.5
+                      ? settings.blurSettings.blurAmount
+                      : 0.5;
+                  amount =
+                      baseAmount * animFactor * 2.0; // Amplify for visibility
 
-          if (isTextContent) {
-            effectiveRadius = effectiveRadius * 0.6; // 40% reduction
-          }
+                  // Log the animation values
+                  print(
+                    "[V3-STYLE] Blur animation: factor=$animFactor, amount=$amount",
+                  );
 
-          // Preserve transparency: avoid introducing a solid backdrop, but let
-          // the blur (shatter) characteristics shine through on the glyphs.
-          // With the transparent-fallback fix in the GLSL shader, we no longer
-          // need to severely dampen the effect for text.  Keep the original
-          // parameters and only make a mild reduction when *only*
-          // preserveTransparency is requested (i.e. non-text overlays).
+                  // Still update the animation manager for compatibility
+                  final animManager = AnimationStateManager();
+                  animManager.updateAnimatedValue(
+                    ParameterIds.blurAmount,
+                    amount,
+                  );
+                } else {
+                  // Clear animated value when animation is disabled
+                  final animManager = AnimationStateManager();
+                  animManager.clearAnimatedValue(ParameterIds.blurAmount);
+                }
 
-          if (!isTextContent && preserveTransparency) {
-            opacity = opacity * 0.6; // Slight reduction for safety
-          }
+                // If preserveTransparency is enabled or this is text content, adjust blur settings
+                double opacity = settings.blurSettings.blurOpacity;
+                double intensity = settings.blurSettings.blurIntensity;
+                double contrast = settings.blurSettings.blurContrast;
 
-          // Set uniforms after the texture sampler
-          shader.setFloat(0, amount);
-          shader.setFloat(1, effectiveRadius);
-          shader.setFloat(2, image.width.toDouble());
-          shader.setFloat(3, image.height.toDouble());
-          shader.setFloat(4, opacity);
-          shader.setFloat(5, settings.blurSettings.blurBlendMode.toDouble());
-          shader.setFloat(6, intensity); // Use adjusted intensity
-          shader.setFloat(7, contrast); // Use adjusted contrast
+                if (enableShaderDebugLogs && settingsChanged) {
+                  _log(
+                    "Setting shader parameters - Amount: ${amount.toStringAsFixed(2)}, " +
+                        "Opacity: ${opacity.toStringAsFixed(2)}, " +
+                        "Intensity: ${intensity.toStringAsFixed(2)}, " +
+                        "Contrast: ${contrast.toStringAsFixed(2)}, " +
+                        "BlendMode: ${settings.blurSettings.blurBlendMode}",
+                  );
+                }
 
-          // Draw with the shader, ensuring it covers the full area
-          canvas.drawRect(Offset.zero & size, Paint()..shader = shader);
-        } catch (e) {
-          // Fall back to drawing the original image
-          canvas.drawImageRect(
-            image,
-            Rect.fromLTWH(
-              0,
-              0,
-              image.width.toDouble(),
-              image.height.toDouble(),
-            ),
-            Rect.fromLTWH(0, 0, size.width, size.height),
-            Paint(),
+                // Performance tweak: reduce blur radius for text-only layers to
+                // minimise the number of kernel samples.  A 40-50 % cut keeps most
+                // of the shatter look but greatly improves frame rate.
+                double effectiveRadius = settings.blurSettings.blurRadius;
+
+                if (isTextContent) {
+                  effectiveRadius = effectiveRadius * 0.6; // 40% reduction
+                  if (enableShaderDebugLogs && settingsChanged) {
+                    _log(
+                      "Reducing radius for text content from ${settings.blurSettings.blurRadius} to $effectiveRadius",
+                    );
+                  }
+                }
+
+                // Preserve transparency: avoid introducing a solid backdrop, but let
+                // the blur (shatter) characteristics shine through on the glyphs.
+                // With the transparent-fallback fix in the GLSL shader, we no longer
+                // need to severely dampen the effect for text.  Keep the original
+                // parameters and only make a mild reduction when *only*
+                // preserveTransparency is requested (i.e. non-text overlays).
+
+                if (!isTextContent && preserveTransparency) {
+                  opacity = opacity * 0.6; // Slight reduction for safety
+                }
+
+                // Set uniforms after the texture sampler
+                shader.setFloat(0, amount);
+                shader.setFloat(1, effectiveRadius);
+                shader.setFloat(2, image.width.toDouble());
+                shader.setFloat(3, image.height.toDouble());
+                shader.setFloat(4, opacity);
+                shader.setFloat(
+                  5,
+                  settings.blurSettings.blurBlendMode.toDouble(),
+                );
+                shader.setFloat(6, intensity); // Use adjusted intensity
+                shader.setFloat(7, contrast); // Use adjusted contrast
+
+                // Draw with the shader, ensuring it covers the full area
+                canvas.drawRect(Offset.zero & size, Paint()..shader = shader);
+              } catch (e) {
+                _log("ERROR: $e");
+                // Fall back to drawing the original image
+                canvas.drawImageRect(
+                  image,
+                  Rect.fromLTWH(
+                    0,
+                    0,
+                    image.width.toDouble(),
+                    image.height.toDouble(),
+                  ),
+                  Rect.fromLTWH(0, 0, size.width, size.height),
+                  Paint(),
+                );
+              }
+            }, child: this.child),
           );
-        }
-      }, child: this.child);
-    }, child: child);
+        }, child: child);
+      },
+    );
   }
 }
 

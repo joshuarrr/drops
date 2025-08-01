@@ -19,6 +19,7 @@ class PresetService {
           final preset = Preset.fromJson(presetData);
           presets.add(preset);
         } catch (e) {
+          print('Error loading preset $id: $e');
           // Continue loading other presets even if one fails
         }
       }
@@ -56,6 +57,7 @@ class PresetService {
 
       return success ? preset : null;
     } catch (e) {
+      print('Error saving named preset: $e');
       return null;
     }
   }
@@ -77,6 +79,7 @@ class PresetService {
 
       return success;
     } catch (e) {
+      print('Error updating preset ${preset.id}: $e');
       return false;
     }
   }
@@ -86,6 +89,7 @@ class PresetService {
     try {
       return await StorageService.removePreset(presetId);
     } catch (e) {
+      print('Error deleting preset $presetId: $e');
       return false;
     }
   }
@@ -106,6 +110,7 @@ class PresetService {
 
       return await StorageService.saveUntitledState(untitledData);
     } catch (e) {
+      print('Error saving untitled state: $e');
       return false;
     }
   }
@@ -116,6 +121,7 @@ class PresetService {
       await StorageService.initialize();
       return StorageService.loadUntitledState();
     } catch (e) {
+      print('Error loading untitled state: $e');
       return null;
     }
   }
@@ -125,6 +131,7 @@ class PresetService {
     try {
       return await StorageService.clearUntitledState();
     } catch (e) {
+      print('Error clearing untitled state: $e');
       return false;
     }
   }
@@ -221,6 +228,7 @@ class PresetService {
 
       return await updatePreset(updatedPreset);
     } catch (e) {
+      print('Error renaming preset $presetId: $e');
       return false;
     }
   }
@@ -274,6 +282,7 @@ class PresetService {
 
       return success ? duplicatedPreset : null;
     } catch (e) {
+      print('Error duplicating preset $presetId: $e');
       return null;
     }
   }

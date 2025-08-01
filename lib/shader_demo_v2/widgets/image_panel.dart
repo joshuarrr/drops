@@ -192,12 +192,12 @@ class ImagePanel extends StatelessWidget {
 
   void _applyPreset(Map<String, dynamic> presetData) {
     // Debug print to see what's in the preset data
-    // debugPrint('APPLYING PRESET:');
-    // debugPrint('  Keys: ${presetData.keys.join(', ')}');
+    debugPrint('APPLYING PRESET:');
+    debugPrint('  Keys: ${presetData.keys.join(', ')}');
 
     // Print all values in presetData for debugging
     presetData.forEach((key, value) {
-      // debugPrint('  $key: $value');
+      debugPrint('  $key: $value');
     });
 
     // Create a deep copy of the settings to ensure changes are properly tracked
@@ -206,7 +206,7 @@ class ImagePanel extends StatelessWidget {
     // Store current values for debugging
     final originalFillScreen = updatedSettings.fillScreen;
     final originalMargin = updatedSettings.textLayoutSettings.fitScreenMargin;
-    // debugPrint(
+    debugPrint(
       '  Original values - fillScreen: $originalFillScreen, margin: $originalMargin',
     );
 
@@ -214,9 +214,9 @@ class ImagePanel extends StatelessWidget {
     if (presetData.containsKey('fillScreen')) {
       final bool fillScreenValue = presetData['fillScreen'] as bool;
       updatedSettings.fillScreen = fillScreenValue;
-      // debugPrint('  Applied fillScreen: $fillScreenValue');
+      debugPrint('  Applied fillScreen: $fillScreenValue');
     } else {
-      // debugPrint('  No fillScreen found in preset data!');
+      debugPrint('  No fillScreen found in preset data!');
     }
 
     // Handle margin setting - check direct presetData key
@@ -224,15 +224,15 @@ class ImagePanel extends StatelessWidget {
       final double marginValue = (presetData['fitScreenMargin'] as num)
           .toDouble();
       updatedSettings.textLayoutSettings.fitScreenMargin = marginValue;
-      // debugPrint('  Applied margin: $marginValue');
+      debugPrint('  Applied margin: $marginValue');
     } else {
-      // debugPrint('  No fitScreenMargin found in preset data!');
+      debugPrint('  No fitScreenMargin found in preset data!');
 
       // Check if there's a settings object that might contain our margin
       if (presetData.containsKey('settings') &&
           presetData['settings'] is Map<String, dynamic>) {
         final settingsMap = presetData['settings'] as Map<String, dynamic>;
-        // debugPrint(
+        debugPrint(
           '  Looking in nested settings: ${settingsMap.keys.join(', ')}',
         );
 
@@ -240,14 +240,14 @@ class ImagePanel extends StatelessWidget {
             settingsMap['textLayoutSettings'] is Map<String, dynamic>) {
           final textLayoutMap =
               settingsMap['textLayoutSettings'] as Map<String, dynamic>;
-          // debugPrint(
+          debugPrint(
             '  Found textLayoutSettings: ${textLayoutMap.keys.join(', ')}',
           );
 
           if (textLayoutMap.containsKey('fitScreenMargin')) {
             final double nestedMargin =
                 (textLayoutMap['fitScreenMargin'] as num).toDouble();
-            // debugPrint('  Found nested margin: $nestedMargin');
+            debugPrint('  Found nested margin: $nestedMargin');
             updatedSettings.textLayoutSettings.fitScreenMargin = nestedMargin;
           }
         }
@@ -264,7 +264,7 @@ class ImagePanel extends StatelessWidget {
       'fitScreenMargin': settings.textLayoutSettings.fitScreenMargin,
     };
 
-    // debugPrint(
+    debugPrint(
       'Saving aspect preset with fillScreen: ${settings.fillScreen}, margin: ${settings.textLayoutSettings.fitScreenMargin}',
     );
 

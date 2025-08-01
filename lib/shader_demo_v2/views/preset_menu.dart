@@ -150,7 +150,7 @@ class _PresetMenuState extends State<PresetMenu> {
         }
 
         // Use FutureBuilder to generate thumbnail on-demand
-        // print(
+        print(
           '🖼️ [PresetMenu] Building thumbnail widget for: ${preset.name} (fillScreen: ${settings.fillScreen})',
         );
         return FutureBuilder<String?>(

@@ -34,18 +34,32 @@ class _ColorPanelState extends State<ColorPanel> {
   bool _showOverlayControls = true;
   final String _logTag = 'ColorPanel';
 
+  // Custom log function that uses both dart:developer and debugPrint
+  void _log(String message, {LogLevel level = LogLevel.info}) {
+    // Use the shared logger with our tag
+    if (level == LogLevel.debug &&
+        EffectLogger.currentLevel.index > LogLevel.debug.index) {
+      return; // Skip debug logs based on current level
+    }
 
+    developer.log(message, name: _logTag);
+
+    // Only print to console for info level and above
+    if (level.index >= LogLevel.info.index) {
+      debugPrint('[$_logTag] $message');
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    // _log('ColorPanel initialized', level: LogLevel.debug);
+    _log('ColorPanel initialized', level: LogLevel.debug);
   }
 
   @override
   Widget build(BuildContext context) {
     // Only log builds at debug level
-    // _log('Building ColorPanel', level: LogLevel.debug);
+    _log('Building ColorPanel', level: LogLevel.debug);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -77,7 +91,7 @@ class _ColorPanelState extends State<ColorPanel> {
           _showColorControls,
           () => setState(() {
             _showColorControls = !_showColorControls;
-            // _log(
+            _log(
               'Color adjustments section ${_showColorControls ? 'expanded' : 'collapsed'}',
               level: LogLevel.debug,
             );
@@ -144,7 +158,7 @@ class _ColorPanelState extends State<ColorPanel> {
                   if (!widget.settings.colorEnabled)
                     widget.settings.colorEnabled = true;
                   widget.onSettingsChanged(widget.settings);
-                  // _log('HSL animation toggled: ${value ? 'ON' : 'OFF'}');
+                  _log('HSL animation toggled: ${value ? 'ON' : 'OFF'}');
                 },
               ),
             ],
@@ -160,7 +174,7 @@ class _ColorPanelState extends State<ColorPanel> {
                     .colorAnimOptions
                     .copyWith(speed: v);
                 widget.onSettingsChanged(widget.settings);
-                // _log('HSL animation speed changed: $v', level: LogLevel.debug);
+                _log('HSL animation speed changed: $v', level: LogLevel.debug);
               },
               animationMode:
                   widget.settings.colorSettings.colorAnimOptions.mode,
@@ -171,7 +185,7 @@ class _ColorPanelState extends State<ColorPanel> {
                     .colorAnimOptions
                     .copyWith(mode: m);
                 widget.onSettingsChanged(widget.settings);
-                // _log(
+                _log(
                   'HSL animation mode changed: ${m.toString()}',
                   level: LogLevel.debug,
                 );
@@ -185,7 +199,7 @@ class _ColorPanelState extends State<ColorPanel> {
                     .colorAnimOptions
                     .copyWith(easing: e);
                 widget.onSettingsChanged(widget.settings);
-                // _log(
+                _log(
                   'HSL animation easing changed: ${e.toString()}',
                   level: LogLevel.debug,
                 );
@@ -202,7 +216,7 @@ class _ColorPanelState extends State<ColorPanel> {
           _showOverlayControls,
           () => setState(() {
             _showOverlayControls = !_showOverlayControls;
-            // _log(
+            _log(
               'Overlay controls section ${_showOverlayControls ? 'expanded' : 'collapsed'}',
               level: LogLevel.debug,
             );
@@ -269,7 +283,7 @@ class _ColorPanelState extends State<ColorPanel> {
                   if (!widget.settings.colorEnabled)
                     widget.settings.colorEnabled = true;
                   widget.onSettingsChanged(widget.settings);
-                  // _log('Overlay animation toggled: ${value ? 'ON' : 'OFF'}');
+                  _log('Overlay animation toggled: ${value ? 'ON' : 'OFF'}');
                 },
               ),
             ],
@@ -285,7 +299,7 @@ class _ColorPanelState extends State<ColorPanel> {
                     .overlayAnimOptions
                     .copyWith(speed: v);
                 widget.onSettingsChanged(widget.settings);
-                // _log(
+                _log(
                   'Overlay animation speed changed: $v',
                   level: LogLevel.debug,
                 );
@@ -299,7 +313,7 @@ class _ColorPanelState extends State<ColorPanel> {
                     .overlayAnimOptions
                     .copyWith(mode: m);
                 widget.onSettingsChanged(widget.settings);
-                // _log(
+                _log(
                   'Overlay animation mode changed: ${m.toString()}',
                   level: LogLevel.debug,
                 );
@@ -313,7 +327,7 @@ class _ColorPanelState extends State<ColorPanel> {
                     .overlayAnimOptions
                     .copyWith(easing: e);
                 widget.onSettingsChanged(widget.settings);
-                // _log(
+                _log(
                   'Overlay animation easing changed: ${e.toString()}',
                   level: LogLevel.debug,
                 );
@@ -379,7 +393,7 @@ class _ColorPanelState extends State<ColorPanel> {
 
     // Log the change if significant
     if (shouldLog) {
-      // _log(
+      _log(
         '$propertyName changed to: ${value.toStringAsFixed(2)}',
         level: LogLevel.debug,
       );
@@ -393,7 +407,7 @@ class _ColorPanelState extends State<ColorPanel> {
       // we don't enable overlay effect implicitly
       if (widget.settings.colorSettings.overlayIntensity <= 0.0 ||
           widget.settings.colorSettings.overlayOpacity <= 0.0) {
-        // _log(
+        _log(
           'Overlay effects might not be visible (Intensity: ${widget.settings.colorSettings.overlayIntensity.toStringAsFixed(2)}, Opacity: ${widget.settings.colorSettings.overlayOpacity.toStringAsFixed(2)})',
           level: LogLevel.debug,
         );
@@ -407,7 +421,7 @@ class _ColorPanelState extends State<ColorPanel> {
         // Only if we're in a color section but not an overlay section
         // No need to reset overlay values here - they should only be changed
         // when explicitly adjusted in the overlay controls
-        // _log(
+        _log(
           'Color adjustment with active overlay (Intensity: ${widget.settings.colorSettings.overlayIntensity.toStringAsFixed(2)}, Opacity: ${widget.settings.colorSettings.overlayOpacity.toStringAsFixed(2)})',
           level: LogLevel.debug,
         );
@@ -436,12 +450,12 @@ class _ColorPanelState extends State<ColorPanel> {
     widget.settings.colorSettings.colorAnimOptions = AnimationOptions();
     widget.settings.colorSettings.overlayAnimOptions = AnimationOptions();
 
-    // _log('Color settings reset to defaults');
+    _log('Color settings reset to defaults');
     widget.onSettingsChanged(widget.settings);
   }
 
   void _applyPreset(Map<String, dynamic> presetData) {
-    // _log('Applying color preset', level: LogLevel.debug);
+    _log('Applying color preset', level: LogLevel.debug);
 
     widget.settings.colorEnabled =
         presetData['colorEnabled'] ?? widget.settings.colorEnabled;
@@ -481,12 +495,12 @@ class _ColorPanelState extends State<ColorPanel> {
       );
     }
 
-    // _log('Color preset applied successfully');
+    _log('Color preset applied successfully');
     widget.onSettingsChanged(widget.settings);
   }
 
   Future<void> _savePresetForAspect(ShaderAspect aspect, String name) async {
-    // _log('Saving color preset: $name');
+    _log('Saving color preset: $name');
 
     Map<String, dynamic> presetData = {
       'colorEnabled': widget.settings.colorEnabled,
@@ -508,13 +522,13 @@ class _ColorPanelState extends State<ColorPanel> {
     bool success = await PresetsManager.savePreset(aspect, name, presetData);
 
     if (success) {
-      // _log('Color preset saved successfully: $name');
+      _log('Color preset saved successfully: $name');
       // Update cached presets
       _cachedPresets[aspect] = await PresetsManager.getPresetsForAspect(aspect);
       // Force refresh of the UI to show the new preset immediately
       _refreshPresets();
     } else {
-      // _log('Failed to save color preset: $name', level: LogLevel.warning);
+      _log('Failed to save color preset: $name', level: LogLevel.warning);
     }
   }
 
@@ -525,19 +539,21 @@ class _ColorPanelState extends State<ColorPanel> {
   static Future<Map<String, dynamic>> _loadPresetsForAspect(
     ShaderAspect aspect,
   ) async {
-
+    debugPrint('[ColorPanel] Loading presets for aspect: $aspect');
     // Delegate to EffectControls
     // This will need to be implemented to connect with the global preset system
     if (!_cachedPresets.containsKey(aspect)) {
       _cachedPresets[aspect] = await PresetsManager.getPresetsForAspect(aspect);
-
+      debugPrint(
+        '[ColorPanel] Loaded ${_cachedPresets[aspect]?.length ?? 0} presets for $aspect',
+      );
     }
     return _cachedPresets[aspect] ?? {};
   }
 
   static void _refreshPresets() {
     _refreshCounter++;
-
+    debugPrint('[ColorPanel] Refreshing presets, counter: $_refreshCounter');
     // Call the central refresh method for immediate UI update
     // TODO: Implement preset refresh in V2 architecture
   }
@@ -546,13 +562,13 @@ class _ColorPanelState extends State<ColorPanel> {
     ShaderAspect aspect,
     String name,
   ) async {
-
+    debugPrint('[ColorPanel] Deleting preset: $name for aspect $aspect');
     final success = await PresetsManager.deletePreset(aspect, name);
     if (success) {
-
+      debugPrint('[ColorPanel] Successfully deleted preset: $name');
       _cachedPresets[aspect] = await PresetsManager.getPresetsForAspect(aspect);
     } else {
-
+      debugPrint('[ColorPanel] Failed to delete preset: $name');
     }
     return success;
   }

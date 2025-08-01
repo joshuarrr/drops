@@ -32,6 +32,7 @@ class StorageService {
       final jsonString = jsonEncode(data);
       return await _preferences.setString(key, jsonString);
     } catch (e) {
+      print('Error saving JSON for key $key: $e');
       return false;
     }
   }
@@ -43,6 +44,7 @@ class StorageService {
       if (jsonString == null) return null;
       return jsonDecode(jsonString) as Map<String, dynamic>;
     } catch (e) {
+      print('Error loading JSON for key $key: $e');
       return null;
     }
   }

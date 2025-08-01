@@ -39,6 +39,7 @@ class ThumbnailService {
 
       return base64String;
     } catch (e) {
+      print('Error capturing thumbnail for preset ${preset.name}: $e');
       return null;
     }
   }
@@ -74,6 +75,7 @@ class ThumbnailService {
     try {
       // If no key provided, skip thumbnail capture
       if (key == null) {
+        print('No preview key provided, skipping thumbnail capture');
         return null;
       }
 
@@ -116,6 +118,7 @@ class ThumbnailService {
           final result = byteData.buffer.asUint8List();
           completer.complete(result);
         } catch (e) {
+          print('Error capturing preview in post-frame: $e');
           completer.complete(null);
         } finally {
           // Dispose of the image
@@ -125,6 +128,7 @@ class ThumbnailService {
 
       return completer.future;
     } catch (e) {
+      print('Error in _capturePreview: $e');
       return null;
     }
   }

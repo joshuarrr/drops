@@ -101,8 +101,6 @@ class TextLayoutSettings {
   double get fitScreenMargin => _fitScreenMargin;
   set fitScreenMargin(double value) {
     _fitScreenMargin = _safeDoubleValue(value, 0.0);
-    if (enableLogging)
-      print("SETTINGS: fitScreenMargin set to $_fitScreenMargin");
   }
 
   // Text getters/setters

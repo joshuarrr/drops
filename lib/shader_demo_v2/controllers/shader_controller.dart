@@ -69,9 +69,16 @@ class ShaderController extends ChangeNotifier {
           final imagePath = untitledData['imagePath'] as String;
           basePresetId = untitledData['basePresetId'] as String?;
 
+          print(
+            'DEBUG: Untitled state - base preset: $basePresetId, image: $imagePath',
+          );
+
           // Validate image path - clear untitled state if it has invalid image
           if (imagePath.contains('album1.jpg') ||
               imagePath.contains('album2.jpg')) {
+            print(
+              'Found invalid image path in untitled state: $imagePath - clearing untitled state',
+            );
             await PresetService.clearUntitledState();
           } else {
             untitledPreset = Preset.untitled(
@@ -80,6 +87,7 @@ class ShaderController extends ChangeNotifier {
             );
           }
         } catch (e) {
+          print('Error loading untitled state: $e');
           // Clear corrupted untitled state
           await PresetService.clearUntitledState();
         }
@@ -97,6 +105,10 @@ class ShaderController extends ChangeNotifier {
         savedPresets: savedPresets,
         untitledPreset: untitledPreset,
         basePresetId: basePresetId,
+      );
+
+      print(
+        'DEBUG: Navigator order length: ${navigatorOrder.length}, current position: ${_navigationController.currentPosition}',
       );
 
       // Determine initial settings: prioritize current preset from navigation, then untitled, then defaults
@@ -121,6 +133,9 @@ class ShaderController extends ChangeNotifier {
         } else {
           initialBasePreset = null;
         }
+        print(
+          'DEBUG: Using current preset from navigation: ${currentPreset.name}',
+        );
       } else if (untitledPreset != null) {
         // Fallback to untitled preset
         initialSettings = untitledPreset.settings;
@@ -171,6 +186,7 @@ class ShaderController extends ChangeNotifier {
       _isInitializing = false;
       notifyListeners();
     } catch (e) {
+      print('Error initializing ShaderController: $e');
       _isInitializing = false;
       rethrow;
     }
@@ -201,12 +217,15 @@ class ShaderController extends ChangeNotifier {
 
         if (defaultImage.isNotEmpty) {
           _state = _state.copyWith(selectedImage: defaultImage);
+          print('Set default image: $defaultImage (was: $currentImage)');
 
           // If we had to fix an invalid image path, update any saved state
           await _fixInvalidImageReferences(currentImage, defaultImage);
         }
       }
-    } catch (e) {}
+    } catch (e) {
+      print('Error loading image assets: $e');
+    }
   }
 
   /// Fix any saved presets or untitled state that have invalid image references
@@ -217,9 +236,12 @@ class ShaderController extends ChangeNotifier {
     try {
       if (invalidPath.isEmpty) return; // No need to fix empty paths
 
+      print('Fixing invalid image reference: $invalidPath -> $validPath');
+
       // Check if there's untitled state with the invalid path
       final untitledData = await PresetService.loadUntitledState();
       if (untitledData != null && untitledData['imagePath'] == invalidPath) {
+        print('Fixing untitled state image path');
         await PresetService.saveUntitledState(
           settings: ShaderSettings.fromMap(
             untitledData['settings'] as Map<String, dynamic>,
@@ -231,7 +253,9 @@ class ShaderController extends ChangeNotifier {
 
       // Note: We could also fix saved presets here if needed, but they're less likely
       // to have this issue since they're usually created through the UI with valid images
-    } catch (e) {}
+    } catch (e) {
+      print('Error fixing invalid image references: $e');
+    }
   }
 
   /// Handle navigation changes from NavigationController
@@ -416,7 +440,9 @@ class ShaderController extends ChangeNotifier {
         notifyListeners();
         return true;
       }
-    } catch (e) {}
+    } catch (e) {
+      print('Error saving preset: $e');
+    }
 
     return false;
   }
@@ -447,7 +473,9 @@ class ShaderController extends ChangeNotifier {
         notifyListeners();
         return true;
       }
-    } catch (e) {}
+    } catch (e) {
+      print('Error deleting preset: $e');
+    }
 
     return false;
   }
@@ -475,7 +503,9 @@ class ShaderController extends ChangeNotifier {
         notifyListeners();
         return true;
       }
-    } catch (e) {}
+    } catch (e) {
+      print('Error renaming preset: $e');
+    }
 
     return false;
   }
@@ -517,7 +547,9 @@ class ShaderController extends ChangeNotifier {
       );
 
       notifyListeners();
-    } catch (e) {}
+    } catch (e) {
+      print('Error performing auto-save: $e');
+    }
   }
 
   /// Clear untitled state
@@ -532,7 +564,9 @@ class ShaderController extends ChangeNotifier {
         navigatorOrder: _navigationController.navigatorOrder,
         currentPosition: _navigationController.currentPosition,
       );
-    } catch (e) {}
+    } catch (e) {
+      print('Error clearing untitled state: $e');
+    }
   }
 
   /// Reset to initial state

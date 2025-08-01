@@ -142,7 +142,7 @@ class _LockableSliderState extends State<LockableSlider> {
                   // Lock/unlock button - only show when animation is enabled
                   GestureDetector(
                     onTap: () {
-                      // print(
+                      print(
                         'Lock button tapped for ${widget.parameterId}, current state: ${isLocked ? "locked" : "unlocked"}',
                       );
                       _animationManager.toggleParameterLock(widget.parameterId);

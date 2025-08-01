@@ -33,8 +33,10 @@ class AnimationStateManager extends ChangeNotifier {
   void setParameterLock(String parameterId, bool isLocked) {
     if (_parameterLocks[parameterId] != isLocked) {
       _parameterLocks[parameterId] = isLocked;
-      // Always notify immediately for lock state changes - they're user-initiated
-      notifyListeners();
+      // CRITICAL FIX: Defer notification to avoid build-during-frame
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        notifyListeners();
+      });
       print(
         'Parameter $parameterId lock state changed to: ${isLocked ? "locked" : "unlocked"}',
       );
@@ -70,8 +72,12 @@ class AnimationStateManager extends ChangeNotifier {
     if (timeSinceLastNotification >= _minNotificationIntervalMs) {
       _lastNotification = now;
       // CRITICAL FIX: Defer notification to avoid build-during-frame
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        notifyListeners();
+      // Use SchedulerBinding instead of WidgetsBinding for consistency
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (hasListeners) {
+          // Check if we still have listeners before notifying
+          notifyListeners();
+        }
       });
     }
   }
@@ -86,7 +92,11 @@ class AnimationStateManager extends ChangeNotifier {
   void clearAnimatedValue(String parameterId) {
     if (_currentAnimatedValues.containsKey(parameterId)) {
       _currentAnimatedValues.remove(parameterId);
-      notifyListeners(); // Always notify for clearing
+
+      // Defer notification to avoid setState during build
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        notifyListeners();
+      });
     }
   }
 
@@ -94,7 +104,10 @@ class AnimationStateManager extends ChangeNotifier {
   void clearAllLocks() {
     if (_parameterLocks.isNotEmpty) {
       _parameterLocks.clear();
-      notifyListeners();
+      // Defer notification to avoid setState during build
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        notifyListeners();
+      });
     }
   }
 
@@ -102,7 +115,10 @@ class AnimationStateManager extends ChangeNotifier {
   void clearAllAnimatedValues() {
     if (_currentAnimatedValues.isNotEmpty) {
       _currentAnimatedValues.clear();
-      notifyListeners();
+      // Defer notification to avoid setState during build
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        notifyListeners();
+      });
     }
   }
 
@@ -126,7 +142,10 @@ class AnimationStateManager extends ChangeNotifier {
       for (final key in keysToRemove) {
         _parameterLocks.remove(key);
       }
-      notifyListeners();
+      // Defer notification to avoid setState during build
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        notifyListeners();
+      });
     }
   }
 
@@ -140,7 +159,10 @@ class AnimationStateManager extends ChangeNotifier {
       for (final key in keysToRemove) {
         _currentAnimatedValues.remove(key);
       }
-      notifyListeners();
+      // Defer notification to avoid setState during build
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        notifyListeners();
+      });
     }
   }
 }

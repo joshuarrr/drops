@@ -27,33 +27,64 @@ class _ColorPickerState extends State<ColorPicker> {
   final GlobalKey _key = GlobalKey();
   final String _logTag = 'ColorPicker';
 
+  // Custom log function that uses both dart:developer and debugPrint
+  void _log(String message, {LogLevel level = LogLevel.info}) {
+    // Skip debug logs if current level is higher
+    if (level == LogLevel.debug &&
+        EffectLogger.currentLevel.index > LogLevel.debug.index) {
+      return;
+    }
+
+    developer.log(message, name: _logTag);
+
+    // Only print to console for info level and above
+    if (level.index >= LogLevel.info.index) {
+      debugPrint('[$_logTag] $message');
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    _log(
+      'ColorPicker initialized for "${widget.label}"',
+      level: LogLevel.debug,
+    );
   }
 
   @override
   void dispose() {
+    _log('ColorPicker for "${widget.label}" disposing', level: LogLevel.debug);
     _removeOverlay();
     super.dispose();
   }
 
   void _removeOverlay() {
     if (_overlayEntry != null) {
+      _log('Removing overlay for "${widget.label}"', level: LogLevel.debug);
       _overlayEntry?.remove();
       _overlayEntry = null;
     }
   }
 
   void _toggleExpanded() {
+    _log('ColorPicker tapped: ${widget.label}');
     if (_isExpanded) {
       _removeOverlay();
       setState(() {
         _isExpanded = false;
+        _log(
+          'ColorPicker state changed: ${widget.label}, isExpanded: $_isExpanded',
+          level: LogLevel.debug,
+        );
       });
     } else {
       setState(() {
         _isExpanded = true;
+        _log(
+          'ColorPicker state changed: ${widget.label}, isExpanded: $_isExpanded',
+          level: LogLevel.debug,
+        );
       });
       // Wait for the build phase to complete before showing overlay
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -69,6 +100,8 @@ class _ColorPickerState extends State<ColorPicker> {
         _key.currentContext!.findRenderObject() as RenderBox;
     final Size size = renderBox.size;
     final Offset position = renderBox.localToGlobal(Offset.zero);
+
+    _log('Showing color options', level: LogLevel.debug);
 
     _overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
@@ -88,6 +121,7 @@ class _ColorPickerState extends State<ColorPicker> {
     );
 
     Overlay.of(context).insert(_overlayEntry!);
+    _log('Overlay inserted for "${widget.label}"', level: LogLevel.debug);
   }
 
   Widget _buildColorOptionsWidget() {
@@ -115,6 +149,8 @@ class _ColorPickerState extends State<ColorPicker> {
       Colors.grey,
     ];
 
+    _log('Building color options widget', level: LogLevel.debug);
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -126,7 +162,10 @@ class _ColorPickerState extends State<ColorPicker> {
               final bool isSelected = color.value == widget.currentColor.value;
               return GestureDetector(
                 onTap: () {
-
+                  _log(
+                    'Color selected: ${widget.label} - 0x${color.value.toRadixString(16).padLeft(8, '0')}',
+                    level: LogLevel.info,
+                  );
                   widget.onColorChanged(color);
                   _removeOverlay();
                   setState(() {
@@ -150,7 +189,10 @@ class _ColorPickerState extends State<ColorPicker> {
             // Custom color picker button
             GestureDetector(
               onTap: () {
-
+                _log(
+                  'Custom color picker tapped: ${widget.label}',
+                  level: LogLevel.debug,
+                );
                 _removeOverlay();
                 setState(() {
                   _isExpanded = false;
@@ -186,6 +228,7 @@ class _ColorPickerState extends State<ColorPicker> {
   @override
   Widget build(BuildContext context) {
     // Add build log
+    _log('Building ColorPicker: ${widget.label}', level: LogLevel.debug);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -237,6 +280,7 @@ class _ColorPickerState extends State<ColorPicker> {
   }
 
   void _showCustomColorPicker(BuildContext context) {
+    _log('Showing custom color picker dialog', level: LogLevel.debug);
     // Use StatefulBuilder to rebuild dialog contents when color changes
     showDialog(
       context: context,
@@ -254,6 +298,7 @@ class _ColorPickerState extends State<ColorPicker> {
                   onColorChanged: (color) {
                     // Update parent without closing dialog
                     widget.onColorChanged(color);
+                    _log('Custom color updated', level: LogLevel.debug);
                   },
                   textColor: widget.textColor,
                 ),
@@ -265,6 +310,7 @@ class _ColorPickerState extends State<ColorPicker> {
                     style: TextStyle(color: widget.textColor),
                   ),
                   onPressed: () {
+                    _log('Custom color picker closed', level: LogLevel.debug);
                     Navigator.of(context).pop();
                   },
                 ),
@@ -308,6 +354,22 @@ class _CustomColorPickerContentState extends State<CustomColorPickerContent> {
   // Track previous slider values to reduce redundant logs
   final Map<String, double> _lastSliderValues = {};
 
+  // Custom log function
+  void _log(String message, {LogLevel level = LogLevel.info}) {
+    // Skip debug logs if current level is higher
+    if (level == LogLevel.debug &&
+        EffectLogger.currentLevel.index > LogLevel.debug.index) {
+      return;
+    }
+
+    developer.log(message, name: _logTag);
+
+    // Only print to console for info level and above
+    if (level.index >= LogLevel.info.index) {
+      debugPrint('[$_logTag] $message');
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -315,6 +377,8 @@ class _CustomColorPickerContentState extends State<CustomColorPickerContent> {
     _green = widget.initialColor.green.toDouble();
     _blue = widget.initialColor.blue.toDouble();
     _opacity = widget.initialColor.opacity;
+
+    _log('CustomColorPicker initialized', level: LogLevel.debug);
   }
 
   Color get _currentColor =>
@@ -323,10 +387,13 @@ class _CustomColorPickerContentState extends State<CustomColorPickerContent> {
   // Update color and notify parent but don't close dialog
   void _updateColor() {
     widget.onColorChanged(_currentColor);
+    _log('Color updated', level: LogLevel.debug);
   }
 
   @override
   Widget build(BuildContext context) {
+    _log('Building custom color picker', level: LogLevel.debug);
+
     return Container(
       width: 300,
       child: Column(
@@ -359,7 +426,7 @@ class _CustomColorPickerContentState extends State<CustomColorPickerContent> {
               setState(() => _red = value);
 
               if (hasChanged) {
-                // _log(
+                _log(
                   'Red value changed to: ${value.toInt()}',
                   level: LogLevel.debug,
                 );
@@ -382,7 +449,7 @@ class _CustomColorPickerContentState extends State<CustomColorPickerContent> {
               setState(() => _green = value);
 
               if (hasChanged) {
-                // _log(
+                _log(
                   'Green value changed to: ${value.toInt()}',
                   level: LogLevel.debug,
                 );
@@ -405,7 +472,7 @@ class _CustomColorPickerContentState extends State<CustomColorPickerContent> {
               setState(() => _blue = value);
 
               if (hasChanged) {
-                // _log(
+                _log(
                   'Blue value changed to: ${value.toInt()}',
                   level: LogLevel.debug,
                 );
@@ -428,7 +495,7 @@ class _CustomColorPickerContentState extends State<CustomColorPickerContent> {
               setState(() => _opacity = value);
 
               if (hasChanged) {
-                // _log(
+                _log(
                   'Alpha value changed to: ${value.toStringAsFixed(2)}',
                   level: LogLevel.debug,
                 );

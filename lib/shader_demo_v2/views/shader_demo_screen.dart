@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
 
 import '../controllers/shader_controller.dart';
@@ -11,7 +12,7 @@ import '../views/image_container.dart';
 import '../views/text_overlay.dart';
 import '../../common/app_scaffold.dart';
 import 'dart:math' as math;
-import '../services/thumbnail_service.dart';
+// import '../services/thumbnail_service.dart'; // Temporarily disabled
 
 /// Main screen for shader demo V2
 /// Uses Provider pattern and Stack layout for overlay controls
@@ -25,44 +26,48 @@ class ShaderDemoScreen extends StatefulWidget {
 class _ShaderDemoScreenState extends State<ShaderDemoScreen>
     with TickerProviderStateMixin {
   late AnimationController _animationController;
-  late Animation<double> _animation;
   late ShaderController _shaderController;
   late PageController _pageController;
   bool _isInitialized = false;
 
-  // Key for capturing thumbnails like V1
-  final GlobalKey _previewKey = GlobalKey();
+  // Key for capturing thumbnails like V1 - temporarily disabled
+  // final GlobalKey _previewKey = GlobalKey();
 
   // DEBUG: Track animation state changes
   bool? _lastAnimationState;
-  int _effectsStackBuildCount = 0;
+  int _animationTickCount = 0;
 
   @override
   void initState() {
     super.initState();
 
-    // Initialize animation controller with a sensible default duration
-    // This will be updated dynamically based on animation speed settings
+    // Initialize animation controller with a fixed duration like V3
+    // This is simpler and more reliable than dynamic duration
     _animationController = AnimationController(
-      duration: const Duration(seconds: 10), // Default, will be updated
+      duration: const Duration(seconds: 5), // Fixed 5 second cycle like V3
       vsync: this,
     );
 
-    _animation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.linear),
-    );
+    // Add direct value listener for debugging
+    _animationController.addListener(() {
+      _animationTickCount++;
+      if (_animationController.value % 0.1 < 0.01) {
+        // Log roughly every 10% of the animation
+        print(
+          "[DEBUG] Direct animation listener: value=${_animationController.value.toStringAsFixed(3)}, tick=$_animationTickCount",
+        );
+      }
+    });
 
     // Listen to animation controller status changes to trigger rebuilds
     _animationController.addStatusListener((status) {
+      print("[DEBUG] Animation status changed: $status");
       if (mounted) {
         setState(() {
           // Trigger rebuild when animation starts/stops to ensure AnimatedBuilder works
         });
       }
     });
-
-    // DON'T start animation loop here - start it only when needed
-    // _animationController.repeat();
 
     // Initialize shader controller
     _initializeController();
@@ -106,53 +111,27 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
   }
 
   /// Start or stop animation controller based on whether any animations are active
+  /// Simplified like V3's approach
   void _updateAnimationControllerState() {
     if (!mounted || !_isInitialized) return;
 
     final bool hasActiveAnimations = _hasActiveAnimations();
 
-    // Calculate the required duration based on fastest active animation
-    if (hasActiveAnimations) {
-      final Duration requiredDuration = _calculateRequiredAnimationDuration();
-
-      // Update controller duration if it has changed significantly
-      if ((_animationController.duration! - requiredDuration).inMilliseconds
-              .abs() >
-          100) {
-        final bool wasAnimating = _animationController.isAnimating;
-        final double currentProgress = _animationController.value;
-
-        // Stop current animation to change duration
-        if (wasAnimating) {
-          _animationController.stop();
-        }
-
-        // Update duration
-        _animationController.duration = requiredDuration;
-
-        // Restart from current progress if it was animating
-        if (wasAnimating) {
-          _animationController.forward(from: currentProgress);
-          _animationController.repeat();
-        }
-
-        // print(
-          "[ShaderDemoScreen] Updated animation duration to ${requiredDuration.inMilliseconds}ms",
-        );
+    // Schedule after frame to avoid setState during build
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      // Simplified animation controller management like V3
+      if (hasActiveAnimations && !_animationController.isAnimating) {
+        // Start animation - simple approach like V3
+        print("[DEBUG] Animation STARTED");
+        _animationController.reset(); // Ensure we start from 0
+        _animationController.repeat(); // Immediately repeat like V3
+      } else if (!hasActiveAnimations && _animationController.isAnimating) {
+        // Stop animation when not needed
+        print("[DEBUG] Animation STOPPED");
+        _animationController.stop();
+        _animationController.reset();
       }
-    }
-
-    // Only log significant animation controller state changes
-    if (hasActiveAnimations && !_animationController.isAnimating) {
-      // Start animation when needed
-      // print("[ShaderDemoScreen] Starting animation controller");
-      _animationController.repeat();
-    } else if (!hasActiveAnimations && _animationController.isAnimating) {
-      // Stop animation when not needed to prevent unnecessary rebuilds
-      // print("[ShaderDemoScreen] Stopping animation controller");
-      _animationController.stop();
-      _animationController.reset();
-    }
+    });
   }
 
   /// Calculate the required animation duration based on the fastest active animation
@@ -219,28 +198,34 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
     if (!_isInitialized) return false;
 
     final settings = _shaderController.settings;
+
+    // CRITICAL FIX: Check if effects are both enabled AND animated
+    // Previously we were only checking if animations were toggled on, not if the effects themselves were enabled
     final hasAnimations =
-        settings.blurSettings.blurAnimated ||
-        settings.colorSettings.colorAnimated ||
-        settings.noiseSettings.noiseAnimated ||
-        settings.rainSettings.rainAnimated ||
-        settings.chromaticSettings.chromaticAnimated ||
-        settings.rippleSettings.rippleAnimated;
+        (settings.blurEnabled && settings.blurSettings.blurAnimated) ||
+        (settings.colorEnabled && settings.colorSettings.colorAnimated) ||
+        (settings.noiseEnabled && settings.noiseSettings.noiseAnimated) ||
+        (settings.rainEnabled && settings.rainSettings.rainAnimated) ||
+        (settings.chromaticEnabled &&
+            settings.chromaticSettings.chromaticAnimated) ||
+        (settings.rippleEnabled && settings.rippleSettings.rippleAnimated);
+
+    // Always log animation state for debugging
+    print(
+      "[DEBUG] _hasActiveAnimations() = $hasAnimations: " +
+          "blur=${settings.blurEnabled && settings.blurSettings.blurAnimated}, " +
+          "color=${settings.colorEnabled && settings.colorSettings.colorAnimated}, " +
+          "noise=${settings.noiseEnabled && settings.noiseSettings.noiseAnimated}, " +
+          "rain=${settings.rainEnabled && settings.rainSettings.rainAnimated}, " +
+          "chromatic=${settings.chromaticEnabled && settings.chromaticSettings.chromaticAnimated}, " +
+          "ripple=${settings.rippleEnabled && settings.rippleSettings.rippleAnimated}",
+    );
 
     // DEBUG: Log animation state changes
     if (_lastAnimationState != hasAnimations) {
-      // print("[ShaderDemoScreen] Animation state changed to: $hasAnimations");
-      if (hasAnimations) {
-        // print(
-          "  - Active animations: " +
-              "blur:${settings.blurSettings.blurAnimated}, " +
-              "color:${settings.colorSettings.colorAnimated}, " +
-              "noise:${settings.noiseSettings.noiseAnimated}, " +
-              "rain:${settings.rainSettings.rainAnimated}, " +
-              "chromatic:${settings.chromaticSettings.chromaticAnimated}, " +
-              "ripple:${settings.rippleSettings.rippleAnimated}",
-        );
-      }
+      print(
+        "[DEBUG] Animation state changed from $_lastAnimationState to $hasAnimations",
+      );
       _lastAnimationState = hasAnimations;
     }
 
@@ -397,9 +382,20 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
           onTap: () => controller.toggleControls(),
           child: Container(
             color: Colors.black,
-            child: RepaintBoundary(
-              key: _previewKey,
-              child: _buildEffectsStack(controller, contentWidget),
+            // CRITICAL: Use V3's direct AnimatedBuilder approach
+            child: AnimatedBuilder(
+              animation: _animationController,
+              builder: (context, child) {
+                final animationValue = _animationController.value;
+                print(
+                  "[CRITICAL] Direct AnimatedBuilder with value: $animationValue",
+                );
+                return _buildStackContent(
+                  controller,
+                  contentWidget,
+                  animationValue,
+                );
+              },
             ),
           ),
         ),
@@ -423,11 +419,39 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
             onTap: () => controller.toggleControls(),
             child: Container(
               color: Colors.black,
-              child: RepaintBoundary(
-                key: index == controller.navigationController.currentPosition
-                    ? _previewKey
-                    : null,
-                child: _buildPresetView(preset, controller),
+              // CRITICAL: Use V3's direct AnimatedBuilder approach for presets too
+              child: AnimatedBuilder(
+                animation: _animationController,
+                builder: (context, child) {
+                  final animationValue = _animationController.value;
+                  print(
+                    "[CRITICAL] PageView AnimatedBuilder with value: $animationValue",
+                  );
+
+                  // Create content widget for this preset
+                  Widget contentWidget;
+                  if (preset.settings.imageEnabled) {
+                    contentWidget = ImageContainer(
+                      imagePath: preset.imagePath,
+                      settings: preset.settings,
+                    );
+                  } else {
+                    final backgroundColor = preset.settings.backgroundEnabled
+                        ? preset.settings.backgroundSettings.backgroundColor
+                        : Colors.black;
+                    contentWidget = Container(
+                      color: backgroundColor,
+                      width: double.infinity,
+                      height: double.infinity,
+                    );
+                  }
+
+                  return _buildStackContent(
+                    controller,
+                    contentWidget,
+                    animationValue,
+                  );
+                },
               ),
             ),
           );
@@ -436,64 +460,8 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
     );
   }
 
-  /// Build a preset view for the PageView
-  Widget _buildPresetView(preset, ShaderController controller) {
-    // Create content widget for this preset
-    Widget contentWidget;
-    if (preset.settings.imageEnabled) {
-      contentWidget = ImageContainer(
-        imagePath: preset.imagePath,
-        settings: preset.settings,
-      );
-    } else {
-      final backgroundColor = preset.settings.backgroundEnabled
-          ? preset.settings.backgroundSettings.backgroundColor
-          : Colors.black;
-      contentWidget = Container(
-        color: backgroundColor,
-        width: double.infinity,
-        height: double.infinity,
-      );
-    }
-
-    // Build effects stack with preset settings
-    return _buildEffectsStackForPreset(contentWidget, preset.settings);
-  }
-
-  /// Build effects stack for a specific preset (used in PageView)
-  Widget _buildEffectsStackForPreset(Widget contentWidget, settings) {
-    // Create list of stack children
-    List<Widget> stackChildren = [];
-
-    // Add main shader effect
-    stackChildren.add(
-      Positioned.fill(
-        child: Container(
-          alignment: Alignment.center,
-          child: EffectController.applyEffects(
-            child: contentWidget,
-            settings: settings,
-            animationValue: _animation.value,
-            preserveTransparency: false,
-            isTextContent: false,
-          ),
-        ),
-      ),
-    );
-
-    // Add text overlay if text is enabled and has content
-    if (settings.textEnabled &&
-        (settings.textLayoutSettings.textTitle.isNotEmpty ||
-            settings.textLayoutSettings.textSubtitle.isNotEmpty ||
-            settings.textLayoutSettings.textArtist.isNotEmpty ||
-            settings.textLayoutSettings.textLyrics.isNotEmpty)) {
-      stackChildren.add(
-        TextOverlay(settings: settings, animationValue: _animation.value),
-      );
-    }
-
-    return Stack(fit: StackFit.expand, children: stackChildren);
-  }
+  // Removed _buildPresetView and _buildEffectsStackForPreset as they're no longer needed
+  // Now using _buildStackContent directly from AnimatedBuilder
 
   /// Build the stable content widget (ImageContainer or background)
   /// This is cached and only rebuilt when critical settings change
@@ -545,33 +513,7 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
     return contentWidget;
   }
 
-  /// Build the effects stack - optimized to use AnimatedBuilder only when controller is running
-  Widget _buildEffectsStack(ShaderController controller, Widget contentWidget) {
-    // DEBUG: Log rebuild triggers
-    _effectsStackBuildCount++;
-    if (_effectsStackBuildCount <= 10) {
-      // print(
-        "[ShaderDemoScreen] _buildEffectsStack called #$_effectsStackBuildCount, isAnimating: ${_animationController.isAnimating}",
-      );
-    }
-
-    if (_animationController.isAnimating) {
-      // Use AnimatedBuilder when animations are active
-      return AnimatedBuilder(
-        animation: _animation,
-        builder: (context, child) {
-          return _buildStackContent(
-            controller,
-            contentWidget,
-            _animation.value,
-          );
-        },
-      );
-    } else {
-      // Static build when no animations are active - prevents unnecessary rebuilds
-      return _buildStackContent(controller, contentWidget, 0.0);
-    }
-  }
+  // Removed _buildEffectsStack - now using AnimatedBuilder directly
 
   /// Build the actual stack content (shared between animated and static builds)
   Widget _buildStackContent(
@@ -579,6 +521,11 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
     Widget contentWidget,
     double animationValue,
   ) {
+    // Debug animation value passed to shader - log EVERY frame for debugging
+    print(
+      "[DEBUG] _buildStackContent called with animationValue=${animationValue.toStringAsFixed(3)}",
+    );
+
     // Create list of stack children
     List<Widget> stackChildren = [];
 
@@ -632,7 +579,7 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
         child: Builder(
           builder: (context) {
             final double topInset = MediaQuery.of(context).padding.top;
-            const double toolbarHeight = kToolbarHeight; // 56
+            // const double toolbarHeight = kToolbarHeight; // 56
             return Container(
               // Add extra bottom padding so the gradient extends
               // further down the screen without moving the toggle bar.
@@ -754,14 +701,14 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
           }
 
           try {
-            // Capture thumbnail of the clean shader view
-            final thumbnailBase64 =
-                await ThumbnailService.capturePresetThumbnail(
-                  preset: savedPreset,
-                  previewKey: _previewKey,
-                );
+            // Commented out for now as we removed RepaintBoundary
+            // final thumbnailBase64 =
+            //     await ThumbnailService.capturePresetThumbnail(
+            //       preset: savedPreset,
+            //       previewKey: _previewKey,
+            //     );
           } catch (e) {
-            // print('Error capturing thumbnail: $e');
+            print('Error capturing thumbnail: $e');
           } finally {
             // Restore original controls visibility
             if (originalControlsVisible && mounted) {

@@ -38,6 +38,13 @@ class EffectLogger {
         : "";
 
     final formattedMessage = prefix.isEmpty ? message : "$prefix $message";
+
+    developer.log(formattedMessage, name: _logTag);
+
+    // Only print to console for higher level logs
+    if (level.index >= LogLevel.info.index) {
+      debugPrint('[$_logTag] $formattedMessage');
+    }
   }
 
   // Log only if message is different from the last time this key was logged
@@ -130,30 +137,26 @@ class EffectController {
   // Preset capturing mode for limited complexity
   static bool _isPresetCapturing = false;
 
-  // DEBUG: Chromatic effect debug counter
-  static int _chromaticLogCount = 0;
-
   // Method to explicitly clear the effect cache
   static void clearEffectCache() {
     final cacheSize = _effectCache.length;
 
-    // Only log if there's something in the cache or we're in debug mode
-    if (cacheSize > 0 || kDebugMode) {
-      final hitRatio = _totalCacheRequests > 0
-          ? (_cacheHits / _totalCacheRequests) * 100
-          : 0;
+    // Only clear if there's something to clear (avoid pointless operations)
+    if (cacheSize > 0) {
+      _effectCache.clear();
+      _cacheHits = 0;
+      _cacheMisses = 0;
+      // Don't reset _totalCacheRequests to track across cache clears
     }
-
-    _effectCache.clear();
-    _cacheHits = 0;
-    _cacheMisses = 0;
-    // Don't reset _totalCacheRequests to track across cache clears
   }
 
   // Set high memory mode to be even more aggressive with caching
   static void setHighMemoryMode(bool enabled) {
     if (_highMemoryMode != enabled) {
       _highMemoryMode = enabled;
+      debugPrint(
+        'EffectController: High memory mode ${enabled ? 'enabled' : 'disabled'}',
+      );
 
       // Clear cache immediately when entering high memory mode
       if (enabled) {
@@ -177,7 +180,7 @@ class EffectController {
       // but it's effective for reducing memory pressure in emergency situations
       if (window is ui.FlutterView) {
         // Request the system to reduce memory usage for graphics
-
+        debugPrint('Requesting low memory graphics mode');
         SystemChannels.skia.invokeMethod<void>(
           'setResourceCacheMaxBytes',
           10 * 1024 * 1024,
@@ -189,12 +192,36 @@ class EffectController {
       imageCache.clearLiveImages();
       PaintingBinding.instance.imageCache.clear();
       PaintingBinding.instance.imageCache.clearLiveImages();
-    } catch (e) {}
+
+      debugPrint('Set low texture resolution to reduce memory usage');
+    } catch (e) {
+      debugPrint('Error setting low texture resolution: $e');
+    }
   }
 
   // Get the current size of the effect cache
   static int getEffectCacheSize() {
     return _effectCache.length;
+  }
+
+  // Get cache performance stats
+  static Map<String, dynamic> getCacheStats() {
+    final hitRatio = _totalCacheRequests > 0
+        ? (_cacheHits / _totalCacheRequests) * 100
+        : 0;
+
+    return {
+      'size': _effectCache.length,
+      'hits': _cacheHits,
+      'misses': _cacheMisses,
+      'total_requests': _totalCacheRequests,
+      'hit_ratio': hitRatio,
+      'efficiency': hitRatio > 50
+          ? 'good'
+          : hitRatio > 20
+          ? 'fair'
+          : 'poor',
+    };
   }
 
   // Generate a unique cache key for a settings configuration
@@ -251,6 +278,13 @@ class EffectController {
     bool preserveTransparency = false,
     bool isTextContent = false, // Add parameter to identify text content
   }) {
+    // Debug animation value received by effect controller - log EVERY frame for debugging
+    print(
+      "[DEBUG] EffectController.applyEffects called with animationValue=${animationValue.toStringAsFixed(3)}, " +
+          "blur=${settings.blurEnabled}, blurAnimated=${settings.blurSettings.blurAnimated}, " +
+          "color=${settings.colorEnabled}, colorAnimated=${settings.colorSettings.colorAnimated}",
+    );
+
     // Generate log message first before deciding whether to show it
     String logMessage = "";
 
@@ -434,9 +468,6 @@ class EffectController {
         if (settings.chromaticEnabled &&
             ((isTextContent && settings.chromaticSettings.applyToText) ||
                 (!isTextContent && settings.chromaticSettings.applyToImage))) {
-          // Apply chromatic effect
-          _chromaticLogCount++;
-
           result = _applyChromaticEffect(
             child: result,
             settings: settings,

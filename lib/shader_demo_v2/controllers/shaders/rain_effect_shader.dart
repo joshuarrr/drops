@@ -36,8 +36,24 @@ class RainEffectShader extends StatelessWidget {
     this.isTextContent = false,
   });
 
+  // Custom log function that uses both dart:developer and debugPrint for visibility
+  void _log(String message) {
+    if (!enableShaderDebugLogs) return;
+    developer.log(message, name: _logTag);
+    debugPrint('[$_logTag] $message');
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (enableShaderDebugLogs) {
+      _log(
+        "Building RainEffectShader with intensity=${settings.rainSettings.rainIntensity.toStringAsFixed(2)}, "
+        "dropSize=${settings.rainSettings.dropSize.toStringAsFixed(2)}, "
+        "speed=${settings.rainSettings.fallSpeed.toStringAsFixed(2)} "
+        "(animated: ${settings.rainSettings.rainAnimated})",
+      );
+    }
+
     // First load the noise texture
     return FutureBuilder<ui.Image>(
       future: _loadNoiseTexture(),
@@ -120,6 +136,12 @@ class RainEffectShader extends StatelessWidget {
                 refraction = refraction * 0.2; // Less distortion for text
                 trailIntensity =
                     trailIntensity * 0.2; // Shorter trails for text
+
+                if (enableShaderDebugLogs) {
+                  _log(
+                    "Reducing effects for text content - original rainIntensity=$rainIntensity, refraction=$refraction",
+                  );
+                }
               }
               // Less aggressive adjustments for general transparency preservation
               else if (preserveTransparency) {
@@ -163,6 +185,7 @@ class RainEffectShader extends StatelessWidget {
               // Draw with the shader, ensuring it covers the full area
               canvas.drawRect(Offset.zero & size, Paint()..shader = shader);
             } catch (e) {
+              _log("ERROR: $e");
               // Fall back to drawing the original image
               canvas.drawImageRect(
                 image,
@@ -202,6 +225,8 @@ class RainEffectShader extends StatelessWidget {
 
       return completer.future;
     } catch (e) {
+      _log("Error loading noise texture: $e");
+
       // Create a fallback noise texture if loading fails
       return _createFallbackNoiseTexture();
     }
@@ -277,6 +302,10 @@ class RainEffectShader extends StatelessWidget {
         "Realistic Article Rain",
         realisticRainPreset,
       );
-    } catch (e) {}
+
+      _log("Created realistic rain preset");
+    } catch (e) {
+      _log("Error creating realistic rain preset: $e");
+    }
   }
 }

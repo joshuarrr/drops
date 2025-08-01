@@ -29,82 +29,59 @@ class ColorSettings with TargetableEffectSettings {
   bool get colorEnabled => _colorEnabled;
   set colorEnabled(bool value) {
     _colorEnabled = value;
-    if (enableLogging) print("SETTINGS: colorEnabled set to $value");
   }
 
   // Color settings with logging
   double get hue => _hue;
   set hue(double value) {
     _hue = value;
-    if (enableLogging) {
-      print("SETTINGS: hue set to ${value.toStringAsFixed(3)}");
-    }
   }
 
   double get saturation => _saturation;
   set saturation(double value) {
     _saturation = value;
-    if (enableLogging) {
-      print("SETTINGS: saturation set to ${value.toStringAsFixed(3)}");
-    }
   }
 
   double get lightness => _lightness;
   set lightness(double value) {
     _lightness = value;
-    if (enableLogging) {
-      print("SETTINGS: lightness set to ${value.toStringAsFixed(3)}");
-    }
   }
 
   double get overlayHue => _overlayHue;
   set overlayHue(double value) {
     _overlayHue = value;
-    if (enableLogging) {
-      print("SETTINGS: overlayHue set to ${value.toStringAsFixed(3)}");
-    }
   }
 
   double get overlayIntensity => _overlayIntensity;
   set overlayIntensity(double value) {
     _overlayIntensity = value;
-    if (enableLogging) {
-      print("SETTINGS: overlayIntensity set to ${value.toStringAsFixed(3)}");
-    }
   }
 
   double get overlayOpacity => _overlayOpacity;
   set overlayOpacity(double value) {
     _overlayOpacity = value;
-    if (enableLogging) {
-      print("SETTINGS: overlayOpacity set to ${value.toStringAsFixed(3)}");
-    }
   }
 
   // Color animation toggle with logging
   bool get colorAnimated => _colorAnimated;
   set colorAnimated(bool value) {
     _colorAnimated = value;
-    if (enableLogging) print("SETTINGS: colorAnimated set to $value");
   }
 
   // Overlay animation toggle with logging
   bool get overlayAnimated => _overlayAnimated;
   set overlayAnimated(bool value) {
     _overlayAnimated = value;
-    if (enableLogging) print("SETTINGS: overlayAnimated set to $value");
   }
 
   AnimationOptions get colorAnimOptions => _colorAnimOptions;
   set colorAnimOptions(AnimationOptions value) {
     _colorAnimOptions = value;
-    if (enableLogging) print("SETTINGS: colorAnimOptions updated");
   }
 
   AnimationOptions get overlayAnimOptions => _overlayAnimOptions;
   set overlayAnimOptions(AnimationOptions value) {
     _overlayAnimOptions = value;
-    if (enableLogging) print("SETTINGS: overlayAnimOptions updated");
   }
 
   ColorSettings({
@@ -134,8 +111,6 @@ class ColorSettings with TargetableEffectSettings {
        _overlayAnimOptions = overlayAnimOptions ?? AnimationOptions() {
     this.applyToImage = applyToImage;
     this.applyToText = applyToText;
-
-    if (enableLogging) print("SETTINGS: ColorSettings initialized");
   }
 
   // Serialization helpers

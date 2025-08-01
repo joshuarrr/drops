@@ -50,7 +50,11 @@ class _TextInputFieldState extends State<TextInputField> {
     // Only update the controller if the external value has actually changed
     // and it's different from what we currently have
     if (widget.value != _lastValue && widget.value != _controller.text) {
-      if (widget.enableLogging) {}
+      if (widget.enableLogging) {
+        print(
+          'DEBUG: External value changed from "$_lastValue" to "${widget.value}"',
+        );
+      }
 
       _lastValue = widget.value;
 

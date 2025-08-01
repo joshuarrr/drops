@@ -23,45 +23,36 @@ class ChromaticSettings with TargetableEffectSettings {
   bool get chromaticEnabled => _chromaticEnabled;
   set chromaticEnabled(bool value) {
     _chromaticEnabled = value;
-    if (enableLogging)
-      print("SETTINGS: ChromaticSettings.chromaticEnabled = $value");
   }
 
   double get amount => _amount;
   set amount(double value) {
     _amount = value;
-    if (enableLogging) print("SETTINGS: ChromaticSettings.amount = $value");
   }
 
   double get angle => _angle;
   set angle(double value) {
     _angle = value;
-    if (enableLogging) print("SETTINGS: ChromaticSettings.angle = $value");
   }
 
   double get spread => _spread;
   set spread(double value) {
     _spread = value;
-    if (enableLogging) print("SETTINGS: ChromaticSettings.spread = $value");
   }
 
   double get intensity => _intensity;
   set intensity(double value) {
     _intensity = value;
-    if (enableLogging) print("SETTINGS: ChromaticSettings.intensity = $value");
   }
 
   bool get chromaticAnimated => _chromaticAnimated;
   set chromaticAnimated(bool value) {
     _chromaticAnimated = value;
-    if (enableLogging)
-      print("SETTINGS: ChromaticSettings.chromaticAnimated = $value");
   }
 
   AnimationOptions get animOptions => _animOptions;
   set animOptions(AnimationOptions value) {
     _animOptions = value;
-    if (enableLogging) print("SETTINGS: ChromaticSettings.animOptions updated");
   }
 
   // Constructor

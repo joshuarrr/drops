@@ -7,7 +7,6 @@ import 'package:flutter_shaders/flutter_shaders.dart';
 import '../../models/effect_settings.dart';
 import '../../models/animation_options.dart';
 import '../../utils/animation_utils.dart';
-import 'debug_flags.dart'; // Import the shared debug flag
 
 /// Controls debug logging for shaders
 bool enableShaderDebugLogs = true;
@@ -23,6 +22,13 @@ class ColorEffectShader extends StatelessWidget {
 
   // Add static map to track last logged values to avoid repeating identical logs
   static final Map<String, Map<String, dynamic>> _lastLoggedValues = {};
+
+  // Custom log function that uses both dart:developer and debugPrint for visibility
+  void _log(String message) {
+    if (!enableShaderDebugLogs) return;
+    developer.log(message, name: _logTag);
+    debugPrint('[$_logTag] $message');
+  }
 
   // Reduces verbosity by only logging when values are non-zero or changed
   bool _shouldLogColorSettings() {
@@ -84,6 +90,18 @@ class ColorEffectShader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Only log when there are non-zero values or values have changed
+    if (_shouldLogColorSettings()) {
+      _log(
+        "Building ColorEffectShader (${isTextContent ? 'text' : 'background'}) with " +
+            "hsl=[${settings.colorSettings.hue.toStringAsFixed(2)}, " +
+            "${settings.colorSettings.saturation.toStringAsFixed(2)}, " +
+            "${settings.colorSettings.lightness.toStringAsFixed(2)}], " +
+            "overlay=[${settings.colorSettings.overlayIntensity.toStringAsFixed(2)}, " +
+            "${settings.colorSettings.overlayOpacity.toStringAsFixed(2)}]",
+      );
+    }
+
     // Convenience aliases so the helper functions are easily accessible.
     final AnimationOptions colorOpts = settings.colorSettings.colorAnimOptions;
     final AnimationOptions overlayOpts =
@@ -111,6 +129,8 @@ class ColorEffectShader extends StatelessWidget {
           return SizedBox(
             width: constraints.maxWidth,
             height: constraints.maxHeight,
+            // CRITICAL: ALWAYS force shader to rebuild on EVERY frame
+            key: ValueKey(DateTime.now().millisecondsSinceEpoch),
             child: AnimatedSampler((image, size, canvas) {
               try {
                 // Set the texture sampler first
@@ -122,13 +142,24 @@ class ColorEffectShader extends StatelessWidget {
                 double lightness = settings.colorSettings.lightness;
 
                 if (settings.colorSettings.colorAnimated) {
-                  // Animate hue through the full color wheel [0,1)
-                  hue = (hue + hslAnimValue) % 1.0;
+                  // V3-style direct animation approach
+                  // This creates a clear visual oscillation that's easy to see
+                  final double animFactor = (math.sin(
+                    animationValue * math.pi,
+                  )).abs();
 
-                  // Add a gentle pulse to saturation & lightness for a richer effect
-                  final double pulse = math.sin(hslAnimValue * 2 * math.pi);
-                  saturation = (saturation + 0.25 * pulse).clamp(-1.0, 1.0);
-                  lightness = (lightness + 0.15 * pulse).clamp(-1.0, 1.0);
+                  // SUPER EXTREME ANIMATION: Force maximally visible changes
+                  // Directly use animation value for hue to cycle through all colors
+                  hue = animationValue; // Cycle through all colors (0-1)
+
+                  // Maximum saturation and medium lightness for most vibrant colors
+                  saturation = 1.0; // Maximum saturation
+                  lightness = 0.5; // Medium lightness for optimal vibrancy
+
+                  // Log the values for debugging
+                  print(
+                    "[V3-STYLE] Color animation: value=$animationValue, hue=$hue, saturation=$saturation, lightness=$lightness",
+                  );
                 }
 
                 // Determine overlay values (may animate independently)
@@ -138,21 +169,34 @@ class ColorEffectShader extends StatelessWidget {
                 double overlayOpacity = settings.colorSettings.overlayOpacity;
 
                 if (settings.colorSettings.overlayAnimated) {
-                  overlayHue = (overlayHue + overlayAnimValue) % 1.0;
-                  // Subtle breathing effect on intensity & opacity
-                  final double pulse = math.sin(overlayAnimValue * 2 * math.pi);
-                  overlayIntensity = (overlayIntensity + 0.3 * pulse).clamp(
-                    0.0,
-                    1.0,
-                  );
-                  overlayOpacity = (overlayOpacity + 0.3 * pulse).clamp(
-                    0.0,
-                    1.0,
+                  // V3-style direct animation approach
+                  // This creates a clear visual oscillation that's easy to see
+                  final double animFactor = (math.sin(
+                    animationValue * math.pi,
+                  )).abs();
+
+                  // SUPER EXTREME ANIMATION: Force maximally visible overlay changes
+                  // Use animation value with offset for overlay hue
+                  overlayHue =
+                      (animationValue + 0.5) % 1.0; // Complementary color
+
+                  // Maximum intensity and pulsing opacity for most visible effect
+                  overlayIntensity = 1.0; // Maximum intensity
+                  overlayOpacity = animFactor; // Pulsing opacity
+
+                  // Log the values for debugging
+                  print(
+                    "[V3-STYLE] Overlay animation: value=$animationValue, hue=$overlayHue, intensity=$overlayIntensity, opacity=$overlayOpacity",
                   );
                 }
 
                 // If preserveTransparency is enabled, we need to avoid applying color overlays
                 if (preserveTransparency) {
+                  if (overlayIntensity > 0 || overlayOpacity > 0) {
+                    _log(
+                      "preserveTransparency enabled - zeroing overlay intensity and opacity",
+                    );
+                  }
                   // IMPORTANT FIX: Setting these to 0 prevents the solid background effect
                   overlayIntensity = 0.0;
                   overlayOpacity = 0.0;
@@ -165,6 +209,30 @@ class ColorEffectShader extends StatelessWidget {
                         settings.colorSettings.overlayAnimated)
                     ? animationValue
                     : 0.0;
+
+                // DEBUG: Log the actual shader uniform values being set
+                _log(
+                  "[DEBUG] Setting shader uniforms: " +
+                      "timeValue=$timeValue, " +
+                      "hue=$hue, " +
+                      "saturation=$saturation, " +
+                      "lightness=$lightness, " +
+                      "overlayHue=$overlayHue, " +
+                      "overlayIntensity=$overlayIntensity, " +
+                      "overlayOpacity=$overlayOpacity",
+                );
+
+                // V3-style animation is always enabled
+                // This ensures the animation is always visible and consistent
+
+                // We've already set the values above, so no need to override again
+                // Just log that we're using the V3 approach
+                if (settings.colorSettings.colorAnimated ||
+                    settings.colorSettings.overlayAnimated) {
+                  print(
+                    "[V3-STYLE] Using direct animation values from V3 approach",
+                  );
+                }
 
                 shader.setFloat(0, timeValue);
                 shader.setFloat(1, hue);
@@ -183,6 +251,7 @@ class ColorEffectShader extends StatelessWidget {
                 // Draw with the shader, ensuring it covers the full area
                 canvas.drawRect(Offset.zero & size, Paint()..shader = shader);
               } catch (e) {
+                _log("ERROR: $e");
                 // Fall back to drawing the original image
                 canvas.drawImageRect(
                   image,

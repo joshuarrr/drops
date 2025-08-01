@@ -53,7 +53,7 @@ class _ImageContainerState extends State<ImageContainer> {
 
         // Log only for debugging (very limited)
         if (_logCount < _maxLogs) {
-          // debugPrint(
+          debugPrint(
             'ImageContainer: building new widget - margin=${margin.toStringAsFixed(1)}, fillScreen=$fillScreen',
           );
           _logCount++;

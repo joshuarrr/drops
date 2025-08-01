@@ -92,7 +92,7 @@ class EffectOptionsMenu extends StatelessWidget {
                   onTap: () {
                     // Toggle the value when tapped
                     onApplyToImageChanged(!applyToImage);
-                    // debugPrint(
+                    debugPrint(
                       "[EffectOptionsMenu] Apply to Image toggled to: ${!applyToImage}",
                     );
                     Navigator.pop(context);
@@ -136,7 +136,7 @@ class EffectOptionsMenu extends StatelessWidget {
                 child: InkWell(
                   onTap: () {
                     onApplyToTextChanged(!applyToText);
-                    // debugPrint(
+                    debugPrint(
                       "[EffectOptionsMenu] Apply to Text toggled to: ${!applyToText}",
                     );
                     Navigator.pop(context);
@@ -179,7 +179,7 @@ class EffectOptionsMenu extends StatelessWidget {
                 child: InkWell(
                   onTap: () {
                     onApplyToBackgroundChanged(!applyToBackground);
-                    // debugPrint(
+                    debugPrint(
                       "[EffectOptionsMenu] Apply to Background toggled to: ${!applyToBackground}",
                     );
                     Navigator.pop(context);
