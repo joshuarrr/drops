@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'shader_demo/shader_demo.dart';
+import 'shader_demo_v2/views/shader_demo_screen.dart';
 import 'typography_demo.dart';
 import 'cymatics_demo.dart';
 import 'common/app_scaffold.dart';
@@ -45,6 +46,19 @@ class DemosScreen extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => const ShaderDemo()),
+                  );
+                },
+              ),
+              const SizedBox(height: 20),
+              _buildDemoCard(
+                context,
+                'Shaders V2',
+                'Advanced shader effects with enhanced controls',
+                Icons.auto_awesome,
+                () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const ShaderDemoScreen()),
                   );
                 },
               ),
