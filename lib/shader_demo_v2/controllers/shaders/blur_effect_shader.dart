@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_shaders/flutter_shaders.dart';
 
 import '../../models/effect_settings.dart';
+import '../../models/animation_options.dart';
+import '../../utils/animation_utils.dart';
 import '../animation_state_manager.dart';
 
 /// Controls debug logging for shaders (external reference)
@@ -133,51 +135,217 @@ class BlurEffectShader extends StatelessWidget {
                 // Set the texture sampler first
                 shader.setImageSampler(0, image);
 
-                // Compute animated amount if enabled - V3 style direct approach
+                // Compute animated amount using proper animation utilities
                 double amount = settings.blurSettings.blurAmount;
                 if (settings.blurSettings.blurAnimated) {
-                  // CRITICAL DEBUG: Log animation frame
-                  print(
-                    "[V3-STYLE] BlurEffectShader with animationValue=${animationValue.toStringAsFixed(3)}",
-                  );
-
-                  // V3-style direct animation approach
-                  // Simple sin wave oscillation for clear visual effect
-                  // Use math library for sin calculation
-                  final double animFactor = math
-                      .sin(animationValue * math.pi)
-                      .abs();
-
-                  // Apply extreme animation for maximum visibility
-                  // Use a high base amount to ensure the effect is visible
-                  final double baseAmount =
-                      settings.blurSettings.blurAmount > 0.5
-                      ? settings.blurSettings.blurAmount
-                      : 0.5;
-                  amount =
-                      baseAmount * animFactor * 2.0; // Amplify for visibility
-
-                  // Log the animation values
-                  print(
-                    "[V3-STYLE] Blur animation: factor=$animFactor, amount=$amount",
-                  );
-
-                  // Still update the animation manager for compatibility
+                  // Get animation state manager
                   final animManager = AnimationStateManager();
-                  animManager.updateAnimatedValue(
+
+                  // Check if parameter is locked
+                  final bool isAmountLocked = animManager.isParameterLocked(
                     ParameterIds.blurAmount,
-                    amount,
                   );
+
+                  print(
+                    "[DEBUG] BlurEffectShader with animationValue=${animationValue.toStringAsFixed(3)}, locked=$isAmountLocked",
+                  );
+
+                  if (isAmountLocked) {
+                    // If locked, keep the slider value (no animation)
+                    // Just update the animation manager for UI consistency
+                    animManager.updateAnimatedValue(
+                      ParameterIds.blurAmount,
+                      amount,
+                    );
+
+                    print(
+                      "[DEBUG] Parameter locked: using fixed value $amount",
+                    );
+                  } else {
+                    // If unlocked, animate according to the selected mode
+                    if (settings.blurSettings.blurAnimOptions.mode ==
+                        AnimationMode.pulse) {
+                      // Use pulse animation - oscillate between slider value and zero
+                      final double animValue =
+                          ShaderAnimationUtils.computePulseValue(
+                            settings.blurSettings.blurAnimOptions,
+                            animationValue,
+                          );
+
+                      // Animate from slider value to zero and back
+                      amount = settings.blurSettings.blurAmount * animValue;
+
+                      print(
+                        "[DEBUG] Pulse animation: value=$animValue, amount=$amount",
+                      );
+                    } else {
+                      // Use randomized animation - animate across parameter range
+                      amount =
+                          ShaderAnimationUtils.computeRandomizedParameterValue(
+                            settings.blurSettings.blurAmount,
+                            settings.blurSettings.blurAnimOptions,
+                            animationValue,
+                            isLocked: isAmountLocked,
+                            minValue: 0.0,
+                            maxValue: 1.0,
+                          );
+
+                      print("[DEBUG] Randomized animation: amount=$amount");
+                    }
+
+                    // Update animation manager with current animated value
+                    animManager.updateAnimatedValue(
+                      ParameterIds.blurAmount,
+                      amount,
+                    );
+                  }
                 } else {
                   // Clear animated value when animation is disabled
                   final animManager = AnimationStateManager();
                   animManager.clearAnimatedValue(ParameterIds.blurAmount);
                 }
 
-                // If preserveTransparency is enabled or this is text content, adjust blur settings
+                // Handle other blur parameters (opacity, intensity, contrast, radius)
                 double opacity = settings.blurSettings.blurOpacity;
                 double intensity = settings.blurSettings.blurIntensity;
                 double contrast = settings.blurSettings.blurContrast;
+                double effectiveRadius = settings.blurSettings.blurRadius;
+
+                // Animate other parameters if animation is enabled
+                if (settings.blurSettings.blurAnimated) {
+                  final animManager = AnimationStateManager();
+
+                  // Handle opacity animation
+                  if (!animManager.isParameterLocked(
+                    ParameterIds.blurOpacity,
+                  )) {
+                    if (settings.blurSettings.blurAnimOptions.mode ==
+                        AnimationMode.pulse) {
+                      final double animValue =
+                          ShaderAnimationUtils.computePulseValue(
+                            settings.blurSettings.blurAnimOptions,
+                            animationValue,
+                          );
+                      opacity = settings.blurSettings.blurOpacity * animValue;
+                    } else {
+                      opacity =
+                          ShaderAnimationUtils.computeRandomizedParameterValue(
+                            settings.blurSettings.blurOpacity,
+                            settings.blurSettings.blurAnimOptions,
+                            animationValue,
+                            isLocked: animManager.isParameterLocked(
+                              ParameterIds.blurOpacity,
+                            ),
+                            minValue: 0.0,
+                            maxValue: 1.0,
+                          );
+                    }
+                    animManager.updateAnimatedValue(
+                      ParameterIds.blurOpacity,
+                      opacity,
+                    );
+                  }
+
+                  // Handle intensity animation
+                  if (!animManager.isParameterLocked(
+                    ParameterIds.blurIntensity,
+                  )) {
+                    if (settings.blurSettings.blurAnimOptions.mode ==
+                        AnimationMode.pulse) {
+                      final double animValue =
+                          ShaderAnimationUtils.computePulseValue(
+                            settings.blurSettings.blurAnimOptions,
+                            animationValue,
+                          );
+                      intensity =
+                          settings.blurSettings.blurIntensity * animValue;
+                    } else {
+                      intensity =
+                          ShaderAnimationUtils.computeRandomizedParameterValue(
+                            settings.blurSettings.blurIntensity,
+                            settings.blurSettings.blurAnimOptions,
+                            animationValue,
+                            isLocked: animManager.isParameterLocked(
+                              ParameterIds.blurIntensity,
+                            ),
+                            minValue: 0.0,
+                            maxValue: 3.0,
+                          );
+                    }
+                    animManager.updateAnimatedValue(
+                      ParameterIds.blurIntensity,
+                      intensity,
+                    );
+                  }
+
+                  // Handle contrast animation
+                  if (!animManager.isParameterLocked(
+                    ParameterIds.blurContrast,
+                  )) {
+                    if (settings.blurSettings.blurAnimOptions.mode ==
+                        AnimationMode.pulse) {
+                      final double animValue =
+                          ShaderAnimationUtils.computePulseValue(
+                            settings.blurSettings.blurAnimOptions,
+                            animationValue,
+                          );
+                      contrast = settings.blurSettings.blurContrast * animValue;
+                    } else {
+                      contrast =
+                          ShaderAnimationUtils.computeRandomizedParameterValue(
+                            settings.blurSettings.blurContrast,
+                            settings.blurSettings.blurAnimOptions,
+                            animationValue,
+                            isLocked: animManager.isParameterLocked(
+                              ParameterIds.blurContrast,
+                            ),
+                            minValue: 0.0,
+                            maxValue: 2.0,
+                          );
+                    }
+                    animManager.updateAnimatedValue(
+                      ParameterIds.blurContrast,
+                      contrast,
+                    );
+                  }
+
+                  // Handle radius animation
+                  if (!animManager.isParameterLocked(ParameterIds.blurRadius)) {
+                    if (settings.blurSettings.blurAnimOptions.mode ==
+                        AnimationMode.pulse) {
+                      final double animValue =
+                          ShaderAnimationUtils.computePulseValue(
+                            settings.blurSettings.blurAnimOptions,
+                            animationValue,
+                          );
+                      effectiveRadius =
+                          settings.blurSettings.blurRadius * animValue;
+                    } else {
+                      effectiveRadius =
+                          ShaderAnimationUtils.computeRandomizedParameterValue(
+                            settings.blurSettings.blurRadius,
+                            settings.blurSettings.blurAnimOptions,
+                            animationValue,
+                            isLocked: animManager.isParameterLocked(
+                              ParameterIds.blurRadius,
+                            ),
+                            minValue: 0.0,
+                            maxValue: 120.0,
+                          );
+                    }
+                    animManager.updateAnimatedValue(
+                      ParameterIds.blurRadius,
+                      effectiveRadius,
+                    );
+                  }
+                } else {
+                  // Clear animated values when animation is disabled
+                  final animManager = AnimationStateManager();
+                  animManager.clearAnimatedValue(ParameterIds.blurOpacity);
+                  animManager.clearAnimatedValue(ParameterIds.blurIntensity);
+                  animManager.clearAnimatedValue(ParameterIds.blurContrast);
+                  animManager.clearAnimatedValue(ParameterIds.blurRadius);
+                }
 
                 if (enableShaderDebugLogs && settingsChanged) {
                   _log(
@@ -192,8 +360,6 @@ class BlurEffectShader extends StatelessWidget {
                 // Performance tweak: reduce blur radius for text-only layers to
                 // minimise the number of kernel samples.  A 40-50 % cut keeps most
                 // of the shatter look but greatly improves frame rate.
-                double effectiveRadius = settings.blurSettings.blurRadius;
-
                 if (isTextContent) {
                   effectiveRadius = effectiveRadius * 0.6; // 40% reduction
                   if (enableShaderDebugLogs && settingsChanged) {
