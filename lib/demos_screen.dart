@@ -35,10 +35,9 @@ class DemosScreen extends StatelessWidget {
           ),
         ),
         child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.max,
+          child: ListView(
+            padding: const EdgeInsets.symmetric(vertical: 40),
             children: [
-              const Spacer(),
               _buildDemoCard(
                 context,
                 'Shaders',
@@ -126,7 +125,7 @@ class DemosScreen extends StatelessWidget {
                   );
                 },
               ),
-              const Spacer(),
+              const SizedBox(height: 20),
             ],
           ),
         ),
