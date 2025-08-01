@@ -188,6 +188,7 @@ class BlurEffectShader extends StatelessWidget {
                             isLocked: isAmountLocked,
                             minValue: 0.0,
                             maxValue: 1.0,
+                            parameterId: ParameterIds.blurAmount,
                           );
 
                       print("[DEBUG] Randomized animation: amount=$amount");
@@ -238,6 +239,7 @@ class BlurEffectShader extends StatelessWidget {
                             ),
                             minValue: 0.0,
                             maxValue: 1.0,
+                            parameterId: ParameterIds.blurOpacity,
                           );
                     }
                     animManager.updateAnimatedValue(
@@ -270,6 +272,7 @@ class BlurEffectShader extends StatelessWidget {
                             ),
                             minValue: 0.0,
                             maxValue: 3.0,
+                            parameterId: ParameterIds.blurIntensity,
                           );
                     }
                     animManager.updateAnimatedValue(
@@ -301,6 +304,7 @@ class BlurEffectShader extends StatelessWidget {
                             ),
                             minValue: 0.0,
                             maxValue: 2.0,
+                            parameterId: ParameterIds.blurContrast,
                           );
                     }
                     animManager.updateAnimatedValue(
@@ -331,6 +335,7 @@ class BlurEffectShader extends StatelessWidget {
                             ),
                             minValue: 0.0,
                             maxValue: 120.0,
+                            parameterId: ParameterIds.blurRadius,
                           );
                     }
                     animManager.updateAnimatedValue(

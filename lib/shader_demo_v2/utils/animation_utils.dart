@@ -71,6 +71,7 @@ class ShaderAnimationUtils {
   /// @param isLocked Whether the parameter is locked to the slider value
   /// @param minValue The minimum possible value for this parameter
   /// @param maxValue The maximum possible value for this parameter
+  /// @param parameterId Optional parameter ID to create unique random patterns for each parameter
   static double computeRandomizedParameterValue(
     double sliderValue,
     AnimationOptions animationOptions,
@@ -78,6 +79,7 @@ class ShaderAnimationUtils {
     required bool isLocked,
     required double minValue,
     required double maxValue,
+    String? parameterId,
   }) {
     if (isLocked) {
       // Locked: stay fixed at the slider value (no animation)
@@ -85,7 +87,23 @@ class ShaderAnimationUtils {
       return sliderValue;
     } else {
       // Unlocked: animate randomly between min and max range
-      // Get the base random animation value (0-1)
+      // Create a unique phase offset based on parameter ID to make each parameter animate differently
+      double phaseOffset = 0.0;
+
+      // Use the parameter ID to create a unique phase offset
+      if (parameterId != null) {
+        // Simple hash of the parameter ID string to get a consistent phase offset
+        int hash = 0;
+        for (int i = 0; i < parameterId.length; i++) {
+          hash = (hash + parameterId.codeUnitAt(i) * 31) % 1000;
+        }
+        phaseOffset = hash / 1000; // Normalize to 0.0-1.0 range
+
+        // Add the phase offset to the base time to create a unique starting point
+        baseTime = (baseTime + phaseOffset) % 1.0;
+      }
+
+      // Get the base random animation value (0-1) with the phase offset applied
       final double randomValue = computeAnimatedValue(
         animationOptions,
         baseTime,
@@ -98,7 +116,7 @@ class ShaderAnimationUtils {
         randomValue,
       )!;
       print(
-        "[DEBUG] Unlocked parameter randomized value: $animatedValue (from $randomValue)",
+        "[DEBUG] Unlocked parameter ($parameterId) randomized value: $animatedValue (from $randomValue, offset=$phaseOffset)",
       );
       return animatedValue;
     }
