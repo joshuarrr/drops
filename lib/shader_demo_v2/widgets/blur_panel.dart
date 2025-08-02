@@ -101,7 +101,7 @@ class BlurPanel extends StatelessWidget {
           value: settings.blurSettings.blurIntensity,
           min: 0.0,
           max: 3.0,
-          divisions: 30,
+          divisions: null, // Removed divisions to get rid of dots
           displayValue:
               '${settings.blurSettings.blurIntensity.toStringAsFixed(1)}x',
           onChanged: (value) => _onSliderChanged(
@@ -118,7 +118,7 @@ class BlurPanel extends StatelessWidget {
           value: settings.blurSettings.blurContrast,
           min: 0.0,
           max: 2.0,
-          divisions: 100,
+          divisions: null, // Removed divisions to get rid of dots
           displayValue:
               '${(settings.blurSettings.blurContrast * 100).round()}%',
           onChanged: (value) => _onSliderChanged(

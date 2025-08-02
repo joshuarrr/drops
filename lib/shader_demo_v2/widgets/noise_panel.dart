@@ -58,11 +58,10 @@ class NoisePanel extends StatelessWidget {
           max: 20.0,
           divisions: 199,
           displayValue: settings.noiseSettings.noiseScale.toStringAsFixed(1),
-          onChanged:
-              (value) => _onSliderChanged(
-                value,
-                (v) => settings.noiseSettings.noiseScale = v,
-              ),
+          onChanged: (value) => _onSliderChanged(
+            value,
+            (v) => settings.noiseSettings.noiseScale = v,
+          ),
           activeColor: sliderColor,
           parameterId: ParameterIds.noiseScale,
           animationEnabled: settings.noiseSettings.noiseAnimated,
@@ -72,13 +71,12 @@ class NoisePanel extends StatelessWidget {
           value: settings.noiseSettings.noiseSpeed,
           min: 0.0,
           max: 1.0,
-          divisions: 100,
+          divisions: null,
           displayValue: settings.noiseSettings.noiseSpeed.toStringAsFixed(2),
-          onChanged:
-              (value) => _onSliderChanged(
-                value,
-                (v) => settings.noiseSettings.noiseSpeed = v,
-              ),
+          onChanged: (value) => _onSliderChanged(
+            value,
+            (v) => settings.noiseSettings.noiseSpeed = v,
+          ),
           activeColor: sliderColor,
           parameterId: ParameterIds.noiseSpeed,
           animationEnabled: settings.noiseSettings.noiseAnimated,
@@ -89,13 +87,12 @@ class NoisePanel extends StatelessWidget {
           value: settings.noiseSettings.waveAmount,
           min: 0.0,
           max: 0.1,
-          divisions: 100,
+          divisions: null,
           displayValue: settings.noiseSettings.waveAmount.toStringAsFixed(3),
-          onChanged:
-              (value) => _onSliderChanged(
-                value,
-                (v) => settings.noiseSettings.waveAmount = v,
-              ),
+          onChanged: (value) => _onSliderChanged(
+            value,
+            (v) => settings.noiseSettings.waveAmount = v,
+          ),
           activeColor: sliderColor,
           parameterId: ParameterIds.waveAmount,
           animationEnabled: settings.noiseSettings.noiseAnimated,
@@ -106,15 +103,14 @@ class NoisePanel extends StatelessWidget {
           value: settings.noiseSettings.colorIntensity,
           min: 0.0,
           max: 1.0,
-          divisions: 100,
+          divisions: null,
           displayValue: settings.noiseSettings.colorIntensity.toStringAsFixed(
             2,
           ),
-          onChanged:
-              (value) => _onSliderChanged(
-                value,
-                (v) => settings.noiseSettings.colorIntensity = v,
-              ),
+          onChanged: (value) => _onSliderChanged(
+            value,
+            (v) => settings.noiseSettings.colorIntensity = v,
+          ),
           activeColor: sliderColor,
           parameterId: ParameterIds.colorIntensity,
           animationEnabled: settings.noiseSettings.noiseAnimated,

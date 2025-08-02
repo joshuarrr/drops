@@ -3,6 +3,11 @@ import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import '../models/animation_options.dart';
 
+// Control debug logging globally
+const bool _enableAnimationDebugLogs = false;
+DateTime _lastLogTime = DateTime.now().subtract(const Duration(seconds: 1));
+const Duration _logThrottleInterval = Duration(milliseconds: 500);
+
 /// Utility class for shader animation calculations
 class ShaderAnimationUtils {
   // Animation duration bounds - centralized for consistency
@@ -25,11 +30,6 @@ class ShaderAnimationUtils {
 
   // Compute the animated value (0-1) for the given options using the animation controller value
   static double computeAnimatedValue(AnimationOptions opts, double baseTime) {
-    // CRITICAL FIX: Log the baseTime to verify it's being used
-    print(
-      "[DEBUG] ShaderAnimationUtils.computeAnimatedValue called with baseTime=${baseTime.toStringAsFixed(3)}",
-    );
-
     // Simplified approach like V1's blur_effect_shader.dart
     if (opts.mode == AnimationMode.pulse) {
       // Use pulse calculation for consistency
@@ -39,10 +39,12 @@ class ShaderAnimationUtils {
       // Use a different approach for randomized mode that creates more variation
 
       // Scale time by speed - higher speed = faster animation
+      // Note: We use a continuous function that doesn't depend on animation direction
       final double scaledTime = (baseTime * opts.speed * 2.0);
 
       // Use multiple sine waves with different frequencies to create pseudo-random values
-      // This creates smooth transitions between random-looking values
+      // These frequencies are chosen to be non-harmonic to create a more random pattern
+      // while still providing smooth transitions
       final double random1 = (math.sin(scaledTime * math.pi * 2.7) * 0.5 + 0.5);
       final double random2 = (math.sin(scaledTime * math.pi * 1.3) * 0.5 + 0.5);
       final double random3 = (math.sin(scaledTime * math.pi * 3.9) * 0.5 + 0.5);
@@ -52,9 +54,16 @@ class ShaderAnimationUtils {
 
       // Apply easing and return
       final result = applyEasing(opts.easing, combinedRandom);
-      print(
-        "[DEBUG] ShaderAnimationUtils computed randomized value: $result from scaledTime=$scaledTime",
-      );
+
+      // Throttled logging
+      if (_enableAnimationDebugLogs) {
+        final now = DateTime.now();
+        if (now.difference(_lastLogTime) > _logThrottleInterval) {
+          _lastLogTime = now;
+          print("[DEBUG] Random animation value: ${result.toStringAsFixed(3)}");
+        }
+      }
+
       return result;
     }
   }
@@ -83,7 +92,6 @@ class ShaderAnimationUtils {
   }) {
     if (isLocked) {
       // Locked: stay fixed at the slider value (no animation)
-      print("[DEBUG] Locked parameter using fixed slider value: $sliderValue");
       return sliderValue;
     } else {
       // Unlocked: animate randomly between min and max range
@@ -115,37 +123,39 @@ class ShaderAnimationUtils {
         maxValue,
         randomValue,
       )!;
-      print(
-        "[DEBUG] Unlocked parameter ($parameterId) randomized value: $animatedValue (from $randomValue, offset=$phaseOffset)",
-      );
+
       return animatedValue;
     }
   }
 
   /// Compute a smooth pulse value (0-1) for consistent pulse animations across all shaders
   ///
-  /// This creates a smooth oscillating pulse that goes from 0 to 1 and back to 0
-  /// using the animation controller value
+  /// This creates a smooth oscillating pulse that goes from slider value to 0 and back
+  /// using the animation controller value. Works with both standard and reverse animations.
   static double computePulseValue(AnimationOptions opts, double baseTime) {
-    // CRITICAL FIX: Log the baseTime to verify it's being used
-    print(
-      "[DEBUG] ShaderAnimationUtils.computePulseValue called with baseTime=${baseTime.toStringAsFixed(3)}",
-    );
-
     // Simplified approach like V1's blur_effect_shader.dart
     // Direct pulse calculation - multiply by speed factor for faster animation
-    final double pulseTime = baseTime * opts.speed * 4.0;
+    // Use a frequency that works well with forward-reverse animation
+    final double pulseTime = baseTime * opts.speed * 2.0;
 
     // Create sine wave oscillation (0 to 1 to 0)
-    final double pulse = (math.sin(pulseTime * math.pi) * 0.5 + 0.5).abs();
+    // Use absolute sine to ensure we always get a 0-1-0 pattern regardless of animation direction
+    final double pulse = math.sin(pulseTime * math.pi).abs();
+
+    // Invert the pulse to get a 1-0-1 pattern (slider value to 0 and back)
+    final double invertedPulse = 1.0 - pulse;
 
     // Apply easing
-    final result = applyEasing(opts.easing, pulse);
+    final result = applyEasing(opts.easing, invertedPulse);
 
-    // Log the result for debugging
-    print(
-      "[DEBUG] ShaderAnimationUtils computed pulse: $result from pulseTime=$pulseTime",
-    );
+    // Throttled logging
+    if (_enableAnimationDebugLogs) {
+      final now = DateTime.now();
+      if (now.difference(_lastLogTime) > _logThrottleInterval) {
+        _lastLogTime = now;
+        print("[DEBUG] Pulse animation value: ${result.toStringAsFixed(3)}");
+      }
+    }
 
     return result;
   }

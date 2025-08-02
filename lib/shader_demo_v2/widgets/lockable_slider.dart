@@ -10,7 +10,7 @@ class LockableSlider extends StatefulWidget {
   final double value;
   final double min;
   final double max;
-  final int divisions;
+  final int? divisions;
   final String displayValue;
   final Function(double) onChanged;
   final Color activeColor;
@@ -90,11 +90,15 @@ class _LockableSliderState extends State<LockableSlider> {
             widget.animationEnabled &&
             !isLocked &&
             currentAnimatedValue != null;
+
+        // Use the animated value when animating, otherwise use widget value
         final double displayedValue = isAnimating
-            ? currentAnimatedValue!
+            ? currentAnimatedValue
             : widget.value;
+
+        // Format the displayed text based on the value
         final String displayedText = isAnimating
-            ? _formatAnimatedValue(currentAnimatedValue!)
+            ? _formatAnimatedValue(currentAnimatedValue)
             : widget.displayValue;
 
         return Column(
@@ -187,6 +191,8 @@ class _LockableSliderState extends State<LockableSlider> {
               activeColor: isAnimating
                   ? widget.activeColor.withOpacity(0.6) // Dimmed when animating
                   : widget.activeColor,
+              // Show the user-set position marker during animation
+              markerPosition: isAnimating ? widget.value : null,
             ),
             if (widget.animationEnabled && !isLocked)
               Padding(

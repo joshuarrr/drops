@@ -48,20 +48,22 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
       vsync: this,
     );
 
-    // Add direct value listener for debugging
+    // Add direct value listener for debugging (disabled for performance)
     _animationController.addListener(() {
       _animationTickCount++;
-      if (_animationController.value % 0.1 < 0.01) {
-        // Log roughly every 10% of the animation
-        print(
-          "[DEBUG] Direct animation listener: value=${_animationController.value.toStringAsFixed(3)}, tick=$_animationTickCount",
-        );
-      }
+      // Disabled animation value logging to reduce console output
+      // if (_animationController.value % 0.1 < 0.01) {
+      //   // Log roughly every 10% of the animation
+      //   print(
+      //     "[DEBUG] Direct animation listener: value=${_animationController.value.toStringAsFixed(3)}, tick=$_animationTickCount",
+      //   );
+      // }
     });
 
     // Listen to animation controller status changes to trigger rebuilds
     _animationController.addStatusListener((status) {
-      print("[DEBUG] Animation status changed: $status");
+      // Disabled status logging for performance
+      // print("[DEBUG] Animation status changed: $status");
       if (mounted) {
         setState(() {
           // Trigger rebuild when animation starts/stops to ensure AnimatedBuilder works
@@ -121,10 +123,12 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
     SchedulerBinding.instance.addPostFrameCallback((_) {
       // Simplified animation controller management like V3
       if (hasActiveAnimations && !_animationController.isAnimating) {
-        // Start animation - simple approach like V3
+        // Start animation with forward-reverse to avoid jumps
         print("[DEBUG] Animation STARTED");
         _animationController.reset(); // Ensure we start from 0
-        _animationController.repeat(); // Immediately repeat like V3
+        _animationController.repeat(
+          reverse: true,
+        ); // Use forward-reverse to avoid jumps
       } else if (!hasActiveAnimations && _animationController.isAnimating) {
         // Stop animation when not needed
         print("[DEBUG] Animation STOPPED");
@@ -210,19 +214,20 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
             settings.chromaticSettings.chromaticAnimated) ||
         (settings.rippleEnabled && settings.rippleSettings.rippleAnimated);
 
-    // Always log animation state for debugging
-    print(
-      "[DEBUG] _hasActiveAnimations() = $hasAnimations: " +
-          "blur=${settings.blurEnabled && settings.blurSettings.blurAnimated}, " +
-          "color=${settings.colorEnabled && settings.colorSettings.colorAnimated}, " +
-          "noise=${settings.noiseEnabled && settings.noiseSettings.noiseAnimated}, " +
-          "rain=${settings.rainEnabled && settings.rainSettings.rainAnimated}, " +
-          "chromatic=${settings.chromaticEnabled && settings.chromaticSettings.chromaticAnimated}, " +
-          "ripple=${settings.rippleEnabled && settings.rippleSettings.rippleAnimated}",
-    );
+    // Animation state logging disabled for performance
+    // print(
+    //   "[DEBUG] _hasActiveAnimations() = $hasAnimations: " +
+    //       "blur=${settings.blurEnabled && settings.blurSettings.blurAnimated}, " +
+    //       "color=${settings.colorEnabled && settings.colorSettings.colorAnimated}, " +
+    //       "noise=${settings.noiseEnabled && settings.noiseSettings.noiseAnimated}, " +
+    //       "rain=${settings.rainEnabled && settings.rainSettings.rainAnimated}, " +
+    //       "chromatic=${settings.chromaticEnabled && settings.chromaticSettings.chromaticAnimated}, " +
+    //       "ripple=${settings.rippleEnabled && settings.rippleSettings.rippleAnimated}",
+    // );
 
-    // DEBUG: Log animation state changes
+    // Only log significant animation state changes
     if (_lastAnimationState != hasAnimations) {
+      // Keep this log as it's useful and infrequent
       print(
         "[DEBUG] Animation state changed from $_lastAnimationState to $hasAnimations",
       );
@@ -424,9 +429,10 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
                 animation: _animationController,
                 builder: (context, child) {
                   final animationValue = _animationController.value;
-                  print(
-                    "[CRITICAL] PageView AnimatedBuilder with value: $animationValue",
-                  );
+                  // Animation debugging disabled
+                  // print(
+                  //   "[CRITICAL] PageView AnimatedBuilder with value: $animationValue",
+                  // );
 
                   // Create content widget for this preset
                   Widget contentWidget;
@@ -521,10 +527,10 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
     Widget contentWidget,
     double animationValue,
   ) {
-    // Debug animation value passed to shader - log EVERY frame for debugging
-    print(
-      "[DEBUG] _buildStackContent called with animationValue=${animationValue.toStringAsFixed(3)}",
-    );
+    // Debug animation value passed to shader - disabled for performance
+    // print(
+    //   "[DEBUG] _buildStackContent called with animationValue=${animationValue.toStringAsFixed(3)}",
+    // );
 
     // Create list of stack children
     List<Widget> stackChildren = [];

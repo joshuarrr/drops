@@ -71,7 +71,7 @@
 - Replace direct V3-style animation with calls to proper utility methods
 - Ensure animation speed, mode, and easing settings are respected
 - Key files to modify:
-  - `lib/shader_demo_v2/controllers/shaders/blur_effect_shader.dart` (first)
+  - `lib/shader_demo_v2/controllers/shaders/blur_effect_shader.dart` (first)  
   - `lib/shader_demo_v2/views/shader_demo_screen.dart` (animation controller)
   
 Once Blur Effect is working correctly, apply the same pattern to other shaders one by one.

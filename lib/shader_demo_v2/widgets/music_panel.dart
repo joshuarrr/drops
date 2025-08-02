@@ -1,7 +1,33 @@
 import 'package:flutter/material.dart';
 
-import '../models/effect_settings.dart';
+import '../models/effect_settings.dart' show ShaderSettings;
 import 'labeled_switch.dart';
+
+/// Custom painter that draws a downward-pointing triangle
+class TrianglePainter extends CustomPainter {
+  final Color color;
+
+  TrianglePainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Paint paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final path = Path();
+    // Draw a downward pointing triangle
+    path.moveTo(size.width / 2, size.height);
+    path.lineTo(0, 0);
+    path.lineTo(size.width, 0);
+    path.close();
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
+}
 
 class MusicPanel extends StatefulWidget {
   final ShaderSettings settings;
@@ -237,41 +263,100 @@ class _MusicPanelState extends State<MusicPanel> {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Column(
             children: [
-              SliderTheme(
-                data: SliderTheme.of(context).copyWith(
-                  trackHeight: 4,
-                  activeTrackColor: widget.sliderColor,
-                  inactiveTrackColor: widget.sliderColor.withValues(alpha: 0.3),
-                  thumbColor: widget.sliderColor,
-                ),
-                child: Builder(
-                  builder: (context) {
-                    double displayDuration = musicSettings.duration;
-                    double currentPosition = musicSettings.playbackPosition;
+              // Store start position when user begins dragging
+              StatefulBuilder(
+                builder: (context, setState) {
+                  // Add state variables to track user interaction
+                  double userStartPosition = 0.0;
+                  bool isDragging = false;
+                  double displayDuration = musicSettings.duration;
+                  double currentPosition = musicSettings.playbackPosition;
 
-                    // Use default duration if none available
-                    if (displayDuration <= 0) {
-                      displayDuration = 100.0;
-                    }
+                  // Use default duration if none available
+                  if (displayDuration <= 0) {
+                    displayDuration = 100.0;
+                  }
 
-                    // Clamp position to valid range
-                    currentPosition = currentPosition.clamp(
-                      0.0,
-                      displayDuration > 0 ? displayDuration : 100.0,
-                    );
+                  // Clamp position to valid range
+                  currentPosition = currentPosition.clamp(
+                    0.0,
+                    displayDuration > 0 ? displayDuration : 100.0,
+                  );
 
-                    return Slider(
-                      value: currentPosition,
-                      min: 0,
-                      max: displayDuration > 0 ? displayDuration : 100,
-                      onChanged: (double value) {
-                        if (widget.onSeek != null && displayDuration > 0) {
-                          widget.onSeek!(value);
-                        }
-                      },
-                    );
-                  },
-                ),
+                  return Stack(
+                    children: [
+                      // Main slider
+                      SliderTheme(
+                        data: SliderTheme.of(context).copyWith(
+                          trackHeight: 4,
+                          activeTrackColor: widget.sliderColor,
+                          inactiveTrackColor: widget.sliderColor.withValues(
+                            alpha: 0.3,
+                          ),
+                          thumbColor: widget.sliderColor,
+                        ),
+                        child: Slider(
+                          value: currentPosition,
+                          min: 0,
+                          max: displayDuration > 0 ? displayDuration : 100,
+                          onChangeStart: (value) {
+                            setState(() {
+                              userStartPosition = value;
+                              isDragging = true;
+                            });
+                          },
+                          onChangeEnd: (value) {
+                            setState(() {
+                              isDragging = false;
+                            });
+                          },
+                          onChanged: (double value) {
+                            if (widget.onSeek != null && displayDuration > 0) {
+                              widget.onSeek!(value);
+                            }
+                          },
+                        ),
+                      ),
+
+                      // User start position indicators (only visible during dragging)
+                      if (isDragging) ...[
+                        // Top triangle indicator
+                        Positioned(
+                          left:
+                              (userStartPosition / displayDuration) *
+                                  (MediaQuery.of(context).size.width - 64) -
+                              8,
+                          top: -16,
+                          child: Container(
+                            width: 16,
+                            height: 12,
+                            child: CustomPaint(
+                              painter: TrianglePainter(color: Colors.amber),
+                            ),
+                          ),
+                        ),
+                        // Bottom triangle indicator (pointing up)
+                        Positioned(
+                          left:
+                              (userStartPosition / displayDuration) *
+                                  (MediaQuery.of(context).size.width - 64) -
+                              8,
+                          bottom: -16,
+                          child: Transform.rotate(
+                            angle: 3.14159, // 180 degrees in radians
+                            child: Container(
+                              width: 16,
+                              height: 12,
+                              child: CustomPaint(
+                                painter: TrianglePainter(color: Colors.amber),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  );
+                },
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8.0),

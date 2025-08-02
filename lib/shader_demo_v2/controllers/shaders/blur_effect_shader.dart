@@ -12,6 +12,13 @@ import '../animation_state_manager.dart';
 /// Controls debug logging for shaders (external reference)
 bool enableShaderDebugLogs = false;
 
+/// Controls animation debug logging (separate from general shader logs)
+bool enableAnimationDebugLogs = false;
+
+/// Throttle animation logging to avoid excessive output
+DateTime _lastAnimLogTime = DateTime.now().subtract(const Duration(seconds: 1));
+const Duration _animLogThrottleInterval = Duration(milliseconds: 500);
+
 /// Custom blur effect shader widget
 class BlurEffectShader extends StatelessWidget {
   final Widget child;
@@ -146,9 +153,16 @@ class BlurEffectShader extends StatelessWidget {
                     ParameterIds.blurAmount,
                   );
 
-                  print(
-                    "[DEBUG] BlurEffectShader with animationValue=${animationValue.toStringAsFixed(3)}, locked=$isAmountLocked",
-                  );
+                  if (enableAnimationDebugLogs) {
+                    final now = DateTime.now();
+                    if (now.difference(_lastAnimLogTime) >
+                        _animLogThrottleInterval) {
+                      _lastAnimLogTime = now;
+                      print(
+                        "[DEBUG] BlurEffectShader animating with locked=$isAmountLocked",
+                      );
+                    }
+                  }
 
                   if (isAmountLocked) {
                     // If locked, keep the slider value (no animation)
@@ -158,9 +172,7 @@ class BlurEffectShader extends StatelessWidget {
                       amount,
                     );
 
-                    print(
-                      "[DEBUG] Parameter locked: using fixed value $amount",
-                    );
+                    // No logging for locked parameters
                   } else {
                     // If unlocked, animate according to the selected mode
                     if (settings.blurSettings.blurAnimOptions.mode ==
@@ -175,9 +187,7 @@ class BlurEffectShader extends StatelessWidget {
                       // Animate from slider value to zero and back
                       amount = settings.blurSettings.blurAmount * animValue;
 
-                      print(
-                        "[DEBUG] Pulse animation: value=$animValue, amount=$amount",
-                      );
+                      // Pulse animation logging handled in utils
                     } else {
                       // Use randomized animation - animate across parameter range
                       amount =
@@ -191,7 +201,7 @@ class BlurEffectShader extends StatelessWidget {
                             parameterId: ParameterIds.blurAmount,
                           );
 
-                      print("[DEBUG] Randomized animation: amount=$amount");
+                      // Randomized animation logging handled in utils
                     }
 
                     // Update animation manager with current animated value

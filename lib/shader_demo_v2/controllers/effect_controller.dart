@@ -278,12 +278,12 @@ class EffectController {
     bool preserveTransparency = false,
     bool isTextContent = false, // Add parameter to identify text content
   }) {
-    // Debug animation value received by effect controller - log EVERY frame for debugging
-    print(
-      "[DEBUG] EffectController.applyEffects called with animationValue=${animationValue.toStringAsFixed(3)}, " +
-          "blur=${settings.blurEnabled}, blurAnimated=${settings.blurSettings.blurAnimated}, " +
-          "color=${settings.colorEnabled}, colorAnimated=${settings.colorSettings.colorAnimated}",
-    );
+    // Debug animation value received by effect controller - disabled for performance
+    // print(
+    //   "[DEBUG] EffectController.applyEffects called with animationValue=${animationValue.toStringAsFixed(3)}, " +
+    //       "blur=${settings.blurEnabled}, blurAnimated=${settings.blurSettings.blurAnimated}, " +
+    //       "color=${settings.colorEnabled}, colorAnimated=${settings.colorSettings.colorAnimated}",
+    // );
 
     // Generate log message first before deciding whether to show it
     String logMessage = "";

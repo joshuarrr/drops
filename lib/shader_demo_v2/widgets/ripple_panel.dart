@@ -153,7 +153,7 @@ class _RipplePanelState extends State<RipplePanel> {
                 value: widget.settings.rippleSettings.rippleOvalness,
                 min: 0.0,
                 max: 1.0,
-                divisions: 100,
+                divisions: null,
                 displayValue: widget.settings.rippleSettings.rippleOvalness
                     .toStringAsFixed(2),
                 onChanged: (value) {
@@ -169,7 +169,7 @@ class _RipplePanelState extends State<RipplePanel> {
                 value: widget.settings.rippleSettings.rippleRotation,
                 min: 0.0,
                 max: 1.0,
-                divisions: 100,
+                divisions: null,
                 displayValue: widget.settings.rippleSettings.rippleRotation
                     .toStringAsFixed(2),
                 onChanged: (value) {
@@ -185,7 +185,7 @@ class _RipplePanelState extends State<RipplePanel> {
                 value: widget.settings.rippleSettings.rippleIntensity,
                 min: 0.0,
                 max: 1.0,
-                divisions: 100,
+                divisions: null,
                 displayValue: widget.settings.rippleSettings.rippleIntensity
                     .toStringAsFixed(2),
                 onChanged: (value) {
@@ -200,7 +200,7 @@ class _RipplePanelState extends State<RipplePanel> {
                 value: widget.settings.rippleSettings.rippleSize,
                 min: 0.0,
                 max: 1.0,
-                divisions: 100,
+                divisions: null,
                 displayValue: widget.settings.rippleSettings.rippleSize
                     .toStringAsFixed(2),
                 onChanged: (value) {
@@ -215,7 +215,7 @@ class _RipplePanelState extends State<RipplePanel> {
                 value: widget.settings.rippleSettings.rippleSpeed,
                 min: 0.0,
                 max: 1.0,
-                divisions: 100,
+                divisions: null,
                 displayValue: widget.settings.rippleSettings.rippleSpeed
                     .toStringAsFixed(2),
                 onChanged: (value) {
@@ -230,7 +230,7 @@ class _RipplePanelState extends State<RipplePanel> {
                 value: widget.settings.rippleSettings.rippleOpacity,
                 min: 0.0,
                 max: 1.0,
-                divisions: 100,
+                divisions: null,
                 displayValue: widget.settings.rippleSettings.rippleOpacity
                     .toStringAsFixed(2),
                 onChanged: (value) {
@@ -245,7 +245,7 @@ class _RipplePanelState extends State<RipplePanel> {
                 value: widget.settings.rippleSettings.rippleColor,
                 min: 0.0,
                 max: 1.0,
-                divisions: 100,
+                divisions: null,
                 displayValue: widget.settings.rippleSettings.rippleColor
                     .toStringAsFixed(2),
                 onChanged: (value) {
