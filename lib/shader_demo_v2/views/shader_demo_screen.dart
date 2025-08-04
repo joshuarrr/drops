@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
@@ -11,7 +13,9 @@ import '../views/preset_menu.dart';
 import '../views/image_container.dart';
 import '../views/text_overlay.dart';
 import '../../common/app_scaffold.dart';
-// import '../services/thumbnail_service.dart'; // Temporarily disabled
+import '../services/thumbnail_service.dart';
+import '../services/preset_service.dart';
+import '../models/preset.dart';
 
 /// Main screen for shader demo V2
 /// Uses Provider pattern and Stack layout for overlay controls
@@ -29,8 +33,8 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
   late PageController _pageController;
   bool _isInitialized = false;
 
-  // Key for capturing thumbnails like V1 - temporarily disabled
-  // final GlobalKey _previewKey = GlobalKey();
+  // Create a key just for thumbnails - separate from the UI tree
+  final GlobalKey _thumbnailCaptureKey = GlobalKey();
 
   // Track animation state changes
   bool? _lastAnimationState;
@@ -438,6 +442,36 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
 
   // Removed unused cache variables
 
+  /// Build a simple content widget for thumbnail capture
+  Widget _buildThumbnailContent(Preset preset) {
+    Widget contentWidget;
+
+    if (preset.settings.imageEnabled) {
+      contentWidget = ImageContainer(
+        imagePath: preset.imagePath,
+        settings: preset.settings,
+      );
+    } else {
+      final backgroundColor = preset.settings.backgroundEnabled
+          ? preset.settings.backgroundSettings.backgroundColor
+          : Colors.black;
+      contentWidget = Container(
+        color: backgroundColor,
+        width: double.infinity,
+        height: double.infinity,
+      );
+    }
+
+    // Apply effects
+    return EffectController.applyEffects(
+      child: contentWidget,
+      settings: preset.settings,
+      animationValue: 0.0, // No animation for thumbnail
+      preserveTransparency: false,
+      isTextContent: false,
+    );
+  }
+
   Widget _cachedContentWidget(String cacheKey, ShaderController controller) {
     // FIXED: Always rebuild content to ensure settings changes are reflected immediately
     // Removed caching conditional to fix image visibility toggle and selection not updating
@@ -521,8 +555,13 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
       );
     }
 
-    // Return the stack directly (RepaintBoundary moved to _buildShaderArea)
-    return Stack(fit: StackFit.expand, children: stackChildren);
+    // Use a unique ValueKey for each page in the navigation stack to avoid conflicts
+    // The key is only used for identification, not for finding the widget
+    return RepaintBoundary(
+      // Use object identity as part of the key to ensure uniqueness
+      key: ValueKey('content-${controller.hashCode}-${contentWidget.hashCode}'),
+      child: Stack(fit: StackFit.expand, children: stackChildren),
+    );
   }
 
   /// Build the controls overlay
@@ -663,12 +702,77 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
           }
 
           try {
-            // Commented out for now as we removed RepaintBoundary
-            // final thumbnailBase64 =
-            //     await ThumbnailService.capturePresetThumbnail(
-            //       preset: savedPreset,
-            //       previewKey: _previewKey,
-            //     );
+            // Create a temporary off-screen widget just for thumbnail capture
+            // This approach avoids conflicts with the main UI
+            final captureCompleter = Completer<String?>();
+
+            // Add a one-time frame callback to build and capture the thumbnail
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              // Create a temporary RepaintBoundary with the preset's content
+              final thumbnailWidget = RepaintBoundary(
+                key: _thumbnailCaptureKey,
+                child: SizedBox(
+                  width: 300, // Thumbnail size
+                  height: 300,
+                  child: Material(
+                    color: Colors.black,
+                    child: _buildThumbnailContent(savedPreset),
+                  ),
+                ),
+              );
+
+              // Insert the widget into the overlay to render it
+              final overlay = Overlay.of(context);
+              final overlayEntry = OverlayEntry(
+                builder: (ctx) {
+                  return Positioned(
+                    left: -1000, // Off-screen
+                    top: -1000,
+                    child: thumbnailWidget,
+                  );
+                },
+              );
+
+              overlay.insert(overlayEntry);
+
+              // Wait for the widget to render, then capture
+              Future.delayed(const Duration(milliseconds: 200), () async {
+                // Capture the thumbnail
+                try {
+                  final captureResult = await ThumbnailService.capturePreview(
+                    _thumbnailCaptureKey,
+                  );
+                  final base64 = captureResult != null
+                      ? base64Encode(captureResult)
+                      : null;
+                  captureCompleter.complete(base64);
+                } catch (e) {
+                  print('Error during capture: $e');
+                  captureCompleter.complete(null);
+                } finally {
+                  // Clean up the overlay entry
+                  overlayEntry.remove();
+                }
+              });
+            });
+
+            // Wait for capture to complete
+            final thumbnailBase64 = await captureCompleter.future;
+
+            // Save the captured thumbnail
+            if (thumbnailBase64 != null) {
+              await PresetService.savePresetThumbnail(
+                savedPreset.id,
+                thumbnailBase64,
+              );
+              print(
+                'Thumbnail captured and saved for preset: ${savedPreset.name}',
+              );
+            } else {
+              print(
+                'Failed to capture thumbnail for preset: ${savedPreset.name}',
+              );
+            }
           } catch (e) {
             print('Error capturing thumbnail: $e');
           } finally {

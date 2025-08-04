@@ -70,6 +70,11 @@ class ThumbnailService {
     return null;
   }
 
+  /// Public method to capture preview using a GlobalKey
+  static Future<Uint8List?> capturePreview(GlobalKey? key) async {
+    return _capturePreview(key);
+  }
+
   /// Capture a screenshot using RenderRepaintBoundary - V1's working approach
   static Future<Uint8List?> _capturePreview(GlobalKey? key) async {
     try {
