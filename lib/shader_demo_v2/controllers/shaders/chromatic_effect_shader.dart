@@ -162,9 +162,10 @@ class ChromaticEffectShader extends StatelessWidget {
                   settings.chromaticSettings.animOptions,
                   animationValue,
                 );
-                // For angle, we do rotation animation rather than pulsing
+                // For angle, we do rotation animation rather than pulsing to zero
+                // This provides a more visually appealing rotation effect
                 angle =
-                    (settings.chromaticSettings.angle + (pulse * 360.0)) %
+                    (settings.chromaticSettings.angle + (pulse * 180.0)) %
                     360.0;
                 animManager.updateAnimatedValue(
                   ParameterIds.chromaticAngle,

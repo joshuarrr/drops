@@ -66,7 +66,8 @@ class LabeledSlider extends StatelessWidget {
               Positioned(
                 left:
                     ((markerPosition! - min) / (max - min)) *
-                    (MediaQuery.of(context).size.width - 32),
+                        (MediaQuery.of(context).size.width - 40) +
+                    16,
                 top: 0,
                 bottom: 0,
                 child: Center(

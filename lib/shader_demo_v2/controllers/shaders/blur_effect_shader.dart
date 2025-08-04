@@ -8,16 +8,7 @@ import '../../models/effect_settings.dart';
 import '../../models/animation_options.dart';
 import '../../utils/animation_utils.dart';
 import '../animation_state_manager.dart';
-
-/// Controls debug logging for shaders (external reference)
-bool enableShaderDebugLogs = false;
-
-/// Controls animation debug logging (separate from general shader logs)
-bool enableAnimationDebugLogs = false;
-
-/// Throttle animation logging to avoid excessive output
-DateTime _lastAnimLogTime = DateTime.now().subtract(const Duration(seconds: 1));
-const Duration _animLogThrottleInterval = Duration(milliseconds: 500);
+import 'debug_flags.dart';
 
 /// Custom blur effect shader widget
 class BlurEffectShader extends StatelessWidget {
@@ -153,16 +144,7 @@ class BlurEffectShader extends StatelessWidget {
                     ParameterIds.blurAmount,
                   );
 
-                  if (enableAnimationDebugLogs) {
-                    final now = DateTime.now();
-                    if (now.difference(_lastAnimLogTime) >
-                        _animLogThrottleInterval) {
-                      _lastAnimLogTime = now;
-                      print(
-                        "[DEBUG] BlurEffectShader animating with locked=$isAmountLocked",
-                      );
-                    }
-                  }
+                  // Animation logging disabled
 
                   if (isAmountLocked) {
                     // If locked, keep the slider value (no animation)

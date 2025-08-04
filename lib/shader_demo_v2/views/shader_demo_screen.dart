@@ -11,7 +11,6 @@ import '../views/preset_menu.dart';
 import '../views/image_container.dart';
 import '../views/text_overlay.dart';
 import '../../common/app_scaffold.dart';
-import 'dart:math' as math;
 // import '../services/thumbnail_service.dart'; // Temporarily disabled
 
 /// Main screen for shader demo V2
@@ -33,9 +32,8 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
   // Key for capturing thumbnails like V1 - temporarily disabled
   // final GlobalKey _previewKey = GlobalKey();
 
-  // DEBUG: Track animation state changes
+  // Track animation state changes
   bool? _lastAnimationState;
-  int _animationTickCount = 0;
 
   @override
   void initState() {
@@ -48,16 +46,9 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
       vsync: this,
     );
 
-    // Add direct value listener for debugging (disabled for performance)
+    // Animation value listener disabled for performance
     _animationController.addListener(() {
-      _animationTickCount++;
-      // Disabled animation value logging to reduce console output
-      // if (_animationController.value % 0.1 < 0.01) {
-      //   // Log roughly every 10% of the animation
-      //   print(
-      //     "[DEBUG] Direct animation listener: value=${_animationController.value.toStringAsFixed(3)}, tick=$_animationTickCount",
-      //   );
-      // }
+      // Animation logging disabled
     });
 
     // Listen to animation controller status changes to trigger rebuilds
@@ -124,78 +115,21 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
       // Simplified animation controller management like V3
       if (hasActiveAnimations && !_animationController.isAnimating) {
         // Start animation with forward-reverse to avoid jumps
-        print("[DEBUG] Animation STARTED");
+        // Animation logging disabled
         _animationController.reset(); // Ensure we start from 0
         _animationController.repeat(
           reverse: true,
         ); // Use forward-reverse to avoid jumps
       } else if (!hasActiveAnimations && _animationController.isAnimating) {
         // Stop animation when not needed
-        print("[DEBUG] Animation STOPPED");
+        // Animation logging disabled
         _animationController.stop();
         _animationController.reset();
       }
     });
   }
 
-  /// Calculate the required animation duration based on the fastest active animation
-  Duration _calculateRequiredAnimationDuration() {
-    if (!_isInitialized) return const Duration(seconds: 10);
-
-    final settings = _shaderController.settings;
-    double fastestSpeed = 0.0;
-
-    // Find the fastest (highest) speed among all active animations
-    if (settings.blurSettings.blurAnimated) {
-      fastestSpeed = math.max(
-        fastestSpeed,
-        settings.blurSettings.blurAnimOptions.speed,
-      );
-    }
-    if (settings.colorSettings.colorAnimated) {
-      fastestSpeed = math.max(
-        fastestSpeed,
-        settings.colorSettings.colorAnimOptions.speed,
-      );
-    }
-    if (settings.colorSettings.overlayAnimated) {
-      fastestSpeed = math.max(
-        fastestSpeed,
-        settings.colorSettings.overlayAnimOptions.speed,
-      );
-    }
-    if (settings.noiseSettings.noiseAnimated) {
-      fastestSpeed = math.max(
-        fastestSpeed,
-        settings.noiseSettings.noiseAnimOptions.speed,
-      );
-    }
-    if (settings.rainSettings.rainAnimated) {
-      fastestSpeed = math.max(
-        fastestSpeed,
-        settings.rainSettings.rainAnimOptions.speed,
-      );
-    }
-    if (settings.chromaticSettings.chromaticAnimated) {
-      fastestSpeed = math.max(
-        fastestSpeed,
-        settings.chromaticSettings.animOptions.speed,
-      );
-    }
-    if (settings.rippleSettings.rippleAnimated) {
-      fastestSpeed = math.max(
-        fastestSpeed,
-        settings.rippleSettings.rippleAnimOptions.speed,
-      );
-    }
-
-    // Map speed (0.0-1.0) to duration (30s to 0.5s)
-    // Use the fastest speed to set controller duration
-    final double durationSeconds = 30.0 - (fastestSpeed * 29.5); // 30s to 0.5s
-    final int durationMs = (durationSeconds * 1000).round();
-
-    return Duration(milliseconds: durationMs);
-  }
+  // Unused function removed
 
   /// Check if any shader effects have animations enabled
   bool _hasActiveAnimations() {
@@ -225,12 +159,8 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
     //       "ripple=${settings.rippleEnabled && settings.rippleSettings.rippleAnimated}",
     // );
 
-    // Only log significant animation state changes
+    // Animation state change logging disabled
     if (_lastAnimationState != hasAnimations) {
-      // Keep this log as it's useful and infrequent
-      print(
-        "[DEBUG] Animation state changed from $_lastAnimationState to $hasAnimations",
-      );
       _lastAnimationState = hasAnimations;
     }
 

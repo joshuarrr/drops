@@ -8,16 +8,7 @@ import '../../models/effect_settings.dart';
 import '../../models/animation_options.dart';
 import '../../utils/animation_utils.dart';
 import '../animation_state_manager.dart';
-
-/// Controls debug logging for shaders
-bool enableShaderDebugLogs = true;
-
-/// Controls animation debug logging (separate from general shader logs)
-bool enableAnimationDebugLogs = false;
-
-/// Throttle animation logging to avoid excessive output
-DateTime _lastAnimLogTime = DateTime.now().subtract(const Duration(seconds: 1));
-const Duration _animLogThrottleInterval = Duration(milliseconds: 500);
+import 'debug_flags.dart';
 
 /// Custom color effect shader widget
 class ColorEffectShader extends StatelessWidget {
@@ -143,16 +134,7 @@ class ColorEffectShader extends StatelessWidget {
 
                   // Animate hue if unlocked
                   if (!animManager.isParameterLocked(ParameterIds.colorHue)) {
-                    if (enableAnimationDebugLogs) {
-                      final now = DateTime.now();
-                      if (now.difference(_lastAnimLogTime) >
-                          _animLogThrottleInterval) {
-                        _lastAnimLogTime = now;
-                        print(
-                          "[DEBUG] Animating color hue, mode: ${settings.colorSettings.colorAnimOptions.mode}",
-                        );
-                      }
-                    }
+                    // Animation logging disabled
 
                     if (settings.colorSettings.colorAnimOptions.mode ==
                         AnimationMode.pulse) {
@@ -260,16 +242,7 @@ class ColorEffectShader extends StatelessWidget {
                     );
                   }
 
-                  if (enableAnimationDebugLogs) {
-                    final now = DateTime.now();
-                    if (now.difference(_lastAnimLogTime) >
-                        _animLogThrottleInterval) {
-                      _lastAnimLogTime = now;
-                      print(
-                        "[DEBUG] Color animation: hue=$hue, saturation=$saturation, lightness=$lightness",
-                      );
-                    }
-                  }
+                  // Animation logging disabled
                 } else {
                   // Clear animated values when animation is disabled
                   final animManager = AnimationStateManager();
@@ -290,16 +263,7 @@ class ColorEffectShader extends StatelessWidget {
 
                   // Animate overlay hue if unlocked
                   if (!animManager.isParameterLocked(ParameterIds.overlayHue)) {
-                    if (enableAnimationDebugLogs) {
-                      final now = DateTime.now();
-                      if (now.difference(_lastAnimLogTime) >
-                          _animLogThrottleInterval) {
-                        _lastAnimLogTime = now;
-                        print(
-                          "[DEBUG] Animating overlay hue, mode: ${settings.colorSettings.overlayAnimOptions.mode}",
-                        );
-                      }
-                    }
+                    // Animation logging disabled
 
                     if (settings.colorSettings.overlayAnimOptions.mode ==
                         AnimationMode.pulse) {
@@ -415,16 +379,7 @@ class ColorEffectShader extends StatelessWidget {
                     );
                   }
 
-                  if (enableAnimationDebugLogs) {
-                    final now = DateTime.now();
-                    if (now.difference(_lastAnimLogTime) >
-                        _animLogThrottleInterval) {
-                      _lastAnimLogTime = now;
-                      print(
-                        "[DEBUG] Overlay animation: hue=$overlayHue, intensity=$overlayIntensity, opacity=$overlayOpacity",
-                      );
-                    }
-                  }
+                  // Animation logging disabled
                 } else {
                   // Clear animated values when animation is disabled
                   final animManager = AnimationStateManager();
@@ -453,17 +408,7 @@ class ColorEffectShader extends StatelessWidget {
                     ? animationValue
                     : 0.0;
 
-                // DEBUG: Log the actual shader uniform values being set
-                _log(
-                  "[DEBUG] Setting shader uniforms: " +
-                      "timeValue=$timeValue, " +
-                      "hue=$hue, " +
-                      "saturation=$saturation, " +
-                      "lightness=$lightness, " +
-                      "overlayHue=$overlayHue, " +
-                      "overlayIntensity=$overlayIntensity, " +
-                      "overlayOpacity=$overlayOpacity",
-                );
+                // Shader uniform logging completely disabled
 
                 // Animation has been properly applied above
                 // No need for any special handling here

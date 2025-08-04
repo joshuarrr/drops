@@ -3,11 +3,11 @@ import '../models/shader_effect.dart';
 import '../models/effect_settings.dart';
 import '../models/ripple_settings.dart';
 import '../models/presets_manager.dart';
-import 'labeled_slider.dart';
-import 'labeled_switch.dart';
+import 'lockable_slider.dart';
+import '../controllers/animation_state_manager.dart';
+
 import 'animation_controls.dart';
 import 'enhanced_panel_header.dart';
-import '../views/effect_controls.dart';
 
 class RipplePanel extends StatefulWidget {
   final ShaderSettings settings;
@@ -62,60 +62,14 @@ class _RipplePanelState extends State<RipplePanel> {
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: Column(
             children: [
-              // Enable/disable switch
-              LabeledSwitch(
-                label: 'Enable Ripple Effect',
-                value: widget.settings.rippleEnabled,
-                onChanged: (value) {
-                  final updatedSettings = widget.settings;
-                  updatedSettings.rippleEnabled = value;
-                  widget.onSettingsChanged(updatedSettings);
-                },
-              ),
-              SizedBox(height: 8),
-
-              // Add animation toggle
-              LabeledSwitch(
-                label: 'Animate Ripple Effect',
-                value: widget.settings.rippleSettings.rippleAnimated,
-                onChanged: (value) {
-                  final updatedSettings = widget.settings;
-                  updatedSettings.rippleSettings.rippleAnimated = value;
-                  widget.onSettingsChanged(updatedSettings);
-                },
-              ),
-              SizedBox(height: 8),
-
-              // Add animation controls
-              AnimationControls(
-                animationSpeed:
-                    widget.settings.rippleSettings.rippleAnimOptions.speed,
-                animationMode:
-                    widget.settings.rippleSettings.rippleAnimOptions.mode,
-                animationEasing:
-                    widget.settings.rippleSettings.rippleAnimOptions.easing,
-                onSpeedChanged: (value) {
-                  widget.settings.rippleSettings.rippleAnimOptions.speed =
-                      value;
-                  widget.onSettingsChanged(widget.settings);
-                },
-                onModeChanged: (mode) {
-                  widget.settings.rippleSettings.rippleAnimOptions.mode = mode;
-                  widget.onSettingsChanged(widget.settings);
-                },
-                onEasingChanged: (easing) {
-                  widget.settings.rippleSettings.rippleAnimOptions.easing =
-                      easing;
-                  widget.onSettingsChanged(widget.settings);
-                },
-                sliderColor: widget.sliderColor,
-              ),
+              // Removed the Enable Ripple Effect toggle as requested
+              // The effect is now automatically enabled when any parameter is changed
 
               // Number of drops with randomize button
               Row(
                 children: [
                   Expanded(
-                    child: LabeledSlider(
+                    child: LockableSlider(
                       label: 'Number of Drops',
                       value: widget.settings.rippleSettings.rippleDropCount
                           .toDouble(),
@@ -131,9 +85,15 @@ class _RipplePanelState extends State<RipplePanel> {
                         final updatedSettings = widget.settings;
                         updatedSettings.rippleSettings.rippleDropCount = value
                             .round();
+                        updatedSettings.rippleEnabled =
+                            true; // Ensure it's enabled
                         widget.onSettingsChanged(updatedSettings);
                       },
                       activeColor: widget.sliderColor,
+                      parameterId: ParameterIds.rippleDropCount,
+                      animationEnabled:
+                          widget.settings.rippleSettings.rippleAnimated,
+                      defaultValue: 5.0,
                     ),
                   ),
                   IconButton(
@@ -142,119 +102,219 @@ class _RipplePanelState extends State<RipplePanel> {
                     onPressed: () {
                       final updatedSettings = widget.settings;
                       updatedSettings.rippleSettings.randomizeDropPositions();
+                      updatedSettings.rippleEnabled =
+                          true; // Ensure it's enabled
                       widget.onSettingsChanged(updatedSettings);
                     },
                   ),
                 ],
               ),
 
-              LabeledSlider(
+              LockableSlider(
                 label: 'Ovalness',
                 value: widget.settings.rippleSettings.rippleOvalness,
                 min: 0.0,
                 max: 1.0,
-                divisions: null,
+                divisions: 100,
                 displayValue: widget.settings.rippleSettings.rippleOvalness
                     .toStringAsFixed(2),
                 onChanged: (value) {
                   final updatedSettings = widget.settings;
                   updatedSettings.rippleSettings.rippleOvalness = value;
+                  updatedSettings.rippleEnabled = true; // Ensure it's enabled
                   widget.onSettingsChanged(updatedSettings);
                 },
                 activeColor: widget.sliderColor,
+                parameterId: ParameterIds.rippleOvalness,
+                animationEnabled: widget.settings.rippleSettings.rippleAnimated,
+                defaultValue: 0.0,
               ),
 
-              LabeledSlider(
+              LockableSlider(
                 label: 'Rotation',
                 value: widget.settings.rippleSettings.rippleRotation,
                 min: 0.0,
                 max: 1.0,
-                divisions: null,
+                divisions: 100,
                 displayValue: widget.settings.rippleSettings.rippleRotation
                     .toStringAsFixed(2),
                 onChanged: (value) {
                   final updatedSettings = widget.settings;
                   updatedSettings.rippleSettings.rippleRotation = value;
+                  updatedSettings.rippleEnabled = true; // Ensure it's enabled
                   widget.onSettingsChanged(updatedSettings);
                 },
                 activeColor: widget.sliderColor,
+                parameterId: ParameterIds.rippleRotation,
+                animationEnabled: widget.settings.rippleSettings.rippleAnimated,
+                defaultValue: 0.0,
               ),
 
-              LabeledSlider(
+              LockableSlider(
                 label: 'Intensity',
                 value: widget.settings.rippleSettings.rippleIntensity,
                 min: 0.0,
                 max: 1.0,
-                divisions: null,
+                divisions: 100,
                 displayValue: widget.settings.rippleSettings.rippleIntensity
                     .toStringAsFixed(2),
                 onChanged: (value) {
                   final updatedSettings = widget.settings;
                   updatedSettings.rippleSettings.rippleIntensity = value;
+                  updatedSettings.rippleEnabled = true; // Ensure it's enabled
                   widget.onSettingsChanged(updatedSettings);
                 },
                 activeColor: widget.sliderColor,
+                parameterId: ParameterIds.rippleIntensity,
+                animationEnabled: widget.settings.rippleSettings.rippleAnimated,
+                defaultValue: 0.5,
               ),
-              LabeledSlider(
+
+              LockableSlider(
                 label: 'Size',
                 value: widget.settings.rippleSettings.rippleSize,
                 min: 0.0,
                 max: 1.0,
-                divisions: null,
+                divisions: 100,
                 displayValue: widget.settings.rippleSettings.rippleSize
                     .toStringAsFixed(2),
                 onChanged: (value) {
                   final updatedSettings = widget.settings;
                   updatedSettings.rippleSettings.rippleSize = value;
+                  updatedSettings.rippleEnabled = true; // Ensure it's enabled
                   widget.onSettingsChanged(updatedSettings);
                 },
                 activeColor: widget.sliderColor,
+                parameterId: ParameterIds.rippleSize,
+                animationEnabled: widget.settings.rippleSettings.rippleAnimated,
+                defaultValue: 0.5,
               ),
-              LabeledSlider(
+
+              LockableSlider(
                 label: 'Speed',
                 value: widget.settings.rippleSettings.rippleSpeed,
                 min: 0.0,
                 max: 1.0,
-                divisions: null,
+                divisions: 100,
                 displayValue: widget.settings.rippleSettings.rippleSpeed
                     .toStringAsFixed(2),
                 onChanged: (value) {
                   final updatedSettings = widget.settings;
                   updatedSettings.rippleSettings.rippleSpeed = value;
+                  updatedSettings.rippleEnabled = true; // Ensure it's enabled
                   widget.onSettingsChanged(updatedSettings);
                 },
                 activeColor: widget.sliderColor,
+                parameterId: ParameterIds.rippleSpeed,
+                animationEnabled: widget.settings.rippleSettings.rippleAnimated,
+                defaultValue: 0.5,
               ),
-              LabeledSlider(
+
+              LockableSlider(
                 label: 'Opacity',
                 value: widget.settings.rippleSettings.rippleOpacity,
                 min: 0.0,
                 max: 1.0,
-                divisions: null,
+                divisions: 100,
                 displayValue: widget.settings.rippleSettings.rippleOpacity
                     .toStringAsFixed(2),
                 onChanged: (value) {
                   final updatedSettings = widget.settings;
                   updatedSettings.rippleSettings.rippleOpacity = value;
+                  updatedSettings.rippleEnabled = true; // Ensure it's enabled
                   widget.onSettingsChanged(updatedSettings);
                 },
                 activeColor: widget.sliderColor,
+                parameterId: ParameterIds.rippleOpacity,
+                animationEnabled: widget.settings.rippleSettings.rippleAnimated,
+                defaultValue: 0.8,
               ),
-              LabeledSlider(
+
+              LockableSlider(
                 label: 'Color',
                 value: widget.settings.rippleSettings.rippleColor,
                 min: 0.0,
                 max: 1.0,
-                divisions: null,
+                divisions: 100,
                 displayValue: widget.settings.rippleSettings.rippleColor
                     .toStringAsFixed(2),
                 onChanged: (value) {
                   final updatedSettings = widget.settings;
                   updatedSettings.rippleSettings.rippleColor = value;
+                  updatedSettings.rippleEnabled = true; // Ensure it's enabled
                   widget.onSettingsChanged(updatedSettings);
                 },
                 activeColor: widget.sliderColor,
+                parameterId: ParameterIds.rippleColor,
+                animationEnabled: widget.settings.rippleSettings.rippleAnimated,
+                defaultValue: 0.5,
               ),
+
+              SizedBox(height: 16),
+
+              // Toggle animation for ripple effect (moved to bottom as requested)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Animate Effect',
+                    style: TextStyle(color: widget.sliderColor, fontSize: 14),
+                  ),
+                  Switch(
+                    value: widget.settings.rippleSettings.rippleAnimated,
+                    activeColor: widget.sliderColor,
+                    onChanged: (value) {
+                      final updatedSettings = widget.settings;
+                      updatedSettings.rippleSettings.rippleAnimated = value;
+                      // Always ensure the effect is enabled when animation is toggled
+                      updatedSettings.rippleEnabled = true;
+                      widget.onSettingsChanged(updatedSettings);
+                    },
+                  ),
+                ],
+              ),
+
+              // Only show animation controls when animation is enabled
+              if (widget.settings.rippleSettings.rippleAnimated)
+                AnimationControls(
+                  animationSpeed:
+                      widget.settings.rippleSettings.rippleAnimOptions.speed,
+                  animationMode:
+                      widget.settings.rippleSettings.rippleAnimOptions.mode,
+                  animationEasing:
+                      widget.settings.rippleSettings.rippleAnimOptions.easing,
+                  onSpeedChanged: (v) {
+                    widget.settings.rippleSettings.rippleAnimOptions = widget
+                        .settings
+                        .rippleSettings
+                        .rippleAnimOptions
+                        .copyWith(speed: v);
+                    widget.settings.rippleEnabled =
+                        true; // Ensure it's enabled when values change
+                    widget.onSettingsChanged(widget.settings);
+                  },
+                  onModeChanged: (m) {
+                    widget.settings.rippleSettings.rippleAnimOptions = widget
+                        .settings
+                        .rippleSettings
+                        .rippleAnimOptions
+                        .copyWith(mode: m);
+                    widget.settings.rippleEnabled =
+                        true; // Ensure it's enabled when values change
+                    widget.onSettingsChanged(widget.settings);
+                  },
+                  onEasingChanged: (e) {
+                    widget.settings.rippleSettings.rippleAnimOptions = widget
+                        .settings
+                        .rippleSettings
+                        .rippleAnimOptions
+                        .copyWith(easing: e);
+                    widget.settings.rippleEnabled =
+                        true; // Ensure it's enabled when values change
+                    widget.onSettingsChanged(widget.settings);
+                  },
+                  sliderColor: widget.sliderColor,
+                ),
             ],
           ),
         ),
@@ -281,6 +341,11 @@ class _RipplePanelState extends State<RipplePanel> {
     widget.settings.rippleSettings.rippleAnimated = false;
     widget.settings.rippleSettings.applyToImage = true;
     widget.settings.rippleSettings.applyToText = true;
+
+    // Clear animation locks for ripple parameters
+    final animationManager = AnimationStateManager();
+    animationManager.clearLocksForEffect('ripple.');
+
     widget.onSettingsChanged(widget.settings);
   }
 

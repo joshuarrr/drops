@@ -1,11 +1,14 @@
 // This is a barrel file that exports all shader-related components
 
-// First export the debug flag to avoid conflicts
-export 'debug_flags.dart' show enableShaderDebugLogs;
+// First export the debug flags to avoid conflicts
+export 'debug_flags.dart'
+    show enableShaderDebugLogs, enableAnimationDebugLogs, AnimationLogger;
 
 // Export individual shader effect widgets
-export 'blur_effect_shader.dart' hide enableShaderDebugLogs;
-export 'color_effect_shader.dart' hide enableShaderDebugLogs;
+export 'blur_effect_shader.dart'
+    hide enableShaderDebugLogs, enableAnimationDebugLogs;
+export 'color_effect_shader.dart'
+    hide enableShaderDebugLogs, enableAnimationDebugLogs;
 export 'noise_effect_shader.dart' hide enableShaderDebugLogs;
 export 'rain_effect_shader.dart' hide enableShaderDebugLogs;
 export 'chromatic_effect_shader.dart' hide enableShaderDebugLogs;
