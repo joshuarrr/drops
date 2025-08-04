@@ -1,5 +1,5 @@
 import 'dart:developer' as developer;
-import 'dart:math' as math;
+// Removed unused math import
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_shaders/flutter_shaders.dart';
@@ -7,6 +7,7 @@ import 'package:flutter_shaders/flutter_shaders.dart';
 import '../../models/animation_options.dart';
 import '../../models/effect_settings.dart';
 import '../../utils/animation_utils.dart';
+import '../animation_state_manager.dart';
 import 'debug_flags.dart';
 
 // Set to true for more verbose logging
@@ -91,35 +92,243 @@ class RippleEffectShader extends StatelessWidget {
 
           // Compute animation values if animation is enabled
           if (settings.rippleSettings.rippleAnimated) {
+            // Get animation state manager
+            final animManager = AnimationStateManager();
+
             if (settings.rippleSettings.rippleAnimOptions.mode ==
                 AnimationMode.pulse) {
-              // Use consistent pulse calculation for ripple effect
-              final double pulse = ShaderAnimationUtils.computePulseValue(
-                settings.rippleSettings.rippleAnimOptions,
-                animationValue,
-              );
-              timeValue = pulse;
+              // PULSE MODE - Apply pulse mode with parameter locking
 
-              // Apply pulse to ripple effect parameters
-              intensity = settings.rippleSettings.rippleIntensity * pulse;
-              speed = settings.rippleSettings.rippleSpeed * pulse;
-              opacity = settings.rippleSettings.rippleOpacity * pulse;
-              colorFactor = settings.rippleSettings.rippleColor * pulse;
+              // Animate intensity if unlocked
+              if (!animManager.isParameterLocked(
+                ParameterIds.rippleIntensity,
+              )) {
+                final double pulse = ShaderAnimationUtils.computePulseValue(
+                  settings.rippleSettings.rippleAnimOptions,
+                  animationValue,
+                );
+                intensity = settings.rippleSettings.rippleIntensity * pulse;
+                animManager.updateAnimatedValue(
+                  ParameterIds.rippleIntensity,
+                  intensity,
+                );
+              } else {
+                // If locked, keep the slider value
+                animManager.updateAnimatedValue(
+                  ParameterIds.rippleIntensity,
+                  intensity,
+                );
+              }
+
+              // Animate speed if unlocked
+              if (!animManager.isParameterLocked(ParameterIds.rippleSpeed)) {
+                final double pulse = ShaderAnimationUtils.computePulseValue(
+                  settings.rippleSettings.rippleAnimOptions,
+                  animationValue,
+                );
+                speed = settings.rippleSettings.rippleSpeed * pulse;
+                animManager.updateAnimatedValue(
+                  ParameterIds.rippleSpeed,
+                  speed,
+                );
+              } else {
+                // If locked, keep the slider value
+                animManager.updateAnimatedValue(
+                  ParameterIds.rippleSpeed,
+                  speed,
+                );
+              }
+
+              // Animate opacity if unlocked
+              if (!animManager.isParameterLocked(ParameterIds.rippleOpacity)) {
+                final double pulse = ShaderAnimationUtils.computePulseValue(
+                  settings.rippleSettings.rippleAnimOptions,
+                  animationValue,
+                );
+                opacity = settings.rippleSettings.rippleOpacity * pulse;
+                animManager.updateAnimatedValue(
+                  ParameterIds.rippleOpacity,
+                  opacity,
+                );
+              } else {
+                // If locked, keep the slider value
+                animManager.updateAnimatedValue(
+                  ParameterIds.rippleOpacity,
+                  opacity,
+                );
+              }
+
+              // Animate color factor if unlocked
+              if (!animManager.isParameterLocked(ParameterIds.rippleColor)) {
+                final double pulse = ShaderAnimationUtils.computePulseValue(
+                  settings.rippleSettings.rippleAnimOptions,
+                  animationValue,
+                );
+                colorFactor = settings.rippleSettings.rippleColor * pulse;
+                animManager.updateAnimatedValue(
+                  ParameterIds.rippleColor,
+                  colorFactor,
+                );
+              } else {
+                // If locked, keep the slider value
+                animManager.updateAnimatedValue(
+                  ParameterIds.rippleColor,
+                  colorFactor,
+                );
+              }
+
+              // For other parameters like size, dropCount, seed, etc., we only need to
+              // animate them if they would make sense to animate in a pulse pattern
+              // For now, we'll keep them static
+
+              timeValue =
+                  animationValue; // Keep using the original animation value for time
             } else {
-              // For non-pulse modes, use the standard animation utilities
-              final double animValue =
-                  ShaderAnimationUtils.computeAnimatedValue(
-                    settings.rippleSettings.rippleAnimOptions,
-                    animationValue,
-                  );
-              timeValue = animValue;
+              // RANDOMIZED MODE - Apply randomized mode with parameter locking
 
-              // Apply animation to ripple effect parameters
-              intensity = settings.rippleSettings.rippleIntensity * animValue;
-              speed = settings.rippleSettings.rippleSpeed * animValue;
-              opacity = settings.rippleSettings.rippleOpacity * animValue;
-              colorFactor = settings.rippleSettings.rippleColor * animValue;
+              // Animate intensity if unlocked
+              if (!animManager.isParameterLocked(
+                ParameterIds.rippleIntensity,
+              )) {
+                intensity =
+                    ShaderAnimationUtils.computeRandomizedParameterValue(
+                      settings.rippleSettings.rippleIntensity,
+                      settings.rippleSettings.rippleAnimOptions,
+                      animationValue,
+                      isLocked: animManager.isParameterLocked(
+                        ParameterIds.rippleIntensity,
+                      ),
+                      minValue: 0.0,
+                      maxValue: 1.0,
+                      parameterId: ParameterIds.rippleIntensity,
+                    );
+                animManager.updateAnimatedValue(
+                  ParameterIds.rippleIntensity,
+                  intensity,
+                );
+              } else {
+                // If locked, keep the slider value
+                animManager.updateAnimatedValue(
+                  ParameterIds.rippleIntensity,
+                  intensity,
+                );
+              }
+
+              // Animate speed if unlocked
+              if (!animManager.isParameterLocked(ParameterIds.rippleSpeed)) {
+                speed = ShaderAnimationUtils.computeRandomizedParameterValue(
+                  settings.rippleSettings.rippleSpeed,
+                  settings.rippleSettings.rippleAnimOptions,
+                  animationValue,
+                  isLocked: animManager.isParameterLocked(
+                    ParameterIds.rippleSpeed,
+                  ),
+                  minValue: 0.0,
+                  maxValue: 5.0,
+                  parameterId: ParameterIds.rippleSpeed,
+                );
+                animManager.updateAnimatedValue(
+                  ParameterIds.rippleSpeed,
+                  speed,
+                );
+              } else {
+                // If locked, keep the slider value
+                animManager.updateAnimatedValue(
+                  ParameterIds.rippleSpeed,
+                  speed,
+                );
+              }
+
+              // Animate opacity if unlocked
+              if (!animManager.isParameterLocked(ParameterIds.rippleOpacity)) {
+                opacity = ShaderAnimationUtils.computeRandomizedParameterValue(
+                  settings.rippleSettings.rippleOpacity,
+                  settings.rippleSettings.rippleAnimOptions,
+                  animationValue,
+                  isLocked: animManager.isParameterLocked(
+                    ParameterIds.rippleOpacity,
+                  ),
+                  minValue: 0.0,
+                  maxValue: 1.0,
+                  parameterId: ParameterIds.rippleOpacity,
+                );
+                animManager.updateAnimatedValue(
+                  ParameterIds.rippleOpacity,
+                  opacity,
+                );
+              } else {
+                // If locked, keep the slider value
+                animManager.updateAnimatedValue(
+                  ParameterIds.rippleOpacity,
+                  opacity,
+                );
+              }
+
+              // Animate color factor if unlocked
+              if (!animManager.isParameterLocked(ParameterIds.rippleColor)) {
+                colorFactor =
+                    ShaderAnimationUtils.computeRandomizedParameterValue(
+                      settings.rippleSettings.rippleColor,
+                      settings.rippleSettings.rippleAnimOptions,
+                      animationValue,
+                      isLocked: animManager.isParameterLocked(
+                        ParameterIds.rippleColor,
+                      ),
+                      minValue: 0.0,
+                      maxValue: 1.0,
+                      parameterId: ParameterIds.rippleColor,
+                    );
+                animManager.updateAnimatedValue(
+                  ParameterIds.rippleColor,
+                  colorFactor,
+                );
+              } else {
+                // If locked, keep the slider value
+                animManager.updateAnimatedValue(
+                  ParameterIds.rippleColor,
+                  colorFactor,
+                );
+              }
+
+              // For randomized mode, we can also animate some of the other parameters
+              // Animate ripple size if unlocked (note: we're using 1.0 - size in the shader)
+              if (!animManager.isParameterLocked(ParameterIds.rippleSize)) {
+                double rawSize =
+                    ShaderAnimationUtils.computeRandomizedParameterValue(
+                      settings.rippleSettings.rippleSize,
+                      settings.rippleSettings.rippleAnimOptions,
+                      animationValue,
+                      isLocked: animManager.isParameterLocked(
+                        ParameterIds.rippleSize,
+                      ),
+                      minValue: 0.0,
+                      maxValue: 1.0,
+                      parameterId: ParameterIds.rippleSize,
+                    );
+                rippleSize = 1.0 - rawSize; // Invert for shader
+                animManager.updateAnimatedValue(
+                  ParameterIds.rippleSize,
+                  settings.rippleSettings.rippleSize,
+                ); // Store original value
+              } else {
+                // If locked, keep the slider value
+                animManager.updateAnimatedValue(
+                  ParameterIds.rippleSize,
+                  settings.rippleSettings.rippleSize,
+                );
+              }
+
+              timeValue =
+                  animationValue; // Keep using the original animation value for time
             }
+          } else {
+            // Clear animated values when animation is disabled
+            final animManager = AnimationStateManager();
+            animManager.clearAnimatedValue(ParameterIds.rippleIntensity);
+            animManager.clearAnimatedValue(ParameterIds.rippleSize);
+            animManager.clearAnimatedValue(ParameterIds.rippleSpeed);
+            animManager.clearAnimatedValue(ParameterIds.rippleOpacity);
+            animManager.clearAnimatedValue(ParameterIds.rippleColor);
           }
 
           // Set uniforms using size from canvas rather than constraints

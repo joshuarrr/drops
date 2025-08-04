@@ -1,4 +1,4 @@
-import 'dart:math' as math;
+// Removed unused math import
 import 'dart:developer' as developer;
 import 'dart:async';
 import 'dart:math';
@@ -13,6 +13,7 @@ import '../../models/animation_options.dart';
 import '../../utils/animation_utils.dart';
 import '../../models/presets_manager.dart';
 import '../../models/shader_effect.dart';
+import '../animation_state_manager.dart';
 import 'debug_flags.dart'; // Import the shared debug flag
 
 /// Custom rain effect shader widget
@@ -94,39 +95,275 @@ class RainEffectShader extends StatelessWidget {
 
               // Compute animation values if animation is enabled
               if (settings.rainSettings.rainAnimated) {
+                // Get animation state manager
+                final animManager = AnimationStateManager();
+
                 if (settings.rainSettings.rainAnimOptions.mode ==
                     AnimationMode.pulse) {
-                  // Use consistent pulse calculation for rain effect
-                  final double pulse = ShaderAnimationUtils.computePulseValue(
-                    settings.rainSettings.rainAnimOptions,
-                    animationValue,
-                  );
-                  timeValue = pulse;
+                  // PULSE MODE - Apply pulse mode with parameter locking
 
-                  // Apply pulse to all rain effect parameters
-                  fallSpeed = settings.rainSettings.fallSpeed * pulse;
-                  rainIntensity = settings.rainSettings.rainIntensity * pulse;
-                  dropSize = settings.rainSettings.dropSize * pulse;
-                  refraction = settings.rainSettings.refraction * pulse;
-                  trailIntensity = settings.rainSettings.trailIntensity * pulse;
+                  // Animate fall speed if unlocked
+                  if (!animManager.isParameterLocked(
+                    ParameterIds.rainFallSpeed,
+                  )) {
+                    final double pulse = ShaderAnimationUtils.computePulseValue(
+                      settings.rainSettings.rainAnimOptions,
+                      animationValue,
+                    );
+                    fallSpeed = settings.rainSettings.fallSpeed * pulse;
+                    animManager.updateAnimatedValue(
+                      ParameterIds.rainFallSpeed,
+                      fallSpeed,
+                    );
+                  } else {
+                    // If locked, keep the slider value
+                    animManager.updateAnimatedValue(
+                      ParameterIds.rainFallSpeed,
+                      fallSpeed,
+                    );
+                  }
+
+                  // Animate rain intensity if unlocked
+                  if (!animManager.isParameterLocked(
+                    ParameterIds.rainIntensity,
+                  )) {
+                    final double pulse = ShaderAnimationUtils.computePulseValue(
+                      settings.rainSettings.rainAnimOptions,
+                      animationValue,
+                    );
+                    rainIntensity = settings.rainSettings.rainIntensity * pulse;
+                    animManager.updateAnimatedValue(
+                      ParameterIds.rainIntensity,
+                      rainIntensity,
+                    );
+                  } else {
+                    // If locked, keep the slider value
+                    animManager.updateAnimatedValue(
+                      ParameterIds.rainIntensity,
+                      rainIntensity,
+                    );
+                  }
+
+                  // Animate drop size if unlocked
+                  if (!animManager.isParameterLocked(
+                    ParameterIds.rainDropSize,
+                  )) {
+                    final double pulse = ShaderAnimationUtils.computePulseValue(
+                      settings.rainSettings.rainAnimOptions,
+                      animationValue,
+                    );
+                    dropSize = settings.rainSettings.dropSize * pulse;
+                    animManager.updateAnimatedValue(
+                      ParameterIds.rainDropSize,
+                      dropSize,
+                    );
+                  } else {
+                    // If locked, keep the slider value
+                    animManager.updateAnimatedValue(
+                      ParameterIds.rainDropSize,
+                      dropSize,
+                    );
+                  }
+
+                  // Animate refraction if unlocked
+                  if (!animManager.isParameterLocked(
+                    ParameterIds.rainRefraction,
+                  )) {
+                    final double pulse = ShaderAnimationUtils.computePulseValue(
+                      settings.rainSettings.rainAnimOptions,
+                      animationValue,
+                    );
+                    refraction = settings.rainSettings.refraction * pulse;
+                    animManager.updateAnimatedValue(
+                      ParameterIds.rainRefraction,
+                      refraction,
+                    );
+                  } else {
+                    // If locked, keep the slider value
+                    animManager.updateAnimatedValue(
+                      ParameterIds.rainRefraction,
+                      refraction,
+                    );
+                  }
+
+                  // Animate trail intensity if unlocked
+                  if (!animManager.isParameterLocked(
+                    ParameterIds.rainTrailIntensity,
+                  )) {
+                    final double pulse = ShaderAnimationUtils.computePulseValue(
+                      settings.rainSettings.rainAnimOptions,
+                      animationValue,
+                    );
+                    trailIntensity =
+                        settings.rainSettings.trailIntensity * pulse;
+                    animManager.updateAnimatedValue(
+                      ParameterIds.rainTrailIntensity,
+                      trailIntensity,
+                    );
+                  } else {
+                    // If locked, keep the slider value
+                    animManager.updateAnimatedValue(
+                      ParameterIds.rainTrailIntensity,
+                      trailIntensity,
+                    );
+                  }
+
+                  timeValue =
+                      animationValue; // Keep using the original animation value for time
                 } else {
-                  // For non-pulse modes, use the standard animation utilities
-                  final double animValue =
-                      ShaderAnimationUtils.computeAnimatedValue(
-                        settings.rainSettings.rainAnimOptions,
-                        animationValue,
-                      );
-                  timeValue = animValue;
+                  // RANDOMIZED MODE - Apply randomized mode with parameter locking
 
-                  // Apply animation to all rain effect parameters
-                  fallSpeed = settings.rainSettings.fallSpeed * animValue;
-                  rainIntensity =
-                      settings.rainSettings.rainIntensity * animValue;
-                  dropSize = settings.rainSettings.dropSize * animValue;
-                  refraction = settings.rainSettings.refraction * animValue;
-                  trailIntensity =
-                      settings.rainSettings.trailIntensity * animValue;
+                  // Animate fall speed if unlocked
+                  if (!animManager.isParameterLocked(
+                    ParameterIds.rainFallSpeed,
+                  )) {
+                    fallSpeed =
+                        ShaderAnimationUtils.computeRandomizedParameterValue(
+                          settings.rainSettings.fallSpeed,
+                          settings.rainSettings.rainAnimOptions,
+                          animationValue,
+                          isLocked: animManager.isParameterLocked(
+                            ParameterIds.rainFallSpeed,
+                          ),
+                          minValue: 0.0,
+                          maxValue: 2.0,
+                          parameterId: ParameterIds.rainFallSpeed,
+                        );
+                    animManager.updateAnimatedValue(
+                      ParameterIds.rainFallSpeed,
+                      fallSpeed,
+                    );
+                  } else {
+                    // If locked, keep the slider value
+                    animManager.updateAnimatedValue(
+                      ParameterIds.rainFallSpeed,
+                      fallSpeed,
+                    );
+                  }
+
+                  // Animate rain intensity if unlocked
+                  if (!animManager.isParameterLocked(
+                    ParameterIds.rainIntensity,
+                  )) {
+                    rainIntensity =
+                        ShaderAnimationUtils.computeRandomizedParameterValue(
+                          settings.rainSettings.rainIntensity,
+                          settings.rainSettings.rainAnimOptions,
+                          animationValue,
+                          isLocked: animManager.isParameterLocked(
+                            ParameterIds.rainIntensity,
+                          ),
+                          minValue: 0.0,
+                          maxValue: 1.0,
+                          parameterId: ParameterIds.rainIntensity,
+                        );
+                    animManager.updateAnimatedValue(
+                      ParameterIds.rainIntensity,
+                      rainIntensity,
+                    );
+                  } else {
+                    // If locked, keep the slider value
+                    animManager.updateAnimatedValue(
+                      ParameterIds.rainIntensity,
+                      rainIntensity,
+                    );
+                  }
+
+                  // Animate drop size if unlocked
+                  if (!animManager.isParameterLocked(
+                    ParameterIds.rainDropSize,
+                  )) {
+                    dropSize =
+                        ShaderAnimationUtils.computeRandomizedParameterValue(
+                          settings.rainSettings.dropSize,
+                          settings.rainSettings.rainAnimOptions,
+                          animationValue,
+                          isLocked: animManager.isParameterLocked(
+                            ParameterIds.rainDropSize,
+                          ),
+                          minValue: 0.0,
+                          maxValue: 1.0,
+                          parameterId: ParameterIds.rainDropSize,
+                        );
+                    animManager.updateAnimatedValue(
+                      ParameterIds.rainDropSize,
+                      dropSize,
+                    );
+                  } else {
+                    // If locked, keep the slider value
+                    animManager.updateAnimatedValue(
+                      ParameterIds.rainDropSize,
+                      dropSize,
+                    );
+                  }
+
+                  // Animate refraction if unlocked
+                  if (!animManager.isParameterLocked(
+                    ParameterIds.rainRefraction,
+                  )) {
+                    refraction =
+                        ShaderAnimationUtils.computeRandomizedParameterValue(
+                          settings.rainSettings.refraction,
+                          settings.rainSettings.rainAnimOptions,
+                          animationValue,
+                          isLocked: animManager.isParameterLocked(
+                            ParameterIds.rainRefraction,
+                          ),
+                          minValue: 0.0,
+                          maxValue: 1.0,
+                          parameterId: ParameterIds.rainRefraction,
+                        );
+                    animManager.updateAnimatedValue(
+                      ParameterIds.rainRefraction,
+                      refraction,
+                    );
+                  } else {
+                    // If locked, keep the slider value
+                    animManager.updateAnimatedValue(
+                      ParameterIds.rainRefraction,
+                      refraction,
+                    );
+                  }
+
+                  // Animate trail intensity if unlocked
+                  if (!animManager.isParameterLocked(
+                    ParameterIds.rainTrailIntensity,
+                  )) {
+                    trailIntensity =
+                        ShaderAnimationUtils.computeRandomizedParameterValue(
+                          settings.rainSettings.trailIntensity,
+                          settings.rainSettings.rainAnimOptions,
+                          animationValue,
+                          isLocked: animManager.isParameterLocked(
+                            ParameterIds.rainTrailIntensity,
+                          ),
+                          minValue: 0.0,
+                          maxValue: 1.0,
+                          parameterId: ParameterIds.rainTrailIntensity,
+                        );
+                    animManager.updateAnimatedValue(
+                      ParameterIds.rainTrailIntensity,
+                      trailIntensity,
+                    );
+                  } else {
+                    // If locked, keep the slider value
+                    animManager.updateAnimatedValue(
+                      ParameterIds.rainTrailIntensity,
+                      trailIntensity,
+                    );
+                  }
+
+                  timeValue =
+                      animationValue; // Keep using the original animation value for time
                 }
+              } else {
+                // Clear animated values when animation is disabled
+                final animManager = AnimationStateManager();
+                animManager.clearAnimatedValue(ParameterIds.rainFallSpeed);
+                animManager.clearAnimatedValue(ParameterIds.rainIntensity);
+                animManager.clearAnimatedValue(ParameterIds.rainDropSize);
+                animManager.clearAnimatedValue(ParameterIds.rainRefraction);
+                animManager.clearAnimatedValue(ParameterIds.rainTrailIntensity);
               }
 
               // CRITICAL FIX: Special handling for text content

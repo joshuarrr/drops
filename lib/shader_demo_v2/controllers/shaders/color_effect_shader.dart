@@ -1,4 +1,4 @@
-import 'dart:math' as math;
+// Removed unused math import
 import 'dart:developer' as developer;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -7,9 +7,17 @@ import 'package:flutter_shaders/flutter_shaders.dart';
 import '../../models/effect_settings.dart';
 import '../../models/animation_options.dart';
 import '../../utils/animation_utils.dart';
+import '../animation_state_manager.dart';
 
 /// Controls debug logging for shaders
 bool enableShaderDebugLogs = true;
+
+/// Controls animation debug logging (separate from general shader logs)
+bool enableAnimationDebugLogs = false;
+
+/// Throttle animation logging to avoid excessive output
+DateTime _lastAnimLogTime = DateTime.now().subtract(const Duration(seconds: 1));
+const Duration _animLogThrottleInterval = Duration(milliseconds: 500);
 
 /// Custom color effect shader widget
 class ColorEffectShader extends StatelessWidget {
@@ -102,20 +110,8 @@ class ColorEffectShader extends StatelessWidget {
       );
     }
 
-    // Convenience aliases so the helper functions are easily accessible.
-    final AnimationOptions colorOpts = settings.colorSettings.colorAnimOptions;
-    final AnimationOptions overlayOpts =
-        settings.colorSettings.overlayAnimOptions;
-
-    // Pre-compute animated values for HSL and Overlay independently.
-    final double hslAnimValue = ShaderAnimationUtils.computeAnimatedValue(
-      colorOpts,
-      animationValue,
-    );
-    final double overlayAnimValue = ShaderAnimationUtils.computeAnimatedValue(
-      overlayOpts,
-      animationValue,
-    );
+    // We'll compute the animation values individually for each parameter
+    // when needed rather than using global HSL and overlay animation values
 
     // Use LayoutBuilder to ensure consistent sizing
     return LayoutBuilder(
@@ -142,24 +138,144 @@ class ColorEffectShader extends StatelessWidget {
                 double lightness = settings.colorSettings.lightness;
 
                 if (settings.colorSettings.colorAnimated) {
-                  // V3-style direct animation approach
-                  // This creates a clear visual oscillation that's easy to see
-                  final double animFactor = (math.sin(
-                    animationValue * math.pi,
-                  )).abs();
+                  // Get animation state manager
+                  final animManager = AnimationStateManager();
 
-                  // SUPER EXTREME ANIMATION: Force maximally visible changes
-                  // Directly use animation value for hue to cycle through all colors
-                  hue = animationValue; // Cycle through all colors (0-1)
+                  // Animate hue if unlocked
+                  if (!animManager.isParameterLocked(ParameterIds.colorHue)) {
+                    if (enableAnimationDebugLogs) {
+                      final now = DateTime.now();
+                      if (now.difference(_lastAnimLogTime) >
+                          _animLogThrottleInterval) {
+                        _lastAnimLogTime = now;
+                        print(
+                          "[DEBUG] Animating color hue, mode: ${settings.colorSettings.colorAnimOptions.mode}",
+                        );
+                      }
+                    }
 
-                  // Maximum saturation and medium lightness for most vibrant colors
-                  saturation = 1.0; // Maximum saturation
-                  lightness = 0.5; // Medium lightness for optimal vibrancy
+                    if (settings.colorSettings.colorAnimOptions.mode ==
+                        AnimationMode.pulse) {
+                      // Use pulse animation - oscillate between slider value and zero
+                      final double animValue =
+                          ShaderAnimationUtils.computePulseValue(
+                            settings.colorSettings.colorAnimOptions,
+                            animationValue,
+                          );
+                      hue = settings.colorSettings.hue * animValue;
+                    } else {
+                      // Use randomized animation - animate across the full hue range (0-1)
+                      hue =
+                          ShaderAnimationUtils.computeRandomizedParameterValue(
+                            settings.colorSettings.hue,
+                            settings.colorSettings.colorAnimOptions,
+                            animationValue,
+                            isLocked: animManager.isParameterLocked(
+                              ParameterIds.colorHue,
+                            ),
+                            minValue: 0.0,
+                            maxValue: 1.0,
+                            parameterId: ParameterIds.colorHue,
+                          );
+                    }
+                    // Update animation manager with current animated value
+                    animManager.updateAnimatedValue(ParameterIds.colorHue, hue);
+                  } else {
+                    // If locked, just update the animation manager for UI consistency
+                    animManager.updateAnimatedValue(ParameterIds.colorHue, hue);
+                  }
 
-                  // Log the values for debugging
-                  print(
-                    "[V3-STYLE] Color animation: value=$animationValue, hue=$hue, saturation=$saturation, lightness=$lightness",
-                  );
+                  // Animate saturation if unlocked
+                  if (!animManager.isParameterLocked(
+                    ParameterIds.colorSaturation,
+                  )) {
+                    if (settings.colorSettings.colorAnimOptions.mode ==
+                        AnimationMode.pulse) {
+                      final double animValue =
+                          ShaderAnimationUtils.computePulseValue(
+                            settings.colorSettings.colorAnimOptions,
+                            animationValue,
+                          );
+                      saturation =
+                          settings.colorSettings.saturation * animValue;
+                    } else {
+                      saturation =
+                          ShaderAnimationUtils.computeRandomizedParameterValue(
+                            settings.colorSettings.saturation,
+                            settings.colorSettings.colorAnimOptions,
+                            animationValue,
+                            isLocked: animManager.isParameterLocked(
+                              ParameterIds.colorSaturation,
+                            ),
+                            minValue: 0.0,
+                            maxValue: 1.0,
+                            parameterId: ParameterIds.colorSaturation,
+                          );
+                    }
+                    animManager.updateAnimatedValue(
+                      ParameterIds.colorSaturation,
+                      saturation,
+                    );
+                  } else {
+                    animManager.updateAnimatedValue(
+                      ParameterIds.colorSaturation,
+                      saturation,
+                    );
+                  }
+
+                  // Animate lightness if unlocked
+                  if (!animManager.isParameterLocked(
+                    ParameterIds.colorLightness,
+                  )) {
+                    if (settings.colorSettings.colorAnimOptions.mode ==
+                        AnimationMode.pulse) {
+                      final double animValue =
+                          ShaderAnimationUtils.computePulseValue(
+                            settings.colorSettings.colorAnimOptions,
+                            animationValue,
+                          );
+                      lightness = settings.colorSettings.lightness * animValue;
+                    } else {
+                      lightness =
+                          ShaderAnimationUtils.computeRandomizedParameterValue(
+                            settings.colorSettings.lightness,
+                            settings.colorSettings.colorAnimOptions,
+                            animationValue,
+                            isLocked: animManager.isParameterLocked(
+                              ParameterIds.colorLightness,
+                            ),
+                            minValue: 0.0,
+                            maxValue: 1.0,
+                            parameterId: ParameterIds.colorLightness,
+                          );
+                    }
+                    animManager.updateAnimatedValue(
+                      ParameterIds.colorLightness,
+                      lightness,
+                    );
+                  } else {
+                    animManager.updateAnimatedValue(
+                      ParameterIds.colorLightness,
+                      lightness,
+                    );
+                  }
+
+                  if (enableAnimationDebugLogs) {
+                    final now = DateTime.now();
+                    if (now.difference(_lastAnimLogTime) >
+                        _animLogThrottleInterval) {
+                      _lastAnimLogTime = now;
+                      print(
+                        "[DEBUG] Color animation: hue=$hue, saturation=$saturation, lightness=$lightness",
+                      );
+                    }
+                  }
+                } else {
+                  // Clear animated values when animation is disabled
+                  final animManager = AnimationStateManager();
+                  animManager.clearAnimatedValue(ParameterIds.colorHue);
+                  animManager.clearAnimatedValue(ParameterIds.colorSaturation);
+                  animManager.clearAnimatedValue(ParameterIds.colorLightness);
                 }
 
                 // Determine overlay values (may animate independently)
@@ -169,25 +285,152 @@ class ColorEffectShader extends StatelessWidget {
                 double overlayOpacity = settings.colorSettings.overlayOpacity;
 
                 if (settings.colorSettings.overlayAnimated) {
-                  // V3-style direct animation approach
-                  // This creates a clear visual oscillation that's easy to see
-                  final double animFactor = (math.sin(
-                    animationValue * math.pi,
-                  )).abs();
+                  // Get animation state manager
+                  final animManager = AnimationStateManager();
 
-                  // SUPER EXTREME ANIMATION: Force maximally visible overlay changes
-                  // Use animation value with offset for overlay hue
-                  overlayHue =
-                      (animationValue + 0.5) % 1.0; // Complementary color
+                  // Animate overlay hue if unlocked
+                  if (!animManager.isParameterLocked(ParameterIds.overlayHue)) {
+                    if (enableAnimationDebugLogs) {
+                      final now = DateTime.now();
+                      if (now.difference(_lastAnimLogTime) >
+                          _animLogThrottleInterval) {
+                        _lastAnimLogTime = now;
+                        print(
+                          "[DEBUG] Animating overlay hue, mode: ${settings.colorSettings.overlayAnimOptions.mode}",
+                        );
+                      }
+                    }
 
-                  // Maximum intensity and pulsing opacity for most visible effect
-                  overlayIntensity = 1.0; // Maximum intensity
-                  overlayOpacity = animFactor; // Pulsing opacity
+                    if (settings.colorSettings.overlayAnimOptions.mode ==
+                        AnimationMode.pulse) {
+                      // Use pulse animation - oscillate between slider value and zero
+                      final double animValue =
+                          ShaderAnimationUtils.computePulseValue(
+                            settings.colorSettings.overlayAnimOptions,
+                            animationValue,
+                          );
+                      overlayHue =
+                          settings.colorSettings.overlayHue * animValue;
+                    } else {
+                      // Use randomized animation - animate across the full hue range (0-1)
+                      overlayHue =
+                          ShaderAnimationUtils.computeRandomizedParameterValue(
+                            settings.colorSettings.overlayHue,
+                            settings.colorSettings.overlayAnimOptions,
+                            animationValue,
+                            isLocked: animManager.isParameterLocked(
+                              ParameterIds.overlayHue,
+                            ),
+                            minValue: 0.0,
+                            maxValue: 1.0,
+                            parameterId: ParameterIds.overlayHue,
+                          );
+                    }
+                    // Update animation manager with current animated value
+                    animManager.updateAnimatedValue(
+                      ParameterIds.overlayHue,
+                      overlayHue,
+                    );
+                  } else {
+                    // If locked, just update the animation manager for UI consistency
+                    animManager.updateAnimatedValue(
+                      ParameterIds.overlayHue,
+                      overlayHue,
+                    );
+                  }
 
-                  // Log the values for debugging
-                  print(
-                    "[V3-STYLE] Overlay animation: value=$animationValue, hue=$overlayHue, intensity=$overlayIntensity, opacity=$overlayOpacity",
-                  );
+                  // Animate overlay intensity if unlocked
+                  if (!animManager.isParameterLocked(
+                    ParameterIds.overlayIntensity,
+                  )) {
+                    if (settings.colorSettings.overlayAnimOptions.mode ==
+                        AnimationMode.pulse) {
+                      final double animValue =
+                          ShaderAnimationUtils.computePulseValue(
+                            settings.colorSettings.overlayAnimOptions,
+                            animationValue,
+                          );
+                      overlayIntensity =
+                          settings.colorSettings.overlayIntensity * animValue;
+                    } else {
+                      overlayIntensity =
+                          ShaderAnimationUtils.computeRandomizedParameterValue(
+                            settings.colorSettings.overlayIntensity,
+                            settings.colorSettings.overlayAnimOptions,
+                            animationValue,
+                            isLocked: animManager.isParameterLocked(
+                              ParameterIds.overlayIntensity,
+                            ),
+                            minValue: 0.0,
+                            maxValue: 1.0,
+                            parameterId: ParameterIds.overlayIntensity,
+                          );
+                    }
+                    animManager.updateAnimatedValue(
+                      ParameterIds.overlayIntensity,
+                      overlayIntensity,
+                    );
+                  } else {
+                    animManager.updateAnimatedValue(
+                      ParameterIds.overlayIntensity,
+                      overlayIntensity,
+                    );
+                  }
+
+                  // Animate overlay opacity if unlocked
+                  if (!animManager.isParameterLocked(
+                    ParameterIds.overlayOpacity,
+                  )) {
+                    if (settings.colorSettings.overlayAnimOptions.mode ==
+                        AnimationMode.pulse) {
+                      final double animValue =
+                          ShaderAnimationUtils.computePulseValue(
+                            settings.colorSettings.overlayAnimOptions,
+                            animationValue,
+                          );
+                      overlayOpacity =
+                          settings.colorSettings.overlayOpacity * animValue;
+                    } else {
+                      overlayOpacity =
+                          ShaderAnimationUtils.computeRandomizedParameterValue(
+                            settings.colorSettings.overlayOpacity,
+                            settings.colorSettings.overlayAnimOptions,
+                            animationValue,
+                            isLocked: animManager.isParameterLocked(
+                              ParameterIds.overlayOpacity,
+                            ),
+                            minValue: 0.0,
+                            maxValue: 1.0,
+                            parameterId: ParameterIds.overlayOpacity,
+                          );
+                    }
+                    animManager.updateAnimatedValue(
+                      ParameterIds.overlayOpacity,
+                      overlayOpacity,
+                    );
+                  } else {
+                    animManager.updateAnimatedValue(
+                      ParameterIds.overlayOpacity,
+                      overlayOpacity,
+                    );
+                  }
+
+                  if (enableAnimationDebugLogs) {
+                    final now = DateTime.now();
+                    if (now.difference(_lastAnimLogTime) >
+                        _animLogThrottleInterval) {
+                      _lastAnimLogTime = now;
+                      print(
+                        "[DEBUG] Overlay animation: hue=$overlayHue, intensity=$overlayIntensity, opacity=$overlayOpacity",
+                      );
+                    }
+                  }
+                } else {
+                  // Clear animated values when animation is disabled
+                  final animManager = AnimationStateManager();
+                  animManager.clearAnimatedValue(ParameterIds.overlayHue);
+                  animManager.clearAnimatedValue(ParameterIds.overlayIntensity);
+                  animManager.clearAnimatedValue(ParameterIds.overlayOpacity);
                 }
 
                 // If preserveTransparency is enabled, we need to avoid applying color overlays
@@ -222,17 +465,8 @@ class ColorEffectShader extends StatelessWidget {
                       "overlayOpacity=$overlayOpacity",
                 );
 
-                // V3-style animation is always enabled
-                // This ensures the animation is always visible and consistent
-
-                // We've already set the values above, so no need to override again
-                // Just log that we're using the V3 approach
-                if (settings.colorSettings.colorAnimated ||
-                    settings.colorSettings.overlayAnimated) {
-                  print(
-                    "[V3-STYLE] Using direct animation values from V3 approach",
-                  );
-                }
+                // Animation has been properly applied above
+                // No need for any special handling here
 
                 shader.setFloat(0, timeValue);
                 shader.setFloat(1, hue);

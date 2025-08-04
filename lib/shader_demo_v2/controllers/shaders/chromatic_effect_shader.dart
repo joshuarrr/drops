@@ -1,4 +1,4 @@
-import 'dart:math' as math;
+// Removed unused math import
 import 'dart:developer' as developer;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -8,7 +8,7 @@ import '../../models/effect_settings.dart';
 import '../../models/animation_options.dart';
 import '../../utils/animation_utils.dart';
 import '../animation_state_manager.dart';
-import 'debug_flags.dart'; // Import the shared debug flag
+// Removed unused debug_flags.dart import
 
 /// Controls debug logging for shaders (external reference)
 bool enableShaderDebugLogs = false;
@@ -91,69 +91,203 @@ class ChromaticEffectShader extends StatelessWidget {
             // Apply animation based on the current animation mode
             if (settings.chromaticSettings.animOptions.mode ==
                 AnimationMode.pulse) {
-              // Use consistent pulse calculation for chromatic effect
-              final double pulse = ShaderAnimationUtils.computePulseValue(
-                settings.chromaticSettings.animOptions,
-                animationValue,
-              );
+              // Apply pulse mode with parameter locking
 
-              // Apply pulse to all chromatic effect parameters and report animated values
-              intensity = settings.chromaticSettings.intensity * pulse;
-              amount = settings.chromaticSettings.amount * pulse;
-              spread = settings.chromaticSettings.spread * pulse;
-              // Angle can animate through full rotation
-              angle =
-                  (settings.chromaticSettings.angle + (pulse * 360.0)) % 360.0;
-
-              animManager.updateAnimatedValue(
+              // Animate intensity if unlocked
+              if (!animManager.isParameterLocked(
                 ParameterIds.chromaticIntensity,
-                intensity,
-              );
-              animManager.updateAnimatedValue(
+              )) {
+                final double pulse = ShaderAnimationUtils.computePulseValue(
+                  settings.chromaticSettings.animOptions,
+                  animationValue,
+                );
+                intensity = settings.chromaticSettings.intensity * pulse;
+                animManager.updateAnimatedValue(
+                  ParameterIds.chromaticIntensity,
+                  intensity,
+                );
+              } else {
+                // If locked, keep the slider value
+                animManager.updateAnimatedValue(
+                  ParameterIds.chromaticIntensity,
+                  intensity,
+                );
+              }
+
+              // Animate amount if unlocked
+              if (!animManager.isParameterLocked(
                 ParameterIds.chromaticAmount,
-                amount,
-              );
-              animManager.updateAnimatedValue(
-                ParameterIds.chromaticAngle,
-                angle,
-              );
-              animManager.updateAnimatedValue(
+              )) {
+                final double pulse = ShaderAnimationUtils.computePulseValue(
+                  settings.chromaticSettings.animOptions,
+                  animationValue,
+                );
+                amount = settings.chromaticSettings.amount * pulse;
+                animManager.updateAnimatedValue(
+                  ParameterIds.chromaticAmount,
+                  amount,
+                );
+              } else {
+                // If locked, keep the slider value
+                animManager.updateAnimatedValue(
+                  ParameterIds.chromaticAmount,
+                  amount,
+                );
+              }
+
+              // Animate spread if unlocked
+              if (!animManager.isParameterLocked(
                 ParameterIds.chromaticSpread,
-                spread,
-              );
+              )) {
+                final double pulse = ShaderAnimationUtils.computePulseValue(
+                  settings.chromaticSettings.animOptions,
+                  animationValue,
+                );
+                spread = settings.chromaticSettings.spread * pulse;
+                animManager.updateAnimatedValue(
+                  ParameterIds.chromaticSpread,
+                  spread,
+                );
+              } else {
+                // If locked, keep the slider value
+                animManager.updateAnimatedValue(
+                  ParameterIds.chromaticSpread,
+                  spread,
+                );
+              }
+
+              // Animate angle if unlocked (rotation animation)
+              if (!animManager.isParameterLocked(ParameterIds.chromaticAngle)) {
+                final double pulse = ShaderAnimationUtils.computePulseValue(
+                  settings.chromaticSettings.animOptions,
+                  animationValue,
+                );
+                // For angle, we do rotation animation rather than pulsing
+                angle =
+                    (settings.chromaticSettings.angle + (pulse * 360.0)) %
+                    360.0;
+                animManager.updateAnimatedValue(
+                  ParameterIds.chromaticAngle,
+                  angle,
+                );
+              } else {
+                // If locked, keep the slider value
+                animManager.updateAnimatedValue(
+                  ParameterIds.chromaticAngle,
+                  angle,
+                );
+              }
             } else {
-              // For non-pulse modes, use the standard animation utilities
-              final double animValue =
-                  ShaderAnimationUtils.computeAnimatedValue(
-                    settings.chromaticSettings.animOptions,
-                    animationValue,
-                  );
+              // Randomized animation mode with parameter locking
 
-              // Apply animation to all chromatic effect parameters and report values
-              intensity = settings.chromaticSettings.intensity * animValue;
-              amount = settings.chromaticSettings.amount * animValue;
-              spread = settings.chromaticSettings.spread * animValue;
-              // Angle can animate through full rotation
-              angle =
-                  (settings.chromaticSettings.angle + (animValue * 360.0)) %
-                  360.0;
-
-              animManager.updateAnimatedValue(
+              // Animate intensity if unlocked
+              if (!animManager.isParameterLocked(
                 ParameterIds.chromaticIntensity,
-                intensity,
-              );
-              animManager.updateAnimatedValue(
+              )) {
+                intensity =
+                    ShaderAnimationUtils.computeRandomizedParameterValue(
+                      settings.chromaticSettings.intensity,
+                      settings.chromaticSettings.animOptions,
+                      animationValue,
+                      isLocked: animManager.isParameterLocked(
+                        ParameterIds.chromaticIntensity,
+                      ),
+                      minValue: 0.0,
+                      maxValue: 1.0,
+                      parameterId: ParameterIds.chromaticIntensity,
+                    );
+                animManager.updateAnimatedValue(
+                  ParameterIds.chromaticIntensity,
+                  intensity,
+                );
+              } else {
+                // If locked, keep the slider value
+                animManager.updateAnimatedValue(
+                  ParameterIds.chromaticIntensity,
+                  intensity,
+                );
+              }
+
+              // Animate amount if unlocked
+              if (!animManager.isParameterLocked(
                 ParameterIds.chromaticAmount,
-                amount,
-              );
-              animManager.updateAnimatedValue(
-                ParameterIds.chromaticAngle,
-                angle,
-              );
-              animManager.updateAnimatedValue(
+              )) {
+                amount = ShaderAnimationUtils.computeRandomizedParameterValue(
+                  settings.chromaticSettings.amount,
+                  settings.chromaticSettings.animOptions,
+                  animationValue,
+                  isLocked: animManager.isParameterLocked(
+                    ParameterIds.chromaticAmount,
+                  ),
+                  minValue: 0.0,
+                  maxValue: 20.0,
+                  parameterId: ParameterIds.chromaticAmount,
+                );
+                animManager.updateAnimatedValue(
+                  ParameterIds.chromaticAmount,
+                  amount,
+                );
+              } else {
+                // If locked, keep the slider value
+                animManager.updateAnimatedValue(
+                  ParameterIds.chromaticAmount,
+                  amount,
+                );
+              }
+
+              // Animate spread if unlocked
+              if (!animManager.isParameterLocked(
                 ParameterIds.chromaticSpread,
-                spread,
-              );
+              )) {
+                spread = ShaderAnimationUtils.computeRandomizedParameterValue(
+                  settings.chromaticSettings.spread,
+                  settings.chromaticSettings.animOptions,
+                  animationValue,
+                  isLocked: animManager.isParameterLocked(
+                    ParameterIds.chromaticSpread,
+                  ),
+                  minValue: 0.0,
+                  maxValue: 1.0,
+                  parameterId: ParameterIds.chromaticSpread,
+                );
+                animManager.updateAnimatedValue(
+                  ParameterIds.chromaticSpread,
+                  spread,
+                );
+              } else {
+                // If locked, keep the slider value
+                animManager.updateAnimatedValue(
+                  ParameterIds.chromaticSpread,
+                  spread,
+                );
+              }
+
+              // Animate angle if unlocked
+              if (!animManager.isParameterLocked(ParameterIds.chromaticAngle)) {
+                // For angle we want full rotation, so use a special approach
+                // We'll animate between 0 and 360 degrees
+                angle = ShaderAnimationUtils.computeRandomizedParameterValue(
+                  settings.chromaticSettings.angle,
+                  settings.chromaticSettings.animOptions,
+                  animationValue,
+                  isLocked: animManager.isParameterLocked(
+                    ParameterIds.chromaticAngle,
+                  ),
+                  minValue: 0.0,
+                  maxValue: 360.0,
+                  parameterId: ParameterIds.chromaticAngle,
+                );
+                animManager.updateAnimatedValue(
+                  ParameterIds.chromaticAngle,
+                  angle,
+                );
+              } else {
+                // If locked, keep the slider value
+                animManager.updateAnimatedValue(
+                  ParameterIds.chromaticAngle,
+                  angle,
+                );
+              }
             }
           } else {
             // Clear animated values when animation is disabled

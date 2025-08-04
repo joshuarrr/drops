@@ -188,5 +188,33 @@ class ParameterIds {
   static const String chromaticSpread = 'chromatic.spread';
   static const String chromaticIntensity = 'chromatic.intensity';
 
+  // Color HSL effect parameters
+  static const String colorHue = 'color.hue';
+  static const String colorSaturation = 'color.saturation';
+  static const String colorLightness = 'color.lightness';
+
+  // Color Overlay effect parameters
+  static const String overlayHue = 'overlay.hue';
+  static const String overlayIntensity = 'overlay.intensity';
+  static const String overlayOpacity = 'overlay.opacity';
+
+  // Rain effect parameters
+  static const String rainIntensity = 'rain.intensity';
+  static const String rainDropSize = 'rain.dropSize';
+  static const String rainFallSpeed = 'rain.fallSpeed';
+  static const String rainRefraction = 'rain.refraction';
+  static const String rainTrailIntensity = 'rain.trailIntensity';
+
+  // Ripple effect parameters
+  static const String rippleIntensity = 'ripple.intensity';
+  static const String rippleSize = 'ripple.size';
+  static const String rippleSpeed = 'ripple.speed';
+  static const String rippleOpacity = 'ripple.opacity';
+  static const String rippleColor = 'ripple.color';
+  static const String rippleDropCount = 'ripple.dropCount';
+  static const String rippleSeed = 'ripple.seed';
+  static const String rippleOvalness = 'ripple.ovalness';
+  static const String rippleRotation = 'ripple.rotation';
+
   // Add more effects as needed...
 }

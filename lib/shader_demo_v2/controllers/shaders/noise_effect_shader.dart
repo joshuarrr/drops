@@ -1,4 +1,4 @@
-import 'dart:math' as math;
+// Removed unused math import
 import 'dart:developer' as developer;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -210,9 +210,10 @@ class NoiseEffectShader extends StatelessWidget {
             settings.noiseSettings.noiseScale,
             settings.noiseSettings.noiseAnimOptions,
             animationValue,
-            isLocked: false,
+            isLocked: animManager.isParameterLocked(ParameterIds.noiseScale),
             minValue: 0.1,
             maxValue: 20.0,
+            parameterId: ParameterIds.noiseScale,
           );
           animManager.updateAnimatedValue(ParameterIds.noiseScale, noiseScale);
         }
@@ -227,9 +228,10 @@ class NoiseEffectShader extends StatelessWidget {
             settings.noiseSettings.noiseSpeed,
             settings.noiseSettings.noiseAnimOptions,
             animationValue,
-            isLocked: false,
+            isLocked: animManager.isParameterLocked(ParameterIds.noiseSpeed),
             minValue: 0.0,
             maxValue: 1.0,
+            parameterId: ParameterIds.noiseSpeed,
           );
           animManager.updateAnimatedValue(ParameterIds.noiseSpeed, noiseSpeed);
         }
@@ -247,9 +249,12 @@ class NoiseEffectShader extends StatelessWidget {
             settings.noiseSettings.colorIntensity,
             settings.noiseSettings.noiseAnimOptions,
             animationValue,
-            isLocked: false,
+            isLocked: animManager.isParameterLocked(
+              ParameterIds.colorIntensity,
+            ),
             minValue: 0.0,
             maxValue: 1.0,
+            parameterId: ParameterIds.colorIntensity,
           );
           animManager.updateAnimatedValue(
             ParameterIds.colorIntensity,
@@ -267,9 +272,10 @@ class NoiseEffectShader extends StatelessWidget {
             settings.noiseSettings.waveAmount,
             settings.noiseSettings.noiseAnimOptions,
             animationValue,
-            isLocked: false,
+            isLocked: animManager.isParameterLocked(ParameterIds.waveAmount),
             minValue: 0.0,
             maxValue: 0.1,
+            parameterId: ParameterIds.waveAmount,
           );
           animManager.updateAnimatedValue(ParameterIds.waveAmount, waveAmount);
         }
@@ -339,119 +345,4 @@ class NoiseEffectShader extends StatelessWidget {
   }
 }
 
-// Custom painter for static noise effect to avoid AnimatedSampler memory accumulation
-class _NoiseStaticPainter extends CustomPainter {
-  final ui.FragmentShader shader;
-  final ShaderSettings settings;
-  final double animationValue;
-  final bool preserveTransparency;
-  final bool isTextContent;
-
-  _NoiseStaticPainter({
-    required this.shader,
-    required this.settings,
-    required this.animationValue,
-    required this.preserveTransparency,
-    required this.isTextContent,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    try {
-      // For static noise, we need to render the shader with a static input
-      // Since we can't easily create an image synchronously, we'll use a different approach
-
-      // Create a minimal texture using a Picture rendered to the canvas directly
-      final recorder = ui.PictureRecorder();
-      final textureCanvas = Canvas(recorder);
-
-      // Create a simple white rectangle as our texture source
-      final texturePaint = Paint()..color = Colors.white;
-      textureCanvas.drawRect(
-        Rect.fromLTWH(0, 0, 64, 64), // Small texture is fine for noise
-        texturePaint,
-      );
-
-      final picture = recorder.endRecording();
-
-      // For now, let's render the static noise pattern manually since
-      // synchronous image creation is complex in Flutter
-      _renderStaticNoisePattern(canvas, size);
-
-      picture.dispose();
-    } catch (e) {
-      // Fallback to simple noise pattern
-      _renderStaticNoisePattern(canvas, size);
-    }
-  }
-
-  void _renderStaticNoisePattern(Canvas canvas, Size size) {
-    // Render a static noise pattern that resembles what the shader would produce
-    // but without needing an actual shader image input
-
-    final paint = Paint();
-
-    // Get noise settings
-    double colorIntensity = settings.noiseSettings.colorIntensity;
-    double waveAmount = settings.noiseSettings.waveAmount;
-    double noiseScale = settings.noiseSettings.noiseScale;
-
-    // Apply same adjustments as the main shader
-    if (isTextContent) {
-      colorIntensity = colorIntensity * 0.1;
-      waveAmount = waveAmount * 0.1;
-    } else if (preserveTransparency) {
-      colorIntensity = colorIntensity * 0.3;
-      waveAmount = waveAmount * 0.5;
-    }
-
-    // FIX A: Render wave effects even when color intensity is zero
-    // Render color-based noise effects if there's color intensity
-    if (colorIntensity > 0.0) {
-      // Create a subtle static noise effect
-      final random = math.Random(
-        42,
-      ); // Fixed seed for consistent static pattern
-
-      // Draw small noise dots across the surface
-      for (
-        int i = 0;
-        i < (size.width * size.height * noiseScale * 0.001).toInt();
-        i++
-      ) {
-        final x = random.nextDouble() * size.width;
-        final y = random.nextDouble() * size.height;
-
-        final alpha = (colorIntensity * 0.3 * random.nextDouble()).clamp(
-          0.0,
-          1.0,
-        );
-
-        paint.color = Color.fromRGBO(
-          242,
-          143,
-          202, // Noise color
-          alpha,
-        );
-
-        // Small dots for texture
-        canvas.drawCircle(
-          Offset(x, y),
-          (0.5 + random.nextDouble() * 1.0) * noiseScale,
-          paint,
-        );
-      }
-    }
-
-    // Render wave distortion effect independently of color intensity
-    if (waveAmount > 0.0) {
-      paint.color = Color.fromRGBO(242, 143, 202, waveAmount * 0.2);
-      canvas.drawRect(Offset.zero & size, paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return true;
-  }
-}
+// Removed unused _NoiseStaticPainter class
