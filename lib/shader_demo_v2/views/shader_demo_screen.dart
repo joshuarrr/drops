@@ -67,6 +67,9 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
   }
 
   Future<void> _initializeController() async {
+    // Disable effect caching to fix image update issues
+    EffectController.disableCaching();
+
     _shaderController = ShaderController();
     await _shaderController.initialize();
 
@@ -98,9 +101,24 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
     }
   }
 
-  /// Optimize animation controller based on whether any animations are actually active
+  /// Optimize animation controller and trigger UI update when settings change
   void _onShaderSettingsChanged() {
-    _updateAnimationControllerState();
+    // Force rebuild by calling setState
+    if (mounted) {
+      setState(() {
+        // Update animation controller state
+        _updateAnimationControllerState();
+
+        // Debug logging for settings changes
+        final settings = _shaderController.settings;
+        final imagePath = _shaderController.selectedImage;
+        print(
+          'SETTINGS CHANGED: imageEnabled=${settings.imageEnabled}, selectedImage=$imagePath',
+        );
+      });
+    } else {
+      _updateAnimationControllerState();
+    }
   }
 
   /// Start or stop animation controller based on whether any animations are active
@@ -313,8 +331,9 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
       final Widget contentWidget = _buildContentWidget(controller);
       return Positioned.fill(
         child: GestureDetector(
-          behavior: HitTestBehavior.translucent,
+          behavior: HitTestBehavior.opaque,
           onTap: () => controller.toggleControls(),
+          onLongPress: () {}, // Add empty handler to ensure events bubble up
           child: Container(
             color: Colors.black,
             // CRITICAL: Use V3's direct AnimatedBuilder approach
@@ -350,8 +369,9 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
         itemBuilder: (context, index) {
           final preset = navigatorOrder[index];
           return GestureDetector(
-            behavior: HitTestBehavior.translucent,
+            behavior: HitTestBehavior.opaque,
             onTap: () => controller.toggleControls(),
+            onLongPress: () {}, // Add empty handler to ensure events bubble up
             child: Container(
               color: Colors.black,
               // CRITICAL: Use V3's direct AnimatedBuilder approach for presets too
@@ -416,19 +436,26 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
     return _cachedContentWidget(cacheKey, controller);
   }
 
-  Widget? _lastContentWidget;
-  String? _lastContentCacheKey;
+  // Removed unused cache variables
 
   Widget _cachedContentWidget(String cacheKey, ShaderController controller) {
-    // Only rebuild content if cache key changed
-    if (_lastContentCacheKey == cacheKey && _lastContentWidget != null) {
-      return _lastContentWidget!;
-    }
+    // FIXED: Always rebuild content to ensure settings changes are reflected immediately
+    // Removed caching conditional to fix image visibility toggle and selection not updating
 
     Widget contentWidget;
+
+    // Add debug logging for image state
+    print(
+      'DEBUG IMAGE STATE: imageEnabled=${controller.settings.imageEnabled}, selectedImage=${controller.selectedImage}',
+    );
+
     if (controller.settings.imageEnabled) {
       // Use ImageContainer to properly handle fit/fill and margins
+      print(
+        'DEBUG: Creating ImageContainer with path: ${controller.selectedImage}',
+      );
       contentWidget = ImageContainer(
+        key: ValueKey('image-${controller.selectedImage}'),
         imagePath: controller.selectedImage,
         settings: controller.settings,
       );
@@ -444,8 +471,7 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
       );
     }
 
-    _lastContentWidget = contentWidget;
-    _lastContentCacheKey = cacheKey;
+    // Removed cache assignments to fix immediate updates
     return contentWidget;
   }
 

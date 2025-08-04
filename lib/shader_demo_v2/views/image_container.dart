@@ -16,13 +16,7 @@ class ImageContainer extends StatefulWidget {
 }
 
 class _ImageContainerState extends State<ImageContainer> {
-  // Cache the last built widget and the values that created it
-  Widget? _cachedWidget;
-  String? _lastImagePath;
-  bool? _lastFillScreen;
-  double? _lastMargin;
-  double? _lastScreenWidth;
-  double? _lastScreenHeight;
+  // Removed caching variables to ensure image toggling works correctly
 
   // Static logging control to reduce noise
   static int _logCount = 0;
@@ -40,16 +34,7 @@ class _ImageContainerState extends State<ImageContainer> {
             ? 0.0
             : widget.settings.textLayoutSettings.fitScreenMargin;
 
-        // Check if we can use cached widget
-        if (_cachedWidget != null &&
-            _lastImagePath == widget.imagePath &&
-            _lastFillScreen == fillScreen &&
-            _lastMargin == margin &&
-            _lastScreenWidth == screenWidth &&
-            _lastScreenHeight == screenHeight) {
-          // Return cached widget - no rebuild needed
-          return _cachedWidget!;
-        }
+        // Removed caching check to ensure image visibility toggle works correctly
 
         // Log only for debugging (very limited)
         if (_logCount < _maxLogs) {
@@ -69,31 +54,59 @@ class _ImageContainerState extends State<ImageContainer> {
             : screenHeight;
 
         // Create the image widget
-        Widget imageWidget = widget.imagePath.isEmpty
-            ? SizedBox(width: imageWidth, height: imageHeight)
-            : Image.asset(
-                widget.imagePath,
-                fit: fillScreen ? BoxFit.cover : BoxFit.contain,
-                width: imageWidth,
-                height: imageHeight,
-              );
+        // Log the image path for debugging
+        debugPrint('ImageContainer: imagePath="${widget.imagePath}"');
 
-        // Create and cache the container
-        _cachedWidget = Container(
+        // Check if the path is valid
+        Widget imageWidget;
+        if (widget.imagePath.isEmpty) {
+          debugPrint('ImageContainer: Empty path, showing empty container');
+          imageWidget = SizedBox(width: imageWidth, height: imageHeight);
+        } else {
+          try {
+            imageWidget = Image.asset(
+              widget.imagePath,
+              fit: fillScreen ? BoxFit.cover : BoxFit.contain,
+              width: imageWidth,
+              height: imageHeight,
+              errorBuilder: (context, error, stackTrace) {
+                debugPrint('ImageContainer: Error loading image: $error');
+                return Container(
+                  width: imageWidth,
+                  height: imageHeight,
+                  color: Colors.red.withOpacity(0.3),
+                  child: Center(
+                    child: Text(
+                      'Error loading image',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                );
+              },
+            );
+          } catch (e) {
+            debugPrint('ImageContainer: Exception loading image: $e');
+            imageWidget = Container(
+              width: imageWidth,
+              height: imageHeight,
+              color: Colors.red.withOpacity(0.3),
+              child: Center(
+                child: Text(
+                  'Error loading image',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            );
+          }
+        }
+
+        // Create the container directly without caching
+        return Container(
           width: screenWidth,
           height: screenHeight,
           padding: isFitMode ? EdgeInsets.all(margin) : EdgeInsets.zero,
           child: Center(child: imageWidget),
         );
-
-        // Update cached values
-        _lastImagePath = widget.imagePath;
-        _lastFillScreen = fillScreen;
-        _lastMargin = margin;
-        _lastScreenWidth = screenWidth;
-        _lastScreenHeight = screenHeight;
-
-        return _cachedWidget!;
       },
     );
   }

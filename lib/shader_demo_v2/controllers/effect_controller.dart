@@ -1,4 +1,4 @@
-import 'dart:math';
+// import 'dart:math';
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import 'dart:developer' as developer;
@@ -7,7 +7,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/foundation.dart';
 
 import '../models/effect_settings.dart';
-import '../models/shader_effect.dart';
+// import '../models/shader_effect.dart';
 import 'custom_shader_widgets.dart';
 
 /// Controls logging for effect application
@@ -172,13 +172,13 @@ class EffectController {
   static void _setLowTextureResolution() {
     try {
       // Set texture quality to lower resolution
-      final platformDispatcher = ui.PlatformDispatcher.instance;
-      final window = platformDispatcher.views.first;
+      // final platformDispatcher = ui.PlatformDispatcher.instance; // Not used anymore
+      // final window = platformDispatcher.views.first; // Not used anymore
 
       // Reduce device pixel ratio for textures and rendering to save memory
       // Note: This is a private API and may change in future Flutter versions
       // but it's effective for reducing memory pressure in emergency situations
-      if (window is ui.FlutterView) {
+      {
         // Request the system to reduce memory usage for graphics
         debugPrint('Requesting low memory graphics mode');
         SystemChannels.skia.invokeMethod<void>(
@@ -231,6 +231,7 @@ class EffectController {
     bool preserveTransparency,
     bool isTextContent,
   ) {
+    // We're not using settings.selectedImage since it doesn't exist in ShaderSettings
     // Create a compact representation of critical settings
     return [
       isTextContent ? 'text' : 'bg',
@@ -268,6 +269,13 @@ class EffectController {
       if (settings.rippleEnabled)
         '${settings.rippleSettings.rippleIntensity.toStringAsFixed(2)}_${settings.rippleSettings.rippleSize.toStringAsFixed(2)}_${settings.rippleSettings.rippleSpeed.toStringAsFixed(2)}_${settings.rippleSettings.rippleOpacity.toStringAsFixed(2)}_${settings.rippleSettings.rippleColor.toStringAsFixed(2)}',
     ].join('|');
+  }
+
+  // Force disable caching for this session
+  static void disableCaching() {
+    _highMemoryMode = true;
+    clearEffectCache();
+    print('Effect caching disabled to fix image update issues');
   }
 
   // Apply all enabled effects to a widget

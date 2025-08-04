@@ -60,7 +60,10 @@ class ImageSelector extends StatelessWidget {
             children: images.map((path) {
               final bool isSelected = path == selectedImage;
               return GestureDetector(
-                onTap: () => onImageSelected(path),
+                onTap: () {
+                  print('DEBUG: Image selector tapped: $path');
+                  onImageSelected(path);
+                },
                 child: Container(
                   width: 64,
                   height: 64,
@@ -72,7 +75,17 @@ class ImageSelector extends StatelessWidget {
                       width: 1,
                     ),
                   ),
-                  child: Image.asset(path, fit: BoxFit.cover),
+                  child: Image.asset(
+                    path,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      print('DEBUG: Error loading thumbnail: $path - $error');
+                      return Container(
+                        color: Colors.grey[800],
+                        child: Icon(Icons.broken_image, color: Colors.white),
+                      );
+                    },
+                  ),
                 ),
               );
             }).toList(),
