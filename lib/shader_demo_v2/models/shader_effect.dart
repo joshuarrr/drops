@@ -12,6 +12,7 @@ enum ShaderAspect {
   rain,
   chromatic,
   ripple,
+  highlights,
   music,
   cymatics,
 }
@@ -40,6 +41,8 @@ extension ShaderAspectExtension on ShaderAspect {
         return 'Chroma';
       case ShaderAspect.ripple:
         return 'Ripple';
+      case ShaderAspect.highlights:
+        return 'Highlights';
       case ShaderAspect.music:
         return 'Music';
       case ShaderAspect.cymatics:
@@ -69,6 +72,8 @@ extension ShaderAspectExtension on ShaderAspect {
         return Icons.blur_on;
       case ShaderAspect.ripple:
         return Icons.water;
+      case ShaderAspect.highlights:
+        return Icons.auto_awesome;
       case ShaderAspect.music:
         return Icons.music_note;
       case ShaderAspect.cymatics:

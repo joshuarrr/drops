@@ -1,0 +1,42 @@
+// First add the import for edge detection
+import '../widgets/edge_detection_overlay.dart';
+import '../services/edge_detection_service.dart';
+
+// Then add this to _ImageContainerState class
+late final EdgeDetectionService _edgeDetectionService;
+
+// In the initState method, add:
+_edgeDetectionService = EdgeDetectionService();
+
+// In the _processImageForFaceDetection method (rename to _processImageForDetection), add:
+// Process the image with both detection services
+_faceDetectionService.processImageFromAsset(widget.imagePath);
+_edgeDetectionService.processImageForEdges(widget.imagePath);
+
+// Replace the existing FaceContourOverlay section in the build method with:
+if (widget.settings.highlightsEnabled &&
+    widget.settings.highlightsSettings.showFaceContours &&
+    !_faceDetectionError &&
+    !_isProcessing) {
+  if (widget.settings.highlightsSettings.useEdgeDetection) {
+    // Use edge detection overlay
+    Positioned.fill(
+      child: EdgeDetectionOverlay(
+        imagePath: widget.imagePath,
+        edgeDetectionService: _edgeDetectionService,
+        settings: widget.settings,
+        imageSize: Size(imageWidth, imageHeight),
+      ),
+    ),
+  } else {
+    // Use face detection overlay
+    Positioned.fill(
+      child: FaceContourOverlay(
+        imagePath: widget.imagePath,
+        faceDetectionService: _faceDetectionService,
+        settings: widget.settings,
+        imageSize: Size(imageWidth, imageHeight),
+      ),
+    ),
+  }
+}

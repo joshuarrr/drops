@@ -1,0 +1,102 @@
+// Add this method to _HighlightsPanelState class
+void _processImageDetection() {
+  try {
+    // Skip if already processing
+    if (_isProcessing) {
+      developer.log('Image detection already in progress', name: _logTag);
+      return;
+    }
+
+    // Skip if we processed recently (within the last 2 seconds)
+    if (_lastProcessingTime != null) {
+      final now = DateTime.now();
+      final difference = now.difference(_lastProcessingTime!);
+      if (difference.inSeconds < 2) {
+        developer.log(
+          'Skipping image detection, processed too recently: ${difference.inMilliseconds}ms ago',
+          name: _logTag,
+        );
+        return;
+      }
+    }
+
+    // Get the currently selected image path from controller
+    final String? imagePath = widget.settings.imageEnabled
+        ? Provider.of<ShaderController>(
+            widget.context,
+            listen: false,
+          ).selectedImage
+        : null;
+
+    // Skip if no image or empty path
+    if (imagePath == null || imagePath.isEmpty) {
+      developer.log('No image to process or empty path', name: _logTag);
+      return;
+    }
+
+    // If we've already processed this exact image, skip
+    if (imagePath == _lastProcessedImage) {
+      developer.log('Already processed this image: $imagePath', name: _logTag);
+      return;
+    }
+
+    _isProcessing = true;
+    setState(() {
+      _errorMessage = null;
+    });
+
+    // Process using the selected detection method
+    _lastProcessedImage = imagePath;
+    
+    if (_useEdgeDetection) {
+      // Use edge detection service
+      _edgeDetectionService
+          .processImageForEdges(imagePath)
+          .then((_) {
+            _isProcessing = false;
+            _lastProcessingTime = DateTime.now();
+            
+            if (mounted) {
+              setState(() {});
+            }
+          })
+          .catchError((error) {
+            _isProcessing = false;
+            if (mounted) {
+              setState(() {
+                _errorMessage = 'Error processing image: $error';
+              });
+            }
+            developer.log('Error in edge detection: $error', name: _logTag);
+          });
+    } else {
+      // Use face detection service
+      _processFaceDetection();
+    }
+  } catch (e) {
+    developer.log('Error in image detection: $e', name: _logTag);
+    _isProcessing = false;
+    if (mounted) {
+      setState(() {
+        _errorMessage = 'Error processing image: $e';
+      });
+    }
+  }
+}
+
+// Then in the build method, add this switch for toggling between face and edge detection
+// Add this to the UI part of the build method before the FaceContourDetection switch
+ListTile(
+  title: const Text('Use Edge Detection'),
+  subtitle: const Text('Switch between face and edge detection'),
+  trailing: Switch(
+    value: _useEdgeDetection,
+    onChanged: (value) {
+      setState(() {
+        _useEdgeDetection = value;
+        // Process with new detection method
+        _processImageDetection();
+      });
+    },
+  ),
+),

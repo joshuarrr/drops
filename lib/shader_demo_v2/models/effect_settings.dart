@@ -10,6 +10,7 @@ import 'text_layout_settings.dart';
 import 'rain_settings.dart';
 import 'chromatic_settings.dart';
 import 'ripple_settings.dart';
+import 'highlights_settings.dart';
 import 'music_settings.dart';
 import 'cymatics_settings_stub.dart';
 import 'background_settings.dart';
@@ -25,6 +26,7 @@ class ShaderSettings {
   RainSettings _rainSettings;
   ChromaticSettings _chromaticSettings;
   RippleSettings _rippleSettings;
+  HighlightsSettings _highlightsSettings;
   MusicSettings _musicSettings;
   CymaticsSettings _cymaticsSettings;
   BackgroundSettings _backgroundSettings;
@@ -41,6 +43,7 @@ class ShaderSettings {
   RainSettings get rainSettings => _rainSettings;
   ChromaticSettings get chromaticSettings => _chromaticSettings;
   RippleSettings get rippleSettings => _rippleSettings;
+  HighlightsSettings get highlightsSettings => _highlightsSettings;
   MusicSettings get musicSettings => _musicSettings;
   CymaticsSettings get cymaticsSettings => _cymaticsSettings;
   BackgroundSettings get backgroundSettings => _backgroundSettings;
@@ -134,6 +137,17 @@ class ShaderSettings {
     _rippleSettings.rippleAnimated = value;
   }
 
+  // Highlights settings
+  bool get highlightsEnabled => _highlightsSettings.highlightsEnabled;
+  set highlightsEnabled(bool value) {
+    _highlightsSettings.highlightsEnabled = value;
+  }
+
+  bool get highlightsAnimated => _highlightsSettings.highlightsAnimated;
+  set highlightsAnimated(bool value) {
+    _highlightsSettings.highlightsAnimated = value;
+  }
+
   // Music settings
   bool get musicEnabled => _musicSettings.musicEnabled;
   set musicEnabled(bool value) {
@@ -189,6 +203,7 @@ class ShaderSettings {
     RainSettings.enableLogging = enabled;
     ChromaticSettings.enableLogging = enabled;
     RippleSettings.enableLogging = enabled;
+    HighlightsSettings.enableLogging = enabled;
     MusicSettings.enableLogging = enabled;
     // CymaticsSettings.enableLogging = enabled; // Not needed in V2
     BackgroundSettings.enableLogging = enabled;
@@ -208,6 +223,7 @@ class ShaderSettings {
       _rainSettings = RainSettings(),
       _chromaticSettings = ChromaticSettings(),
       _rippleSettings = RippleSettings(),
+      _highlightsSettings = HighlightsSettings(),
       _musicSettings = MusicSettings(),
       _cymaticsSettings = CymaticsSettings(),
       _backgroundSettings = BackgroundSettings() {
@@ -224,6 +240,7 @@ class ShaderSettings {
     RainSettings? rainSettings,
     ChromaticSettings? chromaticSettings,
     RippleSettings? rippleSettings,
+    HighlightsSettings? highlightsSettings,
     MusicSettings? musicSettings,
     CymaticsSettings? cymaticsSettings,
     BackgroundSettings? backgroundSettings,
@@ -237,6 +254,7 @@ class ShaderSettings {
        _rainSettings = rainSettings ?? RainSettings(),
        _chromaticSettings = chromaticSettings ?? ChromaticSettings(),
        _rippleSettings = rippleSettings ?? RippleSettings(),
+       _highlightsSettings = highlightsSettings ?? HighlightsSettings(),
        _musicSettings = musicSettings ?? MusicSettings(),
        _cymaticsSettings = cymaticsSettings ?? CymaticsSettings(),
        _backgroundSettings = backgroundSettings ?? BackgroundSettings() {}
@@ -254,6 +272,7 @@ class ShaderSettings {
         'rainSettings': _rainSettings.toMap(),
         'chromaticSettings': _chromaticSettings.toMap(),
         'rippleSettings': _rippleSettings.toMap(),
+        'highlightsSettings': _highlightsSettings.toMap(),
         'musicSettings': _musicSettings.toMap(),
         'cymaticsSettings': _cymaticsSettings.toMap(),
         'backgroundSettings': _backgroundSettings.toMap(),

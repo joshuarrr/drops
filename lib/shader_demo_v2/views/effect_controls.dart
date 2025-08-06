@@ -14,6 +14,7 @@ import '../widgets/text_fx_panel.dart';
 import '../widgets/rain_panel.dart';
 import '../widgets/chromatic_panel.dart';
 import '../widgets/ripple_panel.dart';
+import '../widgets/highlights_panel.dart';
 import '../widgets/aspect_toggle.dart';
 import '../widgets/music_panel.dart';
 import '../services/asset_service.dart';
@@ -225,6 +226,14 @@ class _EffectControlsV2State extends State<EffectControlsV2> {
                   _toggleAspect(aspect, enabled, controller),
               onTap: _selectAspect,
             ),
+            AspectToggle(
+              aspect: ShaderAspect.highlights,
+              isEnabled: settings.highlightsEnabled,
+              isCurrentImageDark: isCurrentImageDark,
+              onToggled: (aspect, enabled) =>
+                  _toggleAspect(aspect, enabled, controller),
+              onTap: _selectAspect,
+            ),
           ],
         ),
       ),
@@ -345,6 +354,9 @@ class _EffectControlsV2State extends State<EffectControlsV2> {
         break;
       case ShaderAspect.ripple:
         settings.rippleEnabled = enabled;
+        break;
+      case ShaderAspect.highlights:
+        settings.highlightsEnabled = enabled;
         break;
       case ShaderAspect.music:
         settings.musicEnabled = enabled;
@@ -497,6 +509,13 @@ class _EffectControlsV2State extends State<EffectControlsV2> {
             ),
           if (_selectedAspect == ShaderAspect.ripple)
             RipplePanel(
+              settings: controller.settings,
+              onSettingsChanged: controller.updateSettings,
+              sliderColor: sliderColor,
+              context: context,
+            ),
+          if (_selectedAspect == ShaderAspect.highlights)
+            HighlightsPanel(
               settings: controller.settings,
               onSettingsChanged: controller.updateSettings,
               sliderColor: sliderColor,
