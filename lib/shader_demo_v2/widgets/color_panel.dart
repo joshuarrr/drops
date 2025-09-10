@@ -9,7 +9,7 @@ import '../controllers/effect_controller.dart';
 import 'value_slider.dart';
 import 'animation_controls.dart';
 import 'enhanced_panel_header.dart';
-import '../views/effect_controls.dart';
+import 'glass_panel.dart';
 
 class ColorPanel extends StatefulWidget {
   final ShaderSettings settings;
@@ -61,281 +61,278 @@ class _ColorPanelState extends State<ColorPanel> {
     // Only log builds at debug level
     _log('Building ColorPanel', level: LogLevel.debug);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        EnhancedPanelHeader(
-          aspect: ShaderAspect.color,
-          onPresetSelected: _applyPreset,
-          onReset: _resetColor,
-          onSavePreset: _savePresetForAspect,
-          sliderColor: widget.sliderColor,
-          loadPresets: _loadPresetsForAspect,
-          deletePreset: _deletePresetAndUpdate,
-          refreshPresets: _refreshPresets,
-          refreshCounter: _refreshCounter,
-          applyToImage: widget.settings.colorSettings.applyToImage,
-          applyToText: widget.settings.colorSettings.applyToText,
-          onApplyToImageChanged: (value) {
-            widget.settings.colorSettings.applyToImage = value;
-            widget.onSettingsChanged(widget.settings);
-          },
-          onApplyToTextChanged: (value) {
-            widget.settings.colorSettings.applyToText = value;
-            widget.onSettingsChanged(widget.settings);
-          },
-        ),
-        // Main color controls section with collapsible header
-        _buildSectionHeader(
-          'Color Adjustments',
-          _showColorControls,
-          () => setState(() {
-            _showColorControls = !_showColorControls;
-            _log(
-              'Color adjustments section ${_showColorControls ? 'expanded' : 'collapsed'}',
-              level: LogLevel.debug,
-            );
-          }),
-        ),
-        if (_showColorControls) ...[
-          ValueSlider(
-            label: 'Hue',
-            value: widget.settings.colorSettings.hue,
-            onChanged:
-                (value) => _onSliderChanged(
-                  value,
-                  (v) => widget.settings.colorSettings.hue = v,
-                  isOverlay: false,
-                  propertyName: 'Hue',
-                ),
+    return GlassPanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          EnhancedPanelHeader(
+            aspect: ShaderAspect.color,
+            onPresetSelected: _applyPreset,
+            onReset: _resetColor,
+            onSavePreset: _savePresetForAspect,
             sliderColor: widget.sliderColor,
-            defaultValue: 0.0,
+            loadPresets: _loadPresetsForAspect,
+            deletePreset: _deletePresetAndUpdate,
+            refreshPresets: _refreshPresets,
+            refreshCounter: _refreshCounter,
+            applyToImage: widget.settings.colorSettings.applyToImage,
+            applyToText: widget.settings.colorSettings.applyToText,
+            onApplyToImageChanged: (value) {
+              widget.settings.colorSettings.applyToImage = value;
+              widget.onSettingsChanged(widget.settings);
+            },
+            onApplyToTextChanged: (value) {
+              widget.settings.colorSettings.applyToText = value;
+              widget.onSettingsChanged(widget.settings);
+            },
           ),
-          ValueSlider(
-            label: 'Saturation',
-            value: widget.settings.colorSettings.saturation,
-            onChanged:
-                (value) => _onSliderChanged(
-                  value,
-                  (v) => widget.settings.colorSettings.saturation = v,
-                  isOverlay: false,
-                  propertyName: 'Saturation',
-                ),
-            sliderColor: widget.sliderColor,
-            defaultValue: 0.0,
+          // Main color controls section with collapsible header
+          _buildSectionHeader(
+            'Color Adjustments',
+            _showColorControls,
+            () => setState(() {
+              _showColorControls = !_showColorControls;
+              _log(
+                'Color adjustments section ${_showColorControls ? 'expanded' : 'collapsed'}',
+                level: LogLevel.debug,
+              );
+            }),
           ),
-          ValueSlider(
-            label: 'Lightness',
-            value: widget.settings.colorSettings.lightness,
-            onChanged:
-                (value) => _onSliderChanged(
-                  value,
-                  (v) => widget.settings.colorSettings.lightness = v,
-                  isOverlay: false,
-                  propertyName: 'Lightness',
-                ),
-            sliderColor: widget.sliderColor,
-            defaultValue: 0.0,
-          ),
-          // Toggle animation for HSL adjustments
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Animate HSL',
-                style: TextStyle(color: widget.sliderColor, fontSize: 14),
+          if (_showColorControls) ...[
+            ValueSlider(
+              label: 'Hue',
+              value: widget.settings.colorSettings.hue,
+              onChanged: (value) => _onSliderChanged(
+                value,
+                (v) => widget.settings.colorSettings.hue = v,
+                isOverlay: false,
+                propertyName: 'Hue',
               ),
-              Switch(
-                value: widget.settings.colorSettings.colorAnimated,
-                thumbColor: WidgetStateProperty.resolveWith(
-                  (states) =>
-                      states.contains(WidgetState.selected)
-                          ? widget.sliderColor
-                          : null,
-                ),
-                onChanged: (value) {
-                  widget.settings.colorSettings.colorAnimated = value;
-                  if (!widget.settings.colorEnabled)
-                    widget.settings.colorEnabled = true;
-                  widget.onSettingsChanged(widget.settings);
-                  _log('HSL animation toggled: ${value ? 'ON' : 'OFF'}');
-                },
-              ),
-            ],
-          ),
-          if (widget.settings.colorSettings.colorAnimated)
-            AnimationControls(
-              animationSpeed:
-                  widget.settings.colorSettings.colorAnimOptions.speed,
-              onSpeedChanged: (v) {
-                widget.settings.colorSettings.colorAnimOptions = widget
-                    .settings
-                    .colorSettings
-                    .colorAnimOptions
-                    .copyWith(speed: v);
-                widget.onSettingsChanged(widget.settings);
-                _log('HSL animation speed changed: $v', level: LogLevel.debug);
-              },
-              animationMode:
-                  widget.settings.colorSettings.colorAnimOptions.mode,
-              onModeChanged: (m) {
-                widget.settings.colorSettings.colorAnimOptions = widget
-                    .settings
-                    .colorSettings
-                    .colorAnimOptions
-                    .copyWith(mode: m);
-                widget.onSettingsChanged(widget.settings);
-                _log(
-                  'HSL animation mode changed: ${m.toString()}',
-                  level: LogLevel.debug,
-                );
-              },
-              animationEasing:
-                  widget.settings.colorSettings.colorAnimOptions.easing,
-              onEasingChanged: (e) {
-                widget.settings.colorSettings.colorAnimOptions = widget
-                    .settings
-                    .colorSettings
-                    .colorAnimOptions
-                    .copyWith(easing: e);
-                widget.onSettingsChanged(widget.settings);
-                _log(
-                  'HSL animation easing changed: ${e.toString()}',
-                  level: LogLevel.debug,
-                );
-              },
               sliderColor: widget.sliderColor,
+              defaultValue: 0.0,
             ),
-        ],
-
-        const SizedBox(height: 16),
-
-        // Overlay section with collapsible header
-        _buildSectionHeader(
-          'Overlay Controls',
-          _showOverlayControls,
-          () => setState(() {
-            _showOverlayControls = !_showOverlayControls;
-            _log(
-              'Overlay controls section ${_showOverlayControls ? 'expanded' : 'collapsed'}',
-              level: LogLevel.debug,
-            );
-          }),
-        ),
-        if (_showOverlayControls) ...[
-          ValueSlider(
-            label: 'Overlay Hue',
-            value: widget.settings.colorSettings.overlayHue,
-            onChanged:
-                (value) => _onSliderChanged(
-                  value,
-                  (v) => widget.settings.colorSettings.overlayHue = v,
-                  isOverlay: true,
-                  propertyName: 'Overlay Hue',
-                ),
-            sliderColor: widget.sliderColor,
-            defaultValue: 0.0,
-          ),
-          ValueSlider(
-            label: 'Overlay Intensity',
-            value: widget.settings.colorSettings.overlayIntensity,
-            onChanged:
-                (value) => _onSliderChanged(
-                  value,
-                  (v) => widget.settings.colorSettings.overlayIntensity = v,
-                  isOverlay: true,
-                  propertyName: 'Overlay Intensity',
-                ),
-            sliderColor: widget.sliderColor,
-            defaultValue: 0.0,
-          ),
-          ValueSlider(
-            label: 'Overlay Opacity',
-            value: widget.settings.colorSettings.overlayOpacity,
-            onChanged:
-                (value) => _onSliderChanged(
-                  value,
-                  (v) => widget.settings.colorSettings.overlayOpacity = v,
-                  isOverlay: true,
-                  propertyName: 'Overlay Opacity',
-                ),
-            sliderColor: widget.sliderColor,
-            defaultValue: 0.0,
-          ),
-          // Toggle animation for overlay
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Animate Overlay',
-                style: TextStyle(color: widget.sliderColor, fontSize: 14),
+            ValueSlider(
+              label: 'Saturation',
+              value: widget.settings.colorSettings.saturation,
+              onChanged: (value) => _onSliderChanged(
+                value,
+                (v) => widget.settings.colorSettings.saturation = v,
+                isOverlay: false,
+                propertyName: 'Saturation',
               ),
-              Switch(
-                value: widget.settings.colorSettings.overlayAnimated,
-                thumbColor: WidgetStateProperty.resolveWith(
-                  (states) =>
-                      states.contains(WidgetState.selected)
-                          ? widget.sliderColor
-                          : null,
-                ),
-                onChanged: (value) {
-                  widget.settings.colorSettings.overlayAnimated = value;
-                  if (!widget.settings.colorEnabled)
-                    widget.settings.colorEnabled = true;
-                  widget.onSettingsChanged(widget.settings);
-                  _log('Overlay animation toggled: ${value ? 'ON' : 'OFF'}');
-                },
-              ),
-            ],
-          ),
-          if (widget.settings.colorSettings.overlayAnimated)
-            AnimationControls(
-              animationSpeed:
-                  widget.settings.colorSettings.overlayAnimOptions.speed,
-              onSpeedChanged: (v) {
-                widget.settings.colorSettings.overlayAnimOptions = widget
-                    .settings
-                    .colorSettings
-                    .overlayAnimOptions
-                    .copyWith(speed: v);
-                widget.onSettingsChanged(widget.settings);
-                _log(
-                  'Overlay animation speed changed: $v',
-                  level: LogLevel.debug,
-                );
-              },
-              animationMode:
-                  widget.settings.colorSettings.overlayAnimOptions.mode,
-              onModeChanged: (m) {
-                widget.settings.colorSettings.overlayAnimOptions = widget
-                    .settings
-                    .colorSettings
-                    .overlayAnimOptions
-                    .copyWith(mode: m);
-                widget.onSettingsChanged(widget.settings);
-                _log(
-                  'Overlay animation mode changed: ${m.toString()}',
-                  level: LogLevel.debug,
-                );
-              },
-              animationEasing:
-                  widget.settings.colorSettings.overlayAnimOptions.easing,
-              onEasingChanged: (e) {
-                widget.settings.colorSettings.overlayAnimOptions = widget
-                    .settings
-                    .colorSettings
-                    .overlayAnimOptions
-                    .copyWith(easing: e);
-                widget.onSettingsChanged(widget.settings);
-                _log(
-                  'Overlay animation easing changed: ${e.toString()}',
-                  level: LogLevel.debug,
-                );
-              },
               sliderColor: widget.sliderColor,
+              defaultValue: 0.0,
             ),
+            ValueSlider(
+              label: 'Lightness',
+              value: widget.settings.colorSettings.lightness,
+              onChanged: (value) => _onSliderChanged(
+                value,
+                (v) => widget.settings.colorSettings.lightness = v,
+                isOverlay: false,
+                propertyName: 'Lightness',
+              ),
+              sliderColor: widget.sliderColor,
+              defaultValue: 0.0,
+            ),
+            // Toggle animation for HSL adjustments
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Animate HSL',
+                  style: TextStyle(color: widget.sliderColor, fontSize: 14),
+                ),
+                Switch(
+                  value: widget.settings.colorSettings.colorAnimated,
+                  thumbColor: WidgetStateProperty.resolveWith(
+                    (states) => states.contains(WidgetState.selected)
+                        ? widget.sliderColor
+                        : null,
+                  ),
+                  onChanged: (value) {
+                    widget.settings.colorSettings.colorAnimated = value;
+                    if (!widget.settings.colorEnabled)
+                      widget.settings.colorEnabled = true;
+                    widget.onSettingsChanged(widget.settings);
+                    _log('HSL animation toggled: ${value ? 'ON' : 'OFF'}');
+                  },
+                ),
+              ],
+            ),
+            if (widget.settings.colorSettings.colorAnimated)
+              AnimationControls(
+                animationSpeed:
+                    widget.settings.colorSettings.colorAnimOptions.speed,
+                onSpeedChanged: (v) {
+                  widget.settings.colorSettings.colorAnimOptions = widget
+                      .settings
+                      .colorSettings
+                      .colorAnimOptions
+                      .copyWith(speed: v);
+                  widget.onSettingsChanged(widget.settings);
+                  _log(
+                    'HSL animation speed changed: $v',
+                    level: LogLevel.debug,
+                  );
+                },
+                animationMode:
+                    widget.settings.colorSettings.colorAnimOptions.mode,
+                onModeChanged: (m) {
+                  widget.settings.colorSettings.colorAnimOptions = widget
+                      .settings
+                      .colorSettings
+                      .colorAnimOptions
+                      .copyWith(mode: m);
+                  widget.onSettingsChanged(widget.settings);
+                  _log(
+                    'HSL animation mode changed: ${m.toString()}',
+                    level: LogLevel.debug,
+                  );
+                },
+                animationEasing:
+                    widget.settings.colorSettings.colorAnimOptions.easing,
+                onEasingChanged: (e) {
+                  widget.settings.colorSettings.colorAnimOptions = widget
+                      .settings
+                      .colorSettings
+                      .colorAnimOptions
+                      .copyWith(easing: e);
+                  widget.onSettingsChanged(widget.settings);
+                  _log(
+                    'HSL animation easing changed: ${e.toString()}',
+                    level: LogLevel.debug,
+                  );
+                },
+                sliderColor: widget.sliderColor,
+              ),
+          ],
+
+          const SizedBox(height: 16),
+
+          // Overlay section with collapsible header
+          _buildSectionHeader(
+            'Overlay Controls',
+            _showOverlayControls,
+            () => setState(() {
+              _showOverlayControls = !_showOverlayControls;
+              _log(
+                'Overlay controls section ${_showOverlayControls ? 'expanded' : 'collapsed'}',
+                level: LogLevel.debug,
+              );
+            }),
+          ),
+          if (_showOverlayControls) ...[
+            ValueSlider(
+              label: 'Overlay Hue',
+              value: widget.settings.colorSettings.overlayHue,
+              onChanged: (value) => _onSliderChanged(
+                value,
+                (v) => widget.settings.colorSettings.overlayHue = v,
+                isOverlay: true,
+                propertyName: 'Overlay Hue',
+              ),
+              sliderColor: widget.sliderColor,
+              defaultValue: 0.0,
+            ),
+            ValueSlider(
+              label: 'Overlay Intensity',
+              value: widget.settings.colorSettings.overlayIntensity,
+              onChanged: (value) => _onSliderChanged(
+                value,
+                (v) => widget.settings.colorSettings.overlayIntensity = v,
+                isOverlay: true,
+                propertyName: 'Overlay Intensity',
+              ),
+              sliderColor: widget.sliderColor,
+              defaultValue: 0.0,
+            ),
+            ValueSlider(
+              label: 'Overlay Opacity',
+              value: widget.settings.colorSettings.overlayOpacity,
+              onChanged: (value) => _onSliderChanged(
+                value,
+                (v) => widget.settings.colorSettings.overlayOpacity = v,
+                isOverlay: true,
+                propertyName: 'Overlay Opacity',
+              ),
+              sliderColor: widget.sliderColor,
+              defaultValue: 0.0,
+            ),
+            // Toggle animation for overlay
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Animate Overlay',
+                  style: TextStyle(color: widget.sliderColor, fontSize: 14),
+                ),
+                Switch(
+                  value: widget.settings.colorSettings.overlayAnimated,
+                  thumbColor: WidgetStateProperty.resolveWith(
+                    (states) => states.contains(WidgetState.selected)
+                        ? widget.sliderColor
+                        : null,
+                  ),
+                  onChanged: (value) {
+                    widget.settings.colorSettings.overlayAnimated = value;
+                    if (!widget.settings.colorEnabled)
+                      widget.settings.colorEnabled = true;
+                    widget.onSettingsChanged(widget.settings);
+                    _log('Overlay animation toggled: ${value ? 'ON' : 'OFF'}');
+                  },
+                ),
+              ],
+            ),
+            if (widget.settings.colorSettings.overlayAnimated)
+              AnimationControls(
+                animationSpeed:
+                    widget.settings.colorSettings.overlayAnimOptions.speed,
+                onSpeedChanged: (v) {
+                  widget.settings.colorSettings.overlayAnimOptions = widget
+                      .settings
+                      .colorSettings
+                      .overlayAnimOptions
+                      .copyWith(speed: v);
+                  widget.onSettingsChanged(widget.settings);
+                  _log(
+                    'Overlay animation speed changed: $v',
+                    level: LogLevel.debug,
+                  );
+                },
+                animationMode:
+                    widget.settings.colorSettings.overlayAnimOptions.mode,
+                onModeChanged: (m) {
+                  widget.settings.colorSettings.overlayAnimOptions = widget
+                      .settings
+                      .colorSettings
+                      .overlayAnimOptions
+                      .copyWith(mode: m);
+                  widget.onSettingsChanged(widget.settings);
+                  _log(
+                    'Overlay animation mode changed: ${m.toString()}',
+                    level: LogLevel.debug,
+                  );
+                },
+                animationEasing:
+                    widget.settings.colorSettings.overlayAnimOptions.easing,
+                onEasingChanged: (e) {
+                  widget.settings.colorSettings.overlayAnimOptions = widget
+                      .settings
+                      .colorSettings
+                      .overlayAnimOptions
+                      .copyWith(easing: e);
+                  widget.onSettingsChanged(widget.settings);
+                  _log(
+                    'Overlay animation easing changed: ${e.toString()}',
+                    level: LogLevel.debug,
+                  );
+                },
+                sliderColor: widget.sliderColor,
+              ),
+          ],
         ],
-      ],
+      ),
     );
   }
 
@@ -487,12 +484,10 @@ class _ColorPanelState extends State<ColorPanel> {
     }
 
     if (presetData['overlayAnimOptions'] != null) {
-      widget
-          .settings
-          .colorSettings
-          .overlayAnimOptions = AnimationOptions.fromMap(
-        Map<String, dynamic>.from(presetData['overlayAnimOptions']),
-      );
+      widget.settings.colorSettings.overlayAnimOptions =
+          AnimationOptions.fromMap(
+            Map<String, dynamic>.from(presetData['overlayAnimOptions']),
+          );
     }
 
     _log('Color preset applied successfully');
@@ -512,10 +507,10 @@ class _ColorPanelState extends State<ColorPanel> {
       'overlayOpacity': widget.settings.colorSettings.overlayOpacity,
       'colorAnimated': widget.settings.colorSettings.colorAnimated,
       'overlayAnimated': widget.settings.colorSettings.overlayAnimated,
-      'colorAnimOptions':
-          widget.settings.colorSettings.colorAnimOptions.toMap(),
-      'overlayAnimOptions':
-          widget.settings.colorSettings.overlayAnimOptions.toMap(),
+      'colorAnimOptions': widget.settings.colorSettings.colorAnimOptions
+          .toMap(),
+      'overlayAnimOptions': widget.settings.colorSettings.overlayAnimOptions
+          .toMap(),
     };
 
     // These methods need to be implemented to work with the global preset system

@@ -11,6 +11,7 @@ import 'text_input_field.dart';
 import 'color_picker.dart';
 import 'dart:async';
 import '../views/effect_controls.dart';
+import 'glass_panel.dart';
 import '../views/text_overlay.dart';
 
 // Enum for identifying each text line (outside class for reuse)
@@ -72,211 +73,213 @@ class _TextPanelState extends State<TextPanel> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        EnhancedPanelHeader(
-          aspect: ShaderAspect.text,
-          onPresetSelected: _applyPreset,
-          onReset: _resetText,
-          onSavePreset: _savePresetForAspect,
-          sliderColor: widget.sliderColor,
-          loadPresets: _loadPresetsForAspect,
-          deletePreset: _deletePresetAndUpdate,
-          refreshPresets: _refreshPresets,
-          refreshCounter: _refreshCounter,
-          // For the text panel, these settings control whether ALL
-          // effects are applied to text or not, so we use
-          // an approach that can toggle all effects at once
-          applyToImage: false, // Not relevant for text panel
-          applyToText: _anyEffectAppliesToText(),
-          onApplyToImageChanged: (_) {}, // Not used for text panel
-          onApplyToTextChanged: (value) {
-            // Toggle all effects to apply/not apply to text
-            widget.settings.colorSettings.applyToText = value;
-            widget.settings.blurSettings.applyToText = value;
-            widget.settings.noiseSettings.applyToText = value;
-            widget.settings.rainSettings.applyToText = value;
-            widget.settings.chromaticSettings.applyToText = value;
-            widget.settings.rippleSettings.applyToText = value;
-            widget.onSettingsChanged(widget.settings);
-          },
-        ),
-
-        const SizedBox(height: 8),
-        Divider(color: widget.sliderColor.withOpacity(0.3)),
-
-        // Add wrap for text line selection buttons
-        Wrap(
-          spacing: 6,
-          children: TextLine.values.map((line) {
-            return ChoiceChip(
-              label: Text(
-                line.label,
-                style: TextStyle(color: widget.sliderColor),
-              ),
-              selected: selectedTextLine == line,
-              selectedColor: widget.sliderColor.withOpacity(0.3),
-              backgroundColor: widget.sliderColor.withOpacity(0.1),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-                side: BorderSide(color: Colors.transparent),
-              ),
-              onSelected: (_) {
-                setState(() {
-                  selectedTextLine = line;
-                });
-                widget.onSettingsChanged(widget.settings);
-              },
-            );
-          }).toList(),
-        ),
-        TextInputField(
-          key: ValueKey('text_input_${selectedTextLine.toString()}'),
-          label: '${selectedTextLine.label} Text',
-          value: _getCurrentText(),
-          onChanged: _setCurrentText,
-          textColor: widget.sliderColor,
-          enableLogging: false,
-          isTextEnabled: () => widget.settings.textLayoutSettings.textEnabled,
-          enableText: () {
-            widget.settings.textLayoutSettings.textEnabled = true;
-            widget.onSettingsChanged(widget.settings);
-          },
-          multiline: selectedTextLine == TextLine.lyrics,
-          maxLines: 8,
-        ),
-        // Add color picker
-        ColorPicker(
-          key: ValueKey(
-            'text_color_${selectedTextLine.toString()}_${_getCurrentColor().value}',
-          ),
-          label: 'Text Color',
-          currentColor: _getCurrentColor(),
-          onColorChanged: (color) {
-            _setCurrentColor(color);
-          },
-          textColor: widget.sliderColor,
-        ),
-        const SizedBox(height: 12),
-        FontSelector(
-          selectedFont: _getCurrentFont().isEmpty
-              ? 'Default'
-              : _getCurrentFont(),
-          selectedWeight: _toFontWeight(_getCurrentWeight()),
-          labelText: 'Font',
-          onFontSelected: (font) {
-            final selected = font == 'Default' ? '' : font;
-            _setCurrentFont(selected);
-            if (!widget.settings.textLayoutSettings.textEnabled)
-              widget.settings.textLayoutSettings.textEnabled = true;
-            widget.onSettingsChanged(widget.settings);
-          },
-          onWeightSelected: (fw) {
-            _setCurrentWeight(_fromFontWeight(fw));
-            if (!widget.settings.textLayoutSettings.textEnabled)
-              widget.settings.textLayoutSettings.textEnabled = true;
-            widget.onSettingsChanged(widget.settings);
-          },
-        ),
-        const SizedBox(height: 12),
-        ValueSlider(
-          label: 'Size',
-          value: _getCurrentSize(),
-          onChanged: (v) => _onSliderChanged(v, _setCurrentSize),
-          sliderColor: widget.sliderColor,
-          defaultValue: 0.05,
-        ),
-        // Add width slider for variable fonts
-        if (_isVariableFont(_getCurrentFont())) _getVariableFontSliders(),
-        // Add Fit to Width checkbox
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Fit to Width',
-              style: TextStyle(color: widget.sliderColor, fontSize: 14),
-            ),
-            Checkbox(
-              value: _getCurrentFitToWidth(),
-              checkColor: Colors.black,
-              activeColor: widget.sliderColor,
-              side: BorderSide(color: widget.sliderColor),
-              onChanged: (value) {
-                if (value != null) {
-                  _setCurrentFitToWidth(value);
-                  if (!widget.settings.textLayoutSettings.textEnabled)
-                    widget.settings.textLayoutSettings.textEnabled = true;
-                  widget.onSettingsChanged(widget.settings);
-                }
-              },
-            ),
-          ],
-        ),
-        // Only show line height slider if fitToWidth is enabled
-        if (_getCurrentFitToWidth())
-          ValueSlider(
-            label: 'Line Height',
-            value: _getCurrentLineHeight() / 2.0, // Scale to 0-1 range
-            onChanged: (v) => _onSliderChanged(
-              v,
-              (val) => _setCurrentLineHeight(val * 2.0),
-            ), // Scale to 0-2 range
+    return GlassPanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          EnhancedPanelHeader(
+            aspect: ShaderAspect.text,
+            onPresetSelected: _applyPreset,
+            onReset: _resetText,
+            onSavePreset: _savePresetForAspect,
             sliderColor: widget.sliderColor,
-            defaultValue: 0.6, // Default 1.2 scaled to 0-1 range
+            loadPresets: _loadPresetsForAspect,
+            deletePreset: _deletePresetAndUpdate,
+            refreshPresets: _refreshPresets,
+            refreshCounter: _refreshCounter,
+            // For the text panel, these settings control whether ALL
+            // effects are applied to text or not, so we use
+            // an approach that can toggle all effects at once
+            applyToImage: false, // Not relevant for text panel
+            applyToText: _anyEffectAppliesToText(),
+            onApplyToImageChanged: (_) {}, // Not used for text panel
+            onApplyToTextChanged: (value) {
+              // Toggle all effects to apply/not apply to text
+              widget.settings.colorSettings.applyToText = value;
+              widget.settings.blurSettings.applyToText = value;
+              widget.settings.noiseSettings.applyToText = value;
+              widget.settings.rainSettings.applyToText = value;
+              widget.settings.chromaticSettings.applyToText = value;
+              widget.settings.rippleSettings.applyToText = value;
+              widget.onSettingsChanged(widget.settings);
+            },
           ),
-        ValueSlider(
-          label: 'Position X',
-          value: _getCurrentPosX(),
-          onChanged: (v) => _onSliderChanged(v, _setCurrentPosX),
-          sliderColor: widget.sliderColor,
-          defaultValue: 0.1,
-        ),
-        ValueSlider(
-          label: 'Position Y',
-          value: _getCurrentPosY(),
-          onChanged: (v) => _onSliderChanged(v, _setCurrentPosY),
-          sliderColor: widget.sliderColor,
-          defaultValue: 0.1,
-        ),
-        // Add horizontal alignment controls
-        AlignmentSelector(
-          label: 'Horizontal Alignment',
-          currentValue: _getCurrentHAlign(),
-          onChanged: (value) {
-            _setCurrentHAlign(value);
-            if (!widget.settings.textLayoutSettings.textEnabled)
+
+          const SizedBox(height: 8),
+          Divider(color: widget.sliderColor.withOpacity(0.3)),
+
+          // Add wrap for text line selection buttons
+          Wrap(
+            spacing: 6,
+            children: TextLine.values.map((line) {
+              return ChoiceChip(
+                label: Text(
+                  line.label,
+                  style: TextStyle(color: widget.sliderColor),
+                ),
+                selected: selectedTextLine == line,
+                selectedColor: widget.sliderColor.withOpacity(0.3),
+                backgroundColor: widget.sliderColor.withOpacity(0.1),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  side: BorderSide(color: Colors.transparent),
+                ),
+                onSelected: (_) {
+                  setState(() {
+                    selectedTextLine = line;
+                  });
+                  widget.onSettingsChanged(widget.settings);
+                },
+              );
+            }).toList(),
+          ),
+          TextInputField(
+            key: ValueKey('text_input_${selectedTextLine.toString()}'),
+            label: '${selectedTextLine.label} Text',
+            value: _getCurrentText(),
+            onChanged: _setCurrentText,
+            textColor: widget.sliderColor,
+            enableLogging: false,
+            isTextEnabled: () => widget.settings.textLayoutSettings.textEnabled,
+            enableText: () {
               widget.settings.textLayoutSettings.textEnabled = true;
-            widget.onSettingsChanged(widget.settings);
-          },
-          sliderColor: widget.sliderColor,
-          icons: const [
-            Icons.format_align_left,
-            Icons.format_align_center,
-            Icons.format_align_right,
-          ],
-          tooltips: const ['Left Align', 'Center Align', 'Right Align'],
-        ),
-        const SizedBox(height: 16),
-        // Add vertical alignment controls
-        AlignmentSelector(
-          label: 'Vertical Alignment',
-          currentValue: _getCurrentVAlign(),
-          onChanged: (value) {
-            _setCurrentVAlign(value);
-            if (!widget.settings.textLayoutSettings.textEnabled)
-              widget.settings.textLayoutSettings.textEnabled = true;
-            widget.onSettingsChanged(widget.settings);
-          },
-          sliderColor: widget.sliderColor,
-          icons: const [
-            Icons.vertical_align_top,
-            Icons.vertical_align_center,
-            Icons.vertical_align_bottom,
-          ],
-          tooltips: const ['Top Align', 'Middle Align', 'Bottom Align'],
-        ),
-      ],
+              widget.onSettingsChanged(widget.settings);
+            },
+            multiline: selectedTextLine == TextLine.lyrics,
+            maxLines: 8,
+          ),
+          // Add color picker
+          ColorPicker(
+            key: ValueKey(
+              'text_color_${selectedTextLine.toString()}_${_getCurrentColor().value}',
+            ),
+            label: 'Text Color',
+            currentColor: _getCurrentColor(),
+            onColorChanged: (color) {
+              _setCurrentColor(color);
+            },
+            textColor: widget.sliderColor,
+          ),
+          const SizedBox(height: 12),
+          FontSelector(
+            selectedFont: _getCurrentFont().isEmpty
+                ? 'Default'
+                : _getCurrentFont(),
+            selectedWeight: _toFontWeight(_getCurrentWeight()),
+            labelText: 'Font',
+            onFontSelected: (font) {
+              final selected = font == 'Default' ? '' : font;
+              _setCurrentFont(selected);
+              if (!widget.settings.textLayoutSettings.textEnabled)
+                widget.settings.textLayoutSettings.textEnabled = true;
+              widget.onSettingsChanged(widget.settings);
+            },
+            onWeightSelected: (fw) {
+              _setCurrentWeight(_fromFontWeight(fw));
+              if (!widget.settings.textLayoutSettings.textEnabled)
+                widget.settings.textLayoutSettings.textEnabled = true;
+              widget.onSettingsChanged(widget.settings);
+            },
+          ),
+          const SizedBox(height: 12),
+          ValueSlider(
+            label: 'Size',
+            value: _getCurrentSize(),
+            onChanged: (v) => _onSliderChanged(v, _setCurrentSize),
+            sliderColor: widget.sliderColor,
+            defaultValue: 0.05,
+          ),
+          // Add width slider for variable fonts
+          if (_isVariableFont(_getCurrentFont())) _getVariableFontSliders(),
+          // Add Fit to Width checkbox
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Fit to Width',
+                style: TextStyle(color: widget.sliderColor, fontSize: 14),
+              ),
+              Checkbox(
+                value: _getCurrentFitToWidth(),
+                checkColor: Colors.black,
+                activeColor: widget.sliderColor,
+                side: BorderSide(color: widget.sliderColor),
+                onChanged: (value) {
+                  if (value != null) {
+                    _setCurrentFitToWidth(value);
+                    if (!widget.settings.textLayoutSettings.textEnabled)
+                      widget.settings.textLayoutSettings.textEnabled = true;
+                    widget.onSettingsChanged(widget.settings);
+                  }
+                },
+              ),
+            ],
+          ),
+          // Only show line height slider if fitToWidth is enabled
+          if (_getCurrentFitToWidth())
+            ValueSlider(
+              label: 'Line Height',
+              value: _getCurrentLineHeight() / 2.0, // Scale to 0-1 range
+              onChanged: (v) => _onSliderChanged(
+                v,
+                (val) => _setCurrentLineHeight(val * 2.0),
+              ), // Scale to 0-2 range
+              sliderColor: widget.sliderColor,
+              defaultValue: 0.6, // Default 1.2 scaled to 0-1 range
+            ),
+          ValueSlider(
+            label: 'Position X',
+            value: _getCurrentPosX(),
+            onChanged: (v) => _onSliderChanged(v, _setCurrentPosX),
+            sliderColor: widget.sliderColor,
+            defaultValue: 0.1,
+          ),
+          ValueSlider(
+            label: 'Position Y',
+            value: _getCurrentPosY(),
+            onChanged: (v) => _onSliderChanged(v, _setCurrentPosY),
+            sliderColor: widget.sliderColor,
+            defaultValue: 0.1,
+          ),
+          // Add horizontal alignment controls
+          AlignmentSelector(
+            label: 'Horizontal Alignment',
+            currentValue: _getCurrentHAlign(),
+            onChanged: (value) {
+              _setCurrentHAlign(value);
+              if (!widget.settings.textLayoutSettings.textEnabled)
+                widget.settings.textLayoutSettings.textEnabled = true;
+              widget.onSettingsChanged(widget.settings);
+            },
+            sliderColor: widget.sliderColor,
+            icons: const [
+              Icons.format_align_left,
+              Icons.format_align_center,
+              Icons.format_align_right,
+            ],
+            tooltips: const ['Left Align', 'Center Align', 'Right Align'],
+          ),
+          const SizedBox(height: 16),
+          // Add vertical alignment controls
+          AlignmentSelector(
+            label: 'Vertical Alignment',
+            currentValue: _getCurrentVAlign(),
+            onChanged: (value) {
+              _setCurrentVAlign(value);
+              if (!widget.settings.textLayoutSettings.textEnabled)
+                widget.settings.textLayoutSettings.textEnabled = true;
+              widget.onSettingsChanged(widget.settings);
+            },
+            sliderColor: widget.sliderColor,
+            icons: const [
+              Icons.vertical_align_top,
+              Icons.vertical_align_center,
+              Icons.vertical_align_bottom,
+            ],
+            tooltips: const ['Top Align', 'Middle Align', 'Bottom Align'],
+          ),
+        ],
+      ),
     );
   }
 

@@ -6,6 +6,7 @@ import '../models/presets_manager.dart';
 import '../controllers/effect_controller.dart';
 import 'color_picker.dart';
 import 'enhanced_panel_header.dart';
+import 'glass_panel.dart';
 
 class TextFxPanel extends StatefulWidget {
   final ShaderSettings settings;
@@ -87,8 +88,9 @@ class _TextFxPanelState extends State<TextFxPanel>
   Widget build(BuildContext context) {
     _log('Building TextFxPanel', level: LogLevel.debug);
 
-    return Column(
-      children: [
+    return GlassPanel(
+      child: Column(
+        children: [
         // Panel header with animation toggle, presets, and options
         EnhancedPanelHeader(
           aspect: ShaderAspect.textfx,
@@ -146,6 +148,7 @@ class _TextFxPanelState extends State<TextFxPanel>
           ),
         ),
       ],
+    ),
     );
   }
 

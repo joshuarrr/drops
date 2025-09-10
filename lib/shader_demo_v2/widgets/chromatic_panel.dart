@@ -8,6 +8,7 @@ import 'lockable_slider.dart';
 import 'labeled_switch.dart';
 import 'animation_controls.dart';
 import 'enhanced_panel_header.dart';
+import 'glass_panel.dart';
 import '../controllers/animation_state_manager.dart';
 import '../views/effect_controls.dart';
 
@@ -47,191 +48,194 @@ class _ChromaticPanelState extends State<ChromaticPanel> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        EnhancedPanelHeader(
-          aspect: ShaderAspect.chromatic,
-          onPresetSelected: _applyPreset,
-          onReset: _resetChromatic,
-          onSavePreset: _savePresetForAspect,
-          sliderColor: widget.sliderColor,
-          loadPresets: _loadPresetsForAspect,
-          deletePreset: _deletePresetAndUpdate,
-          refreshPresets: _refreshPresets,
-          refreshCounter: _refreshCounter,
-          applyToImage: widget.settings.chromaticSettings.applyToImage,
-          applyToText: widget.settings.chromaticSettings.applyToText,
-          onApplyToImageChanged: (value) {
-            widget.settings.chromaticSettings.applyToImage = value;
-            widget.onSettingsChanged(widget.settings);
-          },
-          onApplyToTextChanged: (value) {
-            widget.settings.chromaticSettings.applyToText = value;
-            widget.onSettingsChanged(widget.settings);
-          },
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Column(
-            children: [
-              // Remove the Enable/disable switch
-              // The effect is now automatically enabled when the panel is visible
-              SizedBox(height: 8),
-              LockableSlider(
-                label: 'Amount',
-                value: widget.settings.chromaticSettings.amount,
-                min: 0.0,
-                max: 20.0,
-                divisions: 200,
-                displayValue: widget.settings.chromaticSettings.amount
-                    .toStringAsFixed(2),
-                onChanged: (value) {
-                  final updatedSettings = widget.settings;
-                  updatedSettings.chromaticSettings.amount = value;
-                  updatedSettings.chromaticEnabled =
-                      true; // Ensure it's enabled when values change
-                  widget.onSettingsChanged(updatedSettings);
-                },
-                activeColor: widget.sliderColor,
-                parameterId: ParameterIds.chromaticAmount,
-                animationEnabled:
-                    widget.settings.chromaticSettings.chromaticAnimated,
-                defaultValue: 0.5,
-              ),
-              LockableSlider(
-                label: 'Angle',
-                value: widget.settings.chromaticSettings.angle,
-                min: 0.0,
-                max: 360.0,
-                divisions: 36,
-                displayValue:
-                    '${widget.settings.chromaticSettings.angle.toInt()}°',
-                onChanged: (value) {
-                  final updatedSettings = widget.settings;
-                  updatedSettings.chromaticSettings.angle = value;
-                  updatedSettings.chromaticEnabled =
-                      true; // Ensure it's enabled when values change
-                  widget.onSettingsChanged(updatedSettings);
-                },
-                activeColor: widget.sliderColor,
-                parameterId: ParameterIds.chromaticAngle,
-                animationEnabled:
-                    widget.settings.chromaticSettings.chromaticAnimated,
-                defaultValue: 0.0,
-              ),
-              LockableSlider(
-                label: 'Spread',
-                value: widget.settings.chromaticSettings.spread,
-                min: 0.0,
-                max: 1.0,
-                divisions: 100,
-                displayValue: widget.settings.chromaticSettings.spread
-                    .toStringAsFixed(2),
-                onChanged: (value) {
-                  final updatedSettings = widget.settings;
-                  updatedSettings.chromaticSettings.spread = value;
-                  updatedSettings.chromaticEnabled =
-                      true; // Ensure it's enabled when values change
-                  widget.onSettingsChanged(updatedSettings);
-                },
-                activeColor: widget.sliderColor,
-                parameterId: ParameterIds.chromaticSpread,
-                animationEnabled:
-                    widget.settings.chromaticSettings.chromaticAnimated,
-                defaultValue: 0.5,
-              ),
-              LockableSlider(
-                label: 'Intensity',
-                value: widget.settings.chromaticSettings.intensity,
-                min: 0.0,
-                max: 1.0,
-                divisions: 100,
-                displayValue: widget.settings.chromaticSettings.intensity
-                    .toStringAsFixed(2),
-                onChanged: (value) {
-                  final updatedSettings = widget.settings;
-                  updatedSettings.chromaticSettings.intensity = value;
-                  updatedSettings.chromaticEnabled =
-                      true; // Ensure it's enabled when values change
-                  widget.onSettingsChanged(updatedSettings);
-                },
-                activeColor: widget.sliderColor,
-                parameterId: ParameterIds.chromaticIntensity,
-                animationEnabled:
-                    widget.settings.chromaticSettings.chromaticAnimated,
-                defaultValue: 0.5,
-              ),
-
-              // Toggle animation for chromatic effect
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Animate Effect',
-                    style: TextStyle(color: widget.sliderColor, fontSize: 14),
-                  ),
-                  Switch(
-                    value: widget.settings.chromaticSettings.chromaticAnimated,
-                    activeColor: widget.sliderColor,
-                    onChanged: (value) {
-                      final updatedSettings = widget.settings;
-                      updatedSettings.chromaticSettings.chromaticAnimated =
-                          value;
-                      // Always ensure the effect is enabled when animation is toggled
-                      updatedSettings.chromaticEnabled = true;
-                      widget.onSettingsChanged(updatedSettings);
-                    },
-                  ),
-                ],
-              ),
-
-              // Only show animation controls when animation is enabled
-              if (widget.settings.chromaticSettings.chromaticAnimated)
-                // Add animation controls for chromatic effect
-                AnimationControls(
-                  animationSpeed:
-                      widget.settings.chromaticSettings.animOptions.speed,
-                  onSpeedChanged: (v) {
-                    widget.settings.chromaticSettings.animOptions = widget
-                        .settings
-                        .chromaticSettings
-                        .animOptions
-                        .copyWith(speed: v);
-                    widget.settings.chromaticEnabled =
-                        true; // Ensure it's enabled when values change
-                    widget.onSettingsChanged(widget.settings);
-                  },
-                  animationMode:
-                      widget.settings.chromaticSettings.animOptions.mode,
-                  onModeChanged: (m) {
-                    widget.settings.chromaticSettings.animOptions = widget
-                        .settings
-                        .chromaticSettings
-                        .animOptions
-                        .copyWith(mode: m);
-                    widget.settings.chromaticEnabled =
-                        true; // Ensure it's enabled when values change
-                    widget.onSettingsChanged(widget.settings);
-                  },
-                  animationEasing:
-                      widget.settings.chromaticSettings.animOptions.easing,
-                  onEasingChanged: (e) {
-                    widget.settings.chromaticSettings.animOptions = widget
-                        .settings
-                        .chromaticSettings
-                        .animOptions
-                        .copyWith(easing: e);
-                    widget.settings.chromaticEnabled =
-                        true; // Ensure it's enabled when values change
-                    widget.onSettingsChanged(widget.settings);
-                  },
-                  sliderColor: widget.sliderColor,
-                ),
-            ],
+    return GlassPanel(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          EnhancedPanelHeader(
+            aspect: ShaderAspect.chromatic,
+            onPresetSelected: _applyPreset,
+            onReset: _resetChromatic,
+            onSavePreset: _savePresetForAspect,
+            sliderColor: widget.sliderColor,
+            loadPresets: _loadPresetsForAspect,
+            deletePreset: _deletePresetAndUpdate,
+            refreshPresets: _refreshPresets,
+            refreshCounter: _refreshCounter,
+            applyToImage: widget.settings.chromaticSettings.applyToImage,
+            applyToText: widget.settings.chromaticSettings.applyToText,
+            onApplyToImageChanged: (value) {
+              widget.settings.chromaticSettings.applyToImage = value;
+              widget.onSettingsChanged(widget.settings);
+            },
+            onApplyToTextChanged: (value) {
+              widget.settings.chromaticSettings.applyToText = value;
+              widget.onSettingsChanged(widget.settings);
+            },
           ),
-        ),
-      ],
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Column(
+              children: [
+                // Remove the Enable/disable switch
+                // The effect is now automatically enabled when the panel is visible
+                SizedBox(height: 8),
+                LockableSlider(
+                  label: 'Amount',
+                  value: widget.settings.chromaticSettings.amount,
+                  min: 0.0,
+                  max: 20.0,
+                  divisions: 200,
+                  displayValue: widget.settings.chromaticSettings.amount
+                      .toStringAsFixed(2),
+                  onChanged: (value) {
+                    final updatedSettings = widget.settings;
+                    updatedSettings.chromaticSettings.amount = value;
+                    updatedSettings.chromaticEnabled =
+                        true; // Ensure it's enabled when values change
+                    widget.onSettingsChanged(updatedSettings);
+                  },
+                  activeColor: widget.sliderColor,
+                  parameterId: ParameterIds.chromaticAmount,
+                  animationEnabled:
+                      widget.settings.chromaticSettings.chromaticAnimated,
+                  defaultValue: 0.5,
+                ),
+                LockableSlider(
+                  label: 'Angle',
+                  value: widget.settings.chromaticSettings.angle,
+                  min: 0.0,
+                  max: 360.0,
+                  divisions: 36,
+                  displayValue:
+                      '${widget.settings.chromaticSettings.angle.toInt()}°',
+                  onChanged: (value) {
+                    final updatedSettings = widget.settings;
+                    updatedSettings.chromaticSettings.angle = value;
+                    updatedSettings.chromaticEnabled =
+                        true; // Ensure it's enabled when values change
+                    widget.onSettingsChanged(updatedSettings);
+                  },
+                  activeColor: widget.sliderColor,
+                  parameterId: ParameterIds.chromaticAngle,
+                  animationEnabled:
+                      widget.settings.chromaticSettings.chromaticAnimated,
+                  defaultValue: 0.0,
+                ),
+                LockableSlider(
+                  label: 'Spread',
+                  value: widget.settings.chromaticSettings.spread,
+                  min: 0.0,
+                  max: 1.0,
+                  divisions: 100,
+                  displayValue: widget.settings.chromaticSettings.spread
+                      .toStringAsFixed(2),
+                  onChanged: (value) {
+                    final updatedSettings = widget.settings;
+                    updatedSettings.chromaticSettings.spread = value;
+                    updatedSettings.chromaticEnabled =
+                        true; // Ensure it's enabled when values change
+                    widget.onSettingsChanged(updatedSettings);
+                  },
+                  activeColor: widget.sliderColor,
+                  parameterId: ParameterIds.chromaticSpread,
+                  animationEnabled:
+                      widget.settings.chromaticSettings.chromaticAnimated,
+                  defaultValue: 0.5,
+                ),
+                LockableSlider(
+                  label: 'Intensity',
+                  value: widget.settings.chromaticSettings.intensity,
+                  min: 0.0,
+                  max: 1.0,
+                  divisions: 100,
+                  displayValue: widget.settings.chromaticSettings.intensity
+                      .toStringAsFixed(2),
+                  onChanged: (value) {
+                    final updatedSettings = widget.settings;
+                    updatedSettings.chromaticSettings.intensity = value;
+                    updatedSettings.chromaticEnabled =
+                        true; // Ensure it's enabled when values change
+                    widget.onSettingsChanged(updatedSettings);
+                  },
+                  activeColor: widget.sliderColor,
+                  parameterId: ParameterIds.chromaticIntensity,
+                  animationEnabled:
+                      widget.settings.chromaticSettings.chromaticAnimated,
+                  defaultValue: 0.5,
+                ),
+
+                // Toggle animation for chromatic effect
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Animate Effect',
+                      style: TextStyle(color: widget.sliderColor, fontSize: 14),
+                    ),
+                    Switch(
+                      value:
+                          widget.settings.chromaticSettings.chromaticAnimated,
+                      activeColor: widget.sliderColor,
+                      onChanged: (value) {
+                        final updatedSettings = widget.settings;
+                        updatedSettings.chromaticSettings.chromaticAnimated =
+                            value;
+                        // Always ensure the effect is enabled when animation is toggled
+                        updatedSettings.chromaticEnabled = true;
+                        widget.onSettingsChanged(updatedSettings);
+                      },
+                    ),
+                  ],
+                ),
+
+                // Only show animation controls when animation is enabled
+                if (widget.settings.chromaticSettings.chromaticAnimated)
+                  // Add animation controls for chromatic effect
+                  AnimationControls(
+                    animationSpeed:
+                        widget.settings.chromaticSettings.animOptions.speed,
+                    onSpeedChanged: (v) {
+                      widget.settings.chromaticSettings.animOptions = widget
+                          .settings
+                          .chromaticSettings
+                          .animOptions
+                          .copyWith(speed: v);
+                      widget.settings.chromaticEnabled =
+                          true; // Ensure it's enabled when values change
+                      widget.onSettingsChanged(widget.settings);
+                    },
+                    animationMode:
+                        widget.settings.chromaticSettings.animOptions.mode,
+                    onModeChanged: (m) {
+                      widget.settings.chromaticSettings.animOptions = widget
+                          .settings
+                          .chromaticSettings
+                          .animOptions
+                          .copyWith(mode: m);
+                      widget.settings.chromaticEnabled =
+                          true; // Ensure it's enabled when values change
+                      widget.onSettingsChanged(widget.settings);
+                    },
+                    animationEasing:
+                        widget.settings.chromaticSettings.animOptions.easing,
+                    onEasingChanged: (e) {
+                      widget.settings.chromaticSettings.animOptions = widget
+                          .settings
+                          .chromaticSettings
+                          .animOptions
+                          .copyWith(easing: e);
+                      widget.settings.chromaticEnabled =
+                          true; // Ensure it's enabled when values change
+                      widget.onSettingsChanged(widget.settings);
+                    },
+                    sliderColor: widget.sliderColor,
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
