@@ -54,8 +54,8 @@ class _ImageContainerState extends State<ImageContainer> {
             : screenHeight;
 
         // Create the image widget
-        // Log the image path for debugging
-        debugPrint('ImageContainer: imagePath="${widget.imagePath}"');
+        // Log the image path for debugging (disabled to prevent spam)
+        // debugPrint('ImageContainer: imagePath="${widget.imagePath}"');
 
         // Check if the path is valid
         Widget imageWidget;

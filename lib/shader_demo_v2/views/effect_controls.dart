@@ -14,7 +14,7 @@ import '../widgets/text_fx_panel.dart';
 import '../widgets/rain_panel.dart';
 import '../widgets/chromatic_panel.dart';
 import '../widgets/ripple_panel.dart';
-import '../widgets/aspect_toggle.dart';
+import '../widgets/glass_aspect_toggle.dart';
 import '../widgets/music_panel.dart';
 import '../services/asset_service.dart';
 
@@ -137,7 +137,7 @@ class _EffectControlsV2State extends State<EffectControlsV2> {
           spacing: 16,
           runSpacing: 8,
           children: [
-            AspectToggle(
+            GlassAspectToggle(
               aspect: ShaderAspect.music,
               isEnabled: settings.musicEnabled,
               isCurrentImageDark: isCurrentImageDark,
@@ -145,7 +145,7 @@ class _EffectControlsV2State extends State<EffectControlsV2> {
                   _toggleAspect(aspect, enabled, controller),
               onTap: _selectAspect,
             ),
-            AspectToggle(
+            GlassAspectToggle(
               aspect: ShaderAspect.background,
               isEnabled: settings.backgroundEnabled,
               isCurrentImageDark: isCurrentImageDark,
@@ -153,7 +153,7 @@ class _EffectControlsV2State extends State<EffectControlsV2> {
                   _toggleAspect(aspect, enabled, controller),
               onTap: _selectAspect,
             ),
-            AspectToggle(
+            GlassAspectToggle(
               aspect: ShaderAspect.image,
               isEnabled: settings.imageEnabled,
               isCurrentImageDark: isCurrentImageDark,
@@ -161,7 +161,7 @@ class _EffectControlsV2State extends State<EffectControlsV2> {
                   _toggleAspect(aspect, enabled, controller),
               onTap: _selectAspect,
             ),
-            AspectToggle(
+            GlassAspectToggle(
               aspect: ShaderAspect.text,
               isEnabled: settings.textEnabled,
               isCurrentImageDark: isCurrentImageDark,
@@ -169,7 +169,7 @@ class _EffectControlsV2State extends State<EffectControlsV2> {
                   _toggleAspect(aspect, enabled, controller),
               onTap: _selectAspect,
             ),
-            AspectToggle(
+            GlassAspectToggle(
               aspect: ShaderAspect.textfx,
               isEnabled: settings.textfxEnabled,
               isCurrentImageDark: isCurrentImageDark,
@@ -177,7 +177,7 @@ class _EffectControlsV2State extends State<EffectControlsV2> {
                   _toggleAspect(aspect, enabled, controller),
               onTap: _selectAspect,
             ),
-            AspectToggle(
+            GlassAspectToggle(
               aspect: ShaderAspect.color,
               isEnabled: settings.colorEnabled,
               isCurrentImageDark: isCurrentImageDark,
@@ -185,7 +185,7 @@ class _EffectControlsV2State extends State<EffectControlsV2> {
                   _toggleAspect(aspect, enabled, controller),
               onTap: _selectAspect,
             ),
-            AspectToggle(
+            GlassAspectToggle(
               aspect: ShaderAspect.blur,
               isEnabled: settings.blurEnabled,
               isCurrentImageDark: isCurrentImageDark,
@@ -193,7 +193,7 @@ class _EffectControlsV2State extends State<EffectControlsV2> {
                   _toggleAspect(aspect, enabled, controller),
               onTap: _selectAspect,
             ),
-            AspectToggle(
+            GlassAspectToggle(
               aspect: ShaderAspect.noise,
               isEnabled: settings.noiseEnabled,
               isCurrentImageDark: isCurrentImageDark,
@@ -201,7 +201,7 @@ class _EffectControlsV2State extends State<EffectControlsV2> {
                   _toggleAspect(aspect, enabled, controller),
               onTap: _selectAspect,
             ),
-            AspectToggle(
+            GlassAspectToggle(
               aspect: ShaderAspect.rain,
               isEnabled: settings.rainEnabled,
               isCurrentImageDark: isCurrentImageDark,
@@ -209,7 +209,7 @@ class _EffectControlsV2State extends State<EffectControlsV2> {
                   _toggleAspect(aspect, enabled, controller),
               onTap: _selectAspect,
             ),
-            AspectToggle(
+            GlassAspectToggle(
               aspect: ShaderAspect.chromatic,
               isEnabled: settings.chromaticEnabled,
               isCurrentImageDark: isCurrentImageDark,
@@ -217,7 +217,7 @@ class _EffectControlsV2State extends State<EffectControlsV2> {
                   _toggleAspect(aspect, enabled, controller),
               onTap: _selectAspect,
             ),
-            AspectToggle(
+            GlassAspectToggle(
               aspect: ShaderAspect.ripple,
               isEnabled: settings.rippleEnabled,
               isCurrentImageDark: isCurrentImageDark,
