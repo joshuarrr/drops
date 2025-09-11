@@ -120,11 +120,11 @@ class NoiseEffectShader extends StatelessWidget {
     // Set the texture sampler first
     shader.setImageSampler(0, image);
 
-    // When noiseAnimated is false, we still send the noise speed
-    // but we don't send an animated time value
+    // CRITICAL FIX: Always provide time value for wave effects to work
+    // Wave distortion needs time-based calculations even when animation is disabled
     double timeValue = settings.noiseSettings.noiseAnimated
         ? animationValue
-        : 0.0;
+        : 0.1; // Provide small time value for static wave effects
 
     // The noise speed to use, which can be 0 even when animated
     double noiseSpeed = settings.noiseSettings.noiseSpeed;
@@ -281,12 +281,13 @@ class NoiseEffectShader extends StatelessWidget {
         }
       }
     } else {
-      // Clear animated values when animation is disabled
-      final animManager = AnimationStateManager();
-      animManager.clearAnimatedValue(ParameterIds.noiseScale);
-      animManager.clearAnimatedValue(ParameterIds.noiseSpeed);
-      animManager.clearAnimatedValue(ParameterIds.colorIntensity);
-      animManager.clearAnimatedValue(ParameterIds.waveAmount);
+      // CRITICAL FIX: When animation is disabled, use slider values directly
+      // Don't clear animated values as this breaks static wave effects
+      // The shader still needs the original values for static wave distortion
+      noiseScale = settings.noiseSettings.noiseScale;
+      noiseSpeed = settings.noiseSettings.noiseSpeed;
+      colorIntensity = settings.noiseSettings.colorIntensity;
+      waveAmount = settings.noiseSettings.waveAmount;
     }
 
     // CRITICAL FIX: Special handling for text content

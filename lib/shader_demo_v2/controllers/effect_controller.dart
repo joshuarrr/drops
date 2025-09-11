@@ -1,6 +1,5 @@
 // import 'dart:math';
 import 'package:flutter/material.dart';
-import 'dart:ui' as ui;
 import 'dart:developer' as developer;
 import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart';
@@ -133,9 +132,6 @@ class EffectController {
 
   // Memory management mode
   static bool _highMemoryMode = false;
-
-  // Preset capturing mode for limited complexity
-  static bool _isPresetCapturing = false;
 
   // Method to explicitly clear the effect cache
   static void clearEffectCache() {
@@ -607,23 +603,8 @@ class EffectController {
       return child;
     }
 
-    // During high memory mode or when preset saving, use simplified noise effect
-    if (_highMemoryMode || _isPresetCapturing) {
-      // Return a simplified version that doesn't use AnimatedSampler
-      return Container(
-        decoration: BoxDecoration(
-          color: settings.noiseSettings.colorIntensity > 0.0
-              ? Color.fromRGBO(
-                  (242 * settings.noiseSettings.colorIntensity).round(),
-                  (143 * settings.noiseSettings.colorIntensity).round(),
-                  (202 * settings.noiseSettings.colorIntensity).round(),
-                  settings.noiseSettings.colorIntensity * 0.1,
-                )
-              : Colors.transparent,
-        ),
-        child: child,
-      );
-    }
+    // CRITICAL FIX: Memory mode check disabled - was preventing wave effects
+    // The simplified version doesn't support wave distortion, so we always use the full shader
 
     // Use custom shader implementation
     return NoiseEffectShader(
@@ -718,13 +699,4 @@ class EffectController {
   }
 
   // Cymatics effect removed in V2 for simplification
-
-  /// Set preset capturing mode to limit shader complexity
-  static void setPresetCapturing(bool capturing) {
-    _isPresetCapturing = capturing;
-    if (capturing) {
-      // Temporarily enable high memory mode during preset capture
-      setHighMemoryMode(true);
-    }
-  }
 }
