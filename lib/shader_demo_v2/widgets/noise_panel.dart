@@ -3,8 +3,6 @@ import '../models/shader_effect.dart';
 import '../models/effect_settings.dart';
 import '../models/animation_options.dart';
 import '../models/presets_manager.dart';
-import 'value_slider.dart';
-import 'labeled_slider.dart';
 import 'lockable_slider.dart';
 import 'animation_controls.dart';
 import '../controllers/animation_state_manager.dart';
@@ -67,22 +65,26 @@ class NoisePanel extends StatelessWidget {
             parameterId: ParameterIds.noiseScale,
             animationEnabled: settings.noiseSettings.noiseAnimated,
           ),
-          LockableSlider(
-            label: 'Noise Speed',
-            value: settings.noiseSettings.noiseSpeed,
-            min: 0.0,
-            max: 1.0,
-            divisions: null,
-            displayValue: settings.noiseSettings.noiseSpeed.toStringAsFixed(2),
-            onChanged: (value) => _onSliderChanged(
-              value,
-              (v) => settings.noiseSettings.noiseSpeed = v,
+          // Only show noise speed slider when animation is enabled
+          if (settings.noiseSettings.noiseAnimated)
+            LockableSlider(
+              label: 'Noise Speed',
+              value: settings.noiseSettings.noiseSpeed,
+              min: 0.0,
+              max: 1.0,
+              divisions: null,
+              displayValue: settings.noiseSettings.noiseSpeed.toStringAsFixed(
+                2,
+              ),
+              onChanged: (value) => _onSliderChanged(
+                value,
+                (v) => settings.noiseSettings.noiseSpeed = v,
+              ),
+              activeColor: sliderColor,
+              parameterId: ParameterIds.noiseSpeed,
+              animationEnabled: settings.noiseSettings.noiseAnimated,
+              defaultValue: 0.5,
             ),
-            activeColor: sliderColor,
-            parameterId: ParameterIds.noiseSpeed,
-            animationEnabled: settings.noiseSettings.noiseAnimated,
-            defaultValue: 0.5,
-          ),
           LockableSlider(
             label: 'Wave Amount',
             value: settings.noiseSettings.waveAmount,
