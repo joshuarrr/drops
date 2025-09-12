@@ -133,13 +133,9 @@ class _PresetMenuState extends State<PresetMenu> {
       }
 
       /// Build thumbnail widget with on-demand generation
-      /// Respects the original preset's fill/fit mode
       Widget _buildThumbnailWidget(Preset preset) {
-        // Determine the correct BoxFit based on the preset's fillScreen setting
-        final settings = preset.settings;
-        final BoxFit thumbnailFit = settings.fillScreen
-            ? BoxFit.cover
-            : BoxFit.contain;
+        // Always use contain to show complete image
+        const BoxFit thumbnailFit = BoxFit.contain;
 
         if (preset.hasThumbnail) {
           // Show existing thumbnail from memory or storage
@@ -150,9 +146,7 @@ class _PresetMenuState extends State<PresetMenu> {
         }
 
         // Use FutureBuilder to generate thumbnail on-demand
-        print(
-          '🖼️ [PresetMenu] Building thumbnail widget for: ${preset.name} (fillScreen: ${settings.fillScreen})',
-        );
+        print('🖼️ [PresetMenu] Building thumbnail widget for: ${preset.name}');
         return FutureBuilder<String?>(
           future: ThumbnailService.getOrGenerateThumbnail(preset),
           builder: (context, snapshot) {
@@ -627,11 +621,8 @@ class _PresetMenuState extends State<PresetMenu> {
   /// Build thumbnail widget - shows existing thumbnails or placeholder
   /// Respects the original preset's fill/fit mode
   Widget _buildThumbnailWidget(Preset preset) {
-    // Determine the correct BoxFit based on the preset's fillScreen setting
-    final settings = preset.settings;
-    final BoxFit thumbnailFit = settings.fillScreen
-        ? BoxFit.cover
-        : BoxFit.contain;
+    // Always use contain to show complete image
+    const BoxFit thumbnailFit = BoxFit.contain;
 
     if (preset.hasThumbnail) {
       // Show existing thumbnail from memory or storage

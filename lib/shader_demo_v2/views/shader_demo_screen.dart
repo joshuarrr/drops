@@ -15,7 +15,6 @@ import '../views/text_overlay.dart';
 import '../../common/app_scaffold.dart';
 import '../services/thumbnail_service.dart';
 import '../services/preset_service.dart';
-import '../models/preset.dart';
 
 /// Main screen for shader demo V2
 /// Uses Provider pattern and Stack layout for overlay controls
@@ -29,12 +28,16 @@ class ShaderDemoScreen extends StatefulWidget {
 class _ShaderDemoScreenState extends State<ShaderDemoScreen>
     with TickerProviderStateMixin {
   late AnimationController _animationController;
+  bool _isCapturingScreenshot = false;
+  String? _pendingPresetName; // Store the preset name for success message
+  String? _pendingErrorMessage; // Store error messages
   late ShaderController _shaderController;
   late PageController _pageController;
   bool _isInitialized = false;
 
   // Create a key just for thumbnails - separate from the UI tree
   final GlobalKey _thumbnailCaptureKey = GlobalKey();
+  final GlobalKey _imageCaptureKey = GlobalKey();
 
   // Track animation state changes
   bool? _lastAnimationState;
@@ -242,9 +245,45 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
       value: _shaderController,
       child: Consumer<ShaderController>(
         builder: (context, controller, child) {
+          // Show success toast if we have a pending preset name
+          if (_pendingPresetName != null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Preset "$_pendingPresetName" saved successfully!',
+                    ),
+                    backgroundColor: Colors.green,
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+                _pendingPresetName = null; // Clear after showing
+              }
+            });
+          }
+
+          // Show error toast if we have a pending error message
+          if (_pendingErrorMessage != null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(_pendingErrorMessage!),
+                    backgroundColor: Colors.red,
+                    duration: const Duration(seconds: 3),
+                  ),
+                );
+                _pendingErrorMessage = null; // Clear after showing
+              }
+            });
+          }
+
           return AppScaffold(
             title: 'Shaders',
             showBackButton: true,
+            showAppBar:
+                !_isCapturingScreenshot, // Hide app bar during screenshot capture
             currentIndex: 1,
             extendBodyBehindAppBar: true,
             appBarBackgroundColor: Colors.transparent,
@@ -442,36 +481,6 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
 
   // Removed unused cache variables
 
-  /// Build a simple content widget for thumbnail capture
-  Widget _buildThumbnailContent(Preset preset) {
-    Widget contentWidget;
-
-    if (preset.settings.imageEnabled) {
-      contentWidget = ImageContainer(
-        imagePath: preset.imagePath,
-        settings: preset.settings,
-      );
-    } else {
-      final backgroundColor = preset.settings.backgroundEnabled
-          ? preset.settings.backgroundSettings.backgroundColor
-          : Colors.black;
-      contentWidget = Container(
-        color: backgroundColor,
-        width: double.infinity,
-        height: double.infinity,
-      );
-    }
-
-    // Apply effects
-    return EffectController.applyEffects(
-      child: contentWidget,
-      settings: preset.settings,
-      animationValue: 0.0, // No animation for thumbnail
-      preserveTransparency: false,
-      isTextContent: false,
-    );
-  }
-
   Widget _cachedContentWidget(String cacheKey, ShaderController controller) {
     // FIXED: Always rebuild content to ensure settings changes are reflected immediately
     // Removed caching conditional to fix image visibility toggle and selection not updating
@@ -489,7 +498,7 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
         'DEBUG: Creating ImageContainer with path: ${controller.selectedImage}',
       );
       contentWidget = ImageContainer(
-        key: ValueKey('image-${controller.selectedImage}'),
+        key: _imageCaptureKey,
         imagePath: controller.selectedImage,
         settings: controller.settings,
       );
@@ -557,10 +566,15 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
 
     // Use a unique ValueKey for each page in the navigation stack to avoid conflicts
     // The key is only used for identification, not for finding the widget
-    return RepaintBoundary(
-      // Use object identity as part of the key to ensure uniqueness
-      key: ValueKey('content-${controller.hashCode}-${contentWidget.hashCode}'),
-      child: Stack(fit: StackFit.expand, children: stackChildren),
+    return ClipRect(
+      child: RepaintBoundary(
+        key: _thumbnailCaptureKey,
+        child: SizedBox(
+          width: double.infinity,
+          height: double.infinity,
+          child: Stack(fit: StackFit.expand, children: stackChildren),
+        ),
+      ),
     );
   }
 
@@ -602,6 +616,24 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
         ),
       ),
     );
+  }
+
+  /// Show success toast using a safe approach
+  void _showSuccessToast(String presetName) {
+    // Store the preset name and trigger a rebuild to show toast
+    _pendingPresetName = presetName;
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  /// Show error toast using a safe approach
+  void _showErrorToast(String message) {
+    // Store the error message and trigger a rebuild to show toast
+    _pendingErrorMessage = message;
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   /// Show preset menu
@@ -670,10 +702,73 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               final name = nameController.text.trim();
               if (name.isNotEmpty) {
+                // Hide ALL UI elements for clean capture
+                controller.setControlsVisible(false); // Force hide controls
+
+                // Set screenshot capture flag to hide app bar
+                setState(() {
+                  _isCapturingScreenshot = true;
+                });
+
+                // Close dialog to hide it
                 Navigator.of(context).pop(name);
+
+                // Wait longer for all UI to settle
+                await Future.delayed(const Duration(milliseconds: 800));
+
+                // Capture screenshot of clean screen
+                final captureResult = await ThumbnailService.capturePreview(
+                  _thumbnailCaptureKey,
+                );
+
+                // Restore app bar visibility
+                if (mounted) {
+                  setState(() {
+                    _isCapturingScreenshot = false;
+                  });
+                }
+
+                bool saveSuccess = false;
+                if (captureResult != null) {
+                  final capturedThumbnail = base64Encode(captureResult);
+                  print('🖼️ [ShaderDemoScreen] Clean screenshot captured');
+
+                  // Save the preset with the captured thumbnail
+                  final presetSuccess = await controller.saveNamedPreset(name);
+                  if (presetSuccess) {
+                    final savedPreset = controller.savedPresets
+                        .where((p) => p.name == name)
+                        .lastOrNull;
+
+                    if (savedPreset != null) {
+                      try {
+                        await PresetService.savePresetThumbnail(
+                          savedPreset.id,
+                          capturedThumbnail,
+                        );
+                        print(
+                          'Clean thumbnail saved for preset: ${savedPreset.name}',
+                        );
+                        saveSuccess =
+                            true; // Both preset and thumbnail saved successfully
+                      } catch (e) {
+                        print('❌ Failed to save thumbnail: $e');
+                        saveSuccess = false;
+                      }
+                    }
+                  }
+                }
+
+                // Show success toast only if both preset and thumbnail saved successfully
+                if (saveSuccess) {
+                  _showSuccessToast(name);
+                } else {
+                  // Show error toast if something failed
+                  _showErrorToast('Failed to save preset "$name"');
+                }
               }
             },
             child: const Text('Save'),
@@ -683,120 +778,8 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
     );
 
     if (result != null) {
-      // First save the preset
-      final success = await controller.saveNamedPreset(result);
-
-      if (success && mounted) {
-        // Then capture a thumbnail for the saved preset
-        final savedPreset = controller.savedPresets
-            .where((p) => p.name == result)
-            .lastOrNull; // Get the most recently saved preset with this name
-
-        if (savedPreset != null) {
-          // Ensure controls are hidden for thumbnail capture
-          final originalControlsVisible = controller.controlsVisible;
-          if (originalControlsVisible) {
-            controller.toggleControls(); // Hide controls
-            // Wait for next frame to ensure UI is updated
-            await Future.delayed(const Duration(milliseconds: 100));
-          }
-
-          try {
-            // Create a temporary off-screen widget just for thumbnail capture
-            // This approach avoids conflicts with the main UI
-            final captureCompleter = Completer<String?>();
-
-            // Add a one-time frame callback to build and capture the thumbnail
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              // Create a temporary RepaintBoundary with the preset's content
-              final thumbnailWidget = RepaintBoundary(
-                key: _thumbnailCaptureKey,
-                child: SizedBox(
-                  width: 300, // Thumbnail size
-                  height: 300,
-                  child: Material(
-                    color: Colors.black,
-                    child: _buildThumbnailContent(savedPreset),
-                  ),
-                ),
-              );
-
-              // Insert the widget into the overlay to render it
-              final overlay = Overlay.of(context);
-              final overlayEntry = OverlayEntry(
-                builder: (ctx) {
-                  return Positioned(
-                    left: -1000, // Off-screen
-                    top: -1000,
-                    child: thumbnailWidget,
-                  );
-                },
-              );
-
-              overlay.insert(overlayEntry);
-
-              // Wait for the widget to render, then capture
-              Future.delayed(const Duration(milliseconds: 200), () async {
-                // Capture the thumbnail
-                try {
-                  final captureResult = await ThumbnailService.capturePreview(
-                    _thumbnailCaptureKey,
-                  );
-                  final base64 = captureResult != null
-                      ? base64Encode(captureResult)
-                      : null;
-                  captureCompleter.complete(base64);
-                } catch (e) {
-                  print('Error during capture: $e');
-                  captureCompleter.complete(null);
-                } finally {
-                  // Clean up the overlay entry
-                  overlayEntry.remove();
-                }
-              });
-            });
-
-            // Wait for capture to complete
-            final thumbnailBase64 = await captureCompleter.future;
-
-            // Save the captured thumbnail
-            if (thumbnailBase64 != null) {
-              await PresetService.savePresetThumbnail(
-                savedPreset.id,
-                thumbnailBase64,
-              );
-              print(
-                'Thumbnail captured and saved for preset: ${savedPreset.name}',
-              );
-            } else {
-              print(
-                'Failed to capture thumbnail for preset: ${savedPreset.name}',
-              );
-            }
-          } catch (e) {
-            print('Error capturing thumbnail: $e');
-          } finally {
-            // Restore original controls visibility
-            if (originalControlsVisible && mounted) {
-              controller.toggleControls();
-            }
-          }
-        }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Preset saved successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to save preset'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      // Preset already saved in the Save button callback
+      print('Preset saved: $result');
     }
   }
 }

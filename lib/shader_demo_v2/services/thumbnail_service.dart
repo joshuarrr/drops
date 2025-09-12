@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'dart:ui' as ui;
+import 'package:screenshot/screenshot.dart';
+import 'package:flutter_native_screenshot_plus/flutter_native_screenshot_plus.dart';
+import 'dart:io';
 import '../models/preset.dart';
 import 'storage_service.dart';
 
@@ -75,65 +78,35 @@ class ThumbnailService {
     return _capturePreview(key);
   }
 
-  /// Capture a screenshot using RenderRepaintBoundary - V1's working approach
+  /// Capture a screenshot using Screenshot package
   static Future<Uint8List?> _capturePreview(GlobalKey? key) async {
     try {
-      // If no key provided, skip thumbnail capture
-      if (key == null) {
-        print('No preview key provided, skipping thumbnail capture');
-        return null;
-      }
+      print('🖼️ [ThumbnailService] Starting native screenshot capture...');
 
-      final RenderObject? renderObject = key.currentContext?.findRenderObject();
+      // Use flutter_native_screenshot_plus to capture the actual screen
+      final String? screenshotPath = await FlutterNativeScreenshotPlus()
+          .takeScreenshot();
 
-      if (renderObject == null) {
-        return null;
-      }
+      print('🖼️ [ThumbnailService] Screenshot path: $screenshotPath');
 
-      // Create RepaintBoundary dynamically like V1
-      RenderRepaintBoundary? boundary;
+      if (screenshotPath != null) {
+        // Read the screenshot file
+        final File screenshotFile = File(screenshotPath);
+        final Uint8List imageBytes = await screenshotFile.readAsBytes();
 
-      if (renderObject is RenderRepaintBoundary) {
-        boundary = renderObject;
+        print(
+          '🖼️ [ThumbnailService] Screenshot captured: ${imageBytes.length} bytes',
+        );
+
+        // Clean up the temporary file
+        await screenshotFile.delete();
+
+        return imageBytes;
       } else {
-        return null;
+        print('🖼️ [ThumbnailService] Screenshot path is null');
       }
-
-      // Use high pixel ratio for better quality thumbnails
-      const double pixelRatio = 2.0;
-
-      // Use SchedulerBinding to capture after next frame like V1
-      final completer = Completer<Uint8List?>();
-
-      SchedulerBinding.instance.addPostFrameCallback((_) async {
-        ui.Image? image;
-        try {
-          // Capture at high resolution
-          image = await boundary!.toImage(pixelRatio: pixelRatio);
-
-          final ByteData? byteData = await image.toByteData(
-            format: ui.ImageByteFormat.png,
-          );
-
-          if (byteData == null) {
-            completer.complete(null);
-            return;
-          }
-
-          final result = byteData.buffer.asUint8List();
-          completer.complete(result);
-        } catch (e) {
-          print('Error capturing preview in post-frame: $e');
-          completer.complete(null);
-        } finally {
-          // Dispose of the image
-          image?.dispose();
-        }
-      });
-
-      return completer.future;
     } catch (e) {
-      print('Error in _capturePreview: $e');
+      print('🖼️ [ThumbnailService] Error in _capturePreview: $e');
       return null;
     }
   }
