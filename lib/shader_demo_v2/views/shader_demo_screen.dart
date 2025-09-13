@@ -117,7 +117,9 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
         final settings = _shaderController.settings;
         final imagePath = _shaderController.selectedImage;
         print(
-          'SETTINGS CHANGED: imageEnabled=${settings.imageEnabled}, selectedImage=$imagePath',
+          'SETTINGS CHANGED: imageEnabled=${settings.imageEnabled}, selectedImage=$imagePath, '
+          'backgroundEnabled=${settings.backgroundEnabled}, '
+          'backgroundColor=0x${settings.backgroundSettings.backgroundColor.value.toRadixString(16)}',
         );
       });
     } else {
@@ -511,6 +513,10 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
       final backgroundColor = controller.settings.backgroundEnabled
           ? controller.settings.backgroundSettings.backgroundColor
           : Colors.black;
+      print(
+        'DEBUG: Creating background container - backgroundEnabled=${controller.settings.backgroundEnabled}, '
+        'backgroundColor=0x${backgroundColor.value.toRadixString(16)}',
+      );
       contentWidget = Container(
         color: backgroundColor,
         width: double.infinity,
@@ -530,10 +536,13 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
     Widget contentWidget,
     double animationValue,
   ) {
-    // Debug animation value passed to shader - disabled for performance
-    // print(
-    //   "[DEBUG] _buildStackContent called with animationValue=${animationValue.toStringAsFixed(3)}",
-    // );
+    // Debug to check if contentWidget is a Container with background color
+    if (contentWidget is Container) {
+      final containerWidget = contentWidget;
+      print(
+        '[DEBUG] _buildStackContent: contentWidget is Container with color=0x${containerWidget.color?.value.toRadixString(16) ?? "null"}',
+      );
+    }
 
     // Create list of stack children
     List<Widget> stackChildren = [];
@@ -727,6 +736,14 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
                 // Capture screenshot of clean screen
                 final captureResult = await ThumbnailService.capturePreview(
                   null, // Using native screenshot, no key needed
+
+
+
+
+
+
+
+
                 );
 
                 // Restore app bar visibility

@@ -100,10 +100,20 @@ class _ImageContainerState extends State<ImageContainer> {
           }
         }
 
-        // Create the container directly without caching
+        // Create the container with background color if enabled
+        final backgroundColor = widget.settings.backgroundEnabled
+            ? widget.settings.backgroundSettings.backgroundColor
+            : Colors.black;
+
+        print(
+          'ImageContainer: Creating container with backgroundEnabled=${widget.settings.backgroundEnabled}, '
+          'backgroundColor=0x${backgroundColor.value.toRadixString(16)}',
+        );
+
         return Container(
           width: screenWidth,
           height: screenHeight,
+          color: backgroundColor,
           padding: isFitMode ? EdgeInsets.all(margin) : EdgeInsets.zero,
           child: Center(child: imageWidget),
         );
