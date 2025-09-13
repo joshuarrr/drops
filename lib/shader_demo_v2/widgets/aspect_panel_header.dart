@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/shader_effect.dart';
+import '../services/preset_service.dart';
 
 class AspectPanelHeader extends StatelessWidget {
   final ShaderAspect aspect;
@@ -70,12 +71,16 @@ class AspectPanelHeader extends StatelessWidget {
                   ),
                 ),
               ],
-              onSelected: (value) {
+              onSelected: (value) async {
                 if (value == 'reset') {
                   onReset();
                 } else if (value == 'save_preset') {
+                  // Generate automatic name first, then show dialog
+                  final autoName =
+                      await PresetService.generateAutomaticPresetName();
                   final TextEditingController nameController =
-                      TextEditingController();
+                      TextEditingController(text: autoName);
+
                   showDialog(
                     context: context,
                     builder: (context) => AlertDialog(
@@ -110,11 +115,8 @@ class AspectPanelHeader extends StatelessWidget {
                           ),
                           onPressed: () => Navigator.of(context).pop(),
                         ),
-                        TextButton(
-                          child: Text(
-                            'Save',
-                            style: TextStyle(color: sliderColor),
-                          ),
+                        FilledButton(
+                          child: const Text('Save'),
                           onPressed: () {
                             if (nameController.text.isNotEmpty) {
                               onSavePreset(aspect, nameController.text);

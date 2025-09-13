@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../controllers/shader_controller.dart';
 import '../models/preset.dart';
 import '../services/thumbnail_service.dart';
+import '../services/preset_service.dart';
 import 'dart:math';
 import 'dart:convert';
 
@@ -359,8 +360,10 @@ class _PresetMenuState extends State<PresetMenu> {
                     padding: const EdgeInsets.all(16),
                     child: ElevatedButton(
                       onPressed: () async {
+                        final autoName =
+                            await PresetService.generateAutomaticPresetName();
                         final success = await controller.saveNamedPreset(
-                          'Quick Save ${DateTime.now().millisecondsSinceEpoch}',
+                          autoName,
                         );
                         if (success && context.mounted) {
                           Navigator.of(context).pop();

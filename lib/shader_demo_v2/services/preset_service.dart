@@ -62,6 +62,44 @@ class PresetService {
     }
   }
 
+  /// Generate the next automatic preset name (e.g., "Preset 1", "Preset 2")
+  static Future<String> generateAutomaticPresetName() async {
+    final presets = await loadAllPresets();
+
+    // Find all preset names that match the pattern "Preset N"
+    final regex = RegExp(r'^Preset (\d+)$');
+    final usedNumbers = <int>[];
+
+    for (final preset in presets) {
+      final match = regex.firstMatch(preset.name);
+      if (match != null) {
+        final number = int.tryParse(match.group(1) ?? '');
+        if (number != null) {
+          usedNumbers.add(number);
+        }
+      }
+    }
+
+    // Find the next available number
+    int nextNumber = 1;
+    if (usedNumbers.isNotEmpty) {
+      usedNumbers.sort();
+      // Find first gap or use the next number after the highest
+      for (int i = 0; i < usedNumbers.length; i++) {
+        if (i + 1 < usedNumbers[i]) {
+          nextNumber = i + 1;
+          break;
+        }
+      }
+      if (nextNumber == 1) {
+        // No gaps found, use next number
+        nextNumber = usedNumbers.last + 1;
+      }
+    }
+
+    return 'Preset $nextNumber';
+  }
+
   /// Update an existing preset
   static Future<bool> updatePreset(Preset preset) async {
     try {

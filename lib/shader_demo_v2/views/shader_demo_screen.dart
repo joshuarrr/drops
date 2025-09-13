@@ -667,7 +667,9 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
     ShaderController controller,
     ThemeData theme,
   ) async {
-    final nameController = TextEditingController();
+    // Generate automatic name first
+    final autoName = await PresetService.generateAutomaticPresetName();
+    final nameController = TextEditingController(text: autoName);
 
     final result = await showDialog<String>(
       context: context,
@@ -701,7 +703,7 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Cancel'),
           ),
-          TextButton(
+          FilledButton(
             onPressed: () async {
               final name = nameController.text.trim();
               if (name.isNotEmpty) {

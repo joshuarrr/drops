@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/shader_effect.dart';
 import '../models/presets_manager.dart';
+import '../services/preset_service.dart';
 
 /// A reusable options menu for shader effect panels that provides
 /// consistent UI across all effect types. This includes preset management
@@ -254,11 +255,8 @@ class EffectOptionsMenu extends StatelessWidget {
       onSelected: (value) {
         switch (value) {
           case 'save_preset':
-            // Show dialog to input preset name
-            showDialog(
-              context: context,
-              builder: (context) => _buildSavePresetDialog(context),
-            );
+            // Generate automatic name first, then show dialog
+            _showSavePresetDialog(context);
             break;
           case 'reset':
             onReset();
@@ -268,104 +266,105 @@ class EffectOptionsMenu extends StatelessWidget {
     );
   }
 
-  Widget _buildSavePresetDialog(BuildContext context) {
-    final TextEditingController controller = TextEditingController();
+  Future<void> _showSavePresetDialog(BuildContext context) async {
+    // Generate automatic name first
+    final autoName = await PresetService.generateAutomaticPresetName();
+    final TextEditingController controller = TextEditingController(
+      text: autoName,
+    );
     String? selectedPreset;
 
-    return StatefulBuilder(
-      builder: (context, setState) {
-        return AlertDialog(
-          title: Text('Save ${aspect.label} Preset'),
-          content: FutureBuilder<Map<String, dynamic>>(
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Save ${aspect.label} Preset'),
+        content: FutureBuilder<Map<String, dynamic>>(
+          future: PresetsManager.getPresetsForAspect(aspect),
+          builder: (context, snapshot) {
+            final presets = snapshot.data ?? {};
+            final presetNames = presets.keys.toList();
+
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: controller,
+                  decoration: const InputDecoration(
+                    labelText: 'Preset Name',
+                    hintText: 'Enter a name for this preset',
+                  ),
+                  autofocus: true,
+                ),
+                const SizedBox(height: 16),
+                if (presetNames.isNotEmpty) ...[
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Or update existing preset:',
+                      style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownButton<String>(
+                    isExpanded: true,
+                    hint: const Text('Select a preset to update'),
+                    value: selectedPreset,
+                    items: presetNames.map((name) {
+                      return DropdownMenuItem<String>(
+                        value: name,
+                        child: Text(name),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      selectedPreset = value;
+                      if (value != null) {
+                        controller.text = value;
+                      }
+                    },
+                  ),
+                ],
+              ],
+            );
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final name = controller.text.trim();
+              if (name.isNotEmpty) {
+                onSavePreset(aspect, name);
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('Save'),
+          ),
+          FutureBuilder<Map<String, dynamic>>(
             future: PresetsManager.getPresetsForAspect(aspect),
             builder: (context, snapshot) {
               final presets = snapshot.data ?? {};
-              final presetNames = presets.keys.toList();
-
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: controller,
-                    decoration: const InputDecoration(
-                      labelText: 'Preset Name',
-                      hintText: 'Enter a name for this preset',
-                    ),
-                    autofocus: true,
-                  ),
-                  const SizedBox(height: 16),
-                  if (presetNames.isNotEmpty) ...[
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Or update existing preset:',
-                        style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    DropdownButton<String>(
-                      isExpanded: true,
-                      hint: const Text('Select a preset to update'),
-                      value: selectedPreset,
-                      items: presetNames.map((name) {
-                        return DropdownMenuItem<String>(
-                          value: name,
-                          child: Text(name),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          selectedPreset = value;
-                          if (value != null) {
-                            controller.text = value;
-                          }
-                        });
-                      },
-                    ),
-                  ],
-                ],
-              );
+              if (snapshot.hasData &&
+                  controller.text.isNotEmpty &&
+                  presets.containsKey(controller.text)) {
+                return FilledButton(
+                  onPressed: () {
+                    final name = controller.text.trim();
+                    if (name.isNotEmpty) {
+                      onSavePreset(aspect, name);
+                      Navigator.pop(context);
+                    }
+                  },
+                  child: const Text('Update'),
+                );
+              }
+              return const SizedBox.shrink();
             },
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                final name = controller.text.trim();
-                if (name.isNotEmpty) {
-                  onSavePreset(aspect, name);
-                  Navigator.pop(context);
-                }
-              },
-              child: const Text('Save'),
-            ),
-            FutureBuilder<Map<String, dynamic>>(
-              future: PresetsManager.getPresetsForAspect(aspect),
-              builder: (context, snapshot) {
-                final presets = snapshot.data ?? {};
-                if (snapshot.hasData &&
-                    controller.text.isNotEmpty &&
-                    presets.containsKey(controller.text)) {
-                  return TextButton(
-                    onPressed: () {
-                      final name = controller.text.trim();
-                      if (name.isNotEmpty) {
-                        onSavePreset(aspect, name);
-                        Navigator.pop(context);
-                      }
-                    },
-                    child: const Text('Update'),
-                  );
-                }
-                return const SizedBox.shrink();
-              },
-            ),
-          ],
-        );
-      },
+        ],
+      ),
     );
   }
 }
