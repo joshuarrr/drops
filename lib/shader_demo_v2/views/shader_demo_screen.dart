@@ -35,10 +35,6 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
   late PageController _pageController;
   bool _isInitialized = false;
 
-  // Create a key just for thumbnails - separate from the UI tree
-  final GlobalKey _thumbnailCaptureKey = GlobalKey();
-  final GlobalKey _imageCaptureKey = GlobalKey();
-
   // Track animation state changes
   bool? _lastAnimationState;
 
@@ -83,6 +79,7 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
     // Initialize PageController with current position from NavigationController
     _pageController = PageController(
       initialPage: _shaderController.navigationController.currentPosition,
+      viewportFraction: 1.0, // Ensure each page takes full viewport
     );
 
     // Listen to navigation changes to sync PageController
@@ -401,63 +398,71 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
 
     // Build PageView with vertical scrolling for TikTok-style navigation
     return Positioned.fill(
-      child: PageView.builder(
-        controller: _pageController,
-        scrollDirection: Axis.vertical,
-        itemCount: navigatorOrder.length,
-        onPageChanged: (index) {
-          // Update navigation controller position when user swipes
-          controller.navigationController.navigateToPosition(index);
-        },
-        itemBuilder: (context, index) {
-          final preset = navigatorOrder[index];
-          return GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () => controller.toggleControls(),
-            onLongPress: () {}, // Add empty handler to ensure events bubble up
-            child: Container(
-              color: Colors.black,
-              // CRITICAL: Use V3's direct AnimatedBuilder approach for presets too
-              child: AnimatedBuilder(
-                animation: _animationController,
-                builder: (context, child) {
-                  final animationValue = _animationController.value;
-                  // Animation debugging disabled
-                  // print(
-                  //   "[CRITICAL] PageView AnimatedBuilder with value: $animationValue",
-                  // );
+      child: Container(
+        color: Colors.black, // Prevent transparency during transitions
+        child: PageView.builder(
+          controller: _pageController,
+          scrollDirection: Axis.vertical,
+          itemCount: navigatorOrder.length,
+          pageSnapping: true,
+          onPageChanged: (index) {
+            // Update navigation controller position when user swipes
+            controller.navigationController.navigateToPosition(index);
+          },
+          itemBuilder: (context, index) {
+            final preset = navigatorOrder[index];
+            return GestureDetector(
+              key: ValueKey(preset.id),
+              behavior: HitTestBehavior.opaque,
+              onTap: () => controller.toggleControls(),
+              onLongPress:
+                  () {}, // Add empty handler to ensure events bubble up
+              child: Container(
+                color: Colors.black,
+                // CRITICAL: Use V3's direct AnimatedBuilder approach for presets too
+                child: AnimatedBuilder(
+                  animation: _animationController,
+                  builder: (context, child) {
+                    final animationValue = _animationController.value;
+                    // Animation debugging disabled
+                    // print(
+                    //   "[CRITICAL] PageView AnimatedBuilder with value: $animationValue",
+                    // );
 
-                  // Create content widget for this preset
-                  Widget contentWidget;
-                  if (preset.settings.imageEnabled) {
-                    contentWidget = ImageContainer(
-                      imagePath: preset.imagePath,
-                      settings: preset.settings,
-                    );
-                  } else {
-                    final backgroundColor = preset.settings.backgroundEnabled
-                        ? preset.settings.backgroundSettings.backgroundColor
-                        : Colors.black;
-                    contentWidget = Container(
-                      color: backgroundColor,
-                      width: double.infinity,
-                      height: double.infinity,
-                    );
-                  }
+                    // Create content widget for this preset
+                    Widget contentWidget;
+                    if (preset.settings.imageEnabled) {
+                      contentWidget = ImageContainer(
+                        imagePath: preset.imagePath,
+                        settings: preset.settings,
+                      );
+                    } else {
+                      final backgroundColor = preset.settings.backgroundEnabled
+                          ? preset.settings.backgroundSettings.backgroundColor
+                          : Colors.black;
+                      contentWidget = Container(
+                        color: backgroundColor,
+                        width: double.infinity,
+                        height: double.infinity,
+                      );
+                    }
 
-                  return _buildStackContent(
-                    controller,
-                    contentWidget,
-                    animationValue,
-                  );
-                },
+                    return ClipRect(
+                      child: _buildStackContent(
+                        controller,
+                        contentWidget,
+                        animationValue,
+                      ),
+                    );
+                  },
+                ),
               ),
-            ),
-          );
-        },
+            );
+          }, // End of PageView.builder
+        ),
       ),
     );
-  }
+  } // End of _buildShaderArea
 
   // Removed _buildPresetView and _buildEffectsStackForPreset as they're no longer needed
   // Now using _buildStackContent directly from AnimatedBuilder
@@ -498,7 +503,6 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
         'DEBUG: Creating ImageContainer with path: ${controller.selectedImage}',
       );
       contentWidget = ImageContainer(
-        key: _imageCaptureKey,
         imagePath: controller.selectedImage,
         settings: controller.settings,
       );
@@ -568,7 +572,6 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
     // The key is only used for identification, not for finding the widget
     return ClipRect(
       child: RepaintBoundary(
-        key: _thumbnailCaptureKey,
         child: SizedBox(
           width: double.infinity,
           height: double.infinity,
@@ -723,7 +726,7 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
 
                 // Capture screenshot of clean screen
                 final captureResult = await ThumbnailService.capturePreview(
-                  _thumbnailCaptureKey,
+                  null, // Using native screenshot, no key needed
                 );
 
                 // Restore app bar visibility
