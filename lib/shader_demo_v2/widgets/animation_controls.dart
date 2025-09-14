@@ -116,10 +116,10 @@ class AnimationControls extends StatelessWidget {
     );
   }
 
-  /// Format the animation speed (0-1) as a readable duration (30s to 500ms)
+  /// Format the animation speed (0-1) as a readable duration (60s to 500ms)
   String _formatDuration(double speed) {
-    // Map speed (0-1) to duration (30000ms to 500ms)
-    final durationMs = 30000 - (speed * 29500);
+    // Map speed (0-1) to duration (60000ms to 500ms)
+    final durationMs = 60000 - (speed * 59500);
 
     if (durationMs >= 1000) {
       final seconds = (durationMs / 1000).toStringAsFixed(1);

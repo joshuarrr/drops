@@ -119,8 +119,60 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
     }
   }
 
+  /// Calculate animation duration based on speed slider value
+  /// Maps speed (0-1) to duration (60s to 0.5s)
+  Duration _calculateAnimationDuration(double speed) {
+    final durationMs = 60000 - (speed * 59500);
+    return Duration(milliseconds: durationMs.round());
+  }
+
+  /// Update animation controller duration based on current speed settings
+  void _updateAnimationDuration() {
+    if (!_isInitialized) return;
+
+    // Get the current speed from any active animation
+    final settings = _shaderController.settings;
+    double currentSpeed = 0.5; // Default speed
+
+    // Find the speed from any active animation
+    if (settings.blurEnabled && settings.blurSettings.blurAnimated) {
+      currentSpeed = settings.blurSettings.blurAnimOptions.speed;
+    } else if (settings.colorEnabled && settings.colorSettings.colorAnimated) {
+      currentSpeed = settings.colorSettings.colorAnimOptions.speed;
+    } else if (settings.colorEnabled &&
+        settings.colorSettings.overlayAnimated) {
+      currentSpeed = settings.colorSettings.overlayAnimOptions.speed;
+    } else if (settings.noiseEnabled && settings.noiseSettings.noiseAnimated) {
+      currentSpeed = settings.noiseSettings.noiseAnimOptions.speed;
+    } else if (settings.rainEnabled && settings.rainSettings.rainAnimated) {
+      currentSpeed = settings.rainSettings.rainAnimOptions.speed;
+    } else if (settings.chromaticEnabled &&
+        settings.chromaticSettings.chromaticAnimated) {
+      currentSpeed = settings.chromaticSettings.animOptions.speed;
+    } else if (settings.rippleEnabled &&
+        settings.rippleSettings.rippleAnimated) {
+      currentSpeed = settings.rippleSettings.rippleAnimOptions.speed;
+    }
+
+    final newDuration = _calculateAnimationDuration(currentSpeed);
+
+    // Only update if duration has changed
+    if (_animationController.duration != newDuration) {
+      if (_animationController.isAnimating) {
+        // Stop current animation, update duration, and restart
+        _animationController.stop();
+        _animationController.duration = newDuration;
+        _animationController.reset();
+        _animationController.repeat(reverse: true);
+      } else {
+        // Safe to update duration when not animating
+        _animationController.duration = newDuration;
+      }
+    }
+  }
+
   /// Start or stop animation controller based on whether any animations are active
-  /// Simplified like V3's approach
+  /// Now includes dynamic duration control
   void _updateAnimationControllerState() {
     if (!mounted || !_isInitialized) return;
 
@@ -128,17 +180,18 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
 
     // Schedule after frame to avoid setState during build
     SchedulerBinding.instance.addPostFrameCallback((_) {
-      // Simplified animation controller management like V3
+      // Update duration first
+      _updateAnimationDuration();
+
+      // Then manage animation state
       if (hasActiveAnimations && !_animationController.isAnimating) {
         // Start animation with forward-reverse to avoid jumps
-        // Animation logging disabled
         _animationController.reset(); // Ensure we start from 0
         _animationController.repeat(
           reverse: true,
         ); // Use forward-reverse to avoid jumps
       } else if (!hasActiveAnimations && _animationController.isAnimating) {
         // Stop animation when not needed
-        // Animation logging disabled
         _animationController.stop();
         _animationController.reset();
       }

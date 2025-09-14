@@ -11,7 +11,7 @@ const Duration _logThrottleInterval = Duration(milliseconds: 500);
 /// Utility class for shader animation calculations
 class ShaderAnimationUtils {
   // Animation duration bounds - centralized for consistency
-  static const int minDurationMs = 30000; // slowest (30s)
+  static const int minDurationMs = 60000; // slowest (60s)
   static const int maxDurationMs = 500; // fastest (0.5s)
 
   // Apply easing curve to a normalized time value
@@ -30,24 +30,20 @@ class ShaderAnimationUtils {
 
   // Compute the animated value (0-1) for the given options using the animation controller value
   static double computeAnimatedValue(AnimationOptions opts, double baseTime) {
-    // Simplified approach like V1's blur_effect_shader.dart
     if (opts.mode == AnimationMode.pulse) {
       // Use pulse calculation for consistency
       return computePulseValue(opts, baseTime);
     } else {
       // For randomized mode, we need to generate random values that smoothly transition
-      // Use a different approach for randomized mode that creates more variation
-
-      // Scale time by speed - higher speed = faster animation
-      // Note: We use a continuous function that doesn't depend on animation direction
-      final double scaledTime = (baseTime * opts.speed * 2.0);
+      // With dynamic duration control, we no longer need speed multipliers
+      // The animation controller duration is controlled directly by the speed slider
 
       // Use multiple sine waves with different frequencies to create pseudo-random values
       // These frequencies are chosen to be non-harmonic to create a more random pattern
       // while still providing smooth transitions
-      final double random1 = (math.sin(scaledTime * math.pi * 2.7) * 0.5 + 0.5);
-      final double random2 = (math.sin(scaledTime * math.pi * 1.3) * 0.5 + 0.5);
-      final double random3 = (math.sin(scaledTime * math.pi * 3.9) * 0.5 + 0.5);
+      final double random1 = (math.sin(baseTime * math.pi * 2.7) * 0.5 + 0.5);
+      final double random2 = (math.sin(baseTime * math.pi * 1.3) * 0.5 + 0.5);
+      final double random3 = (math.sin(baseTime * math.pi * 3.9) * 0.5 + 0.5);
 
       // Combine the waves for a more random-looking but smooth result
       final double combinedRandom = (random1 + random2 + random3) / 3.0;
@@ -133,14 +129,14 @@ class ShaderAnimationUtils {
   /// This creates a smooth oscillating pulse that goes from slider value to 0 and back
   /// using the animation controller value. Works with both standard and reverse animations.
   static double computePulseValue(AnimationOptions opts, double baseTime) {
-    // Simplified approach like V1's blur_effect_shader.dart
-    // Direct pulse calculation - multiply by speed factor for faster animation
-    // Use a frequency that works well with forward-reverse animation
-    final double pulseTime = baseTime * opts.speed * 2.0;
+    // With dynamic duration control, we no longer need speed multipliers
+    // The animation controller duration is controlled directly by the speed slider
+    // Use a simple sine wave that works with the forward-reverse animation
+    final double pulseTime = baseTime * math.pi;
 
     // Create sine wave oscillation (0 to 1 to 0)
     // Use absolute sine to ensure we always get a 0-1-0 pattern regardless of animation direction
-    final double pulse = math.sin(pulseTime * math.pi).abs();
+    final double pulse = math.sin(pulseTime).abs();
 
     // Invert the pulse to get a 1-0-1 pattern (slider value to 0 and back)
     final double invertedPulse = 1.0 - pulse;
