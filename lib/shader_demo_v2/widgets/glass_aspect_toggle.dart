@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:liquid_glass_renderer/liquid_glass_renderer.dart';
 import '../models/shader_effect.dart';
+import '../config/glass_effect_config.dart';
 import 'aspect_toggle.dart';
 
 /// A glass-effect wrapper around AspectToggle that creates a liquid glass effect
@@ -26,28 +27,7 @@ class GlassAspectToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final defaultSettings = LiquidGlassSettings(
-      thickness:
-          20.0, // Distortion strength: 0-30+ (higher = more background bending/refraction)
-      glassColor: const Color.fromARGB(
-        170,
-        0,
-        0,
-        0,
-      ), // Glass tint: ARGB format (alpha=opacity, RGB=color tint)
-      lightIntensity:
-          0.25, // Highlight brightness: 0-2+ (higher = brighter top/bottom highlights)
-      blend:
-          100, // Edge blending: 0-100 (lower = sharper edges, higher = smoother)
-      ambientStrength:
-          0.6, // Ambient light: 0-1 (higher = more overall lighting, lower = darker)
-      saturation:
-          1.15, // Color vibrancy: 0-2 (1=normal, >1=more vibrant, <1=desaturated)
-      lightness:
-          1, // Refraction brightness: 0-2 (higher = brighter refracted colors)
-    );
-
-    final settings = glassSettings ?? defaultSettings;
+    final settings = glassSettings ?? GlassEffectConfig.buttonSettings;
 
     return LiquidGlass(
       settings: settings,

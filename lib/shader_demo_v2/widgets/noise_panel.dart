@@ -7,7 +7,6 @@ import 'lockable_slider.dart';
 import 'animation_controls.dart';
 import '../controllers/animation_state_manager.dart';
 import 'enhanced_panel_header.dart';
-import 'glass_panel.dart';
 
 class NoisePanel extends StatelessWidget {
   final ShaderSettings settings;
@@ -25,152 +24,144 @@ class NoisePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassPanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          EnhancedPanelHeader(
-            aspect: ShaderAspect.noise,
-            onPresetSelected: _applyPreset,
-            onReset: _resetNoise,
-            onSavePreset: _savePresetForAspect,
-            sliderColor: sliderColor,
-            loadPresets: _loadPresetsForAspect,
-            deletePreset: _deletePresetAndUpdate,
-            refreshPresets: _refreshPresets,
-            refreshCounter: _refreshCounter,
-            applyToImage: settings.noiseSettings.applyToImage,
-            applyToText: settings.noiseSettings.applyToText,
-            onApplyToImageChanged: (value) {
-              settings.noiseSettings.applyToImage = value;
-              onSettingsChanged(settings);
-            },
-            onApplyToTextChanged: (value) {
-              settings.noiseSettings.applyToText = value;
-              onSettingsChanged(settings);
-            },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        EnhancedPanelHeader(
+          aspect: ShaderAspect.noise,
+          onPresetSelected: _applyPreset,
+          onReset: _resetNoise,
+          onSavePreset: _savePresetForAspect,
+          sliderColor: sliderColor,
+          loadPresets: _loadPresetsForAspect,
+          deletePreset: _deletePresetAndUpdate,
+          refreshPresets: _refreshPresets,
+          refreshCounter: _refreshCounter,
+          applyToImage: settings.noiseSettings.applyToImage,
+          applyToText: settings.noiseSettings.applyToText,
+          onApplyToImageChanged: (value) {
+            settings.noiseSettings.applyToImage = value;
+            onSettingsChanged(settings);
+          },
+          onApplyToTextChanged: (value) {
+            settings.noiseSettings.applyToText = value;
+            onSettingsChanged(settings);
+          },
+        ),
+        LockableSlider(
+          label: 'Noise Scale',
+          value: settings.noiseSettings.noiseScale,
+          min: 0.1,
+          max: 20.0,
+          divisions: 199,
+          displayValue: settings.noiseSettings.noiseScale.toStringAsFixed(1),
+          onChanged: (value) => _onSliderChanged(
+            value,
+            (v) => settings.noiseSettings.noiseScale = v,
           ),
+          activeColor: sliderColor,
+          parameterId: ParameterIds.noiseScale,
+          animationEnabled: settings.noiseSettings.noiseAnimated,
+        ),
+        // Only show noise speed slider when animation is enabled
+        if (settings.noiseSettings.noiseAnimated)
           LockableSlider(
-            label: 'Noise Scale',
-            value: settings.noiseSettings.noiseScale,
-            min: 0.1,
-            max: 20.0,
-            divisions: 199,
-            displayValue: settings.noiseSettings.noiseScale.toStringAsFixed(1),
-            onChanged: (value) => _onSliderChanged(
-              value,
-              (v) => settings.noiseSettings.noiseScale = v,
-            ),
-            activeColor: sliderColor,
-            parameterId: ParameterIds.noiseScale,
-            animationEnabled: settings.noiseSettings.noiseAnimated,
-          ),
-          // Only show noise speed slider when animation is enabled
-          if (settings.noiseSettings.noiseAnimated)
-            LockableSlider(
-              label: 'Noise Speed',
-              value: settings.noiseSettings.noiseSpeed,
-              min: 0.0,
-              max: 1.0,
-              divisions: null,
-              displayValue: settings.noiseSettings.noiseSpeed.toStringAsFixed(
-                2,
-              ),
-              onChanged: (value) => _onSliderChanged(
-                value,
-                (v) => settings.noiseSettings.noiseSpeed = v,
-              ),
-              activeColor: sliderColor,
-              parameterId: ParameterIds.noiseSpeed,
-              animationEnabled: settings.noiseSettings.noiseAnimated,
-              defaultValue: 0.5,
-            ),
-          LockableSlider(
-            label: 'Wave Amount',
-            value: settings.noiseSettings.waveAmount,
-            min: 0.0,
-            max: 0.1,
-            divisions: null,
-            displayValue: settings.noiseSettings.waveAmount.toStringAsFixed(3),
-            onChanged: (value) => _onSliderChanged(
-              value,
-              (v) => settings.noiseSettings.waveAmount = v,
-            ),
-            activeColor: sliderColor,
-            parameterId: ParameterIds.waveAmount,
-            animationEnabled: settings.noiseSettings.noiseAnimated,
-            defaultValue: 0.02,
-          ),
-          LockableSlider(
-            label: 'Color Intensity',
-            value: settings.noiseSettings.colorIntensity,
+            label: 'Noise Speed',
+            value: settings.noiseSettings.noiseSpeed,
             min: 0.0,
             max: 1.0,
             divisions: null,
-            displayValue: settings.noiseSettings.colorIntensity.toStringAsFixed(
-              2,
-            ),
+            displayValue: settings.noiseSettings.noiseSpeed.toStringAsFixed(2),
             onChanged: (value) => _onSliderChanged(
               value,
-              (v) => settings.noiseSettings.colorIntensity = v,
+              (v) => settings.noiseSettings.noiseSpeed = v,
             ),
             activeColor: sliderColor,
-            parameterId: ParameterIds.colorIntensity,
+            parameterId: ParameterIds.noiseSpeed,
             animationEnabled: settings.noiseSettings.noiseAnimated,
-            defaultValue: 0.3,
+            defaultValue: 0.5,
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Animate',
-                style: TextStyle(color: sliderColor, fontSize: 14),
-              ),
-              Switch(
-                value: settings.noiseSettings.noiseAnimated,
-                thumbColor: WidgetStateProperty.resolveWith(
-                  (states) => states.contains(WidgetState.selected)
-                      ? sliderColor
-                      : null,
-                ),
-                onChanged: (value) {
-                  settings.noiseSettings.noiseAnimated = value;
-                  if (!settings.noiseEnabled) settings.noiseEnabled = true;
-                  onSettingsChanged(settings);
-                },
-              ),
-            ],
+        LockableSlider(
+          label: 'Wave Amount',
+          value: settings.noiseSettings.waveAmount,
+          min: 0.0,
+          max: 0.1,
+          divisions: null,
+          displayValue: settings.noiseSettings.waveAmount.toStringAsFixed(3),
+          onChanged: (value) => _onSliderChanged(
+            value,
+            (v) => settings.noiseSettings.waveAmount = v,
           ),
-          if (settings.noiseSettings.noiseAnimated)
-            AnimationControls(
-              animationSpeed: settings.noiseSettings.noiseAnimOptions.speed,
-              onSpeedChanged: (v) {
-                settings.noiseSettings.noiseAnimOptions = settings
-                    .noiseSettings
-                    .noiseAnimOptions
-                    .copyWith(speed: v);
+          activeColor: sliderColor,
+          parameterId: ParameterIds.waveAmount,
+          animationEnabled: settings.noiseSettings.noiseAnimated,
+          defaultValue: 0.02,
+        ),
+        LockableSlider(
+          label: 'Color Intensity',
+          value: settings.noiseSettings.colorIntensity,
+          min: 0.0,
+          max: 1.0,
+          divisions: null,
+          displayValue: settings.noiseSettings.colorIntensity.toStringAsFixed(
+            2,
+          ),
+          onChanged: (value) => _onSliderChanged(
+            value,
+            (v) => settings.noiseSettings.colorIntensity = v,
+          ),
+          activeColor: sliderColor,
+          parameterId: ParameterIds.colorIntensity,
+          animationEnabled: settings.noiseSettings.noiseAnimated,
+          defaultValue: 0.3,
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Animate', style: TextStyle(color: sliderColor, fontSize: 14)),
+            Switch(
+              value: settings.noiseSettings.noiseAnimated,
+              thumbColor: WidgetStateProperty.resolveWith(
+                (states) =>
+                    states.contains(WidgetState.selected) ? sliderColor : null,
+              ),
+              onChanged: (value) {
+                settings.noiseSettings.noiseAnimated = value;
+                if (!settings.noiseEnabled) settings.noiseEnabled = true;
                 onSettingsChanged(settings);
               },
-              animationMode: settings.noiseSettings.noiseAnimOptions.mode,
-              onModeChanged: (m) {
-                settings.noiseSettings.noiseAnimOptions = settings
-                    .noiseSettings
-                    .noiseAnimOptions
-                    .copyWith(mode: m);
-                onSettingsChanged(settings);
-              },
-              animationEasing: settings.noiseSettings.noiseAnimOptions.easing,
-              onEasingChanged: (e) {
-                settings.noiseSettings.noiseAnimOptions = settings
-                    .noiseSettings
-                    .noiseAnimOptions
-                    .copyWith(easing: e);
-                onSettingsChanged(settings);
-              },
-              sliderColor: sliderColor,
             ),
-        ],
-      ),
+          ],
+        ),
+        if (settings.noiseSettings.noiseAnimated)
+          AnimationControls(
+            animationSpeed: settings.noiseSettings.noiseAnimOptions.speed,
+            onSpeedChanged: (v) {
+              settings.noiseSettings.noiseAnimOptions = settings
+                  .noiseSettings
+                  .noiseAnimOptions
+                  .copyWith(speed: v);
+              onSettingsChanged(settings);
+            },
+            animationMode: settings.noiseSettings.noiseAnimOptions.mode,
+            onModeChanged: (m) {
+              settings.noiseSettings.noiseAnimOptions = settings
+                  .noiseSettings
+                  .noiseAnimOptions
+                  .copyWith(mode: m);
+              onSettingsChanged(settings);
+            },
+            animationEasing: settings.noiseSettings.noiseAnimOptions.easing,
+            onEasingChanged: (e) {
+              settings.noiseSettings.noiseAnimOptions = settings
+                  .noiseSettings
+                  .noiseAnimOptions
+                  .copyWith(easing: e);
+              onSettingsChanged(settings);
+            },
+            sliderColor: sliderColor,
+          ),
+      ],
     );
   }
 

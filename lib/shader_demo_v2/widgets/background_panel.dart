@@ -8,7 +8,6 @@ import '../models/background_settings.dart';
 import '../controllers/effect_controller.dart';
 import 'color_picker.dart';
 import 'enhanced_panel_header.dart';
-import 'glass_panel.dart';
 
 class BackgroundPanel extends StatefulWidget {
   final ShaderSettings settings;
@@ -143,73 +142,71 @@ class _BackgroundPanelState extends State<BackgroundPanel> {
       _lastColor = currentColor;
     }
 
-    return GlassPanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          EnhancedPanelHeader(
-            aspect: ShaderAspect.background,
-            onPresetSelected: _applyPreset,
-            onReset: _resetBackground,
-            onSavePreset: _savePresetForAspect,
-            sliderColor: widget.sliderColor,
-            loadPresets: _loadPresetsForAspect,
-            deletePreset: _deletePresetAndUpdate,
-            refreshPresets: _refreshPresets,
-            refreshCounter: _refreshCounter,
-            applyToImage: true,
-            applyToText: true,
-            onApplyToImageChanged: (_) {}, // Not used for background
-            onApplyToTextChanged: (_) {}, // Not used for background
-          ),
-          const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Text(
-              'Background Color',
-              style: TextStyle(
-                color: widget.sliderColor,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        EnhancedPanelHeader(
+          aspect: ShaderAspect.background,
+          onPresetSelected: _applyPreset,
+          onReset: _resetBackground,
+          onSavePreset: _savePresetForAspect,
+          sliderColor: widget.sliderColor,
+          loadPresets: _loadPresetsForAspect,
+          deletePreset: _deletePresetAndUpdate,
+          refreshPresets: _refreshPresets,
+          refreshCounter: _refreshCounter,
+          applyToImage: true,
+          applyToText: true,
+          onApplyToImageChanged: (_) {}, // Not used for background
+          onApplyToTextChanged: (_) {}, // Not used for background
+        ),
+        const SizedBox(height: 16),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Text(
+            'Background Color',
+            style: TextStyle(
+              color: widget.sliderColor,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: ColorPicker(
-              label: 'Background Color',
-              currentColor: currentColor,
-              onColorChanged: (newColor) {
-                _log(
-                  'Background color changed to: 0x${newColor.value.toRadixString(16).padLeft(8, '0')}',
-                  level: LogLevel.info,
-                );
+        ),
+        const SizedBox(height: 8),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: ColorPicker(
+            label: 'Background Color',
+            currentColor: currentColor,
+            onColorChanged: (newColor) {
+              _log(
+                'Background color changed to: 0x${newColor.value.toRadixString(16).padLeft(8, '0')}',
+                level: LogLevel.info,
+              );
 
-                // Update the background color
-                final updatedSettings = widget.settings;
-                updatedSettings.backgroundSettings.backgroundColor = newColor;
+              // Update the background color
+              final updatedSettings = widget.settings;
+              updatedSettings.backgroundSettings.backgroundColor = newColor;
 
-                // Make sure background is enabled when changing colors
-                updatedSettings.backgroundEnabled = true;
-                _log(
-                  'Background enabled: ${updatedSettings.backgroundEnabled}',
-                  level: LogLevel.info,
-                );
+              // Make sure background is enabled when changing colors
+              updatedSettings.backgroundEnabled = true;
+              _log(
+                'Background enabled: ${updatedSettings.backgroundEnabled}',
+                level: LogLevel.info,
+              );
 
-                // Notify parent of changes
-                widget.onSettingsChanged(updatedSettings);
+              // Notify parent of changes
+              widget.onSettingsChanged(updatedSettings);
 
-                // Save the new color to avoid redundant logs
-                _lastColor = newColor;
-              },
-              textColor: widget.sliderColor,
-            ),
+              // Save the new color to avoid redundant logs
+              _lastColor = newColor;
+            },
+            textColor: widget.sliderColor,
           ),
-          const SizedBox(height: 16),
-          // Add animation toggle if needed in the future
-        ],
-      ),
+        ),
+        const SizedBox(height: 16),
+        // Add animation toggle if needed in the future
+      ],
     );
   }
 }

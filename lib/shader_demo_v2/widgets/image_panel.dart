@@ -8,7 +8,6 @@ import '../models/image_category.dart';
 import 'enhanced_panel_header.dart';
 import '../views/effect_controls.dart';
 import 'image_selector.dart';
-import 'glass_panel.dart';
 
 class ImagePanel extends StatelessWidget {
   final ShaderSettings settings;
@@ -40,136 +39,134 @@ class ImagePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassPanel(
-      child: GestureDetector(
-        // Explicitly prevent taps on this panel from being handled by parent widgets
-        onTap: () {
-          // Capture tap events to prevent them from bubbling up
-        },
-        behavior: HitTestBehavior.opaque,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header at the top
-            EnhancedPanelHeader(
-              aspect: ShaderAspect.image,
-              onPresetSelected: _applyPreset,
-              onReset: _resetImage,
-              onSavePreset: _savePresetForAspect,
-              sliderColor: sliderColor,
-              loadPresets: _loadPresetsForAspect,
-              deletePreset: _deletePresetAndUpdate,
-              refreshPresets: _refreshPresets,
-              refreshCounter: _refreshCounter,
-              // For the image panel, only apply to image makes sense
-              // "Apply to Text" option will be hidden in the menu
-              applyToImage: true,
-              applyToText: true,
-              onApplyToImageChanged: (_) {},
-              onApplyToTextChanged: (_) {},
+    return GestureDetector(
+      // Explicitly prevent taps on this panel from being handled by parent widgets
+      onTap: () {
+        // Capture tap events to prevent them from bubbling up
+      },
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header at the top
+          EnhancedPanelHeader(
+            aspect: ShaderAspect.image,
+            onPresetSelected: _applyPreset,
+            onReset: _resetImage,
+            onSavePreset: _savePresetForAspect,
+            sliderColor: sliderColor,
+            loadPresets: _loadPresetsForAspect,
+            deletePreset: _deletePresetAndUpdate,
+            refreshPresets: _refreshPresets,
+            refreshCounter: _refreshCounter,
+            // For the image panel, only apply to image makes sense
+            // "Apply to Text" option will be hidden in the menu
+            applyToImage: true,
+            applyToText: true,
+            onApplyToImageChanged: (_) {},
+            onApplyToTextChanged: (_) {},
+          ),
+
+          const SizedBox(height: 16),
+
+          // Image selector
+          ImageSelector(
+            category: imageCategory,
+            coverImages: coverImages,
+            artistImages: artistImages,
+            selectedImage: selectedImage,
+            onCategoryChanged: onCategoryChanged,
+            onImageSelected: onImageSelected,
+          ),
+
+          const SizedBox(height: 16),
+          Divider(color: sliderColor.withOpacity(0.3)),
+          const SizedBox(height: 16),
+
+          // Radio buttons for display mode
+          Text(
+            'Display Mode',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: sliderColor,
             ),
-
-            const SizedBox(height: 16),
-
-            // Image selector
-            ImageSelector(
-              category: imageCategory,
-              coverImages: coverImages,
-              artistImages: artistImages,
-              selectedImage: selectedImage,
-              onCategoryChanged: onCategoryChanged,
-              onImageSelected: onImageSelected,
+          ),
+          const SizedBox(height: 8),
+          RadioListTile<bool>(
+            value: false,
+            groupValue: settings.fillScreen,
+            onChanged: (value) {
+              if (value != null) {
+                // Create a deep copy to avoid mutation issues
+                final updatedSettings = ShaderSettings.fromMap(
+                  settings.toMap(),
+                );
+                updatedSettings.fillScreen = value;
+                onSettingsChanged(updatedSettings);
+              }
+            },
+            title: Text(
+              'Fit to Screen',
+              style: TextStyle(color: sliderColor, fontSize: 14),
             ),
-
-            const SizedBox(height: 16),
-            Divider(color: sliderColor.withOpacity(0.3)),
-            const SizedBox(height: 16),
-
-            // Radio buttons for display mode
-            Text(
-              'Display Mode',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: sliderColor,
-              ),
+            activeColor: sliderColor,
+            contentPadding: EdgeInsets.zero,
+          ),
+          RadioListTile<bool>(
+            value: true,
+            groupValue: settings.fillScreen,
+            onChanged: (value) {
+              if (value != null) {
+                // Create a deep copy to avoid mutation issues
+                final updatedSettings = ShaderSettings.fromMap(
+                  settings.toMap(),
+                );
+                updatedSettings.fillScreen = value;
+                onSettingsChanged(updatedSettings);
+              }
+            },
+            title: Text(
+              'Fill Screen',
+              style: TextStyle(color: sliderColor, fontSize: 14),
             ),
-            const SizedBox(height: 8),
-            RadioListTile<bool>(
-              value: false,
-              groupValue: settings.fillScreen,
-              onChanged: (value) {
-                if (value != null) {
-                  // Create a deep copy to avoid mutation issues
-                  final updatedSettings = ShaderSettings.fromMap(
-                    settings.toMap(),
-                  );
-                  updatedSettings.fillScreen = value;
-                  onSettingsChanged(updatedSettings);
-                }
-              },
-              title: Text(
-                'Fit to Screen',
-                style: TextStyle(color: sliderColor, fontSize: 14),
-              ),
+            activeColor: sliderColor,
+            contentPadding: EdgeInsets.zero,
+          ),
+
+          // Show margin slider only when in Fit to Screen mode
+          if (!settings.fillScreen) ...[
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Text(
+                  'Margin: ',
+                  style: TextStyle(color: sliderColor, fontSize: 14),
+                ),
+                Text(
+                  '${settings.textLayoutSettings.fitScreenMargin.toStringAsFixed(1)}',
+                  style: TextStyle(color: sliderColor, fontSize: 14),
+                ),
+              ],
+            ),
+            Slider(
+              value: settings.textLayoutSettings.fitScreenMargin,
+              min: 0.0,
+              max: 100.0,
+              divisions: 100,
               activeColor: sliderColor,
-              contentPadding: EdgeInsets.zero,
-            ),
-            RadioListTile<bool>(
-              value: true,
-              groupValue: settings.fillScreen,
+              inactiveColor: sliderColor.withOpacity(0.3),
               onChanged: (value) {
-                if (value != null) {
-                  // Create a deep copy to avoid mutation issues
-                  final updatedSettings = ShaderSettings.fromMap(
-                    settings.toMap(),
-                  );
-                  updatedSettings.fillScreen = value;
-                  onSettingsChanged(updatedSettings);
-                }
+                // Create a deep copy to avoid mutation issues
+                final updatedSettings = ShaderSettings.fromMap(
+                  settings.toMap(),
+                );
+                updatedSettings.textLayoutSettings.fitScreenMargin = value;
+                onSettingsChanged(updatedSettings);
               },
-              title: Text(
-                'Fill Screen',
-                style: TextStyle(color: sliderColor, fontSize: 14),
-              ),
-              activeColor: sliderColor,
-              contentPadding: EdgeInsets.zero,
             ),
-
-            // Show margin slider only when in Fit to Screen mode
-            if (!settings.fillScreen) ...[
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Text(
-                    'Margin: ',
-                    style: TextStyle(color: sliderColor, fontSize: 14),
-                  ),
-                  Text(
-                    '${settings.textLayoutSettings.fitScreenMargin.toStringAsFixed(1)}',
-                    style: TextStyle(color: sliderColor, fontSize: 14),
-                  ),
-                ],
-              ),
-              Slider(
-                value: settings.textLayoutSettings.fitScreenMargin,
-                min: 0.0,
-                max: 100.0,
-                divisions: 100,
-                activeColor: sliderColor,
-                inactiveColor: sliderColor.withOpacity(0.3),
-                onChanged: (value) {
-                  // Create a deep copy to avoid mutation issues
-                  final updatedSettings = ShaderSettings.fromMap(
-                    settings.toMap(),
-                  );
-                  updatedSettings.textLayoutSettings.fitScreenMargin = value;
-                  onSettingsChanged(updatedSettings);
-                },
-              ),
-            ],
           ],
-        ),
+        ],
       ),
     );
   }

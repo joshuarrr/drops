@@ -7,7 +7,6 @@ import '../models/presets_manager.dart';
 import '../controllers/animation_state_manager.dart';
 import 'lockable_slider.dart';
 import 'animation_controls.dart';
-import 'glass_panel.dart';
 import 'enhanced_panel_header.dart';
 
 class BlurPanel extends StatelessWidget {
@@ -33,208 +32,188 @@ class BlurPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassPanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          EnhancedPanelHeader(
-            aspect: ShaderAspect.blur,
-            onPresetSelected: _applyPreset,
-            onReset: _resetBlur,
-            onSavePreset: _savePresetForAspect,
-            sliderColor: sliderColor,
-            loadPresets: _loadPresetsForAspect,
-            deletePreset: _deletePresetAndUpdate,
-            refreshPresets: _refreshPresets,
-            refreshCounter: _refreshCounter,
-            applyToImage: settings.blurSettings.applyToImage,
-            applyToText: settings.blurSettings.applyToText,
-            onApplyToImageChanged: (value) {
-              _updateSettings((s) => s.blurSettings.applyToImage = value);
-            },
-            onApplyToTextChanged: (value) {
-              _updateSettings((s) => s.blurSettings.applyToText = value);
-            },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        EnhancedPanelHeader(
+          aspect: ShaderAspect.blur,
+          onPresetSelected: _applyPreset,
+          onReset: _resetBlur,
+          onSavePreset: _savePresetForAspect,
+          sliderColor: sliderColor,
+          loadPresets: _loadPresetsForAspect,
+          deletePreset: _deletePresetAndUpdate,
+          refreshPresets: _refreshPresets,
+          refreshCounter: _refreshCounter,
+          applyToImage: settings.blurSettings.applyToImage,
+          applyToText: settings.blurSettings.applyToText,
+          onApplyToImageChanged: (value) {
+            _updateSettings((s) => s.blurSettings.applyToImage = value);
+          },
+          onApplyToTextChanged: (value) {
+            _updateSettings((s) => s.blurSettings.applyToText = value);
+          },
+        ),
+        LockableSlider(
+          label: 'Shatter Amount',
+          value: settings.blurSettings.blurAmount,
+          min: 0.0,
+          max: 1.0,
+          divisions: 100,
+          displayValue: '${(settings.blurSettings.blurAmount * 100).round()}%',
+          onChanged: (value) =>
+              _onSliderChanged(value, (s, v) => s.blurSettings.blurAmount = v),
+          activeColor: sliderColor,
+          parameterId: ParameterIds.blurAmount,
+          animationEnabled: settings.blurSettings.blurAnimated,
+          defaultValue: 0.0,
+        ),
+        LockableSlider(
+          label: 'Shatter Radius',
+          value: settings.blurSettings.blurRadius,
+          min: 0.0,
+          max: 120.0,
+          divisions: 120,
+          displayValue: '${settings.blurSettings.blurRadius.round()}px',
+          onChanged: (value) =>
+              _onSliderChanged(value, (s, v) => s.blurSettings.blurRadius = v),
+          activeColor: sliderColor,
+          parameterId: ParameterIds.blurRadius,
+          animationEnabled: settings.blurSettings.blurAnimated,
+          defaultValue: 15.0,
+        ),
+        LockableSlider(
+          label: 'Shatter Opacity',
+          value: settings.blurSettings.blurOpacity,
+          min: 0.0,
+          max: 1.0,
+          divisions: 100,
+          displayValue: '${(settings.blurSettings.blurOpacity * 100).round()}%',
+          onChanged: (value) =>
+              _onSliderChanged(value, (s, v) => s.blurSettings.blurOpacity = v),
+          activeColor: sliderColor,
+          parameterId: ParameterIds.blurOpacity,
+          animationEnabled: settings.blurSettings.blurAnimated,
+          defaultValue: 1.0,
+        ),
+        LockableSlider(
+          label: 'Intensity',
+          value: settings.blurSettings.blurIntensity,
+          min: 0.0,
+          max: 3.0,
+          divisions: null, // Removed divisions to get rid of dots
+          displayValue:
+              '${settings.blurSettings.blurIntensity.toStringAsFixed(1)}x',
+          onChanged: (value) => _onSliderChanged(
+            value,
+            (s, v) => s.blurSettings.blurIntensity = v,
           ),
-          LockableSlider(
-            label: 'Shatter Amount',
-            value: settings.blurSettings.blurAmount,
-            min: 0.0,
-            max: 1.0,
-            divisions: 100,
-            displayValue:
-                '${(settings.blurSettings.blurAmount * 100).round()}%',
-            onChanged: (value) => _onSliderChanged(
-              value,
-              (s, v) => s.blurSettings.blurAmount = v,
-            ),
-            activeColor: sliderColor,
-            parameterId: ParameterIds.blurAmount,
-            animationEnabled: settings.blurSettings.blurAnimated,
-            defaultValue: 0.0,
+          activeColor: sliderColor,
+          parameterId: ParameterIds.blurIntensity,
+          animationEnabled: settings.blurSettings.blurAnimated,
+          defaultValue: 1.0,
+        ),
+        LockableSlider(
+          label: 'Contrast',
+          value: settings.blurSettings.blurContrast,
+          min: 0.0,
+          max: 2.0,
+          divisions: null, // Removed divisions to get rid of dots
+          displayValue:
+              '${(settings.blurSettings.blurContrast * 100).round()}%',
+          onChanged: (value) => _onSliderChanged(
+            value,
+            (s, v) => s.blurSettings.blurContrast = v,
           ),
-          LockableSlider(
-            label: 'Shatter Radius',
-            value: settings.blurSettings.blurRadius,
-            min: 0.0,
-            max: 120.0,
-            divisions: 120,
-            displayValue: '${settings.blurSettings.blurRadius.round()}px',
-            onChanged: (value) => _onSliderChanged(
-              value,
-              (s, v) => s.blurSettings.blurRadius = v,
-            ),
-            activeColor: sliderColor,
-            parameterId: ParameterIds.blurRadius,
-            animationEnabled: settings.blurSettings.blurAnimated,
-            defaultValue: 15.0,
-          ),
-          LockableSlider(
-            label: 'Shatter Opacity',
-            value: settings.blurSettings.blurOpacity,
-            min: 0.0,
-            max: 1.0,
-            divisions: 100,
-            displayValue:
-                '${(settings.blurSettings.blurOpacity * 100).round()}%',
-            onChanged: (value) => _onSliderChanged(
-              value,
-              (s, v) => s.blurSettings.blurOpacity = v,
-            ),
-            activeColor: sliderColor,
-            parameterId: ParameterIds.blurOpacity,
-            animationEnabled: settings.blurSettings.blurAnimated,
-            defaultValue: 1.0,
-          ),
-          LockableSlider(
-            label: 'Intensity',
-            value: settings.blurSettings.blurIntensity,
-            min: 0.0,
-            max: 3.0,
-            divisions: null, // Removed divisions to get rid of dots
-            displayValue:
-                '${settings.blurSettings.blurIntensity.toStringAsFixed(1)}x',
-            onChanged: (value) => _onSliderChanged(
-              value,
-              (s, v) => s.blurSettings.blurIntensity = v,
-            ),
-            activeColor: sliderColor,
-            parameterId: ParameterIds.blurIntensity,
-            animationEnabled: settings.blurSettings.blurAnimated,
-            defaultValue: 1.0,
-          ),
-          LockableSlider(
-            label: 'Contrast',
-            value: settings.blurSettings.blurContrast,
-            min: 0.0,
-            max: 2.0,
-            divisions: null, // Removed divisions to get rid of dots
-            displayValue:
-                '${(settings.blurSettings.blurContrast * 100).round()}%',
-            onChanged: (value) => _onSliderChanged(
-              value,
-              (s, v) => s.blurSettings.blurContrast = v,
-            ),
-            activeColor: sliderColor,
-            parameterId: ParameterIds.blurContrast,
-            animationEnabled: settings.blurSettings.blurAnimated,
-            defaultValue: 0.0,
-          ),
-          Padding(
-            padding: const EdgeInsets.only(top: 8, bottom: 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Blend Mode',
-                  style: TextStyle(color: sliderColor, fontSize: 14),
-                ),
-                const SizedBox(height: 8),
-                SegmentedButton<int>(
-                  segments: const [
-                    ButtonSegment<int>(
-                      value: 0,
-                      label: Text('Normal', style: TextStyle(fontSize: 13)),
-                    ),
-                    ButtonSegment<int>(
-                      value: 1,
-                      label: Text('Multiply', style: TextStyle(fontSize: 13)),
-                    ),
-                    ButtonSegment<int>(
-                      value: 2,
-                      label: Text('Screen', style: TextStyle(fontSize: 13)),
-                    ),
-                  ],
-                  selected: {settings.blurSettings.blurBlendMode},
-                  onSelectionChanged: (Set<int> selection) {
-                    if (selection.isNotEmpty) {
-                      _updateSettings((s) {
-                        s.blurSettings.blurBlendMode = selection.first;
-                        if (!s.blurEnabled) s.blurEnabled = true;
-                      });
-                    }
-                  },
-                ),
-              ],
-            ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          activeColor: sliderColor,
+          parameterId: ParameterIds.blurContrast,
+          animationEnabled: settings.blurSettings.blurAnimated,
+          defaultValue: 0.0,
+        ),
+        Padding(
+          padding: const EdgeInsets.only(top: 8, bottom: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Animate',
+                'Blend Mode',
                 style: TextStyle(color: sliderColor, fontSize: 14),
               ),
-              Switch(
-                value: settings.blurSettings.blurAnimated,
-                thumbColor: WidgetStateProperty.resolveWith(
-                  (states) => states.contains(WidgetState.selected)
-                      ? sliderColor
-                      : null,
-                ),
-                onChanged: (value) {
-                  _updateSettings((s) {
-                    s.blurSettings.blurAnimated = value;
-                    // Ensure effect is enabled when animation toggled on
-                    if (!s.blurEnabled) s.blurEnabled = true;
-                  });
+              const SizedBox(height: 8),
+              SegmentedButton<int>(
+                segments: const [
+                  ButtonSegment<int>(
+                    value: 0,
+                    label: Text('Normal', style: TextStyle(fontSize: 13)),
+                  ),
+                  ButtonSegment<int>(
+                    value: 1,
+                    label: Text('Multiply', style: TextStyle(fontSize: 13)),
+                  ),
+                  ButtonSegment<int>(
+                    value: 2,
+                    label: Text('Screen', style: TextStyle(fontSize: 13)),
+                  ),
+                ],
+                selected: {settings.blurSettings.blurBlendMode},
+                onSelectionChanged: (Set<int> selection) {
+                  if (selection.isNotEmpty) {
+                    _updateSettings((s) {
+                      s.blurSettings.blurBlendMode = selection.first;
+                      if (!s.blurEnabled) s.blurEnabled = true;
+                    });
+                  }
                 },
               ),
             ],
           ),
-          if (settings.blurSettings.blurAnimated)
-            AnimationControls(
-              animationSpeed: settings.blurSettings.blurAnimOptions.speed,
-              onSpeedChanged: (v) {
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Animate', style: TextStyle(color: sliderColor, fontSize: 14)),
+            Switch(
+              value: settings.blurSettings.blurAnimated,
+              thumbColor: WidgetStateProperty.resolveWith(
+                (states) =>
+                    states.contains(WidgetState.selected) ? sliderColor : null,
+              ),
+              onChanged: (value) {
                 _updateSettings((s) {
-                  s.blurSettings.blurAnimOptions = s
-                      .blurSettings
-                      .blurAnimOptions
-                      .copyWith(speed: v);
+                  s.blurSettings.blurAnimated = value;
+                  // Ensure effect is enabled when animation toggled on
+                  if (!s.blurEnabled) s.blurEnabled = true;
                 });
               },
-              animationMode: settings.blurSettings.blurAnimOptions.mode,
-              onModeChanged: (m) {
-                _updateSettings((s) {
-                  s.blurSettings.blurAnimOptions = s
-                      .blurSettings
-                      .blurAnimOptions
-                      .copyWith(mode: m);
-                });
-              },
-              animationEasing: settings.blurSettings.blurAnimOptions.easing,
-              onEasingChanged: (e) {
-                _updateSettings((s) {
-                  s.blurSettings.blurAnimOptions = s
-                      .blurSettings
-                      .blurAnimOptions
-                      .copyWith(easing: e);
-                });
-              },
-              sliderColor: sliderColor,
             ),
-        ],
-      ),
+          ],
+        ),
+        if (settings.blurSettings.blurAnimated)
+          AnimationControls(
+            animationSpeed: settings.blurSettings.blurAnimOptions.speed,
+            onSpeedChanged: (v) {
+              _updateSettings((s) {
+                s.blurSettings.blurAnimOptions = s.blurSettings.blurAnimOptions
+                    .copyWith(speed: v);
+              });
+            },
+            animationMode: settings.blurSettings.blurAnimOptions.mode,
+            onModeChanged: (m) {
+              _updateSettings((s) {
+                s.blurSettings.blurAnimOptions = s.blurSettings.blurAnimOptions
+                    .copyWith(mode: m);
+              });
+            },
+            animationEasing: settings.blurSettings.blurAnimOptions.easing,
+            onEasingChanged: (e) {
+              _updateSettings((s) {
+                s.blurSettings.blurAnimOptions = s.blurSettings.blurAnimOptions
+                    .copyWith(easing: e);
+              });
+            },
+            sliderColor: sliderColor,
+          ),
+      ],
     );
   }
 

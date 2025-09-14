@@ -6,7 +6,6 @@ import '../models/presets_manager.dart';
 import 'value_slider.dart';
 import 'animation_controls.dart';
 import 'enhanced_panel_header.dart';
-import 'glass_panel.dart';
 import '../views/effect_controls.dart';
 
 class RainPanel extends StatelessWidget {
@@ -25,133 +24,127 @@ class RainPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassPanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          EnhancedPanelHeader(
-            aspect: ShaderAspect.rain,
-            onPresetSelected: _applyPreset,
-            onReset: _resetRain,
-            onSavePreset: _savePresetForAspect,
-            sliderColor: sliderColor,
-            loadPresets: _loadPresetsForAspect,
-            deletePreset: _deletePresetAndUpdate,
-            refreshPresets: _refreshPresets,
-            refreshCounter: _refreshCounter,
-            applyToImage: settings.rainSettings.applyToImage,
-            applyToText: settings.rainSettings.applyToText,
-            onApplyToImageChanged: (value) {
-              settings.rainSettings.applyToImage = value;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        EnhancedPanelHeader(
+          aspect: ShaderAspect.rain,
+          onPresetSelected: _applyPreset,
+          onReset: _resetRain,
+          onSavePreset: _savePresetForAspect,
+          sliderColor: sliderColor,
+          loadPresets: _loadPresetsForAspect,
+          deletePreset: _deletePresetAndUpdate,
+          refreshPresets: _refreshPresets,
+          refreshCounter: _refreshCounter,
+          applyToImage: settings.rainSettings.applyToImage,
+          applyToText: settings.rainSettings.applyToText,
+          onApplyToImageChanged: (value) {
+            settings.rainSettings.applyToImage = value;
+            onSettingsChanged(settings);
+          },
+          onApplyToTextChanged: (value) {
+            settings.rainSettings.applyToText = value;
+            onSettingsChanged(settings);
+          },
+        ),
+        ValueSlider(
+          label: 'Rain Intensity',
+          value: settings.rainSettings.rainIntensity,
+          onChanged: (value) => _onSliderChanged(
+            value,
+            (v) => settings.rainSettings.rainIntensity = v,
+          ),
+          sliderColor: sliderColor,
+          defaultValue: 0.5,
+        ),
+        ValueSlider(
+          label: 'Drop Size',
+          value: settings.rainSettings.dropSize,
+          onChanged: (value) => _onSliderChanged(
+            value,
+            (v) => settings.rainSettings.dropSize = v,
+          ),
+          sliderColor: sliderColor,
+          defaultValue: 0.5,
+        ),
+        ValueSlider(
+          label: 'Fall Speed',
+          value: settings.rainSettings.fallSpeed,
+          onChanged: (value) => _onSliderChanged(
+            value,
+            (v) => settings.rainSettings.fallSpeed = v,
+          ),
+          sliderColor: sliderColor,
+          defaultValue: 0.5,
+        ),
+        ValueSlider(
+          label: 'Refraction',
+          value: settings.rainSettings.refraction,
+          onChanged: (value) => _onSliderChanged(
+            value,
+            (v) => settings.rainSettings.refraction = v,
+          ),
+          sliderColor: sliderColor,
+          defaultValue: 0.5,
+        ),
+        ValueSlider(
+          label: 'Trail Intensity',
+          value: settings.rainSettings.trailIntensity,
+          onChanged: (value) => _onSliderChanged(
+            value,
+            (v) => settings.rainSettings.trailIntensity = v,
+          ),
+          sliderColor: sliderColor,
+          defaultValue: 0.3,
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Animate', style: TextStyle(color: sliderColor, fontSize: 14)),
+            Switch(
+              value: settings.rainSettings.rainAnimated,
+              thumbColor: WidgetStateProperty.resolveWith(
+                (states) =>
+                    states.contains(WidgetState.selected) ? sliderColor : null,
+              ),
+              onChanged: (value) {
+                settings.rainSettings.rainAnimated = value;
+                if (!settings.rainEnabled) settings.rainEnabled = true;
+                onSettingsChanged(settings);
+              },
+            ),
+          ],
+        ),
+        if (settings.rainSettings.rainAnimated)
+          AnimationControls(
+            animationSpeed: settings.rainSettings.rainAnimOptions.speed,
+            onSpeedChanged: (v) {
+              settings.rainSettings.rainAnimOptions = settings
+                  .rainSettings
+                  .rainAnimOptions
+                  .copyWith(speed: v);
               onSettingsChanged(settings);
             },
-            onApplyToTextChanged: (value) {
-              settings.rainSettings.applyToText = value;
+            animationMode: settings.rainSettings.rainAnimOptions.mode,
+            onModeChanged: (m) {
+              settings.rainSettings.rainAnimOptions = settings
+                  .rainSettings
+                  .rainAnimOptions
+                  .copyWith(mode: m);
               onSettingsChanged(settings);
             },
-          ),
-          ValueSlider(
-            label: 'Rain Intensity',
-            value: settings.rainSettings.rainIntensity,
-            onChanged: (value) => _onSliderChanged(
-              value,
-              (v) => settings.rainSettings.rainIntensity = v,
-            ),
+            animationEasing: settings.rainSettings.rainAnimOptions.easing,
+            onEasingChanged: (e) {
+              settings.rainSettings.rainAnimOptions = settings
+                  .rainSettings
+                  .rainAnimOptions
+                  .copyWith(easing: e);
+              onSettingsChanged(settings);
+            },
             sliderColor: sliderColor,
-            defaultValue: 0.5,
           ),
-          ValueSlider(
-            label: 'Drop Size',
-            value: settings.rainSettings.dropSize,
-            onChanged: (value) => _onSliderChanged(
-              value,
-              (v) => settings.rainSettings.dropSize = v,
-            ),
-            sliderColor: sliderColor,
-            defaultValue: 0.5,
-          ),
-          ValueSlider(
-            label: 'Fall Speed',
-            value: settings.rainSettings.fallSpeed,
-            onChanged: (value) => _onSliderChanged(
-              value,
-              (v) => settings.rainSettings.fallSpeed = v,
-            ),
-            sliderColor: sliderColor,
-            defaultValue: 0.5,
-          ),
-          ValueSlider(
-            label: 'Refraction',
-            value: settings.rainSettings.refraction,
-            onChanged: (value) => _onSliderChanged(
-              value,
-              (v) => settings.rainSettings.refraction = v,
-            ),
-            sliderColor: sliderColor,
-            defaultValue: 0.5,
-          ),
-          ValueSlider(
-            label: 'Trail Intensity',
-            value: settings.rainSettings.trailIntensity,
-            onChanged: (value) => _onSliderChanged(
-              value,
-              (v) => settings.rainSettings.trailIntensity = v,
-            ),
-            sliderColor: sliderColor,
-            defaultValue: 0.3,
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Animate',
-                style: TextStyle(color: sliderColor, fontSize: 14),
-              ),
-              Switch(
-                value: settings.rainSettings.rainAnimated,
-                thumbColor: WidgetStateProperty.resolveWith(
-                  (states) => states.contains(WidgetState.selected)
-                      ? sliderColor
-                      : null,
-                ),
-                onChanged: (value) {
-                  settings.rainSettings.rainAnimated = value;
-                  if (!settings.rainEnabled) settings.rainEnabled = true;
-                  onSettingsChanged(settings);
-                },
-              ),
-            ],
-          ),
-          if (settings.rainSettings.rainAnimated)
-            AnimationControls(
-              animationSpeed: settings.rainSettings.rainAnimOptions.speed,
-              onSpeedChanged: (v) {
-                settings.rainSettings.rainAnimOptions = settings
-                    .rainSettings
-                    .rainAnimOptions
-                    .copyWith(speed: v);
-                onSettingsChanged(settings);
-              },
-              animationMode: settings.rainSettings.rainAnimOptions.mode,
-              onModeChanged: (m) {
-                settings.rainSettings.rainAnimOptions = settings
-                    .rainSettings
-                    .rainAnimOptions
-                    .copyWith(mode: m);
-                onSettingsChanged(settings);
-              },
-              animationEasing: settings.rainSettings.rainAnimOptions.easing,
-              onEasingChanged: (e) {
-                settings.rainSettings.rainAnimOptions = settings
-                    .rainSettings
-                    .rainAnimOptions
-                    .copyWith(easing: e);
-                onSettingsChanged(settings);
-              },
-              sliderColor: sliderColor,
-            ),
-        ],
-      ),
+      ],
     );
   }
 

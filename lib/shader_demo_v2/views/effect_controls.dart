@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:liquid_glass_renderer/liquid_glass_renderer.dart';
 import '../models/shader_effect.dart';
 import '../models/image_category.dart';
 import '../controllers/shader_controller.dart';
 import '../controllers/music_controller.dart';
+import '../config/glass_effect_config.dart';
 import '../widgets/background_panel.dart';
 import '../widgets/color_panel.dart';
 import '../widgets/blur_panel.dart';
@@ -70,7 +72,6 @@ class _EffectControlsV2State extends State<EffectControlsV2> {
 
     return Consumer<ShaderController>(
       builder: (context, controller, child) {
-        final settings = controller.settings;
         final sliderColor = theme.colorScheme.primary;
 
         return Stack(
@@ -87,25 +88,30 @@ class _EffectControlsV2State extends State<EffectControlsV2> {
             if (_showAspectSliders)
               Positioned.fill(
                 child: Center(
-                  child: Container(
-                    width: MediaQuery.of(context).size.width * 0.8,
-                    constraints: BoxConstraints(
-                      maxHeight: MediaQuery.of(context).size.height - 150,
+                  child: LiquidGlass(
+                    settings: GlassEffectConfig.modalSettings,
+                    shape: const LiquidRoundedSuperellipse(
+                      borderRadius: Radius.circular(16),
                     ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 16,
-                    ),
-                    decoration: BoxDecoration(
-                      color: theme.brightness == Brightness.dark
-                          ? Colors.black.withValues(alpha: 0.1)
-                          : Colors.white.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: _buildAspectParameterSliders(
-                      controller,
-                      sliderColor,
-                      theme,
+                    glassContainsChild: false,
+                    child: Container(
+                      width: MediaQuery.of(context).size.width * 0.8,
+                      constraints: BoxConstraints(
+                        maxHeight: MediaQuery.of(context).size.height - 150,
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 16,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: _buildAspectParameterSliders(
+                        controller,
+                        sliderColor,
+                        theme,
+                      ),
                     ),
                   ),
                 ),

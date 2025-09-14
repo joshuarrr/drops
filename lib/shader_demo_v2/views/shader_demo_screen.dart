@@ -112,15 +112,6 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
       setState(() {
         // Update animation controller state
         _updateAnimationControllerState();
-
-        // Debug logging for settings changes
-        final settings = _shaderController.settings;
-        final imagePath = _shaderController.selectedImage;
-        print(
-          'SETTINGS CHANGED: imageEnabled=${settings.imageEnabled}, selectedImage=$imagePath, '
-          'backgroundEnabled=${settings.backgroundEnabled}, '
-          'backgroundColor=0x${settings.backgroundSettings.backgroundColor.value.toRadixString(16)}',
-        );
       });
     } else {
       _updateAnimationControllerState();
@@ -536,14 +527,6 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
     Widget contentWidget,
     double animationValue,
   ) {
-    // Debug to check if contentWidget is a Container with background color
-    if (contentWidget is Container) {
-      final containerWidget = contentWidget;
-      print(
-        '[DEBUG] _buildStackContent: contentWidget is Container with color=0x${containerWidget.color?.value.toRadixString(16) ?? "null"}',
-      );
-    }
-
     // Create list of stack children
     List<Widget> stackChildren = [];
 
@@ -736,14 +719,6 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
                 // Capture screenshot of clean screen
                 final captureResult = await ThumbnailService.capturePreview(
                   null, // Using native screenshot, no key needed
-
-
-
-
-
-
-
-
                 );
 
                 // Restore app bar visibility

@@ -37,12 +37,6 @@ class _ImageContainerState extends State<ImageContainer> {
         // Removed caching check to ensure image visibility toggle works correctly
 
         // Log only for debugging (very limited)
-        if (_logCount < _maxLogs) {
-          debugPrint(
-            'ImageContainer: building new widget - margin=${margin.toStringAsFixed(1)}, fillScreen=$fillScreen',
-          );
-          _logCount++;
-        }
 
         // Calculate image dimensions
         final bool isFitMode = !fillScreen;
@@ -104,11 +98,6 @@ class _ImageContainerState extends State<ImageContainer> {
         final backgroundColor = widget.settings.backgroundEnabled
             ? widget.settings.backgroundSettings.backgroundColor
             : Colors.black;
-
-        print(
-          'ImageContainer: Creating container with backgroundEnabled=${widget.settings.backgroundEnabled}, '
-          'backgroundColor=0x${backgroundColor.value.toRadixString(16)}',
-        );
 
         return Container(
           width: screenWidth,

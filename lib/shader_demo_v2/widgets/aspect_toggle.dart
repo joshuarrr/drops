@@ -26,10 +26,8 @@ class AspectToggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Color textColor = isCurrentImageDark ? Colors.white : Colors.black;
-    // Subtle background so the button is visible regardless of the underlying image.
-    final Color backgroundColor = Colors.white.withOpacity(
-      isEnabled ? 0.15 : 0.10,
-    );
+    // No background - let the glass effect handle visibility
+    final Color backgroundColor = Colors.transparent;
 
     return Tooltip(
       message: isEnabled
