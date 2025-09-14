@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:math';
 import 'dart:developer' as developer;
 import '../models/shader_effect.dart';
 import '../models/effect_settings.dart';
@@ -7,7 +6,8 @@ import '../models/animation_options.dart';
 import '../models/presets_manager.dart';
 import '../services/preset_refresh_service.dart';
 import '../controllers/effect_controller.dart';
-import 'value_slider.dart';
+import '../controllers/animation_state_manager.dart';
+import 'lockable_slider.dart';
 import 'animation_controls.dart';
 import 'enhanced_panel_header.dart';
 
@@ -98,40 +98,61 @@ class _ColorPanelState extends State<ColorPanel> {
           }),
         ),
         if (_showColorControls) ...[
-          ValueSlider(
+          LockableSlider(
             label: 'Hue',
             value: widget.settings.colorSettings.hue,
+            min: -1.0,
+            max: 1.0,
+            divisions: 200,
+            displayValue:
+                '${(widget.settings.colorSettings.hue * 100).round()}%',
             onChanged: (value) => _onSliderChanged(
               value,
               (v) => widget.settings.colorSettings.hue = v,
               isOverlay: false,
               propertyName: 'Hue',
             ),
-            sliderColor: widget.sliderColor,
+            activeColor: widget.sliderColor,
+            parameterId: ParameterIds.colorHue,
+            animationEnabled: widget.settings.colorSettings.colorAnimated,
             defaultValue: 0.0,
           ),
-          ValueSlider(
+          LockableSlider(
             label: 'Saturation',
             value: widget.settings.colorSettings.saturation,
+            min: -1.0,
+            max: 1.0,
+            divisions: 200,
+            displayValue:
+                '${(widget.settings.colorSettings.saturation * 100).round()}%',
             onChanged: (value) => _onSliderChanged(
               value,
               (v) => widget.settings.colorSettings.saturation = v,
               isOverlay: false,
               propertyName: 'Saturation',
             ),
-            sliderColor: widget.sliderColor,
+            activeColor: widget.sliderColor,
+            parameterId: ParameterIds.colorSaturation,
+            animationEnabled: widget.settings.colorSettings.colorAnimated,
             defaultValue: 0.0,
           ),
-          ValueSlider(
+          LockableSlider(
             label: 'Lightness',
             value: widget.settings.colorSettings.lightness,
+            min: -1.0,
+            max: 1.0,
+            divisions: 200,
+            displayValue:
+                '${(widget.settings.colorSettings.lightness * 100).round()}%',
             onChanged: (value) => _onSliderChanged(
               value,
               (v) => widget.settings.colorSettings.lightness = v,
               isOverlay: false,
               propertyName: 'Lightness',
             ),
-            sliderColor: widget.sliderColor,
+            activeColor: widget.sliderColor,
+            parameterId: ParameterIds.colorLightness,
+            animationEnabled: widget.settings.colorSettings.colorAnimated,
             defaultValue: 0.0,
           ),
           // Toggle animation for HSL adjustments
@@ -219,40 +240,61 @@ class _ColorPanelState extends State<ColorPanel> {
           }),
         ),
         if (_showOverlayControls) ...[
-          ValueSlider(
+          LockableSlider(
             label: 'Overlay Hue',
             value: widget.settings.colorSettings.overlayHue,
+            min: -1.0,
+            max: 1.0,
+            divisions: 200,
+            displayValue:
+                '${(widget.settings.colorSettings.overlayHue * 100).round()}%',
             onChanged: (value) => _onSliderChanged(
               value,
               (v) => widget.settings.colorSettings.overlayHue = v,
               isOverlay: true,
               propertyName: 'Overlay Hue',
             ),
-            sliderColor: widget.sliderColor,
+            activeColor: widget.sliderColor,
+            parameterId: ParameterIds.overlayHue,
+            animationEnabled: widget.settings.colorSettings.overlayAnimated,
             defaultValue: 0.0,
           ),
-          ValueSlider(
+          LockableSlider(
             label: 'Overlay Intensity',
             value: widget.settings.colorSettings.overlayIntensity,
+            min: -1.0,
+            max: 1.0,
+            divisions: 200,
+            displayValue:
+                '${(widget.settings.colorSettings.overlayIntensity * 100).round()}%',
             onChanged: (value) => _onSliderChanged(
               value,
               (v) => widget.settings.colorSettings.overlayIntensity = v,
               isOverlay: true,
               propertyName: 'Overlay Intensity',
             ),
-            sliderColor: widget.sliderColor,
+            activeColor: widget.sliderColor,
+            parameterId: ParameterIds.overlayIntensity,
+            animationEnabled: widget.settings.colorSettings.overlayAnimated,
             defaultValue: 0.0,
           ),
-          ValueSlider(
+          LockableSlider(
             label: 'Overlay Opacity',
             value: widget.settings.colorSettings.overlayOpacity,
+            min: -1.0,
+            max: 1.0,
+            divisions: 200,
+            displayValue:
+                '${(widget.settings.colorSettings.overlayOpacity * 100).round()}%',
             onChanged: (value) => _onSliderChanged(
               value,
               (v) => widget.settings.colorSettings.overlayOpacity = v,
               isOverlay: true,
               propertyName: 'Overlay Opacity',
             ),
-            sliderColor: widget.sliderColor,
+            activeColor: widget.sliderColor,
+            parameterId: ParameterIds.overlayOpacity,
+            animationEnabled: widget.settings.colorSettings.overlayAnimated,
             defaultValue: 0.0,
           ),
           // Toggle animation for overlay

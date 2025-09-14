@@ -392,7 +392,7 @@ class ShaderController extends ChangeNotifier {
   }
 
   /// Save current state as named preset
-  Future<bool> saveNamedPreset(String name) async {
+  Future<bool> saveNamedPreset(String name, {String? thumbnailBase64}) async {
     if (_isDisposed) return false;
 
     try {
@@ -400,25 +400,45 @@ class ShaderController extends ChangeNotifier {
       final currentSettings = _state.settings;
       final currentImage = _state.selectedImage;
 
+      // Use provided thumbnail or generate one if needed
+      String? finalThumbnailBase64 = thumbnailBase64;
+
       // Generate thumbnail (simplified - in real app would capture actual render)
       // For now, just pass null and handle thumbnail generation elsewhere
       final preset = await PresetService.saveNamedPreset(
         name: name,
         settings: currentSettings,
         imagePath: currentImage,
-        thumbnailBase64: null, // TODO: Generate actual thumbnail
+        thumbnailBase64: finalThumbnailBase64,
       );
 
       if (preset != null) {
-        // Update saved presets
-        final updatedPresets = [..._state.savedPresets, preset];
-        updatedPresets.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        // Update saved presets - insert new preset after current position instead of sorting by date
+        final updatedPresets = [..._state.savedPresets];
+
+        // Find the current preset position in the list
+        final currentPresetId = _state.basePreset?.id;
+        int insertIndex = updatedPresets.length; // Default to end
+
+        if (currentPresetId != null) {
+          final currentIndex = updatedPresets.indexWhere(
+            (p) => p.id == currentPresetId,
+          );
+          if (currentIndex != -1) {
+            insertIndex = currentIndex + 1; // Insert after current preset
+          }
+        }
+
+        // Insert the new preset at the calculated position
+        updatedPresets.insert(insertIndex, preset);
 
         // Temporarily remove listener to prevent _onNavigationChanged from overriding state
         _navigationController.removeListener(_onNavigationChanged);
 
-        // Update navigation controller
-        _navigationController.onPresetCreated(preset);
+        // Update navigation controller with the correctly positioned presets
+        _navigationController.updateSavedPresets(updatedPresets);
+
+        // Don't navigate - stay exactly where we are (on the preset we just saved)
 
         // Clear untitled state
         await _clearUntitledState();
@@ -442,6 +462,63 @@ class ShaderController extends ChangeNotifier {
       }
     } catch (e) {
       print('Error saving preset: $e');
+    }
+
+    return false;
+  }
+
+  /// Update an existing preset with current state
+  Future<bool> updatePreset(String presetId, {String? thumbnailBase64}) async {
+    if (_isDisposed) return false;
+
+    try {
+      // Store current state to preserve it during navigation changes
+      final currentSettings = _state.settings;
+      final currentImage = _state.selectedImage;
+
+      // Find the existing preset
+      final existingPreset = _state.savedPresets.firstWhere(
+        (p) => p.id == presetId,
+        orElse: () => throw Exception('Preset not found'),
+      );
+
+      // Use provided thumbnail or keep existing one
+      String? finalThumbnailBase64 =
+          thumbnailBase64 ?? existingPreset.thumbnailBase64;
+
+      // Create updated preset
+      final updatedPreset = existingPreset.copyWith(
+        settings: currentSettings,
+        imagePath: currentImage,
+        thumbnailBase64: finalThumbnailBase64,
+      );
+
+      // Save the updated preset
+      final success = await PresetService.updatePreset(updatedPreset);
+
+      if (success) {
+        // Update the preset in our local list
+        final updatedPresets = _state.savedPresets.map((p) {
+          return p.id == presetId ? updatedPreset : p;
+        }).toList();
+
+        // Update navigation controller
+        _navigationController.updateSavedPresets(updatedPresets);
+
+        // Update state
+        _state = _state.copyWith(
+          settings: currentSettings,
+          selectedImage: currentImage,
+          savedPresets: updatedPresets,
+          hasUnsavedChanges: false,
+          basePreset: updatedPreset,
+        );
+
+        notifyListeners();
+        return true;
+      }
+    } catch (e) {
+      print('Error updating preset: $e');
     }
 
     return false;

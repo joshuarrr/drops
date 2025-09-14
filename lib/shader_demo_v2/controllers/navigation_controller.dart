@@ -250,10 +250,8 @@ class NavigationController extends ChangeNotifier {
 
   /// Handle preset creation (add to navigation)
   void onPresetCreated(Preset newPreset) {
-    _savedPresets.add(newPreset);
-    // Sort by creation date (newest first)
-    _savedPresets.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-
+    // The preset has already been positioned correctly by the caller
+    // Just rebuild the navigator order
     _rebuildNavigatorOrder();
 
     // Don't automatically navigate to the new preset - let user stay where they are

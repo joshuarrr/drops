@@ -1,5 +1,5 @@
-import 'dart:async';
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -267,6 +267,17 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
               ],
             ),
           ),
+          if (_shaderController.basePreset != null)
+            const PopupMenuItem<String>(
+              value: 'update_preset',
+              child: Row(
+                children: [
+                  Icon(Icons.update),
+                  SizedBox(width: 8),
+                  Text('Update Preset'),
+                ],
+              ),
+            ),
           const PopupMenuItem<String>(
             value: 'load_preset',
             child: Row(
@@ -289,14 +300,72 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
   }
 
   void _handleUpdatePreset() {
-    // TODO: Implement update preset functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Update Preset functionality coming soon')),
-    );
+    if (_shaderController.basePreset != null) {
+      _showUpdateDialog(_shaderController, Theme.of(context));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No preset selected to update')),
+      );
+    }
   }
 
   void _handleLoadPreset() {
     _showPresetMenu();
+  }
+
+  Future<void> _showUpdateDialog(
+    ShaderController controller,
+    ThemeData theme,
+  ) async {
+    final currentPreset = controller.basePreset!;
+
+    // Hide ALL UI elements for clean capture
+    controller.setControlsVisible(false); // Force hide controls
+
+    // Set screenshot capture flag to hide app bar
+    setState(() {
+      _isCapturingScreenshot = true;
+    });
+
+    // Wait longer for all UI to settle
+    await Future.delayed(const Duration(milliseconds: 800));
+
+    // Capture screenshot of clean screen
+    final captureResult = await ThumbnailService.capturePreview(
+      null, // Using native screenshot, no key needed
+    );
+
+    // Restore app bar visibility
+    if (mounted) {
+      setState(() {
+        _isCapturingScreenshot = false;
+      });
+    }
+
+    bool updateSuccess = false;
+    if (captureResult != null) {
+      final capturedThumbnail = base64Encode(captureResult);
+      print('🖼️ [ShaderDemoScreen] Clean screenshot captured for update');
+
+      // Update the preset with the captured thumbnail
+      final presetSuccess = await controller.updatePreset(
+        currentPreset.id,
+        thumbnailBase64: capturedThumbnail,
+      );
+      if (presetSuccess) {
+        // Thumbnail is already saved as part of updatePreset
+        print('Clean thumbnail updated for preset: ${currentPreset.name}');
+        updateSuccess = true;
+      }
+    }
+
+    // Show success toast only if both preset and thumbnail updated successfully
+    if (updateSuccess) {
+      _showSuccessToast('Updated "${currentPreset.name}"');
+    } else {
+      // Show error toast if something failed
+      _showErrorToast('Failed to update preset "${currentPreset.name}"');
+    }
   }
 
   /// Build the main shader effect area with vertical PageView navigation
@@ -738,28 +807,14 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
                   print('🖼️ [ShaderDemoScreen] Clean screenshot captured');
 
                   // Save the preset with the captured thumbnail
-                  final presetSuccess = await controller.saveNamedPreset(name);
+                  final presetSuccess = await controller.saveNamedPreset(
+                    name,
+                    thumbnailBase64: capturedThumbnail,
+                  );
                   if (presetSuccess) {
-                    final savedPreset = controller.savedPresets
-                        .where((p) => p.name == name)
-                        .lastOrNull;
-
-                    if (savedPreset != null) {
-                      try {
-                        await PresetService.savePresetThumbnail(
-                          savedPreset.id,
-                          capturedThumbnail,
-                        );
-                        print(
-                          'Clean thumbnail saved for preset: ${savedPreset.name}',
-                        );
-                        saveSuccess =
-                            true; // Both preset and thumbnail saved successfully
-                      } catch (e) {
-                        print('❌ Failed to save thumbnail: $e');
-                        saveSuccess = false;
-                      }
-                    }
+                    // Thumbnail is already saved as part of saveNamedPreset
+                    print('Clean thumbnail saved for preset: $name');
+                    saveSuccess = true;
                   }
                 }
 
