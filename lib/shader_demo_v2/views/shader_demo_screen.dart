@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
 
 import '../controllers/shader_controller.dart';
+import '../controllers/animation_controller_manager.dart';
 
 import '../controllers/effect_controller.dart';
 import '../controllers/effect_controls_bridge.dart';
@@ -28,7 +28,7 @@ class ShaderDemoScreen extends StatefulWidget {
 
 class _ShaderDemoScreenState extends State<ShaderDemoScreen>
     with TickerProviderStateMixin {
-  late AnimationController _animationController;
+  late AnimationControllerManager _animationControllerManager;
   bool _isCapturingScreenshot = false;
   String? _pendingPresetName; // Store the preset name for success message
   String? _pendingErrorMessage; // Store error messages
@@ -36,32 +36,20 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
   late PageController _pageController;
   bool _isInitialized = false;
 
-  // Track animation state changes
-  bool? _lastAnimationState;
-
   @override
   void initState() {
     super.initState();
 
-    // Initialize animation controller with a fixed duration like V3
-    // This is simpler and more reliable than dynamic duration
-    _animationController = AnimationController(
-      duration: const Duration(seconds: 5), // Fixed 5 second cycle like V3
-      vsync: this,
-    );
+    // Initialize animation controller manager
+    _animationControllerManager = AnimationControllerManager(this);
+    _animationControllerManager.initialize();
 
-    // Animation value listener disabled for performance
-    _animationController.addListener(() {
-      // Animation logging disabled
-    });
-
-    // Listen to animation controller status changes to trigger rebuilds
-    _animationController.addStatusListener((status) {
-      // Disabled status logging for performance
-      // print("[DEBUG] Animation status changed: $status");
+    // Listen to animation controller manager changes to trigger rebuilds
+    _animationControllerManager.addListener(() {
+      // Animation logging disabled for performance
       if (mounted) {
         setState(() {
-          // Trigger rebuild when animation starts/stops to ensure AnimatedBuilder works
+          // Trigger rebuild when animation values change
         });
       }
     });
@@ -119,56 +107,14 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
     }
   }
 
-  /// Calculate animation duration based on speed slider value
-  /// Maps speed (0-1) to duration (60s to 0.5s)
-  Duration _calculateAnimationDuration(double speed) {
-    final durationMs = 60000 - (speed * 59500);
-    return Duration(milliseconds: durationMs.round());
-  }
-
   /// Update animation controller duration based on current speed settings
   void _updateAnimationDuration() {
     if (!_isInitialized) return;
 
-    // Get the current speed from any active animation
-    final settings = _shaderController.settings;
-    double currentSpeed = 0.5; // Default speed
-
-    // Find the speed from any active animation
-    if (settings.blurEnabled && settings.blurSettings.blurAnimated) {
-      currentSpeed = settings.blurSettings.blurAnimOptions.speed;
-    } else if (settings.colorEnabled && settings.colorSettings.colorAnimated) {
-      currentSpeed = settings.colorSettings.colorAnimOptions.speed;
-    } else if (settings.colorEnabled &&
-        settings.colorSettings.overlayAnimated) {
-      currentSpeed = settings.colorSettings.overlayAnimOptions.speed;
-    } else if (settings.noiseEnabled && settings.noiseSettings.noiseAnimated) {
-      currentSpeed = settings.noiseSettings.noiseAnimOptions.speed;
-    } else if (settings.rainEnabled && settings.rainSettings.rainAnimated) {
-      currentSpeed = settings.rainSettings.rainAnimOptions.speed;
-    } else if (settings.chromaticEnabled &&
-        settings.chromaticSettings.chromaticAnimated) {
-      currentSpeed = settings.chromaticSettings.animOptions.speed;
-    } else if (settings.rippleEnabled &&
-        settings.rippleSettings.rippleAnimated) {
-      currentSpeed = settings.rippleSettings.rippleAnimOptions.speed;
-    }
-
-    final newDuration = _calculateAnimationDuration(currentSpeed);
-
-    // Only update if duration has changed
-    if (_animationController.duration != newDuration) {
-      if (_animationController.isAnimating) {
-        // Stop current animation, update duration, and restart
-        _animationController.stop();
-        _animationController.duration = newDuration;
-        _animationController.reset();
-        _animationController.repeat(reverse: true);
-      } else {
-        // Safe to update duration when not animating
-        _animationController.duration = newDuration;
-      }
-    }
+    // Update animation state in the manager
+    _animationControllerManager.updateAnimationState(
+      _shaderController.settings,
+    );
   }
 
   /// Start or stop animation controller based on whether any animations are active
@@ -176,64 +122,8 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
   void _updateAnimationControllerState() {
     if (!mounted || !_isInitialized) return;
 
-    final bool hasActiveAnimations = _hasActiveAnimations();
-
-    // Schedule after frame to avoid setState during build
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      // Update duration first
-      _updateAnimationDuration();
-
-      // Then manage animation state
-      if (hasActiveAnimations && !_animationController.isAnimating) {
-        // Start animation with forward-reverse to avoid jumps
-        _animationController.reset(); // Ensure we start from 0
-        _animationController.repeat(
-          reverse: true,
-        ); // Use forward-reverse to avoid jumps
-      } else if (!hasActiveAnimations && _animationController.isAnimating) {
-        // Stop animation when not needed
-        _animationController.stop();
-        _animationController.reset();
-      }
-    });
-  }
-
-  // Unused function removed
-
-  /// Check if any shader effects have animations enabled
-  bool _hasActiveAnimations() {
-    if (!_isInitialized) return false;
-
-    final settings = _shaderController.settings;
-
-    // CRITICAL FIX: Check if effects are both enabled AND animated
-    // Previously we were only checking if animations were toggled on, not if the effects themselves were enabled
-    final hasAnimations =
-        (settings.blurEnabled && settings.blurSettings.blurAnimated) ||
-        (settings.colorEnabled && settings.colorSettings.colorAnimated) ||
-        (settings.noiseEnabled && settings.noiseSettings.noiseAnimated) ||
-        (settings.rainEnabled && settings.rainSettings.rainAnimated) ||
-        (settings.chromaticEnabled &&
-            settings.chromaticSettings.chromaticAnimated) ||
-        (settings.rippleEnabled && settings.rippleSettings.rippleAnimated);
-
-    // Animation state logging disabled for performance
-    // print(
-    //   "[DEBUG] _hasActiveAnimations() = $hasAnimations: " +
-    //       "blur=${settings.blurEnabled && settings.blurSettings.blurAnimated}, " +
-    //       "color=${settings.colorEnabled && settings.colorSettings.colorAnimated}, " +
-    //       "noise=${settings.noiseEnabled && settings.noiseSettings.noiseAnimated}, " +
-    //       "rain=${settings.rainEnabled && settings.rainSettings.rainAnimated}, " +
-    //       "chromatic=${settings.chromaticEnabled && settings.chromaticSettings.chromaticAnimated}, " +
-    //       "ripple=${settings.rippleEnabled && settings.rippleSettings.rippleAnimated}",
-    // );
-
-    // Animation state change logging disabled
-    if (_lastAnimationState != hasAnimations) {
-      _lastAnimationState = hasAnimations;
-    }
-
-    return hasAnimations;
+    // Update animation state in the manager
+    _updateAnimationDuration();
   }
 
   /// Sync PageController with NavigationController changes
@@ -264,7 +154,7 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
       // Disconnect the bridge
       EffectControls.setController(null);
     }
-    _animationController.dispose();
+    _animationControllerManager.dispose();
     super.dispose();
   }
 
@@ -423,18 +313,16 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
           onLongPress: () {}, // Add empty handler to ensure events bubble up
           child: Container(
             color: Colors.black,
-            // CRITICAL: Use V3's direct AnimatedBuilder approach
+            // Use animation controller manager for independent effect animations
             child: AnimatedBuilder(
-              animation: _animationController,
+              animation: _animationControllerManager,
               builder: (context, child) {
-                final animationValue = _animationController.value;
-                print(
-                  "[CRITICAL] Direct AnimatedBuilder with value: $animationValue",
-                );
+                final animationValues = _animationControllerManager
+                    .getAllAnimationValues();
                 return _buildStackContent(
                   controller,
                   contentWidget,
-                  animationValue,
+                  animationValues,
                 );
               },
             ),
@@ -466,14 +354,15 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
                   () {}, // Add empty handler to ensure events bubble up
               child: Container(
                 color: Colors.black,
-                // CRITICAL: Use V3's direct AnimatedBuilder approach for presets too
+                // Use animation controller manager for independent effect animations
                 child: AnimatedBuilder(
-                  animation: _animationController,
+                  animation: _animationControllerManager,
                   builder: (context, child) {
-                    final animationValue = _animationController.value;
+                    final animationValues = _animationControllerManager
+                        .getAllAnimationValues();
                     // Animation debugging disabled
                     // print(
-                    //   "[CRITICAL] PageView AnimatedBuilder with value: $animationValue",
+                    //   "[CRITICAL] PageView AnimatedBuilder with values: $animationValues",
                     // );
 
                     // Create content widget for this preset
@@ -498,7 +387,7 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
                       child: _buildStackContent(
                         controller,
                         contentWidget,
-                        animationValue,
+                        animationValues,
                       ),
                     );
                   },
@@ -579,7 +468,7 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
   Widget _buildStackContent(
     ShaderController controller,
     Widget contentWidget,
-    double animationValue,
+    Map<String, double> animationValues,
   ) {
     // Create list of stack children
     List<Widget> stackChildren = [];
@@ -592,7 +481,7 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
           child: EffectController.applyEffects(
             child: contentWidget,
             settings: controller.settings,
-            animationValue: animationValue,
+            animationValues: animationValues,
             preserveTransparency: false,
             isTextContent: false,
           ),
@@ -609,7 +498,7 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
       stackChildren.add(
         TextOverlay(
           settings: controller.settings,
-          animationValue: animationValue,
+          animationValues: animationValues,
         ),
       );
     }

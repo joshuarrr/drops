@@ -223,7 +223,7 @@ class EffectController {
   // Generate a unique cache key for a settings configuration
   static String _generateCacheKey(
     ShaderSettings settings,
-    double animationValue,
+    Map<String, double> animationValues,
     bool preserveTransparency,
     bool isTextContent,
   ) {
@@ -238,14 +238,16 @@ class EffectController {
       settings.rainEnabled ? 'r1' : 'r0',
       settings.chromaticEnabled ? 'ch1' : 'ch0',
       settings.rippleEnabled ? 'rp1' : 'rp0',
-      // Only include animation value if anything is animated
+      // Only include animation values if anything is animated
       if (settings.colorSettings.colorAnimated ||
           settings.blurSettings.blurAnimated ||
           settings.noiseSettings.noiseAnimated ||
           settings.rainSettings.rainAnimated ||
           settings.chromaticSettings.chromaticAnimated ||
           settings.rippleSettings.rippleAnimated)
-        animationValue.toStringAsFixed(2),
+        animationValues.entries
+            .map((e) => '${e.key}:${e.value.toStringAsFixed(2)}')
+            .join('|'),
       // Hash of settings values for color if enabled
       if (settings.colorEnabled)
         '${settings.colorSettings.hue.toStringAsFixed(2)}_${settings.colorSettings.saturation.toStringAsFixed(2)}_${settings.colorSettings.lightness.toStringAsFixed(2)}_${settings.colorSettings.overlayIntensity.toStringAsFixed(2)}_${settings.colorSettings.overlayOpacity.toStringAsFixed(2)}',
@@ -278,7 +280,7 @@ class EffectController {
   static Widget applyEffects({
     required Widget child,
     required ShaderSettings settings,
-    required double animationValue,
+    required Map<String, double> animationValues,
     bool preserveTransparency = false,
     bool isTextContent = false, // Add parameter to identify text content
   }) {
@@ -335,7 +337,7 @@ class EffectController {
         return _buildEffectsWidget(
           child: child,
           settings: settings,
-          animationValue: animationValue,
+          animationValues: animationValues,
           preserveTransparency: preserveTransparency,
           isTextContent: isTextContent,
         );
@@ -343,7 +345,7 @@ class EffectController {
 
       final cacheKey = _generateCacheKey(
         settings,
-        animationValue,
+        animationValues,
         preserveTransparency,
         isTextContent,
       );
@@ -362,7 +364,7 @@ class EffectController {
       Widget result = _buildEffectsWidget(
         child: child,
         settings: settings,
-        animationValue: animationValue,
+        animationValues: animationValues,
         preserveTransparency: preserveTransparency,
         isTextContent: isTextContent,
       );
@@ -391,7 +393,7 @@ class EffectController {
     return _buildEffectsWidget(
       child: child,
       settings: settings,
-      animationValue: animationValue,
+      animationValues: animationValues,
       preserveTransparency: preserveTransparency,
       isTextContent: isTextContent,
     );
@@ -401,7 +403,7 @@ class EffectController {
   static Widget _buildEffectsWidget({
     required Widget child,
     required ShaderSettings settings,
-    required double animationValue,
+    required Map<String, double> animationValues,
     required bool preserveTransparency,
     required bool isTextContent,
   }) {
@@ -421,7 +423,9 @@ class EffectController {
           result = _applyColorEffect(
             child: result,
             settings: settings,
-            animationValue: animationValue,
+            animationValue: settings.colorSettings.colorAnimated
+                ? (animationValues['color'] ?? 0.0)
+                : (animationValues['overlay'] ?? 0.0),
             preserveTransparency: preserveTransparency,
             isTextContent: isTextContent,
           );
@@ -434,7 +438,7 @@ class EffectController {
           result = _applyNoiseEffect(
             child: result,
             settings: settings,
-            animationValue: animationValue,
+            animationValue: animationValues['noise'] ?? 0.0,
             preserveTransparency: preserveTransparency,
             isTextContent: isTextContent,
           );
@@ -447,7 +451,7 @@ class EffectController {
           result = _applyRainEffect(
             child: result,
             settings: settings,
-            animationValue: animationValue,
+            animationValue: animationValues['rain'] ?? 0.0,
             preserveTransparency: preserveTransparency,
             isTextContent: isTextContent,
           );
@@ -460,7 +464,7 @@ class EffectController {
           result = _applyRippleEffect(
             child: result,
             settings: settings,
-            animationValue: animationValue,
+            animationValue: animationValues['ripple'] ?? 0.0,
             preserveTransparency: preserveTransparency,
             isTextContent: isTextContent,
           );
@@ -475,7 +479,7 @@ class EffectController {
           result = _applyChromaticEffect(
             child: result,
             settings: settings,
-            animationValue: animationValue,
+            animationValue: animationValues['chromatic'] ?? 0.0,
             preserveTransparency: preserveTransparency,
             isTextContent: isTextContent,
           );
@@ -488,7 +492,7 @@ class EffectController {
           result = _applyBlurEffect(
             child: result,
             settings: settings,
-            animationValue: animationValue,
+            animationValue: animationValues['blur'] ?? 0.0,
             preserveTransparency: preserveTransparency,
             isTextContent: isTextContent,
           );

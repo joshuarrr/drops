@@ -7,8 +7,6 @@ import 'package:uuid/uuid.dart';
 
 import '../controllers/effect_controller.dart';
 import '../models/effect_settings.dart';
-import '../models/text_layout_settings.dart';
-import '../models/text_fx_settings.dart';
 import '../../theme/custom_fonts.dart';
 
 // Enum for identifying each text line
@@ -18,7 +16,7 @@ enum TextLine { title, subtitle, artist, lyrics }
 /// top of the current shader preview.
 class TextOverlay extends StatefulWidget {
   final ShaderSettings settings;
-  final double animationValue;
+  final Map<String, double> animationValues;
 
   // Static cache reference for direct bust
   static _TextOverlayState? _activeState;
@@ -26,7 +24,7 @@ class TextOverlay extends StatefulWidget {
   const TextOverlay({
     Key? key,
     required this.settings,
-    required this.animationValue,
+    required this.animationValues,
   }) : super(key: key);
 
   // Static method to force a refresh
@@ -107,9 +105,7 @@ class _TextOverlayState extends State<TextOverlay> {
       textSettings.hashCode,
       fxSettings
           .updateCounter, // Use updateCounter property from TextFXSettings
-      widget.animationValue.toStringAsFixed(
-        3,
-      ), // Round to avoid too many rebuilds
+      widget.animationValues.hashCode, // Use hash of all animation values
     );
 
     final currentKey = '$_currentKey-$settingsKey';
@@ -145,8 +141,7 @@ class _TextOverlayState extends State<TextOverlay> {
                         widget.settings.blurEnabled) ||
                     (widget.settings.noiseSettings.noiseAnimated &&
                         widget.settings.noiseEnabled)) &&
-                (_lastTextOverlayAnimValue! - widget.animationValue).abs() >
-                    0.01);
+                _hasSignificantAnimationChange());
 
     // Force a rebuild if settings changed
     if (settingsChanged) {
@@ -171,7 +166,7 @@ class _TextOverlayState extends State<TextOverlay> {
           child: EffectController.applyEffects(
             child: overlayStack,
             settings: widget.settings,
-            animationValue: widget.animationValue,
+            animationValues: widget.animationValues,
             isTextContent: true,
             preserveTransparency: true,
           ),
@@ -188,9 +183,23 @@ class _TextOverlayState extends State<TextOverlay> {
     // Update cache
     _cachedTextOverlay = result;
     _lastTextOverlaySettings = ShaderSettings.fromMap(widget.settings.toMap());
-    _lastTextOverlayAnimValue = widget.animationValue;
+    _lastTextOverlayAnimValue = widget.animationValues.hashCode.toDouble();
 
     return result;
+  }
+
+  // Helper to check if animation values have changed significantly
+  bool _hasSignificantAnimationChange() {
+    if (_lastTextOverlayAnimValue == null) return true;
+
+    // Check if any animation value has changed significantly
+    for (final entry in widget.animationValues.entries) {
+      final lastValue = _lastTextOverlayAnimValue!;
+      if ((lastValue - entry.value).abs() > 0.01) {
+        return true;
+      }
+    }
+    return false;
   }
 
   // Helper to check if a font is a variable font
