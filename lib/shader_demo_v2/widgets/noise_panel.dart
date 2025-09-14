@@ -3,6 +3,7 @@ import '../models/shader_effect.dart';
 import '../models/effect_settings.dart';
 import '../models/animation_options.dart';
 import '../models/presets_manager.dart';
+import '../services/preset_refresh_service.dart';
 import 'lockable_slider.dart';
 import 'animation_controls.dart';
 import '../controllers/animation_state_manager.dart';
@@ -249,7 +250,7 @@ class NoisePanel extends StatelessWidget {
   static void _refreshPresets() {
     _refreshCounter++;
     // Call the central refresh method for immediate UI update
-    // TODO: Implement preset refresh in V2 architecture
+    PresetRefreshService().refreshAspect(ShaderAspect.noise);
   }
 
   static Future<bool> _deletePresetAndUpdate(
@@ -259,6 +260,8 @@ class NoisePanel extends StatelessWidget {
     final success = await PresetsManager.deletePreset(aspect, name);
     if (success) {
       _cachedPresets[aspect] = await PresetsManager.getPresetsForAspect(aspect);
+      // Trigger refresh after deletion
+      PresetRefreshService().refreshAspect(aspect);
     }
     return success;
   }

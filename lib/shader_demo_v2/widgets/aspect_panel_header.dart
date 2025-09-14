@@ -77,7 +77,9 @@ class AspectPanelHeader extends StatelessWidget {
                 } else if (value == 'save_preset') {
                   // Generate automatic name first, then show dialog
                   final autoName =
-                      await PresetService.generateAutomaticPresetName();
+                      await PresetService.generateAutomaticAspectPresetName(
+                        aspect,
+                      );
                   final TextEditingController nameController =
                       TextEditingController(text: autoName);
 

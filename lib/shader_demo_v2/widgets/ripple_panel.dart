@@ -3,6 +3,7 @@ import '../models/shader_effect.dart';
 import '../models/effect_settings.dart';
 import '../models/ripple_settings.dart';
 import '../models/presets_manager.dart';
+import '../services/preset_refresh_service.dart';
 import 'lockable_slider.dart';
 import '../controllers/animation_state_manager.dart';
 
@@ -433,7 +434,7 @@ class _RipplePanelState extends State<RipplePanel> {
   static void _refreshPresets() {
     _refreshCounter++;
     // Call the central refresh method for immediate UI update
-    // TODO: Implement preset refresh in V2 architecture
+    PresetRefreshService().refreshAspect(ShaderAspect.ripple);
   }
 
   static Future<bool> _deletePresetAndUpdate(
@@ -443,6 +444,8 @@ class _RipplePanelState extends State<RipplePanel> {
     final success = await PresetsManager.deletePreset(aspect, name);
     if (success) {
       _cachedPresets[aspect] = await PresetsManager.getPresetsForAspect(aspect);
+      // Trigger refresh after deletion
+      PresetRefreshService().refreshAspect(aspect);
     }
     return success;
   }

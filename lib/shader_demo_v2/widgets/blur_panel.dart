@@ -4,6 +4,7 @@ import '../models/effect_settings.dart';
 import '../controllers/effect_controls_bridge.dart';
 import '../models/animation_options.dart';
 import '../models/presets_manager.dart';
+import '../services/preset_refresh_service.dart';
 import '../controllers/animation_state_manager.dart';
 import 'lockable_slider.dart';
 import 'animation_controls.dart';
@@ -311,7 +312,7 @@ class BlurPanel extends StatelessWidget {
   static void _refreshPresets() {
     _refreshCounter++;
     // Call the central refresh method for immediate UI update
-    EffectControls.refreshPresets();
+    PresetRefreshService().refreshAspect(ShaderAspect.blur);
   }
 
   static Future<bool> _deletePresetAndUpdate(
@@ -321,6 +322,8 @@ class BlurPanel extends StatelessWidget {
     final success = await PresetsManager.deletePreset(aspect, name);
     if (success) {
       _cachedPresets[aspect] = await PresetsManager.getPresetsForAspect(aspect);
+      // Trigger refresh after deletion
+      PresetRefreshService().refreshAspect(aspect);
     }
     return success;
   }

@@ -1,5 +1,7 @@
 import '../models/preset.dart';
 import '../models/effect_settings.dart';
+import '../models/presets_manager.dart';
+import '../models/shader_effect.dart';
 import 'storage_service.dart';
 
 /// Preset service with single responsibility: preset CRUD operations
@@ -98,6 +100,60 @@ class PresetService {
     }
 
     return 'Preset $nextNumber';
+  }
+
+  /// Generate the next automatic preset name for a specific aspect (e.g., "Image Preset 1", "Blur Preset 2")
+  static Future<String> generateAutomaticAspectPresetName(
+    ShaderAspect aspect,
+  ) async {
+    // Import PresetsManager here to avoid circular dependency
+    final presets = await PresetsManager.getPresetsForAspect(aspect);
+    final presetNames = presets.keys.toList();
+
+    // Find all preset names that match the pattern "Aspect Preset N" or "Preset N"
+    final aspectRegex = RegExp(r'^${aspect.label} Preset (\d+)$');
+    final genericRegex = RegExp(r'^Preset (\d+)$');
+    final usedNumbers = <int>[];
+
+    for (final name in presetNames) {
+      // Try aspect-specific pattern first
+      var match = aspectRegex.firstMatch(name);
+      if (match != null) {
+        final number = int.tryParse(match.group(1) ?? '');
+        if (number != null) {
+          usedNumbers.add(number);
+        }
+        continue;
+      }
+
+      // Fall back to generic pattern
+      match = genericRegex.firstMatch(name);
+      if (match != null) {
+        final number = int.tryParse(match.group(1) ?? '');
+        if (number != null) {
+          usedNumbers.add(number);
+        }
+      }
+    }
+
+    // Find the next available number
+    int nextNumber = 1;
+    if (usedNumbers.isNotEmpty) {
+      usedNumbers.sort();
+      // Find first gap or use the next number after the highest
+      for (int i = 0; i < usedNumbers.length; i++) {
+        if (i + 1 < usedNumbers[i]) {
+          nextNumber = i + 1;
+          break;
+        }
+      }
+      if (nextNumber == 1) {
+        // No gaps found, use next number
+        nextNumber = usedNumbers.last + 1;
+      }
+    }
+
+    return '${aspect.label} Preset $nextNumber';
   }
 
   /// Update an existing preset

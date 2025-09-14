@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import '../models/shader_effect.dart';
+import '../services/preset_refresh_service.dart';
 import 'effect_options_menu.dart';
 
 /// An enhanced version of AspectPanelHeader that includes the new options menu
 /// with Apply to Image and Apply to Text checkboxes.
-class EnhancedPanelHeader extends StatelessWidget {
+class EnhancedPanelHeader extends StatefulWidget {
   final ShaderAspect aspect;
   final Function(Map<String, dynamic>) onPresetSelected;
   final VoidCallback onReset;
@@ -46,6 +47,34 @@ class EnhancedPanelHeader extends StatelessWidget {
   static void _defaultBoolCallback(bool value) {}
 
   @override
+  State<EnhancedPanelHeader> createState() => _EnhancedPanelHeaderState();
+}
+
+class _EnhancedPanelHeaderState extends State<EnhancedPanelHeader> {
+  late PresetRefreshService _refreshService;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshService = PresetRefreshService();
+    _refreshService.addListener(_onRefresh);
+  }
+
+  @override
+  void dispose() {
+    _refreshService.removeListener(_onRefresh);
+    super.dispose();
+  }
+
+  void _onRefresh() {
+    if (mounted) {
+      setState(() {
+        // Trigger rebuild when presets are refreshed
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Column(
       children: [
@@ -57,9 +86,9 @@ class EnhancedPanelHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
-                '${aspect.label} Settings',
+                '${widget.aspect.label} Settings',
                 style: TextStyle(
-                  color: sliderColor,
+                  color: widget.sliderColor,
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   shadows: [
@@ -73,16 +102,16 @@ class EnhancedPanelHeader extends StatelessWidget {
               ),
               // Use the new options menu
               EffectOptionsMenu(
-                aspect: aspect,
-                textColor: sliderColor,
-                onSavePreset: onSavePreset,
-                onReset: onReset,
-                applyToImage: applyToImage,
-                applyToText: applyToText,
-                applyToBackground: applyToBackground,
-                onApplyToImageChanged: onApplyToImageChanged,
-                onApplyToTextChanged: onApplyToTextChanged,
-                onApplyToBackgroundChanged: onApplyToBackgroundChanged,
+                aspect: widget.aspect,
+                textColor: widget.sliderColor,
+                onSavePreset: widget.onSavePreset,
+                onReset: widget.onReset,
+                applyToImage: widget.applyToImage,
+                applyToText: widget.applyToText,
+                applyToBackground: widget.applyToBackground,
+                onApplyToImageChanged: widget.onApplyToImageChanged,
+                onApplyToTextChanged: widget.onApplyToTextChanged,
+                onApplyToBackgroundChanged: widget.onApplyToBackgroundChanged,
               ),
             ],
           ),
@@ -90,8 +119,10 @@ class EnhancedPanelHeader extends StatelessWidget {
         const SizedBox(height: 8),
         // Preset chips
         FutureBuilder<Map<String, dynamic>>(
-          key: ValueKey('presets_${aspect.toString()}_$refreshCounter'),
-          future: loadPresets(aspect),
+          key: ValueKey(
+            'presets_${widget.aspect.toString()}_${_refreshService.getRefreshCounter(widget.aspect)}',
+          ),
+          future: widget.loadPresets(widget.aspect),
           builder: (context, snapshot) {
             if (!snapshot.hasData || snapshot.data!.isEmpty) {
               return const SizedBox.shrink();
@@ -110,7 +141,7 @@ class EnhancedPanelHeader extends StatelessWidget {
                       return Padding(
                         padding: const EdgeInsets.only(right: 6.0),
                         child: InkWell(
-                          onTap: () => onPresetSelected(entry.value),
+                          onTap: () => widget.onPresetSelected(entry.value),
                           onLongPress: () {
                             // Show delete confirmation
                             showDialog(
@@ -132,12 +163,13 @@ class EnhancedPanelHeader extends StatelessWidget {
                                       child: Text('Delete'),
                                       onPressed: () async {
                                         Navigator.of(context).pop();
-                                        final success = await deletePreset(
-                                          aspect,
-                                          entry.key,
-                                        );
+                                        final success = await widget
+                                            .deletePreset(
+                                              widget.aspect,
+                                              entry.key,
+                                            );
                                         if (success) {
-                                          refreshPresets();
+                                          widget.refreshPresets();
                                         }
                                       },
                                     ),
@@ -152,16 +184,16 @@ class EnhancedPanelHeader extends StatelessWidget {
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: sliderColor.withOpacity(0.2),
+                              color: widget.sliderColor.withOpacity(0.2),
                               borderRadius: BorderRadius.circular(14),
                               border: Border.all(
-                                color: sliderColor.withOpacity(0.3),
+                                color: widget.sliderColor.withOpacity(0.3),
                               ),
                             ),
                             child: Text(
                               entry.key,
                               style: TextStyle(
-                                color: sliderColor,
+                                color: widget.sliderColor,
                                 fontSize: 12,
                                 shadows: [
                                   Shadow(

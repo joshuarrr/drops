@@ -5,6 +5,7 @@ import '../models/shader_effect.dart';
 import '../models/effect_settings.dart';
 import '../models/animation_options.dart';
 import '../models/presets_manager.dart';
+import '../services/preset_refresh_service.dart';
 import '../controllers/effect_controller.dart';
 import 'value_slider.dart';
 import 'animation_controls.dart';
@@ -544,7 +545,7 @@ class _ColorPanelState extends State<ColorPanel> {
     _refreshCounter++;
     debugPrint('[ColorPanel] Refreshing presets, counter: $_refreshCounter');
     // Call the central refresh method for immediate UI update
-    // TODO: Implement preset refresh in V2 architecture
+    PresetRefreshService().refreshAspect(ShaderAspect.color);
   }
 
   static Future<bool> _deletePresetAndUpdate(
@@ -556,6 +557,8 @@ class _ColorPanelState extends State<ColorPanel> {
     if (success) {
       debugPrint('[ColorPanel] Successfully deleted preset: $name');
       _cachedPresets[aspect] = await PresetsManager.getPresetsForAspect(aspect);
+      // Trigger refresh after deletion
+      PresetRefreshService().refreshAspect(aspect);
     } else {
       debugPrint('[ColorPanel] Failed to delete preset: $name');
     }

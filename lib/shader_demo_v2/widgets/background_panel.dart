@@ -4,6 +4,7 @@ import '../models/effect_settings.dart';
 import '../controllers/effect_controls_bridge.dart';
 import '../models/animation_options.dart';
 import '../models/presets_manager.dart';
+import '../services/preset_refresh_service.dart';
 import '../models/background_settings.dart';
 import '../controllers/effect_controller.dart';
 import 'color_picker.dart';
@@ -121,7 +122,8 @@ class _BackgroundPanelState extends State<BackgroundPanel> {
     setState(() {
       _refreshCounter++;
     });
-    EffectControls.refreshPresets();
+    // Call the central refresh method for immediate UI update
+    PresetRefreshService().refreshAspect(ShaderAspect.background);
   }
 
   @override

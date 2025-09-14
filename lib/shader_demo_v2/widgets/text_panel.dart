@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/shader_effect.dart';
 import '../models/effect_settings.dart';
 import '../models/presets_manager.dart';
+import '../services/preset_refresh_service.dart';
 import '../../common/font_selector.dart';
 import '../../theme/custom_fonts.dart';
 import 'value_slider.dart';
@@ -1171,7 +1172,7 @@ class _TextPanelState extends State<TextPanel> {
   static void _refreshPresets() {
     _refreshCounter++;
     // Call the central refresh method for immediate UI update
-    // TODO: Implement preset refresh in V2 architecture
+    PresetRefreshService().refreshAspect(ShaderAspect.text);
   }
 
   static Future<bool> _deletePresetAndUpdate(
@@ -1181,6 +1182,8 @@ class _TextPanelState extends State<TextPanel> {
     final success = await PresetsManager.deletePreset(aspect, name);
     if (success) {
       _cachedPresets[aspect] = await PresetsManager.getPresetsForAspect(aspect);
+      // Trigger refresh after deletion
+      PresetRefreshService().refreshAspect(aspect);
     }
     return success;
   }

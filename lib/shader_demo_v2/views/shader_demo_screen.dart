@@ -15,6 +15,7 @@ import '../views/text_overlay.dart';
 import '../../common/app_scaffold.dart';
 import '../services/thumbnail_service.dart';
 import '../services/preset_service.dart';
+import '../models/preset.dart';
 
 /// Main screen for shader demo V2
 /// Uses Provider pattern and Stack layout for overlay controls
@@ -665,33 +666,94 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
     // Generate automatic name first
     final autoName = await PresetService.generateAutomaticPresetName();
     final nameController = TextEditingController(text: autoName);
+    String? selectedPreset;
+    ValueNotifier<int> refreshTrigger = ValueNotifier(0);
 
     final result = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: theme.dialogBackgroundColor,
         title: Text(
-          'Save Preset',
+          'Save Image Preset',
           style: TextStyle(color: theme.colorScheme.onSurface),
         ),
-        content: TextField(
-          controller: nameController,
-          style: TextStyle(color: theme.colorScheme.onSurface),
-          decoration: InputDecoration(
-            hintText: 'Enter preset name',
-            hintStyle: TextStyle(
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
-            ),
-            enabledBorder: UnderlineInputBorder(
-              borderSide: BorderSide(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
-              ),
-            ),
-            focusedBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: theme.colorScheme.primary),
-            ),
-          ),
-          autofocus: true,
+        content: ValueListenableBuilder<int>(
+          valueListenable: refreshTrigger,
+          builder: (context, _, __) {
+            return FutureBuilder<List<Preset>>(
+              future: PresetService.loadAllPresets(),
+              builder: (context, snapshot) {
+                final presets = snapshot.data ?? [];
+                final presetNames = presets.map((p) => p.name).toList();
+
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: nameController,
+                      style: TextStyle(color: theme.colorScheme.onSurface),
+                      decoration: InputDecoration(
+                        labelText: 'Preset Name',
+                        hintText: 'Enter preset name',
+                        hintStyle: TextStyle(
+                          color: theme.colorScheme.onSurface.withOpacity(0.6),
+                        ),
+                        enabledBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(
+                            color: theme.colorScheme.onSurface.withOpacity(0.6),
+                          ),
+                        ),
+                        focusedBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                      ),
+                      autofocus: true,
+                    ),
+                    const SizedBox(height: 16),
+                    if (presetNames.isNotEmpty) ...[
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Or update existing preset:',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: theme.colorScheme.onSurface.withOpacity(0.7),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      DropdownButton<String>(
+                        isExpanded: true,
+                        hint: Text(
+                          'Select a preset to update',
+                          style: TextStyle(
+                            color: theme.colorScheme.onSurface.withOpacity(0.6),
+                          ),
+                        ),
+                        value: selectedPreset,
+                        dropdownColor: theme.dialogBackgroundColor,
+                        style: TextStyle(color: theme.colorScheme.onSurface),
+                        items: presetNames.map((name) {
+                          return DropdownMenuItem<String>(
+                            value: name,
+                            child: Text(name),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          selectedPreset = value;
+                          if (value != null) {
+                            nameController.text = value;
+                          }
+                        },
+                      ),
+                    ],
+                  ],
+                );
+              },
+            );
+          },
         ),
         actions: [
           TextButton(
@@ -769,6 +831,120 @@ class _ShaderDemoScreenState extends State<ShaderDemoScreen>
               }
             },
             child: const Text('Save'),
+          ),
+          ValueListenableBuilder<int>(
+            valueListenable: refreshTrigger,
+            builder: (context, _, __) {
+              return FutureBuilder<List<Preset>>(
+                future: PresetService.loadAllPresets(),
+                builder: (context, snapshot) {
+                  final presets = snapshot.data ?? [];
+                  final presetNames = presets.map((p) => p.name).toList();
+                  if (snapshot.hasData &&
+                      nameController.text.isNotEmpty &&
+                      presetNames.contains(nameController.text)) {
+                    return FilledButton(
+                      onPressed: () async {
+                        final name = nameController.text.trim();
+                        if (name.isNotEmpty) {
+                          // Hide ALL UI elements for clean capture
+                          controller.setControlsVisible(
+                            false,
+                          ); // Force hide controls
+
+                          // Set screenshot capture flag to hide app bar
+                          setState(() {
+                            _isCapturingScreenshot = true;
+                          });
+
+                          // Close dialog to hide it
+                          Navigator.of(context).pop(name);
+
+                          // Wait longer for all UI to settle
+                          await Future.delayed(
+                            const Duration(milliseconds: 800),
+                          );
+
+                          // Capture screenshot of clean screen
+                          final captureResult =
+                              await ThumbnailService.capturePreview(
+                                null, // Using native screenshot, no key needed
+                              );
+
+                          // Restore app bar visibility
+                          if (mounted) {
+                            setState(() {
+                              _isCapturingScreenshot = false;
+                            });
+                          }
+
+                          bool saveSuccess = false;
+                          if (captureResult != null) {
+                            final capturedThumbnail = base64Encode(
+                              captureResult,
+                            );
+                            print(
+                              '🖼️ [ShaderDemoScreen] Clean screenshot captured',
+                            );
+
+                            // Save the preset with the captured thumbnail
+                            final presetSuccess = await controller
+                                .saveNamedPreset(name);
+                            if (presetSuccess) {
+                              final savedPreset = controller.savedPresets
+                                  .where((p) => p.name == name)
+                                  .lastOrNull;
+
+                              if (savedPreset != null) {
+                                try {
+                                  await PresetService.savePresetThumbnail(
+                                    savedPreset.id,
+                                    capturedThumbnail,
+                                  );
+                                  print(
+                                    '🖼️ [ShaderDemoScreen] Thumbnail saved successfully',
+                                  );
+                                  saveSuccess = true;
+                                } catch (e) {
+                                  print(
+                                    '🖼️ [ShaderDemoScreen] Error saving thumbnail: $e',
+                                  );
+                                }
+                              }
+                            }
+                          } else {
+                            print(
+                              '🖼️ [ShaderDemoScreen] Screenshot capture failed',
+                            );
+                          }
+
+                          // Restore controls visibility
+                          controller.setControlsVisible(true);
+
+                          if (saveSuccess) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Preset "$name" updated successfully',
+                                ),
+                              ),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Failed to update preset'),
+                              ),
+                            );
+                          }
+                        }
+                      },
+                      child: const Text('Update'),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              );
+            },
           ),
         ],
       ),

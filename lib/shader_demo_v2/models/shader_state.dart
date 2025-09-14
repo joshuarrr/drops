@@ -27,7 +27,7 @@ class ShaderState {
   const ShaderState({
     required this.settings,
     required this.selectedImage,
-    this.controlsVisible = true,
+    this.controlsVisible = false,
     this.savedPresets = const [],
     this.basePreset,
     this.hasUnsavedChanges = false,
@@ -42,7 +42,7 @@ class ShaderState {
     return ShaderState(
       settings: ShaderSettings.defaults,
       selectedImage: '',
-      controlsVisible: true,
+      controlsVisible: false,
       savedPresets: const [],
       basePreset: null,
       hasUnsavedChanges: false,

@@ -3,6 +3,7 @@ import '../models/shader_effect.dart';
 import '../models/effect_settings.dart';
 import '../models/presets_manager.dart';
 import '../models/image_category.dart';
+import '../services/preset_refresh_service.dart';
 // TODO: Replace with V2 state management
 // import '../state/shader_demo_state.dart';
 import 'enhanced_panel_header.dart';
@@ -295,7 +296,7 @@ class ImagePanel extends StatelessWidget {
   static void _refreshPresets() {
     _refreshCounter++;
     // Call the central refresh method for immediate UI update
-    // TODO: Implement preset refresh in V2 architecture
+    PresetRefreshService().refreshAspect(ShaderAspect.image);
   }
 
   static Future<bool> _deletePresetAndUpdate(
@@ -305,6 +306,8 @@ class ImagePanel extends StatelessWidget {
     final success = await PresetsManager.deletePreset(aspect, name);
     if (success) {
       _cachedPresets[aspect] = await PresetsManager.getPresetsForAspect(aspect);
+      // Trigger refresh after deletion
+      PresetRefreshService().refreshAspect(aspect);
     }
     return success;
   }

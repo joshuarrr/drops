@@ -167,7 +167,7 @@ class ShaderController extends ChangeNotifier {
       _state = ShaderState(
         settings: initialSettings,
         selectedImage: initialImage,
-        controlsVisible: true,
+        controlsVisible: false,
         savedPresets: savedPresets,
         basePreset: initialBasePreset,
         hasUnsavedChanges: untitledPreset != null,

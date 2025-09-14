@@ -3,6 +3,7 @@ import 'dart:developer' as developer;
 import '../models/effect_settings.dart';
 import '../models/shader_effect.dart';
 import '../models/presets_manager.dart';
+import '../services/preset_refresh_service.dart';
 import '../controllers/effect_controller.dart';
 import 'color_picker.dart';
 import 'enhanced_panel_header.dart';
@@ -366,6 +367,8 @@ class _TextFxPanelState extends State<TextFxPanel>
 
   static void _refreshPresets() {
     _refreshCounter++;
+    // Call the central refresh method for immediate UI update
+    PresetRefreshService().refreshAspect(ShaderAspect.textfx);
   }
 
   static Future<bool> _deletePresetAndUpdate(
@@ -375,6 +378,8 @@ class _TextFxPanelState extends State<TextFxPanel>
     final success = await PresetsManager.deletePreset(aspect, name);
     if (success) {
       _cachedPresets[aspect] = await PresetsManager.getPresetsForAspect(aspect);
+      // Trigger refresh after deletion
+      PresetRefreshService().refreshAspect(aspect);
     }
     return success;
   }
