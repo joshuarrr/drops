@@ -249,6 +249,94 @@ class _PresetMenuState extends State<PresetMenu> {
     }
   }
 
+  Future<void> _handlePresetRename(
+    Preset preset,
+    ShaderController controller,
+  ) async {
+    final TextEditingController textController = TextEditingController(
+      text: preset.name,
+    );
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Rename Preset'),
+        content: TextField(
+          controller: textController,
+          decoration: const InputDecoration(
+            hintText: 'Enter new name',
+            border: OutlineInputBorder(),
+          ),
+          textInputAction: TextInputAction.done,
+          onSubmitted: (value) {
+            if (value.trim().isNotEmpty) {
+              Navigator.pop(context, value.trim());
+            }
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final newName = textController.text.trim();
+              if (newName.isNotEmpty) {
+                Navigator.pop(context, newName);
+              }
+            },
+            child: const Text('Rename'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null && result != preset.name) {
+      try {
+        final success = await PresetService.renamePreset(preset.id, result);
+        if (success) {
+          // Refresh the controller's preset list from storage
+          await controller.refreshPresets();
+          // Then refresh our local sorted list
+          _updateSortedPresets();
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Preset renamed to "$result"'),
+                behavior: SnackBarBehavior.floating,
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Failed to rename preset'),
+                behavior: SnackBarBehavior.floating,
+                backgroundColor: Colors.red,
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error renaming preset: $e'),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -582,7 +670,10 @@ class _PresetMenuState extends State<PresetMenu> {
                       )
                     : Icon(Icons.palette, color: theme.colorScheme.primary),
               ),
-              title: Text(preset.name),
+              title: GestureDetector(
+                onLongPress: () => _handlePresetRename(preset, controller),
+                child: Text(preset.name),
+              ),
               subtitle: Text(preset.createdAt.toString().split(' ')[0]),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -648,15 +739,19 @@ class _PresetMenuState extends State<PresetMenu> {
                     children: [
                       // Preset name
                       Expanded(
-                        child: Text(
-                          preset.name,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
+                        child: GestureDetector(
+                          onLongPress: () =>
+                              _handlePresetRename(preset, controller),
+                          child: Text(
+                            preset.name,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
 
