@@ -254,38 +254,43 @@ class PresetService {
     Preset? untitledPreset,
     String? basePresetId,
   }) {
+    // Filter out hidden presets for slideshow navigation
+    final visiblePresets = savedPresets
+        .where((preset) => !preset.isHiddenFromSlideshow)
+        .toList();
+
     // No untitled preset to show
     if (untitledPreset == null) {
-      return savedPresets;
+      return visiblePresets;
     }
 
-    // Smart deduplication - hide untitled if it matches any saved preset exactly
+    // Smart deduplication - hide untitled if it matches any visible preset exactly
     final isDuplicate = isUntitledDuplicate(
       currentSettings: untitledPreset.settings,
       currentImage: untitledPreset.imagePath,
-      savedPresets: savedPresets,
+      savedPresets: visiblePresets,
     );
 
     if (isDuplicate) {
-      // Untitled is identical to a saved preset, so hide it
-      return savedPresets;
+      // Untitled is identical to a visible preset, so hide it
+      return visiblePresets;
     }
 
     // If no base preset, add untitled at the beginning
     if (basePresetId == null) {
-      return [untitledPreset, ...savedPresets];
+      return [untitledPreset, ...visiblePresets];
     }
 
-    // Find base preset position
-    final baseIndex = savedPresets.indexWhere((p) => p.id == basePresetId);
+    // Find base preset position in visible presets
+    final baseIndex = visiblePresets.indexWhere((p) => p.id == basePresetId);
 
     if (baseIndex == -1) {
-      // Base preset not found, add at beginning
-      return [untitledPreset, ...savedPresets];
+      // Base preset not found or hidden, add at beginning
+      return [untitledPreset, ...visiblePresets];
     }
 
     // Insert untitled after base preset for context-aware clustering
-    final result = List<Preset>.from(savedPresets);
+    final result = List<Preset>.from(visiblePresets);
     result.insert(baseIndex + 1, untitledPreset);
     return result;
   }
@@ -296,12 +301,17 @@ class PresetService {
     required List<Preset> savedPresets,
     String? basePresetId,
   }) {
-    if (basePresetId == null || savedPresets.isEmpty) return 0;
+    // Filter out hidden presets for slideshow navigation
+    final visiblePresets = savedPresets
+        .where((preset) => !preset.isHiddenFromSlideshow)
+        .toList();
 
-    final baseIndex = savedPresets.indexWhere((p) => p.id == basePresetId);
+    if (basePresetId == null || visiblePresets.isEmpty) return 0;
+
+    final baseIndex = visiblePresets.indexWhere((p) => p.id == basePresetId);
 
     if (baseIndex == -1) {
-      // Base preset not found, position at beginning
+      // Base preset not found or hidden, position at beginning
       return 0;
     }
 
@@ -392,5 +402,50 @@ class PresetService {
           preset.name.toLowerCase() == name.toLowerCase() &&
           preset.id != excludePresetId,
     );
+  }
+
+  /// Toggle the hidden state of a preset for slideshows
+  static Future<Preset?> toggleHiddenState(String presetId) async {
+    try {
+      // Load the current preset
+      final presetData = StorageService.loadPreset(presetId);
+      if (presetData == null) {
+        print('Preset not found: $presetId');
+        return null;
+      }
+
+      // Parse the preset
+      final preset = Preset.fromJson(presetData);
+
+      // Create an updated preset with toggled visibility
+      final updatedPreset = preset.copyWith(
+        isHiddenFromSlideshow: !preset.isHiddenFromSlideshow,
+      );
+
+      // Save the updated preset
+      final success = await StorageService.savePreset(
+        presetId,
+        updatedPreset.toJson(),
+      );
+
+      if (success) {
+        print(
+          'Toggled hidden state for preset ${preset.name}: ${updatedPreset.isHiddenFromSlideshow}',
+        );
+        return updatedPreset;
+      } else {
+        print('Failed to save updated preset');
+        return null;
+      }
+    } catch (e) {
+      print('Error toggling hidden state for preset $presetId: $e');
+      return null;
+    }
+  }
+
+  /// Get visible presets (those not hidden from slideshow)
+  static Future<List<Preset>> getVisiblePresets() async {
+    final allPresets = await loadAllPresets();
+    return allPresets.where((preset) => !preset.isHiddenFromSlideshow).toList();
   }
 }

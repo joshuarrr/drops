@@ -13,6 +13,8 @@ class Preset {
   final String imagePath;
   final String? thumbnailBase64; // Optional thumbnail data
   final bool isUntitled;
+  final bool
+  isHiddenFromSlideshow; // Whether this preset should be hidden from slideshow
 
   const Preset({
     required this.id,
@@ -22,6 +24,7 @@ class Preset {
     required this.imagePath,
     this.thumbnailBase64,
     this.isUntitled = false,
+    this.isHiddenFromSlideshow = false,
   });
 
   /// Create an untitled preset for tracking unsaved changes
@@ -37,6 +40,7 @@ class Preset {
       imagePath: imagePath,
       thumbnailBase64: null,
       isUntitled: true,
+      isHiddenFromSlideshow: false,
     );
   }
 
@@ -55,6 +59,7 @@ class Preset {
       imagePath: imagePath,
       thumbnailBase64: thumbnailBase64,
       isUntitled: false,
+      isHiddenFromSlideshow: false,
     );
   }
 
@@ -70,6 +75,7 @@ class Preset {
       imagePath: json['imagePath'] as String,
       thumbnailBase64: json['thumbnail'] as String?,
       isUntitled: json['isUntitled'] as bool? ?? false,
+      isHiddenFromSlideshow: json['isHiddenFromSlideshow'] as bool? ?? false,
     );
   }
 
@@ -83,6 +89,7 @@ class Preset {
       'imagePath': imagePath,
       if (thumbnailBase64 != null) 'thumbnail': thumbnailBase64,
       'isUntitled': isUntitled,
+      'isHiddenFromSlideshow': isHiddenFromSlideshow,
     };
   }
 
@@ -96,6 +103,7 @@ class Preset {
     String? thumbnailBase64,
     bool? clearThumbnail = false,
     bool? isUntitled,
+    bool? isHiddenFromSlideshow,
   }) {
     return Preset(
       id: id ?? this.id,
@@ -107,6 +115,8 @@ class Preset {
           ? null
           : (thumbnailBase64 ?? this.thumbnailBase64),
       isUntitled: isUntitled ?? this.isUntitled,
+      isHiddenFromSlideshow:
+          isHiddenFromSlideshow ?? this.isHiddenFromSlideshow,
     );
   }
 

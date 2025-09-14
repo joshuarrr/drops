@@ -622,9 +622,24 @@ class ShaderController extends ChangeNotifier {
   }
 
   /// Refresh presets - triggers UI update
-  void refreshPresets() {
-    // Force UI update by notifying listeners
-    notifyListeners();
+  Future<void> refreshPresets() async {
+    if (_isDisposed) return;
+
+    try {
+      // Reload presets from storage
+      final updatedPresets = await PresetService.loadAllPresets();
+
+      // Update the main state with fresh presets
+      _state = _state.copyWith(savedPresets: updatedPresets);
+
+      // Update the navigation controller with fresh presets
+      _navigationController.updateSavedPresets(updatedPresets);
+
+      // Force UI update by notifying listeners
+      notifyListeners();
+    } catch (e) {
+      print('Error refreshing presets: $e');
+    }
   }
 
   /// Set music volume (called by music panel)

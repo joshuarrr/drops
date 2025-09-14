@@ -38,6 +38,7 @@ class _PresetMenuState extends State<PresetMenu> {
   void _updateSortedPresets() {
     final controller = context.read<ShaderController>();
     final presets = List<Preset>.from(controller.savedPresets);
+
     _sortPresets(presets);
     setState(() {
       _sortedPresets = presets;
@@ -202,6 +203,47 @@ class _PresetMenuState extends State<PresetMenu> {
               ),
             );
           },
+        );
+      }
+    }
+  }
+
+  Future<void> _handlePresetToggleVisibility(
+    Preset preset,
+    ShaderController controller,
+  ) async {
+    try {
+      final updatedPreset = await PresetService.toggleHiddenState(preset.id);
+      if (updatedPreset != null) {
+        // Refresh the controller's preset list from storage
+        await controller.refreshPresets();
+
+        // Then refresh our local sorted list
+        _updateSortedPresets();
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                updatedPreset.isHiddenFromSlideshow
+                    ? 'Preset "${preset.name}" hidden from slideshow'
+                    : 'Preset "${preset.name}" shown in slideshow',
+              ),
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error updating preset: $e'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
         );
       }
     }
@@ -516,40 +558,58 @@ class _PresetMenuState extends State<PresetMenu> {
       itemCount: _sortedPresets.length,
       itemBuilder: (context, index) {
         final preset = _sortedPresets[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 8),
-          child: ListTile(
-            leading: Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: preset.hasThumbnail
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.memory(
-                        base64Decode(preset.effectiveThumbnailBase64!),
-                        fit: preset.settings.fillScreen
-                            ? BoxFit.cover
-                            : BoxFit.contain,
-                      ),
-                    )
-                  : Icon(Icons.palette, color: theme.colorScheme.primary),
-            ),
-            title: Text(preset.name),
-            subtitle: Text(preset.createdAt.toString().split(' ')[0]),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.delete, size: 20),
-                  onPressed: () => _handlePresetDelete(preset, controller),
+        return Opacity(
+          opacity: preset.isHiddenFromSlideshow ? 0.3 : 1.0,
+          child: Card(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: ListTile(
+              leading: Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(8),
                 ),
-              ],
+                child: preset.hasThumbnail
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.memory(
+                          base64Decode(preset.effectiveThumbnailBase64!),
+                          fit: preset.settings.fillScreen
+                              ? BoxFit.cover
+                              : BoxFit.contain,
+                        ),
+                      )
+                    : Icon(Icons.palette, color: theme.colorScheme.primary),
+              ),
+              title: Text(preset.name),
+              subtitle: Text(preset.createdAt.toString().split(' ')[0]),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Hide/Show toggle button
+                  IconButton(
+                    icon: Icon(
+                      preset.isHiddenFromSlideshow
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                      size: 20,
+                    ),
+                    tooltip: preset.isHiddenFromSlideshow
+                        ? 'Show in slideshow'
+                        : 'Hide from slideshow',
+                    onPressed: () =>
+                        _handlePresetToggleVisibility(preset, controller),
+                  ),
+                  // Delete button
+                  IconButton(
+                    icon: const Icon(Icons.delete, size: 20),
+                    onPressed: () => _handlePresetDelete(preset, controller),
+                  ),
+                ],
+              ),
+              onTap: () => _handlePresetLoad(preset, controller),
             ),
-            onTap: () => _handlePresetLoad(preset, controller),
           ),
         );
       },
@@ -557,65 +617,85 @@ class _PresetMenuState extends State<PresetMenu> {
   }
 
   Widget _buildPresetCard(Preset preset, ShaderController controller) {
-    return InkWell(
-      onTap: () => _handlePresetLoad(preset, controller),
-      borderRadius: BorderRadius.circular(12),
-      child: ClipRRect(
+    return Opacity(
+      opacity: preset.isHiddenFromSlideshow ? 0.3 : 1.0,
+      child: InkWell(
+        onTap: () => _handlePresetLoad(preset, controller),
         borderRadius: BorderRadius.circular(12),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            // Background - thumbnail or placeholder
-            _buildThumbnailWidget(preset),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Background - thumbnail or placeholder
+              _buildThumbnailWidget(preset),
 
-            // Overlay with name and delete button at the bottom
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12.0,
-                  vertical: 8.0,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.7),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Preset name
-                    Expanded(
-                      child: Text(
-                        preset.name,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-
-                    // Delete button
-                    InkWell(
-                      borderRadius: BorderRadius.circular(16),
-                      onTap: () => _handlePresetDelete(preset, controller),
-                      child: const Padding(
-                        padding: EdgeInsets.all(4.0),
-                        child: Icon(
-                          Icons.delete,
-                          size: 18,
-                          color: Colors.white,
+              // Overlay with name and delete button at the bottom
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12.0,
+                    vertical: 8.0,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.7),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Preset name
+                      Expanded(
+                        child: Text(
+                          preset.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                    ),
-                  ],
+
+                      // Hide/Show toggle button
+                      InkWell(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: () =>
+                            _handlePresetToggleVisibility(preset, controller),
+                        child: Padding(
+                          padding: const EdgeInsets.all(4.0),
+                          child: Icon(
+                            preset.isHiddenFromSlideshow
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            size: 18,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+
+                      // Delete button
+                      InkWell(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: () => _handlePresetDelete(preset, controller),
+                        child: const Padding(
+                          padding: EdgeInsets.all(4.0),
+                          child: Icon(
+                            Icons.delete,
+                            size: 18,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
