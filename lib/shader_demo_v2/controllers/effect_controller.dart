@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import '../models/effect_settings.dart';
 // import '../models/shader_effect.dart';
 import 'custom_shader_widgets.dart';
+import 'shaders/edge_effect_shader.dart';
 
 /// Controls logging for effect application
 enum LogLevel { debug, info, warning, error }
@@ -238,13 +239,15 @@ class EffectController {
       settings.rainEnabled ? 'r1' : 'r0',
       settings.chromaticEnabled ? 'ch1' : 'ch0',
       settings.rippleEnabled ? 'rp1' : 'rp0',
+      settings.edgeEnabled ? 'e1' : 'e0',
       // Only include animation values if anything is animated
       if (settings.colorSettings.colorAnimated ||
           settings.blurSettings.blurAnimated ||
           settings.noiseSettings.noiseAnimated ||
           settings.rainSettings.rainAnimated ||
           settings.chromaticSettings.chromaticAnimated ||
-          settings.rippleSettings.rippleAnimated)
+          settings.rippleSettings.rippleAnimated ||
+          settings.edgeSettings.edgeAnimated)
         animationValues.entries
             .map((e) => '${e.key}:${e.value.toStringAsFixed(2)}')
             .join('|'),
@@ -266,6 +269,9 @@ class EffectController {
       // Hash of settings values for ripple if enabled
       if (settings.rippleEnabled)
         '${settings.rippleSettings.rippleIntensity.toStringAsFixed(2)}_${settings.rippleSettings.rippleSize.toStringAsFixed(2)}_${settings.rippleSettings.rippleSpeed.toStringAsFixed(2)}_${settings.rippleSettings.rippleOpacity.toStringAsFixed(2)}_${settings.rippleSettings.rippleColor.toStringAsFixed(2)}',
+      // Hash of settings values for edge if enabled
+      if (settings.edgeEnabled)
+        '${settings.edgeSettings.opacity.toStringAsFixed(2)}_${settings.edgeSettings.edgeIntensity.toStringAsFixed(2)}_${settings.edgeSettings.edgeThickness.toStringAsFixed(2)}_${settings.edgeSettings.edgeColor.toStringAsFixed(2)}',
     ].join('|');
   }
 
@@ -315,7 +321,8 @@ class EffectController {
         !settings.rainEnabled &&
         !settings.chromaticEnabled &&
         !settings.rippleEnabled &&
-        !settings.sketchEnabled) {
+        !settings.sketchEnabled &&
+        !settings.edgeEnabled) {
       return child;
     }
 
@@ -329,7 +336,8 @@ class EffectController {
         (settings.chromaticSettings.chromaticAnimated &&
             settings.chromaticEnabled) ||
         (settings.rippleSettings.rippleAnimated && settings.rippleEnabled) ||
-        (settings.sketchSettings.sketchAnimated && settings.sketchEnabled);
+        (settings.sketchSettings.sketchAnimated && settings.sketchEnabled) ||
+        (settings.edgeSettings.edgeAnimated && settings.edgeEnabled);
 
     // If not animated, check cache for existing widget
     if (!isAnimated) {
@@ -493,6 +501,17 @@ class EffectController {
             child: result,
             settings: settings,
             animationValue: animationValues['sketch'] ?? 0.0,
+            preserveTransparency: preserveTransparency,
+            isTextContent: isTextContent,
+          );
+        }
+
+        // Apply edge effect if enabled
+        if (settings.edgeEnabled) {
+          result = _applyEdgeEffect(
+            child: result,
+            settings: settings,
+            animationValue: animationValues['edge'] ?? 0.0,
             preserveTransparency: preserveTransparency,
             isTextContent: isTextContent,
           );
@@ -732,6 +751,29 @@ class EffectController {
 
     // Use custom shader implementation
     return SketchEffectShader(
+      settings: settings,
+      animationValue: animationValue,
+      child: child,
+      preserveTransparency: preserveTransparency,
+      isTextContent: isTextContent,
+    );
+  }
+
+  // Helper method to apply edge effect using custom shader
+  static Widget _applyEdgeEffect({
+    required Widget child,
+    required ShaderSettings settings,
+    required double animationValue,
+    bool preserveTransparency = false,
+    bool isTextContent = false,
+  }) {
+    // Skip if edge is disabled or opacity is too low
+    if (!settings.edgeSettings.shouldApplyEdge) {
+      return child;
+    }
+
+    // Use custom shader implementation
+    return applyEdgeEffect(
       settings: settings,
       animationValue: animationValue,
       child: child,

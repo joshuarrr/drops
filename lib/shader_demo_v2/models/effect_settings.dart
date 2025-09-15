@@ -14,6 +14,7 @@ import 'music_settings.dart';
 import 'cymatics_settings_stub.dart';
 import 'background_settings.dart';
 import 'sketch_settings.dart';
+import 'edge_settings.dart';
 
 // Class to store all shader effect settings
 class ShaderSettings {
@@ -30,6 +31,7 @@ class ShaderSettings {
   CymaticsSettings _cymaticsSettings;
   BackgroundSettings _backgroundSettings;
   SketchSettings _sketchSettings;
+  EdgeSettings _edgeSettings;
 
   // Flag to control logging
   static bool enableLogging = true;
@@ -47,6 +49,7 @@ class ShaderSettings {
   CymaticsSettings get cymaticsSettings => _cymaticsSettings;
   BackgroundSettings get backgroundSettings => _backgroundSettings;
   SketchSettings get sketchSettings => _sketchSettings;
+  EdgeSettings get edgeSettings => _edgeSettings;
 
   // Convenience getters for most commonly used properties
   // These delegate to the specialized settings classes
@@ -187,6 +190,17 @@ class ShaderSettings {
     _sketchSettings.sketchEnabled = value;
   }
 
+  // Edge settings
+  bool get edgeEnabled => _edgeSettings.edgeEnabled;
+  set edgeEnabled(bool value) {
+    _edgeSettings.edgeEnabled = value;
+  }
+
+  bool get edgeAnimated => _edgeSettings.edgeAnimated;
+  set edgeAnimated(bool value) {
+    _edgeSettings.edgeAnimated = value;
+  }
+
   // Enable logging for all settings classes
   static void setLogging(bool enabled) {
     enableLogging = enabled;
@@ -220,7 +234,8 @@ class ShaderSettings {
       _musicSettings = MusicSettings(),
       _cymaticsSettings = CymaticsSettings(),
       _backgroundSettings = BackgroundSettings(),
-      _sketchSettings = SketchSettings() {
+      _sketchSettings = SketchSettings(),
+      _edgeSettings = EdgeSettings() {
     // No logging for the static default instance
   }
 
@@ -238,6 +253,7 @@ class ShaderSettings {
     CymaticsSettings? cymaticsSettings,
     BackgroundSettings? backgroundSettings,
     SketchSettings? sketchSettings,
+    EdgeSettings? edgeSettings,
     bool skipLogging =
         false, // Add parameter to skip logging when loading presets
   }) : _colorSettings = colorSettings ?? ColorSettings(),
@@ -251,7 +267,8 @@ class ShaderSettings {
        _musicSettings = musicSettings ?? MusicSettings(),
        _cymaticsSettings = cymaticsSettings ?? CymaticsSettings(),
        _backgroundSettings = backgroundSettings ?? BackgroundSettings(),
-       _sketchSettings = sketchSettings ?? SketchSettings() {}
+       _sketchSettings = sketchSettings ?? SketchSettings(),
+       _edgeSettings = edgeSettings ?? EdgeSettings() {}
 
   // Serialization helper for persistence
   Map<String, dynamic> toMap() {
@@ -270,6 +287,7 @@ class ShaderSettings {
         'cymaticsSettings': _cymaticsSettings.toMap(),
         'backgroundSettings': _backgroundSettings.toMap(),
         'sketchSettings': _sketchSettings.toMap(),
+        'edgeSettings': _edgeSettings.toMap(),
       };
     } catch (e) {
       print('Error serializing ShaderSettings: $e');
@@ -378,6 +396,9 @@ class ShaderSettings {
           ? SketchSettings.fromMap(
               Map<String, dynamic>.from(map['sketchSettings']),
             )
+          : null,
+      edgeSettings: map['edgeSettings'] != null
+          ? EdgeSettings.fromMap(Map<String, dynamic>.from(map['edgeSettings']))
           : null,
       skipLogging: true, // Skip logging when loading from map (preset loading)
     );

@@ -15,6 +15,7 @@ enum ShaderAspect {
   music,
   cymatics,
   sketch,
+  edge,
 }
 
 // Helper extension for working with ShaderAspects
@@ -47,6 +48,8 @@ extension ShaderAspectExtension on ShaderAspect {
         return 'Cymatics';
       case ShaderAspect.sketch:
         return 'Sketch';
+      case ShaderAspect.edge:
+        return 'Edge';
     }
   }
 
@@ -78,6 +81,8 @@ extension ShaderAspectExtension on ShaderAspect {
         return Icons.radar;
       case ShaderAspect.sketch:
         return Icons.brush;
+      case ShaderAspect.edge:
+        return Icons.line_weight;
     }
   }
 }

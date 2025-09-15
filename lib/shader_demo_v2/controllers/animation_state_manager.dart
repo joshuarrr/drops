@@ -227,5 +227,11 @@ class ParameterIds {
   static const String sketchLineSpacing = 'sketch.lineSpacing';
   static const String sketchLineThickness = 'sketch.lineThickness';
 
+  // Edge effect parameters
+  static const String edgeOpacity = 'edge.opacity';
+  static const String edgeIntensity = 'edge.intensity';
+  static const String edgeThickness = 'edge.thickness';
+  static const String edgeColor = 'edge.color';
+
   // Add more effects as needed...
 }

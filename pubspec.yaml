@@ -107,6 +107,8 @@ flutter:
     - assets/shaders/rain_effect.frag
     - assets/shaders/chromatic_effect.frag
     - assets/shaders/ripple_effect.frag
+    - assets/shaders/sketch_effect.frag
+    - assets/shaders/edge_effect.frag
 
 
   # An image asset can refer to one or more resolution-specific "variants", see

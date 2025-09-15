@@ -14,6 +14,7 @@ class AnimationControllerManager extends ChangeNotifier {
   late AnimationController _chromaticController;
   late AnimationController _rippleController;
   late AnimationController _sketchController;
+  late AnimationController _edgeController;
 
   // Track which controllers are currently active
   final Set<String> _activeControllers = <String>{};
@@ -66,6 +67,10 @@ class AnimationControllerManager extends ChangeNotifier {
       duration: const Duration(seconds: 5),
       vsync: _tickerProvider,
     );
+    _edgeController = AnimationController(
+      duration: const Duration(seconds: 5),
+      vsync: _tickerProvider,
+    );
 
     // Add listeners to track animation values
     _blurController.addListener(
@@ -91,6 +96,9 @@ class AnimationControllerManager extends ChangeNotifier {
     );
     _sketchController.addListener(
       () => _updateAnimationValue('sketch', _sketchController.value),
+    );
+    _edgeController.addListener(
+      () => _updateAnimationValue('edge', _edgeController.value),
     );
 
     _isInitialized = true;
@@ -144,6 +152,8 @@ class AnimationControllerManager extends ChangeNotifier {
         return _rippleController;
       case 'sketch':
         return _sketchController;
+      case 'edge':
+        return _edgeController;
       default:
         throw ArgumentError('Unknown effect type: $effectType');
     }
@@ -257,6 +267,17 @@ class AnimationControllerManager extends ChangeNotifier {
     } else {
       _stopController('sketch');
     }
+
+    // Update edge animation
+    if (settings.edgeEnabled && settings.edgeSettings.edgeAnimated) {
+      _updateControllerDuration(
+        'edge',
+        settings.edgeSettings.edgeAnimOptions.speed,
+      );
+      _startController('edge');
+    } else {
+      _stopController('edge');
+    }
   }
 
   /// Start a specific controller
@@ -310,6 +331,7 @@ class AnimationControllerManager extends ChangeNotifier {
       _chromaticController.dispose();
       _rippleController.dispose();
       _sketchController.dispose();
+      _edgeController.dispose();
     }
     super.dispose();
   }
