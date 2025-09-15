@@ -73,8 +73,8 @@ void main() {
     // Determine final edge color based on uEdgeColor parameter
     vec3 finalEdgeColor;
     if (uEdgeColor < 0.33) {
-        // Black edges
-        finalEdgeColor = edgeColor * vec3(0.0);
+        // Black edges - use inverted edge detection for visibility
+        finalEdgeColor = vec3(1.0) - edgeColor;
     } else if (uEdgeColor < 0.67) {
         // Original color edges with edge intensity
         finalEdgeColor = color.rgb * edgeColor;

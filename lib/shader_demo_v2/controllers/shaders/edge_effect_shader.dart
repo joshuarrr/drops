@@ -54,8 +54,6 @@ class EdgeEffectShader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print("DEBUG: EdgeEffectShader build called");
-
     if (enableShaderDebugLogs) {
       _log(
         "Building EdgeEffectShader with opacity=${settings.edgeSettings.opacity.toStringAsFixed(2)}",
@@ -64,11 +62,8 @@ class EdgeEffectShader extends StatelessWidget {
 
     // Skip if effect is disabled or opacity is too low
     if (!settings.edgeSettings.shouldApplyEdge) {
-      print("DEBUG: EdgeEffectShader skipped - shouldApplyEdge returned false");
       return child;
     }
-
-    print("DEBUG: EdgeEffectShader continuing with shader application");
 
     // Use ShaderBuilder with AnimatedSampler for the effect
     return ShaderBuilder(assetKey: 'assets/shaders/edge_effect.frag', (
@@ -76,7 +71,6 @@ class EdgeEffectShader extends StatelessWidget {
       shader,
       child,
     ) {
-      print("DEBUG: ShaderBuilder callback executed - shader loaded");
       return AnimatedSampler((image, size, canvas) {
         try {
           // Set the texture sampler first
@@ -306,7 +300,6 @@ class EdgeEffectShader extends StatelessWidget {
 
           // Draw with the shader, ensuring it covers the full area
           canvas.drawRect(Offset.zero & size, Paint()..shader = shader);
-          print("DEBUG: Edge shader drawn successfully");
         } catch (e) {
           _log("ERROR in shader: $e");
           // Fall back to drawing the original image

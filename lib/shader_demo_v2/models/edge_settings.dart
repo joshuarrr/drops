@@ -56,9 +56,6 @@ class EdgeSettings {
 
   // Convenience getter to check if effect should be applied
   bool get shouldApplyEdge {
-    print(
-      'DEBUG: shouldApplyEdge called - edgeEnabled: $_edgeEnabled, opacity: $_opacity',
-    );
     return _edgeEnabled && _opacity >= 0.01;
   }
 
