@@ -216,5 +216,16 @@ class ParameterIds {
   static const String rippleOvalness = 'ripple.ovalness';
   static const String rippleRotation = 'ripple.rotation';
 
+  // Sketch effect parameters
+  static const String sketchOpacity = 'sketch.opacity';
+  static const String sketchImageOpacity = 'sketch.imageOpacity';
+  static const String sketchLumThreshold1 = 'sketch.lumThreshold1';
+  static const String sketchLumThreshold2 = 'sketch.lumThreshold2';
+  static const String sketchLumThreshold3 = 'sketch.lumThreshold3';
+  static const String sketchLumThreshold4 = 'sketch.lumThreshold4';
+  static const String sketchHatchYOffset = 'sketch.hatchYOffset';
+  static const String sketchLineSpacing = 'sketch.lineSpacing';
+  static const String sketchLineThickness = 'sketch.lineThickness';
+
   // Add more effects as needed...
 }

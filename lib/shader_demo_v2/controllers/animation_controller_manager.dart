@@ -13,6 +13,7 @@ class AnimationControllerManager extends ChangeNotifier {
   late AnimationController _rainController;
   late AnimationController _chromaticController;
   late AnimationController _rippleController;
+  late AnimationController _sketchController;
 
   // Track which controllers are currently active
   final Set<String> _activeControllers = <String>{};
@@ -61,6 +62,10 @@ class AnimationControllerManager extends ChangeNotifier {
       duration: const Duration(seconds: 5),
       vsync: _tickerProvider,
     );
+    _sketchController = AnimationController(
+      duration: const Duration(seconds: 5),
+      vsync: _tickerProvider,
+    );
 
     // Add listeners to track animation values
     _blurController.addListener(
@@ -83,6 +88,9 @@ class AnimationControllerManager extends ChangeNotifier {
     );
     _rippleController.addListener(
       () => _updateAnimationValue('ripple', _rippleController.value),
+    );
+    _sketchController.addListener(
+      () => _updateAnimationValue('sketch', _sketchController.value),
     );
 
     _isInitialized = true;
@@ -134,6 +142,8 @@ class AnimationControllerManager extends ChangeNotifier {
         return _chromaticController;
       case 'ripple':
         return _rippleController;
+      case 'sketch':
+        return _sketchController;
       default:
         throw ArgumentError('Unknown effect type: $effectType');
     }
@@ -236,6 +246,17 @@ class AnimationControllerManager extends ChangeNotifier {
     } else {
       _stopController('ripple');
     }
+
+    // Update sketch animation
+    if (settings.sketchEnabled && settings.sketchSettings.sketchAnimated) {
+      _updateControllerDuration(
+        'sketch',
+        settings.sketchSettings.sketchAnimOptions.speed,
+      );
+      _startController('sketch');
+    } else {
+      _stopController('sketch');
+    }
   }
 
   /// Start a specific controller
@@ -288,6 +309,7 @@ class AnimationControllerManager extends ChangeNotifier {
       _rainController.dispose();
       _chromaticController.dispose();
       _rippleController.dispose();
+      _sketchController.dispose();
     }
     super.dispose();
   }

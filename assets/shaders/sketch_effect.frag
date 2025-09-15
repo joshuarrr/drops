@@ -53,10 +53,8 @@ void main() {
     float thickness = max(0.5, uLineThickness * scale);
     float offset = uHatchYOffset;
     
-    // Add subtle animation if enabled
-    if (uTime > 0.0) {
-        offset += sin(uTime * 0.5) * 2.0;
-    }
+    // Animation is now handled by the animation state manager in Dart code
+    // We keep uTime for compatibility but don't use it directly
     
     // Start with white background
     vec3 baseColor = vec3(1.0);

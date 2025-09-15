@@ -1,3 +1,5 @@
+import 'animation_options.dart';
+
 class SketchSettings {
   // Core effect controls
   bool _sketchEnabled;
@@ -18,6 +20,7 @@ class SketchSettings {
   // Animation controls
   bool _sketchAnimated;
   double _animationSpeed;
+  AnimationOptions _animOptions;
 
   // Constructor with default values
   SketchSettings({
@@ -33,6 +36,7 @@ class SketchSettings {
     double lineThickness = 2.0,
     bool sketchAnimated = false,
     double animationSpeed = 1.0,
+    AnimationOptions? animOptions,
   }) : _sketchEnabled = sketchEnabled,
        _opacity = opacity,
        _imageOpacity = imageOpacity,
@@ -44,7 +48,8 @@ class SketchSettings {
        _lineSpacing = lineSpacing,
        _lineThickness = lineThickness,
        _sketchAnimated = sketchAnimated,
-       _animationSpeed = animationSpeed;
+       _animationSpeed = animationSpeed,
+       _animOptions = animOptions ?? AnimationOptions();
 
   // Getters
   bool get sketchEnabled => _sketchEnabled;
@@ -59,6 +64,7 @@ class SketchSettings {
   double get lineThickness => _lineThickness;
   bool get sketchAnimated => _sketchAnimated;
   double get animationSpeed => _animationSpeed;
+  AnimationOptions get sketchAnimOptions => _animOptions;
 
   // Setters
   set sketchEnabled(bool value) => _sketchEnabled = value;
@@ -73,6 +79,7 @@ class SketchSettings {
   set lineThickness(double value) => _lineThickness = value;
   set sketchAnimated(bool value) => _sketchAnimated = value;
   set animationSpeed(double value) => _animationSpeed = value;
+  set sketchAnimOptions(AnimationOptions value) => _animOptions = value;
 
   // Copy with method
   SketchSettings copyWith({
@@ -88,6 +95,7 @@ class SketchSettings {
     double? lineThickness,
     bool? sketchAnimated,
     double? animationSpeed,
+    AnimationOptions? animOptions,
   }) {
     return SketchSettings(
       sketchEnabled: sketchEnabled ?? _sketchEnabled,
@@ -102,6 +110,7 @@ class SketchSettings {
       lineThickness: lineThickness ?? _lineThickness,
       sketchAnimated: sketchAnimated ?? _sketchAnimated,
       animationSpeed: animationSpeed ?? _animationSpeed,
+      animOptions: animOptions ?? _animOptions,
     );
   }
 
@@ -119,6 +128,7 @@ class SketchSettings {
     _lineThickness = 2.0;
     _sketchAnimated = false;
     _animationSpeed = 1.0;
+    _animOptions = AnimationOptions();
   }
 
   // Check if sketch should be applied
@@ -151,6 +161,7 @@ class SketchSettings {
       'lineThickness': _lineThickness,
       'sketchAnimated': _sketchAnimated,
       'animationSpeed': _animationSpeed,
+      'animOptions': _animOptions.toMap(),
     };
   }
 
@@ -168,6 +179,11 @@ class SketchSettings {
       lineThickness: map['lineThickness'] ?? 2.0,
       sketchAnimated: map['sketchAnimated'] ?? false,
       animationSpeed: map['animationSpeed'] ?? 1.0,
+      animOptions: map['animOptions'] != null
+          ? AnimationOptions.fromMap(
+              Map<String, dynamic>.from(map['animOptions']),
+            )
+          : null,
     );
   }
 }

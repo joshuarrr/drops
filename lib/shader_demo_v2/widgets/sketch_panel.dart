@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import '../models/shader_effect.dart';
 import '../models/effect_settings.dart';
 import '../models/animation_options.dart';
-import '../models/presets_manager.dart';
 import '../services/preset_refresh_service.dart';
+import '../controllers/animation_state_manager.dart';
 import 'lockable_slider.dart';
 import 'animation_controls.dart';
 import 'enhanced_panel_header.dart';
@@ -85,7 +85,7 @@ class _SketchPanelState extends State<SketchPanel> {
                     '${(widget.settings.sketchSettings.imageOpacity * 100).round()}%',
                 onChanged: (value) => _onImageOpacityChanged(value),
                 activeColor: widget.sliderColor,
-                parameterId: 'sketch_image_opacity',
+                parameterId: ParameterIds.sketchImageOpacity,
                 animationEnabled: widget.settings.sketchSettings.sketchAnimated,
                 defaultValue: 1.0,
               ),
@@ -103,7 +103,7 @@ class _SketchPanelState extends State<SketchPanel> {
                     '${(widget.settings.sketchSettings.opacity * 100).round()}%',
                 onChanged: (value) => _onOpacityChanged(value),
                 activeColor: widget.sliderColor,
-                parameterId: 'sketch_opacity',
+                parameterId: ParameterIds.sketchOpacity,
                 animationEnabled: widget.settings.sketchSettings.sketchAnimated,
                 defaultValue: 0.8,
               ),
@@ -121,7 +121,7 @@ class _SketchPanelState extends State<SketchPanel> {
                     '${(widget.settings.sketchSettings.lumThreshold1 * 100).round()}%',
                 onChanged: (value) => _onLumThreshold1Changed(value),
                 activeColor: widget.sliderColor,
-                parameterId: 'sketch_lum_threshold1',
+                parameterId: ParameterIds.sketchLumThreshold1,
                 animationEnabled: widget.settings.sketchSettings.sketchAnimated,
                 defaultValue: 0.8,
               ),
@@ -139,7 +139,7 @@ class _SketchPanelState extends State<SketchPanel> {
                     '${(widget.settings.sketchSettings.lumThreshold2 * 100).round()}%',
                 onChanged: (value) => _onLumThreshold2Changed(value),
                 activeColor: widget.sliderColor,
-                parameterId: 'sketch_lum_threshold2',
+                parameterId: ParameterIds.sketchLumThreshold2,
                 animationEnabled: widget.settings.sketchSettings.sketchAnimated,
                 defaultValue: 0.6,
               ),
@@ -157,7 +157,7 @@ class _SketchPanelState extends State<SketchPanel> {
                     '${(widget.settings.sketchSettings.lumThreshold3 * 100).round()}%',
                 onChanged: (value) => _onLumThreshold3Changed(value),
                 activeColor: widget.sliderColor,
-                parameterId: 'sketch_lum_threshold3',
+                parameterId: ParameterIds.sketchLumThreshold3,
                 animationEnabled: widget.settings.sketchSettings.sketchAnimated,
                 defaultValue: 0.4,
               ),
@@ -175,7 +175,7 @@ class _SketchPanelState extends State<SketchPanel> {
                     '${(widget.settings.sketchSettings.lumThreshold4 * 100).round()}%',
                 onChanged: (value) => _onLumThreshold4Changed(value),
                 activeColor: widget.sliderColor,
-                parameterId: 'sketch_lum_threshold4',
+                parameterId: ParameterIds.sketchLumThreshold4,
                 animationEnabled: widget.settings.sketchSettings.sketchAnimated,
                 defaultValue: 0.2,
               ),
@@ -193,7 +193,7 @@ class _SketchPanelState extends State<SketchPanel> {
                     '${widget.settings.sketchSettings.hatchYOffset.round()}px',
                 onChanged: (value) => _onHatchYOffsetChanged(value),
                 activeColor: widget.sliderColor,
-                parameterId: 'sketch_hatch_y_offset',
+                parameterId: ParameterIds.sketchHatchYOffset,
                 animationEnabled: widget.settings.sketchSettings.sketchAnimated,
                 defaultValue: 0.0,
               ),
@@ -211,7 +211,7 @@ class _SketchPanelState extends State<SketchPanel> {
                     '${widget.settings.sketchSettings.lineSpacing.round()}px',
                 onChanged: (value) => _onLineSpacingChanged(value),
                 activeColor: widget.sliderColor,
-                parameterId: 'sketch_line_spacing',
+                parameterId: ParameterIds.sketchLineSpacing,
                 animationEnabled: widget.settings.sketchSettings.sketchAnimated,
                 defaultValue: 15.0,
               ),
@@ -229,24 +229,34 @@ class _SketchPanelState extends State<SketchPanel> {
                     '${widget.settings.sketchSettings.lineThickness.toStringAsFixed(1)}px',
                 onChanged: (value) => _onLineThicknessChanged(value),
                 activeColor: widget.sliderColor,
-                parameterId: 'sketch_line_thickness',
+                parameterId: ParameterIds.sketchLineThickness,
                 animationEnabled: widget.settings.sketchSettings.sketchAnimated,
                 defaultValue: 1.5,
               ),
 
               const SizedBox(height: 16),
 
-              // Animation controls
-              AnimationControls(
-                animationSpeed: widget.settings.sketchSettings.animationSpeed,
-                onSpeedChanged: _onAnimationSpeedChanged,
-                animationMode: AnimationMode.pulse,
-                onModeChanged: (mode) {}, // Sketch only supports pulse mode
-                animationEasing: AnimationEasing.linear,
-                onEasingChanged:
-                    (easing) {}, // Sketch only supports linear easing
-                sliderColor: widget.sliderColor,
+              // Animation toggle
+              SwitchListTile(
+                title: const Text('Enable Animation'),
+                value: widget.settings.sketchSettings.sketchAnimated,
+                onChanged: _onAnimatedChanged,
+                activeColor: widget.sliderColor,
               ),
+
+              // Animation controls - only show when animation is enabled
+              if (widget.settings.sketchSettings.sketchAnimated)
+                AnimationControls(
+                  animationSpeed: widget.settings.sketchSettings.animationSpeed,
+                  onSpeedChanged: _onAnimationSpeedChanged,
+                  animationMode:
+                      widget.settings.sketchSettings.sketchAnimOptions.mode,
+                  onModeChanged: _onAnimationModeChanged,
+                  animationEasing:
+                      widget.settings.sketchSettings.sketchAnimOptions.easing,
+                  onEasingChanged: _onAnimationEasingChanged,
+                  sliderColor: widget.sliderColor,
+                ),
 
               const SizedBox(height: 16),
             ],
@@ -311,10 +321,44 @@ class _SketchPanelState extends State<SketchPanel> {
     widget.onSettingsChanged(updatedSettings);
   }
 
+  // Handle animation toggle
+  void _onAnimatedChanged(bool isAnimated) {
+    final updatedSettings = widget.settings;
+    updatedSettings.sketchSettings.sketchAnimated = isAnimated;
+    widget.onSettingsChanged(updatedSettings);
+  }
+
   // Handle animation speed changes
   void _onAnimationSpeedChanged(double speed) {
     final updatedSettings = widget.settings;
     updatedSettings.sketchSettings.animationSpeed = speed;
+
+    // Also update the speed in animation options
+    updatedSettings.sketchSettings.sketchAnimOptions = updatedSettings
+        .sketchSettings
+        .sketchAnimOptions
+        .copyWith(speed: speed);
+
+    widget.onSettingsChanged(updatedSettings);
+  }
+
+  // Handle animation mode changes
+  void _onAnimationModeChanged(AnimationMode mode) {
+    final updatedSettings = widget.settings;
+    updatedSettings.sketchSettings.sketchAnimOptions = updatedSettings
+        .sketchSettings
+        .sketchAnimOptions
+        .copyWith(mode: mode);
+    widget.onSettingsChanged(updatedSettings);
+  }
+
+  // Handle animation easing changes
+  void _onAnimationEasingChanged(AnimationEasing easing) {
+    final updatedSettings = widget.settings;
+    updatedSettings.sketchSettings.sketchAnimOptions = updatedSettings
+        .sketchSettings
+        .sketchAnimOptions
+        .copyWith(easing: easing);
     widget.onSettingsChanged(updatedSettings);
   }
 
@@ -352,6 +396,14 @@ class _SketchPanelState extends State<SketchPanel> {
         presetData['sketchAnimated'] ?? false;
     updatedSettings.sketchSettings.animationSpeed =
         presetData['animationSpeed'] ?? 1.0;
+
+    // Load animation options if available
+    if (presetData['animOptions'] != null) {
+      updatedSettings.sketchSettings.sketchAnimOptions =
+          AnimationOptions.fromMap(
+            Map<String, dynamic>.from(presetData['animOptions']),
+          );
+    }
 
     widget.onSettingsChanged(updatedSettings);
   }
@@ -398,6 +450,7 @@ class _SketchPanelState extends State<SketchPanel> {
       'lineThickness': widget.settings.sketchSettings.lineThickness,
       'sketchAnimated': widget.settings.sketchSettings.sketchAnimated,
       'animationSpeed': widget.settings.sketchSettings.animationSpeed,
+      'animOptions': widget.settings.sketchSettings.sketchAnimOptions.toMap(),
     };
 
     // For now, just store in our cache
