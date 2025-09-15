@@ -18,6 +18,7 @@ import '../widgets/chromatic_panel.dart';
 import '../widgets/ripple_panel.dart';
 import '../widgets/glass_aspect_toggle.dart';
 import '../widgets/music_panel.dart';
+import '../widgets/sketch_panel.dart';
 import '../services/asset_service.dart';
 
 /// Effect controls for shader demo V2 - matches V1 UI exactly
@@ -231,6 +232,14 @@ class _EffectControlsV2State extends State<EffectControlsV2> {
                   _toggleAspect(aspect, enabled, controller),
               onTap: _selectAspect,
             ),
+            GlassAspectToggle(
+              aspect: ShaderAspect.sketch,
+              isEnabled: settings.sketchEnabled,
+              isCurrentImageDark: isCurrentImageDark,
+              onToggled: (aspect, enabled) =>
+                  _toggleAspect(aspect, enabled, controller),
+              onTap: _selectAspect,
+            ),
           ],
         ),
       ),
@@ -357,6 +366,9 @@ class _EffectControlsV2State extends State<EffectControlsV2> {
         break;
       case ShaderAspect.cymatics:
         // V2 doesn't support cymatics - skip
+        break;
+      case ShaderAspect.sketch:
+        settings.sketchEnabled = enabled;
         break;
     }
 
@@ -510,6 +522,13 @@ class _EffectControlsV2State extends State<EffectControlsV2> {
             ),
           if (_selectedAspect == ShaderAspect.music)
             _buildMusicPanel(controller, sliderColor),
+          if (_selectedAspect == ShaderAspect.sketch)
+            SketchPanel(
+              settings: controller.settings,
+              onSettingsChanged: controller.updateSettings,
+              sliderColor: sliderColor,
+              context: context,
+            ),
           const SizedBox(height: 12),
         ],
       ),

@@ -314,7 +314,8 @@ class EffectController {
         !settings.noiseEnabled &&
         !settings.rainEnabled &&
         !settings.chromaticEnabled &&
-        !settings.rippleEnabled) {
+        !settings.rippleEnabled &&
+        !settings.sketchEnabled) {
       return child;
     }
 
@@ -327,7 +328,8 @@ class EffectController {
         (settings.rainSettings.rainAnimated && settings.rainEnabled) ||
         (settings.chromaticSettings.chromaticAnimated &&
             settings.chromaticEnabled) ||
-        (settings.rippleSettings.rippleAnimated && settings.rippleEnabled);
+        (settings.rippleSettings.rippleAnimated && settings.rippleEnabled) ||
+        (settings.sketchSettings.sketchAnimated && settings.sketchEnabled);
 
     // If not animated, check cache for existing widget
     if (!isAnimated) {
@@ -480,6 +482,17 @@ class EffectController {
             child: result,
             settings: settings,
             animationValue: animationValues['chromatic'] ?? 0.0,
+            preserveTransparency: preserveTransparency,
+            isTextContent: isTextContent,
+          );
+        }
+
+        // Apply sketch effect if enabled
+        if (settings.sketchEnabled) {
+          result = _applySketchEffect(
+            child: result,
+            settings: settings,
+            animationValue: animationValues['sketch'] ?? 0.0,
             preserveTransparency: preserveTransparency,
             isTextContent: isTextContent,
           );
@@ -703,4 +716,27 @@ class EffectController {
   }
 
   // Cymatics effect removed in V2 for simplification
+
+  // Helper method to apply sketch effect using custom shader
+  static Widget _applySketchEffect({
+    required Widget child,
+    required ShaderSettings settings,
+    required double animationValue,
+    bool preserveTransparency = false,
+    bool isTextContent = false,
+  }) {
+    // Skip if sketch is disabled or opacity is too low
+    if (!settings.sketchSettings.shouldApplySketch) {
+      return child;
+    }
+
+    // Use custom shader implementation
+    return SketchEffectShader(
+      settings: settings,
+      animationValue: animationValue,
+      child: child,
+      preserveTransparency: preserveTransparency,
+      isTextContent: isTextContent,
+    );
+  }
 }

@@ -14,6 +14,7 @@ enum ShaderAspect {
   ripple,
   music,
   cymatics,
+  sketch,
 }
 
 // Helper extension for working with ShaderAspects
@@ -44,6 +45,8 @@ extension ShaderAspectExtension on ShaderAspect {
         return 'Music';
       case ShaderAspect.cymatics:
         return 'Cymatics';
+      case ShaderAspect.sketch:
+        return 'Sketch';
     }
   }
 
@@ -73,6 +76,8 @@ extension ShaderAspectExtension on ShaderAspect {
         return Icons.music_note;
       case ShaderAspect.cymatics:
         return Icons.radar;
+      case ShaderAspect.sketch:
+        return Icons.brush;
     }
   }
 }

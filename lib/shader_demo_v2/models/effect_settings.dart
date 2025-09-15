@@ -13,6 +13,7 @@ import 'ripple_settings.dart';
 import 'music_settings.dart';
 import 'cymatics_settings_stub.dart';
 import 'background_settings.dart';
+import 'sketch_settings.dart';
 
 // Class to store all shader effect settings
 class ShaderSettings {
@@ -28,6 +29,7 @@ class ShaderSettings {
   MusicSettings _musicSettings;
   CymaticsSettings _cymaticsSettings;
   BackgroundSettings _backgroundSettings;
+  SketchSettings _sketchSettings;
 
   // Flag to control logging
   static bool enableLogging = true;
@@ -44,6 +46,7 @@ class ShaderSettings {
   MusicSettings get musicSettings => _musicSettings;
   CymaticsSettings get cymaticsSettings => _cymaticsSettings;
   BackgroundSettings get backgroundSettings => _backgroundSettings;
+  SketchSettings get sketchSettings => _sketchSettings;
 
   // Convenience getters for most commonly used properties
   // These delegate to the specialized settings classes
@@ -178,6 +181,12 @@ class ShaderSettings {
     _textLayoutSettings.fillScreen = value;
   }
 
+  // Sketch settings
+  bool get sketchEnabled => _sketchSettings.sketchEnabled;
+  set sketchEnabled(bool value) {
+    _sketchSettings.sketchEnabled = value;
+  }
+
   // Enable logging for all settings classes
   static void setLogging(bool enabled) {
     enableLogging = enabled;
@@ -210,7 +219,8 @@ class ShaderSettings {
       _rippleSettings = RippleSettings(),
       _musicSettings = MusicSettings(),
       _cymaticsSettings = CymaticsSettings(),
-      _backgroundSettings = BackgroundSettings() {
+      _backgroundSettings = BackgroundSettings(),
+      _sketchSettings = SketchSettings() {
     // No logging for the static default instance
   }
 
@@ -227,6 +237,7 @@ class ShaderSettings {
     MusicSettings? musicSettings,
     CymaticsSettings? cymaticsSettings,
     BackgroundSettings? backgroundSettings,
+    SketchSettings? sketchSettings,
     bool skipLogging =
         false, // Add parameter to skip logging when loading presets
   }) : _colorSettings = colorSettings ?? ColorSettings(),
@@ -239,7 +250,8 @@ class ShaderSettings {
        _rippleSettings = rippleSettings ?? RippleSettings(),
        _musicSettings = musicSettings ?? MusicSettings(),
        _cymaticsSettings = cymaticsSettings ?? CymaticsSettings(),
-       _backgroundSettings = backgroundSettings ?? BackgroundSettings() {}
+       _backgroundSettings = backgroundSettings ?? BackgroundSettings(),
+       _sketchSettings = sketchSettings ?? SketchSettings() {}
 
   // Serialization helper for persistence
   Map<String, dynamic> toMap() {
@@ -257,6 +269,7 @@ class ShaderSettings {
         'musicSettings': _musicSettings.toMap(),
         'cymaticsSettings': _cymaticsSettings.toMap(),
         'backgroundSettings': _backgroundSettings.toMap(),
+        'sketchSettings': _sketchSettings.toMap(),
       };
     } catch (e) {
       print('Error serializing ShaderSettings: $e');
@@ -278,6 +291,7 @@ class ShaderSettings {
           'cymaticsSettings': CymaticsSettings().toMap(),
           'backgroundSettings':
               backgroundMap, // Use the actual background settings
+          'sketchSettings': SketchSettings().toMap(),
         };
       } catch (innerError) {
         // If even that fails, return minimal settings but still try to preserve color
@@ -294,6 +308,7 @@ class ShaderSettings {
           'rippleSettings': RippleSettings().toMap(),
           'musicSettings': MusicSettings().toMap(),
           'cymaticsSettings': CymaticsSettings().toMap(),
+          'sketchSettings': SketchSettings().toMap(),
           'backgroundSettings': {
             'backgroundEnabled': _backgroundSettings.backgroundEnabled,
             'backgroundColor': _backgroundSettings.backgroundColor.value,
@@ -357,6 +372,11 @@ class ShaderSettings {
           ? BackgroundSettings.fromMap(
               Map<String, dynamic>.from(map['backgroundSettings']),
               skipLogging: true, // Skip logging during preset loading
+            )
+          : null,
+      sketchSettings: map['sketchSettings'] != null
+          ? SketchSettings.fromMap(
+              Map<String, dynamic>.from(map['sketchSettings']),
             )
           : null,
       skipLogging: true, // Skip logging when loading from map (preset loading)
