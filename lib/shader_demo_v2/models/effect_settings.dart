@@ -15,6 +15,7 @@ import 'cymatics_settings_stub.dart';
 import 'background_settings.dart';
 import 'sketch_settings.dart';
 import 'edge_settings.dart';
+import 'glitch_settings.dart';
 
 // Class to store all shader effect settings
 class ShaderSettings {
@@ -32,6 +33,7 @@ class ShaderSettings {
   BackgroundSettings _backgroundSettings;
   SketchSettings _sketchSettings;
   EdgeSettings _edgeSettings;
+  GlitchSettings _glitchSettings;
 
   // Flag to control logging
   static bool enableLogging = true;
@@ -50,6 +52,7 @@ class ShaderSettings {
   BackgroundSettings get backgroundSettings => _backgroundSettings;
   SketchSettings get sketchSettings => _sketchSettings;
   EdgeSettings get edgeSettings => _edgeSettings;
+  GlitchSettings get glitchSettings => _glitchSettings;
 
   // Convenience getters for most commonly used properties
   // These delegate to the specialized settings classes
@@ -201,6 +204,17 @@ class ShaderSettings {
     _edgeSettings.edgeAnimated = value;
   }
 
+  // Glitch settings
+  bool get glitchEnabled => _glitchSettings.effectEnabled;
+  set glitchEnabled(bool value) {
+    _glitchSettings.effectEnabled = value;
+  }
+
+  bool get glitchAnimated => _glitchSettings.effectAnimated;
+  set glitchAnimated(bool value) {
+    _glitchSettings.effectAnimated = value;
+  }
+
   // Enable logging for all settings classes
   static void setLogging(bool enabled) {
     enableLogging = enabled;
@@ -235,7 +249,8 @@ class ShaderSettings {
       _cymaticsSettings = CymaticsSettings(),
       _backgroundSettings = BackgroundSettings(),
       _sketchSettings = SketchSettings(),
-      _edgeSettings = EdgeSettings() {
+      _edgeSettings = EdgeSettings(),
+      _glitchSettings = GlitchSettings() {
     // No logging for the static default instance
   }
 
@@ -254,6 +269,7 @@ class ShaderSettings {
     BackgroundSettings? backgroundSettings,
     SketchSettings? sketchSettings,
     EdgeSettings? edgeSettings,
+    GlitchSettings? glitchSettings,
     bool skipLogging =
         false, // Add parameter to skip logging when loading presets
   }) : _colorSettings = colorSettings ?? ColorSettings(),
@@ -268,7 +284,8 @@ class ShaderSettings {
        _cymaticsSettings = cymaticsSettings ?? CymaticsSettings(),
        _backgroundSettings = backgroundSettings ?? BackgroundSettings(),
        _sketchSettings = sketchSettings ?? SketchSettings(),
-       _edgeSettings = edgeSettings ?? EdgeSettings() {}
+       _edgeSettings = edgeSettings ?? EdgeSettings(),
+       _glitchSettings = glitchSettings ?? GlitchSettings() {}
 
   // Serialization helper for persistence
   Map<String, dynamic> toMap() {
@@ -288,6 +305,7 @@ class ShaderSettings {
         'backgroundSettings': _backgroundSettings.toMap(),
         'sketchSettings': _sketchSettings.toMap(),
         'edgeSettings': _edgeSettings.toMap(),
+        'glitchSettings': _glitchSettings.toMap(),
       };
     } catch (e) {
       print('Error serializing ShaderSettings: $e');
@@ -310,6 +328,7 @@ class ShaderSettings {
           'backgroundSettings':
               backgroundMap, // Use the actual background settings
           'sketchSettings': SketchSettings().toMap(),
+          'glitchSettings': GlitchSettings().toMap(),
         };
       } catch (innerError) {
         // If even that fails, return minimal settings but still try to preserve color
@@ -327,6 +346,7 @@ class ShaderSettings {
           'musicSettings': MusicSettings().toMap(),
           'cymaticsSettings': CymaticsSettings().toMap(),
           'sketchSettings': SketchSettings().toMap(),
+          'glitchSettings': GlitchSettings().toMap(),
           'backgroundSettings': {
             'backgroundEnabled': _backgroundSettings.backgroundEnabled,
             'backgroundColor': _backgroundSettings.backgroundColor.value,
@@ -399,6 +419,11 @@ class ShaderSettings {
           : null,
       edgeSettings: map['edgeSettings'] != null
           ? EdgeSettings.fromMap(Map<String, dynamic>.from(map['edgeSettings']))
+          : null,
+      glitchSettings: map['glitchSettings'] != null
+          ? GlitchSettings.fromMap(
+              Map<String, dynamic>.from(map['glitchSettings']),
+            )
           : null,
       skipLogging: true, // Skip logging when loading from map (preset loading)
     );

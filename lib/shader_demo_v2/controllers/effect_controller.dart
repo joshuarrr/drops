@@ -9,6 +9,7 @@ import '../models/effect_settings.dart';
 // import '../models/shader_effect.dart';
 import 'custom_shader_widgets.dart';
 import 'shaders/edge_effect_shader.dart';
+import 'shaders/glitch_shader.dart';
 
 /// Controls logging for effect application
 enum LogLevel { debug, info, warning, error }
@@ -240,6 +241,7 @@ class EffectController {
       settings.chromaticEnabled ? 'ch1' : 'ch0',
       settings.rippleEnabled ? 'rp1' : 'rp0',
       settings.edgeEnabled ? 'e1' : 'e0',
+      settings.glitchEnabled ? 'g1' : 'g0',
       // Only include animation values if anything is animated
       if (settings.colorSettings.colorAnimated ||
           settings.blurSettings.blurAnimated ||
@@ -247,7 +249,8 @@ class EffectController {
           settings.rainSettings.rainAnimated ||
           settings.chromaticSettings.chromaticAnimated ||
           settings.rippleSettings.rippleAnimated ||
-          settings.edgeSettings.edgeAnimated)
+          settings.edgeSettings.edgeAnimated ||
+          settings.glitchSettings.effectAnimated)
         animationValues.entries
             .map((e) => '${e.key}:${e.value.toStringAsFixed(2)}')
             .join('|'),
@@ -272,6 +275,9 @@ class EffectController {
       // Hash of settings values for edge if enabled
       if (settings.edgeEnabled)
         '${settings.edgeSettings.opacity.toStringAsFixed(2)}_${settings.edgeSettings.edgeIntensity.toStringAsFixed(2)}_${settings.edgeSettings.edgeThickness.toStringAsFixed(2)}_${settings.edgeSettings.edgeColor.toStringAsFixed(2)}',
+      // Hash of settings values for glitch if enabled
+      if (settings.glitchEnabled)
+        '${settings.glitchSettings.opacity.toStringAsFixed(2)}_${settings.glitchSettings.intensity.toStringAsFixed(2)}_${settings.glitchSettings.speed.toStringAsFixed(2)}_${settings.glitchSettings.blockSize.toStringAsFixed(2)}',
     ].join('|');
   }
 
@@ -322,7 +328,8 @@ class EffectController {
         !settings.chromaticEnabled &&
         !settings.rippleEnabled &&
         !settings.sketchEnabled &&
-        !settings.edgeEnabled) {
+        !settings.edgeEnabled &&
+        !settings.glitchEnabled) {
       return child;
     }
 
@@ -337,7 +344,8 @@ class EffectController {
             settings.chromaticEnabled) ||
         (settings.rippleSettings.rippleAnimated && settings.rippleEnabled) ||
         (settings.sketchSettings.sketchAnimated && settings.sketchEnabled) ||
-        (settings.edgeSettings.edgeAnimated && settings.edgeEnabled);
+        (settings.edgeSettings.edgeAnimated && settings.edgeEnabled) ||
+        (settings.glitchSettings.effectAnimated && settings.glitchEnabled);
 
     // If not animated, check cache for existing widget
     if (!isAnimated) {
@@ -512,6 +520,17 @@ class EffectController {
             child: result,
             settings: settings,
             animationValue: animationValues['edge'] ?? 0.0,
+            preserveTransparency: preserveTransparency,
+            isTextContent: isTextContent,
+          );
+        }
+
+        // Apply glitch effect if enabled
+        if (settings.glitchEnabled) {
+          result = _applyGlitchEffect(
+            child: result,
+            settings: settings,
+            animationValue: animationValues['glitch'] ?? 0.0,
             preserveTransparency: preserveTransparency,
             isTextContent: isTextContent,
           );
@@ -774,6 +793,29 @@ class EffectController {
 
     // Use custom shader implementation
     return applyEdgeEffect(
+      settings: settings,
+      animationValue: animationValue,
+      child: child,
+      preserveTransparency: preserveTransparency,
+      isTextContent: isTextContent,
+    );
+  }
+
+  // Helper method to apply glitch effect using custom shader
+  static Widget _applyGlitchEffect({
+    required Widget child,
+    required ShaderSettings settings,
+    required double animationValue,
+    bool preserveTransparency = false,
+    bool isTextContent = false,
+  }) {
+    // Skip if glitch is disabled or opacity is too low
+    if (!settings.glitchSettings.shouldApplyEffect) {
+      return child;
+    }
+
+    // Use custom shader implementation
+    return applyGlitchEffect(
       settings: settings,
       animationValue: animationValue,
       child: child,

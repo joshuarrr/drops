@@ -15,6 +15,7 @@ class AnimationControllerManager extends ChangeNotifier {
   late AnimationController _rippleController;
   late AnimationController _sketchController;
   late AnimationController _edgeController;
+  late AnimationController _glitchController;
 
   // Track which controllers are currently active
   final Set<String> _activeControllers = <String>{};
@@ -71,6 +72,10 @@ class AnimationControllerManager extends ChangeNotifier {
       duration: const Duration(seconds: 5),
       vsync: _tickerProvider,
     );
+    _glitchController = AnimationController(
+      duration: const Duration(seconds: 5),
+      vsync: _tickerProvider,
+    );
 
     // Add listeners to track animation values
     _blurController.addListener(
@@ -99,6 +104,9 @@ class AnimationControllerManager extends ChangeNotifier {
     );
     _edgeController.addListener(
       () => _updateAnimationValue('edge', _edgeController.value),
+    );
+    _glitchController.addListener(
+      () => _updateAnimationValue('glitch', _glitchController.value),
     );
 
     _isInitialized = true;
@@ -154,6 +162,8 @@ class AnimationControllerManager extends ChangeNotifier {
         return _sketchController;
       case 'edge':
         return _edgeController;
+      case 'glitch':
+        return _glitchController;
       default:
         throw ArgumentError('Unknown effect type: $effectType');
     }
@@ -278,6 +288,17 @@ class AnimationControllerManager extends ChangeNotifier {
     } else {
       _stopController('edge');
     }
+
+    // Update glitch animation
+    if (settings.glitchEnabled && settings.glitchSettings.effectAnimated) {
+      _updateControllerDuration(
+        'glitch',
+        settings.glitchSettings.effectAnimOptions.speed,
+      );
+      _startController('glitch');
+    } else {
+      _stopController('glitch');
+    }
   }
 
   /// Start a specific controller
@@ -332,6 +353,7 @@ class AnimationControllerManager extends ChangeNotifier {
       _rippleController.dispose();
       _sketchController.dispose();
       _edgeController.dispose();
+      _glitchController.dispose();
     }
     super.dispose();
   }

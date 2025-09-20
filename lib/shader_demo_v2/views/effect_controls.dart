@@ -20,6 +20,7 @@ import '../widgets/glass_aspect_toggle.dart';
 import '../widgets/music_panel.dart';
 import '../widgets/sketch_panel.dart';
 import '../widgets/edge_panel.dart';
+import '../widgets/glitch_panel.dart';
 import '../services/asset_service.dart';
 
 /// Effect controls for shader demo V2 - matches V1 UI exactly
@@ -249,6 +250,14 @@ class _EffectControlsV2State extends State<EffectControlsV2> {
                   _toggleAspect(aspect, enabled, controller),
               onTap: _selectAspect,
             ),
+            GlassAspectToggle(
+              aspect: ShaderAspect.glitch,
+              isEnabled: settings.glitchEnabled,
+              isCurrentImageDark: isCurrentImageDark,
+              onToggled: (aspect, enabled) =>
+                  _toggleAspect(aspect, enabled, controller),
+              onTap: _selectAspect,
+            ),
           ],
         ),
       ),
@@ -381,6 +390,9 @@ class _EffectControlsV2State extends State<EffectControlsV2> {
         break;
       case ShaderAspect.edge:
         settings.edgeEnabled = enabled;
+        break;
+      case ShaderAspect.glitch:
+        settings.glitchEnabled = enabled;
         break;
     }
 
@@ -543,6 +555,13 @@ class _EffectControlsV2State extends State<EffectControlsV2> {
             ),
           if (_selectedAspect == ShaderAspect.edge)
             EdgePanel(
+              settings: controller.settings,
+              onSettingsChanged: controller.updateSettings,
+              sliderColor: sliderColor,
+              context: context,
+            ),
+          if (_selectedAspect == ShaderAspect.glitch)
+            GlitchPanel(
               settings: controller.settings,
               onSettingsChanged: controller.updateSettings,
               sliderColor: sliderColor,

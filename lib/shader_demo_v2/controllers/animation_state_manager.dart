@@ -233,5 +233,11 @@ class ParameterIds {
   static const String edgeThickness = 'edge.thickness';
   static const String edgeColor = 'edge.color';
 
+  // Glitch effect parameters
+  static const String glitchOpacity = 'glitch.opacity';
+  static const String glitchIntensity = 'glitch.intensity';
+  static const String glitchSpeed = 'glitch.speed';
+  static const String glitchBlockSize = 'glitch.blockSize';
+
   // Add more effects as needed...
 }

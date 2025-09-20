@@ -16,6 +16,7 @@ enum ShaderAspect {
   cymatics,
   sketch,
   edge,
+  glitch,
 }
 
 // Helper extension for working with ShaderAspects
@@ -50,6 +51,8 @@ extension ShaderAspectExtension on ShaderAspect {
         return 'Sketch';
       case ShaderAspect.edge:
         return 'Edge';
+      case ShaderAspect.glitch:
+        return 'Glitch';
     }
   }
 
@@ -83,6 +86,8 @@ extension ShaderAspectExtension on ShaderAspect {
         return Icons.brush;
       case ShaderAspect.edge:
         return Icons.line_weight;
+      case ShaderAspect.glitch:
+        return Icons.bug_report;
     }
   }
 }
