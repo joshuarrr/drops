@@ -16,6 +16,7 @@ class AnimationControllerManager extends ChangeNotifier {
   late AnimationController _sketchController;
   late AnimationController _edgeController;
   late AnimationController _glitchController;
+  late AnimationController _vhsController;
 
   // Track which controllers are currently active
   final Set<String> _activeControllers = <String>{};
@@ -76,6 +77,10 @@ class AnimationControllerManager extends ChangeNotifier {
       duration: const Duration(seconds: 5),
       vsync: _tickerProvider,
     );
+    _vhsController = AnimationController(
+      duration: const Duration(seconds: 5),
+      vsync: _tickerProvider,
+    );
 
     // Add listeners to track animation values
     _blurController.addListener(
@@ -107,6 +112,9 @@ class AnimationControllerManager extends ChangeNotifier {
     );
     _glitchController.addListener(
       () => _updateAnimationValue('glitch', _glitchController.value),
+    );
+    _vhsController.addListener(
+      () => _updateAnimationValue('vhs', _vhsController.value),
     );
 
     _isInitialized = true;
@@ -164,6 +172,8 @@ class AnimationControllerManager extends ChangeNotifier {
         return _edgeController;
       case 'glitch':
         return _glitchController;
+      case 'vhs':
+        return _vhsController;
       default:
         throw ArgumentError('Unknown effect type: $effectType');
     }
@@ -299,6 +309,17 @@ class AnimationControllerManager extends ChangeNotifier {
     } else {
       _stopController('glitch');
     }
+
+    // Update VHS animation
+    if (settings.vhsEnabled && settings.vhsSettings.effectAnimated) {
+      _updateControllerDuration(
+        'vhs',
+        settings.vhsSettings.effectAnimOptions.speed,
+      );
+      _startController('vhs');
+    } else {
+      _stopController('vhs');
+    }
   }
 
   /// Start a specific controller
@@ -354,6 +375,7 @@ class AnimationControllerManager extends ChangeNotifier {
       _sketchController.dispose();
       _edgeController.dispose();
       _glitchController.dispose();
+      _vhsController.dispose();
     }
     super.dispose();
   }

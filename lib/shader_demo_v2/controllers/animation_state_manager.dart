@@ -243,5 +243,18 @@ class ParameterIds {
   static const String glitchVerticalSliceIntensity =
       'glitch.verticalSliceIntensity';
 
+  // VHS effect parameters
+  static const String vhsOpacity = 'vhs.opacity';
+  static const String vhsNoiseIntensity = 'vhs.noiseIntensity';
+  static const String vhsFieldLines = 'vhs.fieldLines';
+  static const String vhsHorizontalWaveStrength = 'vhs.horizontalWaveStrength';
+  static const String vhsHorizontalWaveScreenSize =
+      'vhs.horizontalWaveScreenSize';
+  static const String vhsHorizontalWaveVerticalSize =
+      'vhs.horizontalWaveVerticalSize';
+  static const String vhsDottedNoiseStrength = 'vhs.dottedNoiseStrength';
+  static const String vhsHorizontalDistortionStrength =
+      'vhs.horizontalDistortionStrength';
+
   // Add more effects as needed...
 }

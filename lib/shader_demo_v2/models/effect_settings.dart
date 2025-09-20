@@ -16,6 +16,7 @@ import 'background_settings.dart';
 import 'sketch_settings.dart';
 import 'edge_settings.dart';
 import 'glitch_settings.dart';
+import 'vhs_settings.dart';
 
 // Class to store all shader effect settings
 class ShaderSettings {
@@ -34,6 +35,7 @@ class ShaderSettings {
   SketchSettings _sketchSettings;
   EdgeSettings _edgeSettings;
   GlitchSettings _glitchSettings;
+  VHSSettings _vhsSettings;
 
   // Flag to control logging
   static bool enableLogging = true;
@@ -53,6 +55,7 @@ class ShaderSettings {
   SketchSettings get sketchSettings => _sketchSettings;
   EdgeSettings get edgeSettings => _edgeSettings;
   GlitchSettings get glitchSettings => _glitchSettings;
+  VHSSettings get vhsSettings => _vhsSettings;
 
   // Convenience getters for most commonly used properties
   // These delegate to the specialized settings classes
@@ -215,6 +218,17 @@ class ShaderSettings {
     _glitchSettings.effectAnimated = value;
   }
 
+  // VHS settings
+  bool get vhsEnabled => _vhsSettings.effectEnabled;
+  set vhsEnabled(bool value) {
+    _vhsSettings.effectEnabled = value;
+  }
+
+  bool get vhsAnimated => _vhsSettings.effectAnimated;
+  set vhsAnimated(bool value) {
+    _vhsSettings.effectAnimated = value;
+  }
+
   // Enable logging for all settings classes
   static void setLogging(bool enabled) {
     enableLogging = enabled;
@@ -250,7 +264,8 @@ class ShaderSettings {
       _backgroundSettings = BackgroundSettings(),
       _sketchSettings = SketchSettings(),
       _edgeSettings = EdgeSettings(),
-      _glitchSettings = GlitchSettings() {
+      _glitchSettings = GlitchSettings(),
+      _vhsSettings = VHSSettings() {
     // No logging for the static default instance
   }
 
@@ -270,6 +285,7 @@ class ShaderSettings {
     SketchSettings? sketchSettings,
     EdgeSettings? edgeSettings,
     GlitchSettings? glitchSettings,
+    VHSSettings? vhsSettings,
     bool skipLogging =
         false, // Add parameter to skip logging when loading presets
   }) : _colorSettings = colorSettings ?? ColorSettings(),
@@ -285,7 +301,8 @@ class ShaderSettings {
        _backgroundSettings = backgroundSettings ?? BackgroundSettings(),
        _sketchSettings = sketchSettings ?? SketchSettings(),
        _edgeSettings = edgeSettings ?? EdgeSettings(),
-       _glitchSettings = glitchSettings ?? GlitchSettings() {}
+       _glitchSettings = glitchSettings ?? GlitchSettings(),
+       _vhsSettings = vhsSettings ?? VHSSettings() {}
 
   // Serialization helper for persistence
   Map<String, dynamic> toMap() {
@@ -306,6 +323,7 @@ class ShaderSettings {
         'sketchSettings': _sketchSettings.toMap(),
         'edgeSettings': _edgeSettings.toMap(),
         'glitchSettings': _glitchSettings.toMap(),
+        'vhsSettings': _vhsSettings.toMap(),
       };
     } catch (e) {
       print('Error serializing ShaderSettings: $e');
@@ -424,6 +442,9 @@ class ShaderSettings {
           ? GlitchSettings.fromMap(
               Map<String, dynamic>.from(map['glitchSettings']),
             )
+          : null,
+      vhsSettings: map['vhsSettings'] != null
+          ? VHSSettings.fromMap(Map<String, dynamic>.from(map['vhsSettings']))
           : null,
       skipLogging: true, // Skip logging when loading from map (preset loading)
     );

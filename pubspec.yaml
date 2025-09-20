@@ -110,6 +110,7 @@ flutter:
     - assets/shaders/sketch_effect.frag
     - assets/shaders/edge_effect.frag
     - assets/shaders/glitch.frag
+    - assets/shaders/vhs.frag
 
 
   # An image asset can refer to one or more resolution-specific "variants", see

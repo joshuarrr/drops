@@ -10,6 +10,7 @@ import '../models/effect_settings.dart';
 import 'custom_shader_widgets.dart';
 import 'shaders/edge_effect_shader.dart';
 import 'shaders/glitch_shader.dart';
+import 'shaders/vhs_shader.dart';
 
 /// Controls logging for effect application
 enum LogLevel { debug, info, warning, error }
@@ -242,6 +243,7 @@ class EffectController {
       settings.rippleEnabled ? 'rp1' : 'rp0',
       settings.edgeEnabled ? 'e1' : 'e0',
       settings.glitchEnabled ? 'g1' : 'g0',
+      settings.vhsEnabled ? 'v1' : 'v0',
       // Only include animation values if anything is animated
       if (settings.colorSettings.colorAnimated ||
           settings.blurSettings.blurAnimated ||
@@ -250,7 +252,8 @@ class EffectController {
           settings.chromaticSettings.chromaticAnimated ||
           settings.rippleSettings.rippleAnimated ||
           settings.edgeSettings.edgeAnimated ||
-          settings.glitchSettings.effectAnimated)
+          settings.glitchSettings.effectAnimated ||
+          settings.vhsSettings.effectAnimated)
         animationValues.entries
             .map((e) => '${e.key}:${e.value.toStringAsFixed(2)}')
             .join('|'),
@@ -278,6 +281,9 @@ class EffectController {
       // Hash of settings values for glitch if enabled
       if (settings.glitchEnabled)
         '${settings.glitchSettings.opacity.toStringAsFixed(2)}_${settings.glitchSettings.intensity.toStringAsFixed(2)}_${settings.glitchSettings.frequency.toStringAsFixed(2)}_${settings.glitchSettings.blockSize.toStringAsFixed(2)}',
+      // Hash of settings values for VHS if enabled
+      if (settings.vhsEnabled)
+        '${settings.vhsSettings.opacity.toStringAsFixed(2)}_${settings.vhsSettings.noiseIntensity.toStringAsFixed(2)}_${settings.vhsSettings.fieldLines.toStringAsFixed(2)}_${settings.vhsSettings.horizontalWaveStrength.toStringAsFixed(2)}_${settings.vhsSettings.horizontalWaveScreenSize.toStringAsFixed(2)}_${settings.vhsSettings.horizontalWaveVerticalSize.toStringAsFixed(2)}_${settings.vhsSettings.dottedNoiseStrength.toStringAsFixed(2)}_${settings.vhsSettings.horizontalDistortionStrength.toStringAsFixed(2)}',
     ].join('|');
   }
 
@@ -329,7 +335,8 @@ class EffectController {
         !settings.rippleEnabled &&
         !settings.sketchEnabled &&
         !settings.edgeEnabled &&
-        !settings.glitchEnabled) {
+        !settings.glitchEnabled &&
+        !settings.vhsEnabled) {
       return child;
     }
 
@@ -345,7 +352,8 @@ class EffectController {
         (settings.rippleSettings.rippleAnimated && settings.rippleEnabled) ||
         (settings.sketchSettings.sketchAnimated && settings.sketchEnabled) ||
         (settings.edgeSettings.edgeAnimated && settings.edgeEnabled) ||
-        (settings.glitchSettings.effectAnimated && settings.glitchEnabled);
+        (settings.glitchSettings.effectAnimated && settings.glitchEnabled) ||
+        (settings.vhsSettings.effectAnimated && settings.vhsEnabled);
 
     // If not animated, check cache for existing widget
     if (!isAnimated) {
@@ -531,6 +539,17 @@ class EffectController {
             child: result,
             settings: settings,
             animationValue: animationValues['glitch'] ?? 0.0,
+            preserveTransparency: preserveTransparency,
+            isTextContent: isTextContent,
+          );
+        }
+
+        // Apply VHS effect if enabled
+        if (settings.vhsEnabled) {
+          result = _applyVHSEffect(
+            child: result,
+            settings: settings,
+            animationValue: animationValues['vhs'] ?? 0.0,
             preserveTransparency: preserveTransparency,
             isTextContent: isTextContent,
           );
@@ -816,6 +835,29 @@ class EffectController {
 
     // Use custom shader implementation
     return applyGlitchEffect(
+      settings: settings,
+      animationValue: animationValue,
+      child: child,
+      preserveTransparency: preserveTransparency,
+      isTextContent: isTextContent,
+    );
+  }
+
+  // Helper method to apply VHS effect using custom shader
+  static Widget _applyVHSEffect({
+    required Widget child,
+    required ShaderSettings settings,
+    required double animationValue,
+    bool preserveTransparency = false,
+    bool isTextContent = false,
+  }) {
+    // Skip if VHS is disabled or opacity is too low
+    if (!settings.vhsSettings.shouldApplyEffect) {
+      return child;
+    }
+
+    // Use custom shader implementation
+    return applyVHSEffect(
       settings: settings,
       animationValue: animationValue,
       child: child,
