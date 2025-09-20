@@ -17,10 +17,10 @@ class EdgeSettings {
 
   // Constructor with default values
   EdgeSettings({
-    bool edgeEnabled = true, // Changed default to true for debugging
-    double opacity = 1.0, // Changed default to 1.0 for maximum visibility
-    double edgeIntensity = 3.0, // Increased for better visibility
-    double edgeThickness = 2.0, // Increased for better visibility
+    bool edgeEnabled = false,
+    double opacity = 0.7,
+    double edgeIntensity = 1.5,
+    double edgeThickness = 1.0,
     double edgeColor = 0.0,
     bool edgeAnimated = false,
     double animationSpeed = 1.0,
@@ -84,10 +84,10 @@ class EdgeSettings {
 
   // Reset to default values
   void reset() {
-    _edgeEnabled = true; // Changed to true for debugging
-    _opacity = 1.0; // Changed to 1.0 for maximum visibility
-    _edgeIntensity = 3.0; // Increased for better visibility
-    _edgeThickness = 2.0; // Increased for better visibility
+    _edgeEnabled = false;
+    _opacity = 0.7;
+    _edgeIntensity = 1.5;
+    _edgeThickness = 1.0;
     _edgeColor = 0.0;
     _edgeAnimated = false;
     _animationSpeed = 1.0;

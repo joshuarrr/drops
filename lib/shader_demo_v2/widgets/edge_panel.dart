@@ -31,19 +31,6 @@ class _EdgePanelState extends State<EdgePanel> {
   static int _refreshCounter = 0;
 
   @override
-  void initState() {
-    super.initState();
-    // Ensure effect is enabled when panel is created
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!widget.settings.edgeEnabled) {
-        final updatedSettings = widget.settings;
-        updatedSettings.edgeEnabled = true;
-        widget.onSettingsChanged(updatedSettings);
-      }
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,

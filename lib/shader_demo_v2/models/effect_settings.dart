@@ -452,6 +452,17 @@ class ShaderSettings {
     // Set imageEnabled after creating the instance
     settings._imageEnabled = map['imageEnabled'] ?? true;
 
+    // Backward compatibility: presets created before the edge effect existed
+    // will not have edge settings persisted. Ensure the effect stays disabled
+    // unless the preset explicitly turns it on.
+    final rawEdgeSettings = map['edgeSettings'];
+    if (rawEdgeSettings == null) {
+      settings._edgeSettings.edgeEnabled = false;
+    } else if (rawEdgeSettings is Map<String, dynamic> &&
+        !rawEdgeSettings.containsKey('edgeEnabled')) {
+      settings._edgeSettings.edgeEnabled = false;
+    }
+
     return settings;
   }
 

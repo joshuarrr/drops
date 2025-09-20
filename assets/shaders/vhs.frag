@@ -84,12 +84,13 @@ void main() {
 
     // Horizontal wave distortion driven by smooth sine wave
     vec2 waveUV = uv_org;
+    float direction = 1.0;
     if (uHorizontalWaveStrength > 0.001) {
         float frequencyT = clamp(uHorizontalWaveScreenSize / 200.0, 0.0, 1.0);
         float frequency = mix(2.0, 40.0, frequencyT);
         float travelSpeed = mix(0.5, 3.0, frequencyT);
         float directionNoise = noise3d(vec3(floor(baseTime * 0.25), 13.0, 7.0));
-        float direction = 1.0 - 2.0 * step(0.5, directionNoise);
+        direction = 1.0 - 2.0 * step(0.5, directionNoise);
 
         float envelope = 1.0;
         if (uHorizontalWaveVerticalSize > 0.0) {
@@ -119,6 +120,10 @@ void main() {
 
     // Subtle horizontal distortion for authenticity
     if (uHorizontalDistortionStrength > 0.0001) {
+        if (uHorizontalWaveStrength <= 0.001) {
+            float directionNoise = noise3d(vec3(floor(baseTime * 0.25), 13.0, 7.0));
+            direction = 1.0 - 2.0 * step(0.5, directionNoise);
+        }
         float distortionFreq = mix(2.0, 8.0, clamp(uHorizontalWaveScreenSize / 200.0, 0.0, 1.0));
         float distortion = sin((waveUV.y - baseTime * 1.2 * direction) * distortionFreq * 6.28318);
         waveUV.x += distortion * uHorizontalDistortionStrength;
