@@ -109,16 +109,16 @@ class _GlitchPanelState extends State<GlitchPanel> {
 
               const SizedBox(height: 16),
 
-              // Speed slider
+              // Frequency slider
               LockableSlider(
-                label: 'Speed',
-                value: widget.settings.glitchSettings.speed,
+                label: 'Frequency',
+                value: widget.settings.glitchSettings.frequency,
                 min: 0.0,
                 max: 3.0,
                 divisions: 100,
                 displayValue:
-                    '${widget.settings.glitchSettings.speed.toStringAsFixed(1)}x',
-                onChanged: (value) => _onSpeedChanged(value),
+                    '${widget.settings.glitchSettings.frequency.toStringAsFixed(1)}x',
+                onChanged: (value) => _onFrequencyChanged(value),
                 activeColor: widget.sliderColor,
                 parameterId: ParameterIds.glitchSpeed,
                 animationEnabled: widget.settings.glitchSettings.effectAnimated,
@@ -141,6 +141,42 @@ class _GlitchPanelState extends State<GlitchPanel> {
                 parameterId: ParameterIds.glitchBlockSize,
                 animationEnabled: widget.settings.glitchSettings.effectAnimated,
                 defaultValue: 0.1,
+              ),
+
+              const SizedBox(height: 16),
+
+              // Horizontal Slice Intensity slider
+              LockableSlider(
+                label: 'Horizontal Slicing',
+                value: widget.settings.glitchSettings.horizontalSliceIntensity,
+                min: 0.0,
+                max: 1.0,
+                divisions: 100,
+                displayValue:
+                    '${(widget.settings.glitchSettings.horizontalSliceIntensity * 100).round()}%',
+                onChanged: (value) => _onHorizontalSliceIntensityChanged(value),
+                activeColor: widget.sliderColor,
+                parameterId: ParameterIds.glitchHorizontalSliceIntensity,
+                animationEnabled: widget.settings.glitchSettings.effectAnimated,
+                defaultValue: 0.0,
+              ),
+
+              const SizedBox(height: 16),
+
+              // Vertical Slice Intensity slider
+              LockableSlider(
+                label: 'Vertical Slicing',
+                value: widget.settings.glitchSettings.verticalSliceIntensity,
+                min: 0.0,
+                max: 1.0,
+                divisions: 100,
+                displayValue:
+                    '${(widget.settings.glitchSettings.verticalSliceIntensity * 100).round()}%',
+                onChanged: (value) => _onVerticalSliceIntensityChanged(value),
+                activeColor: widget.sliderColor,
+                parameterId: ParameterIds.glitchVerticalSliceIntensity,
+                animationEnabled: widget.settings.glitchSettings.effectAnimated,
+                defaultValue: 0.0,
               ),
 
               const SizedBox(height: 16),
@@ -188,15 +224,27 @@ class _GlitchPanelState extends State<GlitchPanel> {
     widget.onSettingsChanged(updatedSettings);
   }
 
-  void _onSpeedChanged(double value) {
+  void _onFrequencyChanged(double value) {
     final updatedSettings = widget.settings;
-    updatedSettings.glitchSettings.speed = value;
+    updatedSettings.glitchSettings.frequency = value;
     widget.onSettingsChanged(updatedSettings);
   }
 
   void _onBlockSizeChanged(double value) {
     final updatedSettings = widget.settings;
     updatedSettings.glitchSettings.blockSize = value;
+    widget.onSettingsChanged(updatedSettings);
+  }
+
+  void _onHorizontalSliceIntensityChanged(double value) {
+    final updatedSettings = widget.settings;
+    updatedSettings.glitchSettings.horizontalSliceIntensity = value;
+    widget.onSettingsChanged(updatedSettings);
+  }
+
+  void _onVerticalSliceIntensityChanged(double value) {
+    final updatedSettings = widget.settings;
+    updatedSettings.glitchSettings.verticalSliceIntensity = value;
     widget.onSettingsChanged(updatedSettings);
   }
 
@@ -256,8 +304,12 @@ class _GlitchPanelState extends State<GlitchPanel> {
     updatedSettings.glitchEnabled = presetData['effectEnabled'] ?? true;
     updatedSettings.glitchSettings.opacity = presetData['opacity'] ?? 0.5;
     updatedSettings.glitchSettings.intensity = presetData['intensity'] ?? 0.3;
-    updatedSettings.glitchSettings.speed = presetData['speed'] ?? 1.0;
+    updatedSettings.glitchSettings.frequency = presetData['frequency'] ?? 1.0;
     updatedSettings.glitchSettings.blockSize = presetData['blockSize'] ?? 0.1;
+    updatedSettings.glitchSettings.horizontalSliceIntensity =
+        presetData['horizontalSliceIntensity'] ?? 0.0;
+    updatedSettings.glitchSettings.verticalSliceIntensity =
+        presetData['verticalSliceIntensity'] ?? 0.0;
     updatedSettings.glitchSettings.effectAnimated =
         presetData['effectAnimated'] ?? false;
     updatedSettings.glitchSettings.animationSpeed =
@@ -307,8 +359,12 @@ class _GlitchPanelState extends State<GlitchPanel> {
       'effectEnabled': true,
       'opacity': widget.settings.glitchSettings.opacity,
       'intensity': widget.settings.glitchSettings.intensity,
-      'speed': widget.settings.glitchSettings.speed,
+      'frequency': widget.settings.glitchSettings.frequency,
       'blockSize': widget.settings.glitchSettings.blockSize,
+      'horizontalSliceIntensity':
+          widget.settings.glitchSettings.horizontalSliceIntensity,
+      'verticalSliceIntensity':
+          widget.settings.glitchSettings.verticalSliceIntensity,
       'effectAnimated': widget.settings.glitchSettings.effectAnimated,
       'animationSpeed': widget.settings.glitchSettings.animationSpeed,
       'animOptions': widget.settings.glitchSettings.effectAnimOptions.toMap(),

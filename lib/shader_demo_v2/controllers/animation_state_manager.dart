@@ -238,6 +238,10 @@ class ParameterIds {
   static const String glitchIntensity = 'glitch.intensity';
   static const String glitchSpeed = 'glitch.speed';
   static const String glitchBlockSize = 'glitch.blockSize';
+  static const String glitchHorizontalSliceIntensity =
+      'glitch.horizontalSliceIntensity';
+  static const String glitchVerticalSliceIntensity =
+      'glitch.verticalSliceIntensity';
 
   // Add more effects as needed...
 }

@@ -92,8 +92,12 @@ class GlitchShader extends StatelessWidget {
     // Compute animated values if needed
     double opacity = settings.glitchSettings.opacity;
     double intensity = settings.glitchSettings.intensity;
-    double speed = settings.glitchSettings.speed;
+    double frequency = settings.glitchSettings.frequency;
     double blockSize = settings.glitchSettings.blockSize;
+    double horizontalSliceIntensity =
+        settings.glitchSettings.horizontalSliceIntensity;
+    double verticalSliceIntensity =
+        settings.glitchSettings.verticalSliceIntensity;
     double time = settings.glitchSettings.effectAnimated ? animationValue : 0.0;
 
     if (settings.glitchSettings.effectAnimated) {
@@ -139,16 +143,16 @@ class GlitchShader extends StatelessWidget {
           );
         }
 
-        // Animate speed if unlocked
+        // Animate frequency if unlocked
         if (!animManager.isParameterLocked(ParameterIds.glitchSpeed)) {
           double pulse = ShaderAnimationUtils.computePulseValue(
             settings.glitchSettings.effectAnimOptions,
             animationValue,
           );
-          speed = settings.glitchSettings.speed * pulse;
-          animManager.updateAnimatedValue(ParameterIds.glitchSpeed, speed);
+          frequency = settings.glitchSettings.frequency * pulse;
+          animManager.updateAnimatedValue(ParameterIds.glitchSpeed, frequency);
         } else {
-          animManager.updateAnimatedValue(ParameterIds.glitchSpeed, speed);
+          animManager.updateAnimatedValue(ParameterIds.glitchSpeed, frequency);
         }
 
         // Animate block size if unlocked
@@ -166,6 +170,48 @@ class GlitchShader extends StatelessWidget {
           animManager.updateAnimatedValue(
             ParameterIds.glitchBlockSize,
             blockSize,
+          );
+        }
+
+        // Animate horizontal slice intensity if unlocked
+        if (!animManager.isParameterLocked(
+          ParameterIds.glitchHorizontalSliceIntensity,
+        )) {
+          double pulse = ShaderAnimationUtils.computePulseValue(
+            settings.glitchSettings.effectAnimOptions,
+            animationValue,
+          );
+          horizontalSliceIntensity =
+              settings.glitchSettings.horizontalSliceIntensity * pulse;
+          animManager.updateAnimatedValue(
+            ParameterIds.glitchHorizontalSliceIntensity,
+            horizontalSliceIntensity,
+          );
+        } else {
+          animManager.updateAnimatedValue(
+            ParameterIds.glitchHorizontalSliceIntensity,
+            horizontalSliceIntensity,
+          );
+        }
+
+        // Animate vertical slice intensity if unlocked
+        if (!animManager.isParameterLocked(
+          ParameterIds.glitchVerticalSliceIntensity,
+        )) {
+          double pulse = ShaderAnimationUtils.computePulseValue(
+            settings.glitchSettings.effectAnimOptions,
+            animationValue,
+          );
+          verticalSliceIntensity =
+              settings.glitchSettings.verticalSliceIntensity * pulse;
+          animManager.updateAnimatedValue(
+            ParameterIds.glitchVerticalSliceIntensity,
+            verticalSliceIntensity,
+          );
+        } else {
+          animManager.updateAnimatedValue(
+            ParameterIds.glitchVerticalSliceIntensity,
+            verticalSliceIntensity,
           );
         }
       } else {
@@ -211,10 +257,10 @@ class GlitchShader extends StatelessWidget {
           );
         }
 
-        // Animate speed if unlocked
+        // Animate frequency if unlocked
         if (!animManager.isParameterLocked(ParameterIds.glitchSpeed)) {
-          speed = ShaderAnimationUtils.computeRandomizedParameterValue(
-            settings.glitchSettings.speed,
+          frequency = ShaderAnimationUtils.computeRandomizedParameterValue(
+            settings.glitchSettings.frequency,
             settings.glitchSettings.effectAnimOptions,
             animationValue,
             isLocked: animManager.isParameterLocked(ParameterIds.glitchSpeed),
@@ -222,9 +268,9 @@ class GlitchShader extends StatelessWidget {
             maxValue: 3.0,
             parameterId: ParameterIds.glitchSpeed,
           );
-          animManager.updateAnimatedValue(ParameterIds.glitchSpeed, speed);
+          animManager.updateAnimatedValue(ParameterIds.glitchSpeed, frequency);
         } else {
-          animManager.updateAnimatedValue(ParameterIds.glitchSpeed, speed);
+          animManager.updateAnimatedValue(ParameterIds.glitchSpeed, frequency);
         }
 
         // Animate block size if unlocked
@@ -250,6 +296,60 @@ class GlitchShader extends StatelessWidget {
             blockSize,
           );
         }
+
+        // Animate horizontal slice intensity if unlocked
+        if (!animManager.isParameterLocked(
+          ParameterIds.glitchHorizontalSliceIntensity,
+        )) {
+          horizontalSliceIntensity =
+              ShaderAnimationUtils.computeRandomizedParameterValue(
+                settings.glitchSettings.horizontalSliceIntensity,
+                settings.glitchSettings.effectAnimOptions,
+                animationValue,
+                isLocked: animManager.isParameterLocked(
+                  ParameterIds.glitchHorizontalSliceIntensity,
+                ),
+                minValue: 0.0,
+                maxValue: 1.0,
+                parameterId: ParameterIds.glitchHorizontalSliceIntensity,
+              );
+          animManager.updateAnimatedValue(
+            ParameterIds.glitchHorizontalSliceIntensity,
+            horizontalSliceIntensity,
+          );
+        } else {
+          animManager.updateAnimatedValue(
+            ParameterIds.glitchHorizontalSliceIntensity,
+            horizontalSliceIntensity,
+          );
+        }
+
+        // Animate vertical slice intensity if unlocked
+        if (!animManager.isParameterLocked(
+          ParameterIds.glitchVerticalSliceIntensity,
+        )) {
+          verticalSliceIntensity =
+              ShaderAnimationUtils.computeRandomizedParameterValue(
+                settings.glitchSettings.verticalSliceIntensity,
+                settings.glitchSettings.effectAnimOptions,
+                animationValue,
+                isLocked: animManager.isParameterLocked(
+                  ParameterIds.glitchVerticalSliceIntensity,
+                ),
+                minValue: 0.0,
+                maxValue: 1.0,
+                parameterId: ParameterIds.glitchVerticalSliceIntensity,
+              );
+          animManager.updateAnimatedValue(
+            ParameterIds.glitchVerticalSliceIntensity,
+            verticalSliceIntensity,
+          );
+        } else {
+          animManager.updateAnimatedValue(
+            ParameterIds.glitchVerticalSliceIntensity,
+            verticalSliceIntensity,
+          );
+        }
       }
     } else {
       // Clear animated values when animation is disabled
@@ -258,6 +358,10 @@ class GlitchShader extends StatelessWidget {
       animManager.clearAnimatedValue(ParameterIds.glitchIntensity);
       animManager.clearAnimatedValue(ParameterIds.glitchSpeed);
       animManager.clearAnimatedValue(ParameterIds.glitchBlockSize);
+      animManager.clearAnimatedValue(
+        ParameterIds.glitchHorizontalSliceIntensity,
+      );
+      animManager.clearAnimatedValue(ParameterIds.glitchVerticalSliceIntensity);
     }
 
     // Set uniforms in the correct order matching the shader
@@ -266,9 +370,11 @@ class GlitchShader extends StatelessWidget {
     shader.setFloat(2, size.height); // uResolution.y
     shader.setFloat(3, opacity); // uOpacity
     shader.setFloat(4, intensity); // uIntensity
-    shader.setFloat(5, speed); // uSpeed
+    shader.setFloat(5, frequency); // uFrequency
     shader.setFloat(6, blockSize); // uBlockSize
-    shader.setFloat(7, isTextContent ? 1.0 : 0.0); // uIsTextContent
+    shader.setFloat(7, horizontalSliceIntensity); // uHorizontalSliceIntensity
+    shader.setFloat(8, verticalSliceIntensity); // uVerticalSliceIntensity
+    shader.setFloat(9, isTextContent ? 1.0 : 0.0); // uIsTextContent
 
     // Draw with shader
     canvas.drawRect(Offset.zero & size, Paint()..shader = shader);

@@ -4,8 +4,10 @@ class GlitchSettings {
   bool _effectEnabled;
   double _opacity;
   double _intensity;
-  double _speed;
+  double _frequency;
   double _blockSize;
+  double _horizontalSliceIntensity;
+  double _verticalSliceIntensity;
   bool _effectAnimated;
   double _animationSpeed;
   AnimationOptions _animOptions;
@@ -16,16 +18,20 @@ class GlitchSettings {
     bool effectEnabled = false,
     double opacity = 0.5,
     double intensity = 0.3,
-    double speed = 1.0,
+    double frequency = 1.0,
     double blockSize = 0.1,
+    double horizontalSliceIntensity = 0.0,
+    double verticalSliceIntensity = 0.0,
     bool effectAnimated = false,
     double animationSpeed = 1.0,
     AnimationOptions? animOptions,
   }) : _effectEnabled = effectEnabled,
        _opacity = opacity,
        _intensity = intensity,
-       _speed = speed,
+       _frequency = frequency,
        _blockSize = blockSize,
+       _horizontalSliceIntensity = horizontalSliceIntensity,
+       _verticalSliceIntensity = verticalSliceIntensity,
        _effectAnimated = effectAnimated,
        _animationSpeed = animationSpeed,
        _animOptions = animOptions ?? AnimationOptions();
@@ -34,8 +40,10 @@ class GlitchSettings {
   bool get effectEnabled => _effectEnabled;
   double get opacity => _opacity;
   double get intensity => _intensity;
-  double get speed => _speed;
+  double get frequency => _frequency;
   double get blockSize => _blockSize;
+  double get horizontalSliceIntensity => _horizontalSliceIntensity;
+  double get verticalSliceIntensity => _verticalSliceIntensity;
   bool get effectAnimated => _effectAnimated;
   double get animationSpeed => _animationSpeed;
   AnimationOptions get effectAnimOptions => _animOptions;
@@ -44,8 +52,11 @@ class GlitchSettings {
   set effectEnabled(bool value) => _effectEnabled = value;
   set opacity(double value) => _opacity = value;
   set intensity(double value) => _intensity = value;
-  set speed(double value) => _speed = value;
+  set frequency(double value) => _frequency = value;
   set blockSize(double value) => _blockSize = value;
+  set horizontalSliceIntensity(double value) =>
+      _horizontalSliceIntensity = value;
+  set verticalSliceIntensity(double value) => _verticalSliceIntensity = value;
   set effectAnimated(bool value) => _effectAnimated = value;
   set animationSpeed(double value) => _animationSpeed = value;
   set effectAnimOptions(AnimationOptions value) => _animOptions = value;
@@ -58,8 +69,10 @@ class GlitchSettings {
     bool? effectEnabled,
     double? opacity,
     double? intensity,
-    double? speed,
+    double? frequency,
     double? blockSize,
+    double? horizontalSliceIntensity,
+    double? verticalSliceIntensity,
     bool? effectAnimated,
     double? animationSpeed,
     AnimationOptions? animOptions,
@@ -68,8 +81,11 @@ class GlitchSettings {
       effectEnabled: effectEnabled ?? _effectEnabled,
       opacity: opacity ?? _opacity,
       intensity: intensity ?? _intensity,
-      speed: speed ?? _speed,
+      frequency: frequency ?? _frequency,
       blockSize: blockSize ?? _blockSize,
+      horizontalSliceIntensity:
+          horizontalSliceIntensity ?? _horizontalSliceIntensity,
+      verticalSliceIntensity: verticalSliceIntensity ?? _verticalSliceIntensity,
       effectAnimated: effectAnimated ?? _effectAnimated,
       animationSpeed: animationSpeed ?? _animationSpeed,
       animOptions: animOptions ?? _animOptions,
@@ -81,8 +97,10 @@ class GlitchSettings {
     _effectEnabled = false;
     _opacity = 0.5;
     _intensity = 0.3;
-    _speed = 1.0;
+    _frequency = 1.0;
     _blockSize = 0.1;
+    _horizontalSliceIntensity = 0.0;
+    _verticalSliceIntensity = 0.0;
     _effectAnimated = false;
     _animationSpeed = 1.0;
     _animOptions = AnimationOptions();
@@ -94,8 +112,10 @@ class GlitchSettings {
       'effectEnabled': _effectEnabled,
       'opacity': _opacity,
       'intensity': _intensity,
-      'speed': _speed,
+      'frequency': _frequency,
       'blockSize': _blockSize,
+      'horizontalSliceIntensity': _horizontalSliceIntensity,
+      'verticalSliceIntensity': _verticalSliceIntensity,
       'effectAnimated': _effectAnimated,
       'animationSpeed': _animationSpeed,
       'animOptions': _animOptions.toMap(),
@@ -108,8 +128,10 @@ class GlitchSettings {
       effectEnabled: map['effectEnabled'] ?? false,
       opacity: map['opacity'] ?? 0.5,
       intensity: map['intensity'] ?? 0.3,
-      speed: map['speed'] ?? 1.0,
+      frequency: map['frequency'] ?? 1.0,
       blockSize: map['blockSize'] ?? 0.1,
+      horizontalSliceIntensity: map['horizontalSliceIntensity'] ?? 0.0,
+      verticalSliceIntensity: map['verticalSliceIntensity'] ?? 0.0,
       effectAnimated: map['effectAnimated'] ?? false,
       animationSpeed: map['animationSpeed'] ?? 1.0,
       animOptions: map['animOptions'] != null
@@ -122,6 +144,6 @@ class GlitchSettings {
 
   @override
   String toString() {
-    return 'GlitchSettings(enabled: $_effectEnabled, opacity: $_opacity, intensity: $_intensity, speed: $_speed, blockSize: $_blockSize, animated: $_effectAnimated)';
+    return 'GlitchSettings(enabled: $_effectEnabled, opacity: $_opacity, intensity: $_intensity, frequency: $_frequency, blockSize: $_blockSize, horizontalSliceIntensity: $_horizontalSliceIntensity, verticalSliceIntensity: $_verticalSliceIntensity, animated: $_effectAnimated)';
   }
 }

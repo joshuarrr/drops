@@ -10,8 +10,10 @@ uniform float uTime;               // Animation time (seconds)
 uniform vec2 uResolution;          // Screen resolution (width, height)
 uniform float uOpacity;            // Effect opacity (0.0 to 1.0)
 uniform float uIntensity;          // Glitch intensity (0.0 to 1.0)
-uniform float uSpeed;              // Effect speed multiplier (0.0 to 3.0)
+uniform float uFrequency;            // Glitch frequency (0.0 to 3.0) - controls how often glitches occur
 uniform float uBlockSize;          // Block size for glitch effect (0.0 to 0.5)
+uniform float uHorizontalSliceIntensity; // Horizontal slice displacement intensity (0.0 to 1.0)
+uniform float uVerticalSliceIntensity;   // Vertical slice displacement intensity (0.0 to 1.0)
 uniform float uIsTextContent;      // Flag for text content (1.0 = text)
 
 // Define output
@@ -44,10 +46,60 @@ void main() {
     // Glitch effect implementation
     vec3 result = color.rgb;
     
-    // Apply glitch effect based on intensity
+    // Apply slice displacement effects
+    if (uHorizontalSliceIntensity > 0.0) {
+        // Create erratic timing for horizontal slices
+        float erraticTime = uTime + sin(uTime * 7.3) * 0.5 + cos(uTime * 11.7) * 0.3;
+        float sliceTime = erraticTime * uFrequency;
+        
+        // Create horizontal slice pattern - slices are horizontal lines
+        float sliceY = floor(uv.y * 20.0); // Create 20 horizontal slices
+        float sliceHash = fract(sin(sliceY * 12.9898 + sliceTime * 2.0) * 43758.5453);
+        
+        // Slice displacement occurs when hash is below slice intensity threshold
+        if (sliceHash < uHorizontalSliceIntensity) {
+            // Random vertical displacement for this slice
+            float verticalDisplacement = (fract(sin(sliceY * 78.233 + sliceTime * 3.0) * 43758.5453) - 0.5) * 0.1 * uHorizontalSliceIntensity;
+            
+            // Apply displacement
+            vec2 sliceUV = uv + vec2(0.0, verticalDisplacement);
+            sliceUV = clamp(sliceUV, 0.0, 1.0); // Clamp to valid UV range
+            
+            // Sample with slice displacement
+            vec4 sliceColor = texture(uTexture, sliceUV);
+            result = mix(result, sliceColor.rgb, uHorizontalSliceIntensity * 0.9);
+        }
+    }
+    
+    if (uVerticalSliceIntensity > 0.0) {
+        // Create erratic timing for vertical slices
+        float erraticTime = uTime + sin(uTime * 5.7) * 0.4 + cos(uTime * 13.2) * 0.6;
+        float sliceTime = erraticTime * uFrequency;
+        
+        // Create vertical slice pattern - slices are vertical lines
+        float sliceX = floor(uv.x * 20.0); // Create 20 vertical slices
+        float sliceHash = fract(sin(sliceX * 12.9898 + sliceTime * 2.5) * 43758.5453);
+        
+        // Slice displacement occurs when hash is below slice intensity threshold
+        if (sliceHash < uVerticalSliceIntensity) {
+            // Random horizontal displacement for this slice
+            float horizontalDisplacement = (fract(sin(sliceX * 78.233 + sliceTime * 3.5) * 43758.5453) - 0.5) * 0.1 * uVerticalSliceIntensity;
+            
+            // Apply displacement
+            vec2 sliceUV = uv + vec2(horizontalDisplacement, 0.0);
+            sliceUV = clamp(sliceUV, 0.0, 1.0); // Clamp to valid UV range
+            
+            // Sample with slice displacement
+            vec4 sliceColor = texture(uTexture, sliceUV);
+            result = mix(result, sliceColor.rgb, uVerticalSliceIntensity * 0.9);
+        }
+    }
+    
+    // Apply chromatic aberration glitch effect based on intensity
     if (uIntensity > 0.0) {
-        // Calculate glitch timing based on speed
-        float glitchTime = uTime * uSpeed;
+        // Create erratic timing for chromatic aberration glitch
+        float erraticTime = uTime + sin(uTime * 9.1) * 0.7 + cos(uTime * 15.3) * 0.4;
+        float glitchTime = erraticTime * uFrequency;
         
         // Create block-based glitch pattern
         vec2 blockUV = floor(uv / uBlockSize) * uBlockSize;

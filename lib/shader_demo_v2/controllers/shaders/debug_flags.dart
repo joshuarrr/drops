@@ -2,7 +2,7 @@
 /// for the shader system.
 
 /// Controls debug logging for all shaders
-bool enableShaderDebugLogs = true;
+bool enableShaderDebugLogs = false;
 
 /// Controls animation debug logging (separate from general shader logs)
 bool enableAnimationDebugLogs = false;

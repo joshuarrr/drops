@@ -277,7 +277,7 @@ class EffectController {
         '${settings.edgeSettings.opacity.toStringAsFixed(2)}_${settings.edgeSettings.edgeIntensity.toStringAsFixed(2)}_${settings.edgeSettings.edgeThickness.toStringAsFixed(2)}_${settings.edgeSettings.edgeColor.toStringAsFixed(2)}',
       // Hash of settings values for glitch if enabled
       if (settings.glitchEnabled)
-        '${settings.glitchSettings.opacity.toStringAsFixed(2)}_${settings.glitchSettings.intensity.toStringAsFixed(2)}_${settings.glitchSettings.speed.toStringAsFixed(2)}_${settings.glitchSettings.blockSize.toStringAsFixed(2)}',
+        '${settings.glitchSettings.opacity.toStringAsFixed(2)}_${settings.glitchSettings.intensity.toStringAsFixed(2)}_${settings.glitchSettings.frequency.toStringAsFixed(2)}_${settings.glitchSettings.blockSize.toStringAsFixed(2)}',
     ].join('|');
   }
 
