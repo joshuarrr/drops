@@ -336,7 +336,8 @@ class EffectController {
         !settings.sketchEnabled &&
         !settings.edgeEnabled &&
         !settings.glitchEnabled &&
-        !settings.vhsEnabled) {
+        !settings.vhsEnabled &&
+        !settings.ditherEnabled) {
       return child;
     }
 
@@ -506,6 +507,17 @@ class EffectController {
             child: result,
             settings: settings,
             animationValue: animationValues['chromatic'] ?? 0.0,
+            preserveTransparency: preserveTransparency,
+            isTextContent: isTextContent,
+          );
+        }
+
+        // Apply dither effect if enabled (image only)
+        if (settings.ditherEnabled && !isTextContent) {
+          result = _applyDitherEffect(
+            child: result,
+            settings: settings,
+            animationValue: animationValues['dither'] ?? 0.0,
             preserveTransparency: preserveTransparency,
             isTextContent: isTextContent,
           );
@@ -861,6 +873,26 @@ class EffectController {
       settings: settings,
       animationValue: animationValue,
       child: child,
+      preserveTransparency: preserveTransparency,
+      isTextContent: isTextContent,
+    );
+  }
+
+  static Widget _applyDitherEffect({
+    required Widget child,
+    required ShaderSettings settings,
+    required double animationValue,
+    bool preserveTransparency = false,
+    bool isTextContent = false,
+  }) {
+    if (!settings.ditherSettings.shouldApplyEffect) {
+      return child;
+    }
+
+    return applyDitherEffect(
+      child: child,
+      settings: settings,
+      animationValue: animationValue,
       preserveTransparency: preserveTransparency,
       isTextContent: isTextContent,
     );

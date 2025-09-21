@@ -18,6 +18,7 @@ enum ShaderAspect {
   edge,
   glitch,
   vhs,
+  dither,
 }
 
 // Helper extension for working with ShaderAspects
@@ -56,6 +57,8 @@ extension ShaderAspectExtension on ShaderAspect {
         return 'Glitch';
       case ShaderAspect.vhs:
         return 'VHS';
+      case ShaderAspect.dither:
+        return 'Dither';
     }
   }
 
@@ -93,6 +96,8 @@ extension ShaderAspectExtension on ShaderAspect {
         return Icons.bug_report;
       case ShaderAspect.vhs:
         return Icons.videocam;
+      case ShaderAspect.dither:
+        return Icons.grid_on;
     }
   }
 }

@@ -17,6 +17,7 @@ import 'sketch_settings.dart';
 import 'edge_settings.dart';
 import 'glitch_settings.dart';
 import 'vhs_settings.dart';
+import 'dither_settings.dart';
 
 // Class to store all shader effect settings
 class ShaderSettings {
@@ -36,6 +37,7 @@ class ShaderSettings {
   EdgeSettings _edgeSettings;
   GlitchSettings _glitchSettings;
   VHSSettings _vhsSettings;
+  DitherSettings _ditherSettings;
 
   // Flag to control logging
   static bool enableLogging = true;
@@ -56,6 +58,7 @@ class ShaderSettings {
   EdgeSettings get edgeSettings => _edgeSettings;
   GlitchSettings get glitchSettings => _glitchSettings;
   VHSSettings get vhsSettings => _vhsSettings;
+  DitherSettings get ditherSettings => _ditherSettings;
 
   // Convenience getters for most commonly used properties
   // These delegate to the specialized settings classes
@@ -224,6 +227,12 @@ class ShaderSettings {
     _vhsSettings.effectEnabled = value;
   }
 
+  // Dither settings
+  bool get ditherEnabled => _ditherSettings.effectEnabled;
+  set ditherEnabled(bool value) {
+    _ditherSettings.effectEnabled = value;
+  }
+
   bool get vhsAnimated => _vhsSettings.effectAnimated;
   set vhsAnimated(bool value) {
     _vhsSettings.effectAnimated = value;
@@ -288,7 +297,8 @@ class ShaderSettings {
       _sketchSettings = SketchSettings(),
       _edgeSettings = EdgeSettings(),
       _glitchSettings = GlitchSettings(),
-      _vhsSettings = VHSSettings() {
+      _vhsSettings = VHSSettings(),
+      _ditherSettings = DitherSettings() {
     // No logging for the static default instance
   }
 
@@ -309,6 +319,7 @@ class ShaderSettings {
     EdgeSettings? edgeSettings,
     GlitchSettings? glitchSettings,
     VHSSettings? vhsSettings,
+    DitherSettings? ditherSettings,
     bool skipLogging =
         false, // Add parameter to skip logging when loading presets
   }) : _colorSettings = colorSettings ?? ColorSettings(),
@@ -325,7 +336,8 @@ class ShaderSettings {
        _sketchSettings = sketchSettings ?? SketchSettings(),
        _edgeSettings = edgeSettings ?? EdgeSettings(),
        _glitchSettings = glitchSettings ?? GlitchSettings(),
-       _vhsSettings = vhsSettings ?? VHSSettings() {}
+       _vhsSettings = vhsSettings ?? VHSSettings(),
+       _ditherSettings = ditherSettings ?? DitherSettings() {}
 
   // Serialization helper for persistence
   Map<String, dynamic> toMap() {
@@ -347,6 +359,7 @@ class ShaderSettings {
         'edgeSettings': _edgeSettings.toMap(),
         'glitchSettings': _glitchSettings.toMap(),
         'vhsSettings': _vhsSettings.toMap(),
+        'ditherSettings': _ditherSettings.toMap(),
       };
     } catch (e) {
       print('Error serializing ShaderSettings: $e');
@@ -468,6 +481,11 @@ class ShaderSettings {
           : null,
       vhsSettings: map['vhsSettings'] != null
           ? VHSSettings.fromMap(Map<String, dynamic>.from(map['vhsSettings']))
+          : null,
+      ditherSettings: map['ditherSettings'] != null
+          ? DitherSettings.fromMap(
+              Map<String, dynamic>.from(map['ditherSettings']),
+            )
           : null,
       skipLogging: true, // Skip logging when loading from map (preset loading)
     );
