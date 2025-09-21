@@ -39,8 +39,8 @@ float Saw(float b, float t) {
 vec2 DropLayer(vec2 uv, float t) {
     vec2 UV = uv;
     
-    // Make drops fall
-    uv.y += t * (0.2 + uFallSpeed * 0.8);
+    // Make drops fall (downward): reverse advection direction
+    uv.y -= t * (0.2 + uFallSpeed * 0.8);
     
     // Grid setup - adjust based on drop size
     float gridScale = 0.015 * (0.2 + uDropSize * 1.8);
@@ -64,9 +64,10 @@ vec2 DropLayer(vec2 uv, float t) {
     x += wiggle * (.5 - abs(x)) * (n.z - .5);
     x *= .7;
     
-    // Drop timing
-    float ti = fract(t + n.z);
-    y = (Saw(.85, ti) - .5) * .9 + .5;
+    // Drop timing - enforce strictly downward motion (no up phase)
+    float life = fract(t + n.z);
+    // Monotonic fall from near top to near bottom within the cell (downward)
+    y = mix(0.95, 0.05, life);
     vec2 p = vec2(x, y);
     
     // Distance to drop
@@ -79,8 +80,16 @@ vec2 DropLayer(vec2 uv, float t) {
     float r = sqrt(S(1., y, st.y));
     float cd = abs(st.x - x);
     float trail = S(.23 * r, .15 * r * r, cd);
-    float trailFront = S(-.02, .02, st.y - y);
-    trail *= trailFront * r * r;
+    // Flip trail front gating for downward motion (trail above the drop)
+    // Feather the head to avoid hard horizontal lines
+    float tfWidth = mix(0.04, 0.10, uDropSize);
+    float trailFront = S(-tfWidth, tfWidth, y - st.y);
+    // Progressive vertical fade along the trail to remove hard horizontal edge
+    // Length-aware decay so longer trails fade smoothly without clipping
+    float trailLen = mix(0.12, 0.45, uTrailIntensity);
+    float behindN = clamp((y - st.y) / max(trailLen, 1e-3), 0.0, 1.0);
+    float verticalFade = pow(1.0 - behindN, 3.0);
+    trail *= trailFront * r * r * verticalFade;
     
     // Droplets
     y = UV.y;
@@ -89,6 +98,15 @@ vec2 DropLayer(vec2 uv, float t) {
     y = fract(y * 10.) + (st.y - .5);
     float dd = length(st - vec2(x, y));
     droplets = S(.3, 0., dd);
+
+    // Fade-in/out gating over the life cycle to avoid popping and residuals
+    float lifeIn = S(0.00, 0.08, life);
+    float lifeOut = 1.0 - S(0.92, 1.00, life);
+    float lifeGate = lifeIn * lifeOut;
+
+    mainDrop *= lifeGate;
+    trail *= lifeGate;
+    droplets *= lifeGate;
     
     float m = mainDrop + droplets * r * trailFront;
     
@@ -152,14 +170,19 @@ void main() {
     // Calculate drops
     vec2 c = Drops(uv, t, staticDrops, layer1, layer2);
     
-    // Calculate normals for texture distortion
-    vec2 e = vec2(.001, 0.);
-    float cx = Drops(uv + e, t, staticDrops, layer1, layer2).x;
-    float cy = Drops(uv + e.yx, t, staticDrops, layer1, layer2).x;
-    vec2 n = vec2(cx - c.x, cy - c.x);
+    // Calculate normals for texture distortion using central differences
+    // Central differencing + slightly larger epsilon reduces aliasing lines
+    vec2 e = vec2(0.0015, 0.0);
+    float cxp = Drops(uv + e, t, staticDrops, layer1, layer2).x;
+    float cxm = Drops(uv - e, t, staticDrops, layer1, layer2).x;
+    float cyp = Drops(uv + e.yx, t, staticDrops, layer1, layer2).x;
+    float cym = Drops(uv - e.yx, t, staticDrops, layer1, layer2).x;
+    vec2 n = vec2(cxp - cxm, cyp - cym) * 0.5;
     
-    // Apply refraction distortion
+    // Apply refraction distortion with a soft cap to avoid overshoot lines
     n *= uRefraction;
+    float maxShift = mix(0.02, 0.06, uRefraction);
+    n = clamp(n, vec2(-maxShift), vec2(maxShift));
     
     // Calculate focus blur based on drop intensity
     float focus = mix(maxBlur - c.y, minBlur, S(.1, .2, c.x));

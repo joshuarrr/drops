@@ -6,6 +6,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_shaders/flutter_shaders.dart';
 
 import '../../models/effect_settings.dart';
@@ -78,11 +79,10 @@ class RainEffectShader extends StatelessWidget {
               // Set the noise texture sampler second
               shader.setImageSampler(1, noiseTexture);
 
-              // When rainAnimated is false, we still send the fall speed
-              // but we don't send an animated time value
-              double timeValue = settings.rainSettings.rainAnimated
-                  ? animationValue
-                  : 0.0;
+              // Use monotonic frame time to ensure strictly forward time progression
+              final Duration frameTime =
+                  SchedulerBinding.instance.currentFrameTimeStamp;
+              double timeValue = frameTime.inMicroseconds / 1e6;
 
               // The fall speed to use, which can be 0 even when animated
               double fallSpeed = settings.rainSettings.fallSpeed;
@@ -95,17 +95,25 @@ class RainEffectShader extends StatelessWidget {
 
               // Compute animation values if animation is enabled
               if (settings.rainSettings.rainAnimated) {
+                // Ensure rain parameters start locked by default for single-handle behavior
+                final lockManager = AnimationStateManager();
+                lockManager.setParameterLock(ParameterIds.rainIntensity, true);
+                lockManager.setParameterLock(ParameterIds.rainDropSize, true);
+                lockManager.setParameterLock(ParameterIds.rainFallSpeed, true);
+                lockManager.setParameterLock(ParameterIds.rainRefraction, true);
+                lockManager.setParameterLock(
+                  ParameterIds.rainTrailIntensity,
+                  true,
+                );
                 // Get animation state manager
-                final animManager = AnimationStateManager();
+                final animMgr = AnimationStateManager();
 
                 if (settings.rainSettings.rainAnimOptions.mode ==
                     AnimationMode.pulse) {
                   // PULSE MODE - Apply pulse mode with parameter locking
 
                   // Animate fall speed if unlocked
-                  if (!animManager.isParameterLocked(
-                    ParameterIds.rainFallSpeed,
-                  )) {
+                  if (!animMgr.isParameterLocked(ParameterIds.rainFallSpeed)) {
                     final double pulse = ShaderAnimationUtils.computePulseValue(
                       settings.rainSettings.rainAnimOptions,
                       animationValue,
@@ -115,22 +123,20 @@ class RainEffectShader extends StatelessWidget {
                       settings.rainSettings.fallSpeedRange.userMax,
                       pulse,
                     )!;
-                    animManager.updateAnimatedValue(
+                    animMgr.updateAnimatedValue(
                       ParameterIds.rainFallSpeed,
                       fallSpeed,
                     );
                   } else {
                     // If locked, keep the slider value
-                    animManager.updateAnimatedValue(
+                    animMgr.updateAnimatedValue(
                       ParameterIds.rainFallSpeed,
                       fallSpeed,
                     );
                   }
 
                   // Animate rain intensity if unlocked
-                  if (!animManager.isParameterLocked(
-                    ParameterIds.rainIntensity,
-                  )) {
+                  if (!animMgr.isParameterLocked(ParameterIds.rainIntensity)) {
                     final double pulse = ShaderAnimationUtils.computePulseValue(
                       settings.rainSettings.rainAnimOptions,
                       animationValue,
@@ -140,22 +146,20 @@ class RainEffectShader extends StatelessWidget {
                       settings.rainSettings.rainIntensityRange.userMax,
                       pulse,
                     )!;
-                    animManager.updateAnimatedValue(
+                    animMgr.updateAnimatedValue(
                       ParameterIds.rainIntensity,
                       rainIntensity,
                     );
                   } else {
                     // If locked, keep the slider value
-                    animManager.updateAnimatedValue(
+                    animMgr.updateAnimatedValue(
                       ParameterIds.rainIntensity,
                       rainIntensity,
                     );
                   }
 
                   // Animate drop size if unlocked
-                  if (!animManager.isParameterLocked(
-                    ParameterIds.rainDropSize,
-                  )) {
+                  if (!animMgr.isParameterLocked(ParameterIds.rainDropSize)) {
                     final double pulse = ShaderAnimationUtils.computePulseValue(
                       settings.rainSettings.rainAnimOptions,
                       animationValue,
@@ -165,22 +169,20 @@ class RainEffectShader extends StatelessWidget {
                       settings.rainSettings.dropSizeRange.userMax,
                       pulse,
                     )!;
-                    animManager.updateAnimatedValue(
+                    animMgr.updateAnimatedValue(
                       ParameterIds.rainDropSize,
                       dropSize,
                     );
                   } else {
                     // If locked, keep the slider value
-                    animManager.updateAnimatedValue(
+                    animMgr.updateAnimatedValue(
                       ParameterIds.rainDropSize,
                       dropSize,
                     );
                   }
 
                   // Animate refraction if unlocked
-                  if (!animManager.isParameterLocked(
-                    ParameterIds.rainRefraction,
-                  )) {
+                  if (!animMgr.isParameterLocked(ParameterIds.rainRefraction)) {
                     final double pulse = ShaderAnimationUtils.computePulseValue(
                       settings.rainSettings.rainAnimOptions,
                       animationValue,
@@ -190,20 +192,20 @@ class RainEffectShader extends StatelessWidget {
                       settings.rainSettings.refractionRange.userMax,
                       pulse,
                     )!;
-                    animManager.updateAnimatedValue(
+                    animMgr.updateAnimatedValue(
                       ParameterIds.rainRefraction,
                       refraction,
                     );
                   } else {
                     // If locked, keep the slider value
-                    animManager.updateAnimatedValue(
+                    animMgr.updateAnimatedValue(
                       ParameterIds.rainRefraction,
                       refraction,
                     );
                   }
 
                   // Animate trail intensity if unlocked
-                  if (!animManager.isParameterLocked(
+                  if (!animMgr.isParameterLocked(
                     ParameterIds.rainTrailIntensity,
                   )) {
                     final double pulse = ShaderAnimationUtils.computePulseValue(
@@ -215,33 +217,30 @@ class RainEffectShader extends StatelessWidget {
                       settings.rainSettings.trailIntensityRange.userMax,
                       pulse,
                     )!;
-                    animManager.updateAnimatedValue(
+                    animMgr.updateAnimatedValue(
                       ParameterIds.rainTrailIntensity,
                       trailIntensity,
                     );
                   } else {
                     // If locked, keep the slider value
-                    animManager.updateAnimatedValue(
+                    animMgr.updateAnimatedValue(
                       ParameterIds.rainTrailIntensity,
                       trailIntensity,
                     );
                   }
 
-                  timeValue =
-                      animationValue; // Keep using the original animation value for time
+                  // Keep using monotonic frame time for uTime; do not override with animationValue
                 } else {
                   // RANDOMIZED MODE - Apply randomized mode with parameter locking
 
                   // Animate fall speed if unlocked
-                  if (!animManager.isParameterLocked(
-                    ParameterIds.rainFallSpeed,
-                  )) {
+                  if (!animMgr.isParameterLocked(ParameterIds.rainFallSpeed)) {
                     fallSpeed =
                         ShaderAnimationUtils.computeRandomizedParameterValue(
                           settings.rainSettings.fallSpeed,
                           settings.rainSettings.rainAnimOptions,
                           animationValue,
-                          isLocked: animManager.isParameterLocked(
+                          isLocked: animMgr.isParameterLocked(
                             ParameterIds.rainFallSpeed,
                           ),
                           minValue:
@@ -250,28 +249,26 @@ class RainEffectShader extends StatelessWidget {
                               settings.rainSettings.fallSpeedRange.userMax,
                           parameterId: ParameterIds.rainFallSpeed,
                         );
-                    animManager.updateAnimatedValue(
+                    animMgr.updateAnimatedValue(
                       ParameterIds.rainFallSpeed,
                       fallSpeed,
                     );
                   } else {
                     // If locked, keep the slider value
-                    animManager.updateAnimatedValue(
+                    animMgr.updateAnimatedValue(
                       ParameterIds.rainFallSpeed,
                       fallSpeed,
                     );
                   }
 
                   // Animate rain intensity if unlocked
-                  if (!animManager.isParameterLocked(
-                    ParameterIds.rainIntensity,
-                  )) {
+                  if (!animMgr.isParameterLocked(ParameterIds.rainIntensity)) {
                     rainIntensity =
                         ShaderAnimationUtils.computeRandomizedParameterValue(
                           settings.rainSettings.rainIntensity,
                           settings.rainSettings.rainAnimOptions,
                           animationValue,
-                          isLocked: animManager.isParameterLocked(
+                          isLocked: animMgr.isParameterLocked(
                             ParameterIds.rainIntensity,
                           ),
                           minValue:
@@ -280,56 +277,52 @@ class RainEffectShader extends StatelessWidget {
                               settings.rainSettings.rainIntensityRange.userMax,
                           parameterId: ParameterIds.rainIntensity,
                         );
-                    animManager.updateAnimatedValue(
+                    animMgr.updateAnimatedValue(
                       ParameterIds.rainIntensity,
                       rainIntensity,
                     );
                   } else {
                     // If locked, keep the slider value
-                    animManager.updateAnimatedValue(
+                    animMgr.updateAnimatedValue(
                       ParameterIds.rainIntensity,
                       rainIntensity,
                     );
                   }
 
                   // Animate drop size if unlocked
-                  if (!animManager.isParameterLocked(
-                    ParameterIds.rainDropSize,
-                  )) {
+                  if (!animMgr.isParameterLocked(ParameterIds.rainDropSize)) {
                     dropSize =
                         ShaderAnimationUtils.computeRandomizedParameterValue(
                           settings.rainSettings.dropSize,
                           settings.rainSettings.rainAnimOptions,
                           animationValue,
-                          isLocked: animManager.isParameterLocked(
+                          isLocked: animMgr.isParameterLocked(
                             ParameterIds.rainDropSize,
                           ),
                           minValue: settings.rainSettings.dropSizeRange.userMin,
                           maxValue: settings.rainSettings.dropSizeRange.userMax,
                           parameterId: ParameterIds.rainDropSize,
                         );
-                    animManager.updateAnimatedValue(
+                    animMgr.updateAnimatedValue(
                       ParameterIds.rainDropSize,
                       dropSize,
                     );
                   } else {
                     // If locked, keep the slider value
-                    animManager.updateAnimatedValue(
+                    animMgr.updateAnimatedValue(
                       ParameterIds.rainDropSize,
                       dropSize,
                     );
                   }
 
                   // Animate refraction if unlocked
-                  if (!animManager.isParameterLocked(
-                    ParameterIds.rainRefraction,
-                  )) {
+                  if (!animMgr.isParameterLocked(ParameterIds.rainRefraction)) {
                     refraction =
                         ShaderAnimationUtils.computeRandomizedParameterValue(
                           settings.rainSettings.refraction,
                           settings.rainSettings.rainAnimOptions,
                           animationValue,
-                          isLocked: animManager.isParameterLocked(
+                          isLocked: animMgr.isParameterLocked(
                             ParameterIds.rainRefraction,
                           ),
                           minValue:
@@ -338,20 +331,20 @@ class RainEffectShader extends StatelessWidget {
                               settings.rainSettings.refractionRange.userMax,
                           parameterId: ParameterIds.rainRefraction,
                         );
-                    animManager.updateAnimatedValue(
+                    animMgr.updateAnimatedValue(
                       ParameterIds.rainRefraction,
                       refraction,
                     );
                   } else {
                     // If locked, keep the slider value
-                    animManager.updateAnimatedValue(
+                    animMgr.updateAnimatedValue(
                       ParameterIds.rainRefraction,
                       refraction,
                     );
                   }
 
                   // Animate trail intensity if unlocked
-                  if (!animManager.isParameterLocked(
+                  if (!animMgr.isParameterLocked(
                     ParameterIds.rainTrailIntensity,
                   )) {
                     trailIntensity =
@@ -359,7 +352,7 @@ class RainEffectShader extends StatelessWidget {
                           settings.rainSettings.trailIntensity,
                           settings.rainSettings.rainAnimOptions,
                           animationValue,
-                          isLocked: animManager.isParameterLocked(
+                          isLocked: animMgr.isParameterLocked(
                             ParameterIds.rainTrailIntensity,
                           ),
                           minValue:
@@ -368,29 +361,28 @@ class RainEffectShader extends StatelessWidget {
                               settings.rainSettings.trailIntensityRange.userMax,
                           parameterId: ParameterIds.rainTrailIntensity,
                         );
-                    animManager.updateAnimatedValue(
+                    animMgr.updateAnimatedValue(
                       ParameterIds.rainTrailIntensity,
                       trailIntensity,
                     );
                   } else {
                     // If locked, keep the slider value
-                    animManager.updateAnimatedValue(
+                    animMgr.updateAnimatedValue(
                       ParameterIds.rainTrailIntensity,
                       trailIntensity,
                     );
                   }
 
-                  timeValue =
-                      animationValue; // Keep using the original animation value for time
+                  // Keep using monotonic frame time for uTime; do not override with animationValue
                 }
               } else {
                 // Clear animated values when animation is disabled
-                final animManager = AnimationStateManager();
-                animManager.clearAnimatedValue(ParameterIds.rainFallSpeed);
-                animManager.clearAnimatedValue(ParameterIds.rainIntensity);
-                animManager.clearAnimatedValue(ParameterIds.rainDropSize);
-                animManager.clearAnimatedValue(ParameterIds.rainRefraction);
-                animManager.clearAnimatedValue(ParameterIds.rainTrailIntensity);
+                final animMgr2 = AnimationStateManager();
+                animMgr2.clearAnimatedValue(ParameterIds.rainFallSpeed);
+                animMgr2.clearAnimatedValue(ParameterIds.rainIntensity);
+                animMgr2.clearAnimatedValue(ParameterIds.rainDropSize);
+                animMgr2.clearAnimatedValue(ParameterIds.rainRefraction);
+                animMgr2.clearAnimatedValue(ParameterIds.rainTrailIntensity);
               }
 
               // CRITICAL FIX: Special handling for text content
