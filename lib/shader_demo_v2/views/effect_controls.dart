@@ -23,6 +23,7 @@ import '../widgets/edge_panel.dart';
 import '../widgets/glitch_panel.dart';
 import '../widgets/vhs_panel.dart';
 import '../widgets/dither_panel.dart';
+import '../widgets/flare_panel.dart';
 import '../services/asset_service.dart';
 
 /// Effect controls for shader demo V2 - matches V1 UI exactly
@@ -269,6 +270,14 @@ class _EffectControlsV2State extends State<EffectControlsV2> {
               onTap: _selectAspect,
             ),
             GlassAspectToggle(
+              aspect: ShaderAspect.flare,
+              isEnabled: settings.flareEnabled,
+              isCurrentImageDark: isCurrentImageDark,
+              onToggled: (aspect, enabled) =>
+                  _toggleAspect(aspect, enabled, controller),
+              onTap: _selectAspect,
+            ),
+            GlassAspectToggle(
               aspect: ShaderAspect.dither,
               isEnabled: settings.ditherEnabled,
               isCurrentImageDark: isCurrentImageDark,
@@ -414,6 +423,9 @@ class _EffectControlsV2State extends State<EffectControlsV2> {
         break;
       case ShaderAspect.vhs:
         settings.vhsEnabled = enabled;
+        break;
+      case ShaderAspect.flare:
+        settings.flareEnabled = enabled;
         break;
       case ShaderAspect.dither:
         settings.ditherEnabled = enabled;
@@ -593,6 +605,13 @@ class _EffectControlsV2State extends State<EffectControlsV2> {
             ),
           if (_selectedAspect == ShaderAspect.vhs)
             VHSPanel(
+              settings: controller.settings,
+              onSettingsChanged: controller.updateSettings,
+              sliderColor: sliderColor,
+              context: context,
+            ),
+          if (_selectedAspect == ShaderAspect.flare)
+            FlarePanel(
               settings: controller.settings,
               onSettingsChanged: controller.updateSettings,
               sliderColor: sliderColor,

@@ -18,6 +18,7 @@ import 'edge_settings.dart';
 import 'glitch_settings.dart';
 import 'vhs_settings.dart';
 import 'dither_settings.dart';
+import 'flare_settings.dart';
 
 // Class to store all shader effect settings
 class ShaderSettings {
@@ -38,6 +39,7 @@ class ShaderSettings {
   GlitchSettings _glitchSettings;
   VHSSettings _vhsSettings;
   DitherSettings _ditherSettings;
+  FlareSettings _flareSettings;
 
   // Flag to control logging
   static bool enableLogging = true;
@@ -59,6 +61,7 @@ class ShaderSettings {
   GlitchSettings get glitchSettings => _glitchSettings;
   VHSSettings get vhsSettings => _vhsSettings;
   DitherSettings get ditherSettings => _ditherSettings;
+  FlareSettings get flareSettings => _flareSettings;
 
   // Convenience getters for most commonly used properties
   // These delegate to the specialized settings classes
@@ -233,6 +236,12 @@ class ShaderSettings {
     _ditherSettings.effectEnabled = value;
   }
 
+  // Flare settings
+  bool get flareEnabled => _flareSettings.effectEnabled;
+  set flareEnabled(bool value) {
+    _flareSettings.effectEnabled = value;
+  }
+
   bool get vhsAnimated => _vhsSettings.effectAnimated;
   set vhsAnimated(bool value) {
     _vhsSettings.effectAnimated = value;
@@ -298,7 +307,8 @@ class ShaderSettings {
       _edgeSettings = EdgeSettings(),
       _glitchSettings = GlitchSettings(),
       _vhsSettings = VHSSettings(),
-      _ditherSettings = DitherSettings() {
+      _ditherSettings = DitherSettings(),
+      _flareSettings = FlareSettings() {
     // No logging for the static default instance
   }
 
@@ -320,6 +330,7 @@ class ShaderSettings {
     GlitchSettings? glitchSettings,
     VHSSettings? vhsSettings,
     DitherSettings? ditherSettings,
+    FlareSettings? flareSettings,
     bool skipLogging =
         false, // Add parameter to skip logging when loading presets
   }) : _colorSettings = colorSettings ?? ColorSettings(),
@@ -337,7 +348,8 @@ class ShaderSettings {
        _edgeSettings = edgeSettings ?? EdgeSettings(),
        _glitchSettings = glitchSettings ?? GlitchSettings(),
        _vhsSettings = vhsSettings ?? VHSSettings(),
-       _ditherSettings = ditherSettings ?? DitherSettings() {}
+       _ditherSettings = ditherSettings ?? DitherSettings(),
+       _flareSettings = flareSettings ?? FlareSettings() {}
 
   // Serialization helper for persistence
   Map<String, dynamic> toMap() {
@@ -360,6 +372,7 @@ class ShaderSettings {
         'glitchSettings': _glitchSettings.toMap(),
         'vhsSettings': _vhsSettings.toMap(),
         'ditherSettings': _ditherSettings.toMap(),
+        'flareSettings': _flareSettings.toMap(),
       };
     } catch (e) {
       print('Error serializing ShaderSettings: $e');
@@ -485,6 +498,39 @@ class ShaderSettings {
       ditherSettings: map['ditherSettings'] != null
           ? DitherSettings.fromMap(
               Map<String, dynamic>.from(map['ditherSettings']),
+            )
+          : null,
+      // New effect: flare
+      // Optional in older presets
+      // If missing, default instance is used
+      // No logging when loading
+      //
+      // Note: flare is targetable (image/text), default image only
+      //
+      // Keep code concise
+      //
+      //
+      //
+      //
+      //
+      //
+      //
+      //
+      //
+      //
+      //
+      //
+      //
+      //
+      //
+      //
+      //
+      //
+      //
+      //
+      flareSettings: map['flareSettings'] != null
+          ? FlareSettings.fromMap(
+              Map<String, dynamic>.from(map['flareSettings']),
             )
           : null,
       skipLogging: true, // Skip logging when loading from map (preset loading)

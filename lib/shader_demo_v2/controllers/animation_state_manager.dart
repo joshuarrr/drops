@@ -256,5 +256,16 @@ class ParameterIds {
   static const String vhsHorizontalDistortionStrength =
       'vhs.horizontalDistortionStrength';
 
+  // Flare effect parameters
+  static const String flareDistortion = 'flare.distortion';
+  static const String flareSwirl = 'flare.swirl';
+  static const String flareGrainMixer = 'flare.grainMixer';
+  static const String flareGrainOverlay = 'flare.grainOverlay';
+  static const String flareOffsetX = 'flare.offsetX';
+  static const String flareOffsetY = 'flare.offsetY';
+  static const String flareScale = 'flare.scale';
+  static const String flareRotation = 'flare.rotation';
+  static const String flareOpacity = 'flare.opacity';
+
   // Add more effects as needed...
 }

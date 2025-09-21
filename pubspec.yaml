@@ -112,6 +112,7 @@ flutter:
     - assets/shaders/glitch.frag
     - assets/shaders/vhs.frag
     - assets/shaders/image_dither.frag
+    - assets/shaders/flare.frag
 
 
   # An image asset can refer to one or more resolution-specific "variants", see

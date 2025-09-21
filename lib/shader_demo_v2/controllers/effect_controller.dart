@@ -11,6 +11,7 @@ import 'custom_shader_widgets.dart';
 import 'shaders/edge_effect_shader.dart';
 import 'shaders/glitch_shader.dart';
 import 'shaders/vhs_shader.dart';
+import 'shaders/index.dart';
 
 /// Controls logging for effect application
 enum LogLevel { debug, info, warning, error }
@@ -337,7 +338,8 @@ class EffectController {
         !settings.edgeEnabled &&
         !settings.glitchEnabled &&
         !settings.vhsEnabled &&
-        !settings.ditherEnabled) {
+        !settings.ditherEnabled &&
+        !settings.flareEnabled) {
       return child;
     }
 
@@ -354,7 +356,8 @@ class EffectController {
         (settings.sketchSettings.sketchAnimated && settings.sketchEnabled) ||
         (settings.edgeSettings.edgeAnimated && settings.edgeEnabled) ||
         (settings.glitchSettings.effectAnimated && settings.glitchEnabled) ||
-        (settings.vhsSettings.effectAnimated && settings.vhsEnabled);
+        (settings.vhsSettings.effectAnimated && settings.vhsEnabled) ||
+        (settings.flareSettings.effectAnimated && settings.flareEnabled);
 
     // If not animated, check cache for existing widget
     if (!isAnimated) {
@@ -562,6 +565,19 @@ class EffectController {
             child: result,
             settings: settings,
             animationValue: animationValues['vhs'] ?? 0.0,
+            preserveTransparency: preserveTransparency,
+            isTextContent: isTextContent,
+          );
+        }
+
+        // Apply flare effect if enabled and targeted
+        if (settings.flareEnabled &&
+            ((isTextContent && settings.flareSettings.applyToText) ||
+                (!isTextContent && settings.flareSettings.applyToImage))) {
+          result = _applyFlareEffect(
+            child: result,
+            settings: settings,
+            animationValue: animationValues['flare'] ?? 0.0,
             preserveTransparency: preserveTransparency,
             isTextContent: isTextContent,
           );
@@ -873,6 +889,26 @@ class EffectController {
       settings: settings,
       animationValue: animationValue,
       child: child,
+      preserveTransparency: preserveTransparency,
+      isTextContent: isTextContent,
+    );
+  }
+
+  static Widget _applyFlareEffect({
+    required Widget child,
+    required ShaderSettings settings,
+    required double animationValue,
+    bool preserveTransparency = false,
+    bool isTextContent = false,
+  }) {
+    if (!settings.flareSettings.shouldApplyEffect) {
+      return child;
+    }
+
+    return applyFlareEffect(
+      child: child,
+      settings: settings,
+      animationValue: animationValue,
       preserveTransparency: preserveTransparency,
       isTextContent: isTextContent,
     );

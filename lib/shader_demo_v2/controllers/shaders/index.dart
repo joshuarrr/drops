@@ -27,3 +27,4 @@ export 'edge_effect_shader.dart' show applyEdgeEffect;
 export 'glitch_shader.dart' show applyGlitchEffect;
 export 'vhs_shader.dart' show applyVHSEffect;
 export 'image_dither_shader.dart' show applyDitherEffect;
+export 'flare_shader.dart' show applyFlareEffect;

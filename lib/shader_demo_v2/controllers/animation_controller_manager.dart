@@ -17,6 +17,7 @@ class AnimationControllerManager extends ChangeNotifier {
   late AnimationController _edgeController;
   late AnimationController _glitchController;
   late AnimationController _vhsController;
+  late AnimationController _flareController;
 
   // Track which controllers are currently active
   final Set<String> _activeControllers = <String>{};
@@ -81,6 +82,10 @@ class AnimationControllerManager extends ChangeNotifier {
       duration: const Duration(seconds: 5),
       vsync: _tickerProvider,
     );
+    _flareController = AnimationController(
+      duration: const Duration(seconds: 5),
+      vsync: _tickerProvider,
+    );
 
     // Add listeners to track animation values
     _blurController.addListener(
@@ -115,6 +120,9 @@ class AnimationControllerManager extends ChangeNotifier {
     );
     _vhsController.addListener(
       () => _updateAnimationValue('vhs', _vhsController.value),
+    );
+    _flareController.addListener(
+      () => _updateAnimationValue('flare', _flareController.value),
     );
 
     _isInitialized = true;
@@ -174,6 +182,8 @@ class AnimationControllerManager extends ChangeNotifier {
         return _glitchController;
       case 'vhs':
         return _vhsController;
+      case 'flare':
+        return _flareController;
       default:
         throw ArgumentError('Unknown effect type: $effectType');
     }
@@ -319,6 +329,17 @@ class AnimationControllerManager extends ChangeNotifier {
       _startController('vhs');
     } else {
       _stopController('vhs');
+    }
+
+    // Update Flare animation
+    if (settings.flareEnabled && settings.flareSettings.effectAnimated) {
+      _updateControllerDuration(
+        'flare',
+        settings.flareSettings.animOptions.speed,
+      );
+      _startController('flare');
+    } else {
+      _stopController('flare');
     }
   }
 
