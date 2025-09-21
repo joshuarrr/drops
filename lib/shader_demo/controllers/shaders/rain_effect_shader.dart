@@ -162,7 +162,11 @@ class RainEffectShader extends StatelessWidget {
                 2,
                 rainIntensity.clamp(0.0, 1.0),
               ); // Rain intensity
-              shader.setFloat(3, dropSize.clamp(0.0, 1.0)); // Drop size
+              // Invert drop size so UI slider direction matches visual effect
+              shader.setFloat(
+                3,
+                (1.0 - dropSize).clamp(0.0, 1.0),
+              ); // Drop size (inverted)
               shader.setFloat(4, fallSpeed.clamp(0.0, 2.0)); // Fall speed
               shader.setFloat(
                 5,

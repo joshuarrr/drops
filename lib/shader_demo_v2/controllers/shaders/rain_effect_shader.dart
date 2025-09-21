@@ -110,7 +110,11 @@ class RainEffectShader extends StatelessWidget {
                       settings.rainSettings.rainAnimOptions,
                       animationValue,
                     );
-                    fallSpeed = settings.rainSettings.fallSpeed * pulse;
+                    fallSpeed = ui.lerpDouble(
+                      settings.rainSettings.fallSpeedRange.userMin,
+                      settings.rainSettings.fallSpeedRange.userMax,
+                      pulse,
+                    )!;
                     animManager.updateAnimatedValue(
                       ParameterIds.rainFallSpeed,
                       fallSpeed,
@@ -131,7 +135,11 @@ class RainEffectShader extends StatelessWidget {
                       settings.rainSettings.rainAnimOptions,
                       animationValue,
                     );
-                    rainIntensity = settings.rainSettings.rainIntensity * pulse;
+                    rainIntensity = ui.lerpDouble(
+                      settings.rainSettings.rainIntensityRange.userMin,
+                      settings.rainSettings.rainIntensityRange.userMax,
+                      pulse,
+                    )!;
                     animManager.updateAnimatedValue(
                       ParameterIds.rainIntensity,
                       rainIntensity,
@@ -152,7 +160,11 @@ class RainEffectShader extends StatelessWidget {
                       settings.rainSettings.rainAnimOptions,
                       animationValue,
                     );
-                    dropSize = settings.rainSettings.dropSize * pulse;
+                    dropSize = ui.lerpDouble(
+                      settings.rainSettings.dropSizeRange.userMin,
+                      settings.rainSettings.dropSizeRange.userMax,
+                      pulse,
+                    )!;
                     animManager.updateAnimatedValue(
                       ParameterIds.rainDropSize,
                       dropSize,
@@ -173,7 +185,11 @@ class RainEffectShader extends StatelessWidget {
                       settings.rainSettings.rainAnimOptions,
                       animationValue,
                     );
-                    refraction = settings.rainSettings.refraction * pulse;
+                    refraction = ui.lerpDouble(
+                      settings.rainSettings.refractionRange.userMin,
+                      settings.rainSettings.refractionRange.userMax,
+                      pulse,
+                    )!;
                     animManager.updateAnimatedValue(
                       ParameterIds.rainRefraction,
                       refraction,
@@ -194,8 +210,11 @@ class RainEffectShader extends StatelessWidget {
                       settings.rainSettings.rainAnimOptions,
                       animationValue,
                     );
-                    trailIntensity =
-                        settings.rainSettings.trailIntensity * pulse;
+                    trailIntensity = ui.lerpDouble(
+                      settings.rainSettings.trailIntensityRange.userMin,
+                      settings.rainSettings.trailIntensityRange.userMax,
+                      pulse,
+                    )!;
                     animManager.updateAnimatedValue(
                       ParameterIds.rainTrailIntensity,
                       trailIntensity,
@@ -225,8 +244,10 @@ class RainEffectShader extends StatelessWidget {
                           isLocked: animManager.isParameterLocked(
                             ParameterIds.rainFallSpeed,
                           ),
-                          minValue: 0.0,
-                          maxValue: 2.0,
+                          minValue:
+                              settings.rainSettings.fallSpeedRange.userMin,
+                          maxValue:
+                              settings.rainSettings.fallSpeedRange.userMax,
                           parameterId: ParameterIds.rainFallSpeed,
                         );
                     animManager.updateAnimatedValue(
@@ -253,8 +274,10 @@ class RainEffectShader extends StatelessWidget {
                           isLocked: animManager.isParameterLocked(
                             ParameterIds.rainIntensity,
                           ),
-                          minValue: 0.0,
-                          maxValue: 1.0,
+                          minValue:
+                              settings.rainSettings.rainIntensityRange.userMin,
+                          maxValue:
+                              settings.rainSettings.rainIntensityRange.userMax,
                           parameterId: ParameterIds.rainIntensity,
                         );
                     animManager.updateAnimatedValue(
@@ -281,8 +304,8 @@ class RainEffectShader extends StatelessWidget {
                           isLocked: animManager.isParameterLocked(
                             ParameterIds.rainDropSize,
                           ),
-                          minValue: 0.0,
-                          maxValue: 1.0,
+                          minValue: settings.rainSettings.dropSizeRange.userMin,
+                          maxValue: settings.rainSettings.dropSizeRange.userMax,
                           parameterId: ParameterIds.rainDropSize,
                         );
                     animManager.updateAnimatedValue(
@@ -309,8 +332,10 @@ class RainEffectShader extends StatelessWidget {
                           isLocked: animManager.isParameterLocked(
                             ParameterIds.rainRefraction,
                           ),
-                          minValue: 0.0,
-                          maxValue: 1.0,
+                          minValue:
+                              settings.rainSettings.refractionRange.userMin,
+                          maxValue:
+                              settings.rainSettings.refractionRange.userMax,
                           parameterId: ParameterIds.rainRefraction,
                         );
                     animManager.updateAnimatedValue(
@@ -337,8 +362,10 @@ class RainEffectShader extends StatelessWidget {
                           isLocked: animManager.isParameterLocked(
                             ParameterIds.rainTrailIntensity,
                           ),
-                          minValue: 0.0,
-                          maxValue: 1.0,
+                          minValue:
+                              settings.rainSettings.trailIntensityRange.userMin,
+                          maxValue:
+                              settings.rainSettings.trailIntensityRange.userMax,
                           parameterId: ParameterIds.rainTrailIntensity,
                         );
                     animManager.updateAnimatedValue(
@@ -404,7 +431,11 @@ class RainEffectShader extends StatelessWidget {
                 2,
                 rainIntensity.clamp(0.0, 1.0),
               ); // Rain intensity
-              shader.setFloat(3, dropSize.clamp(0.0, 1.0)); // Drop size
+              // Invert drop size so UI slider direction matches visual effect
+              shader.setFloat(
+                3,
+                (1.0 - dropSize).clamp(0.0, 1.0),
+              ); // Drop size (inverted)
               shader.setFloat(4, fallSpeed.clamp(0.0, 2.0)); // Fall speed
               shader.setFloat(
                 5,

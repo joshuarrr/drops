@@ -6,7 +6,7 @@ Affected control panels:
 [x] shatter (blur)
 [x] chroma
 [x] waves (noise)
-[-] rain (currently not even using lockable slider)
+[x] rain
 [x] ripple
 [x] sketch
 [x] edge

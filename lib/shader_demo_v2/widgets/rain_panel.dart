@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import '../models/shader_effect.dart';
 import '../models/effect_settings.dart';
 import '../models/animation_options.dart';
+import '../models/parameter_range.dart';
 import '../models/presets_manager.dart';
 import '../services/preset_refresh_service.dart';
-import 'value_slider.dart';
+import '../controllers/animation_state_manager.dart';
+import 'range_lockable_slider.dart';
 import 'animation_controls.dart';
 import 'enhanced_panel_header.dart';
 import '../views/effect_controls.dart';
@@ -49,55 +51,90 @@ class RainPanel extends StatelessWidget {
             onSettingsChanged(settings);
           },
         ),
-        ValueSlider(
+        RangeLockableSlider(
           label: 'Rain Intensity',
-          value: settings.rainSettings.rainIntensity,
-          onChanged: (value) => _onSliderChanged(
-            value,
-            (v) => settings.rainSettings.rainIntensity = v,
-          ),
-          sliderColor: sliderColor,
-          defaultValue: 0.5,
+          range: settings.rainSettings.rainIntensityRange,
+          min: 0.0,
+          max: 1.0,
+          divisions: 100,
+          activeColor: sliderColor,
+          formatValue: (v) => '${(v * 100).round()}%',
+          defaults: ShaderSettings.defaults.rainSettings.rainIntensityRange,
+          parameterId: ParameterIds.rainIntensity,
+          animationEnabled: settings.rainSettings.rainAnimated,
+          onRangeChanged: (range) {
+            settings.rainSettings.setRainIntensityRange(range);
+            if (!settings.rainEnabled) settings.rainEnabled = true;
+            onSettingsChanged(settings);
+          },
         ),
-        ValueSlider(
+        RangeLockableSlider(
           label: 'Drop Size',
-          value: settings.rainSettings.dropSize,
-          onChanged: (value) => _onSliderChanged(
-            value,
-            (v) => settings.rainSettings.dropSize = v,
-          ),
-          sliderColor: sliderColor,
-          defaultValue: 0.5,
+          range: settings.rainSettings.dropSizeRange,
+          min: 0.0,
+          max: 1.0,
+          divisions: 100,
+          activeColor: sliderColor,
+          formatValue: (v) => '${(v * 100).round()}%',
+          defaults: ShaderSettings.defaults.rainSettings.dropSizeRange,
+          parameterId: ParameterIds.rainDropSize,
+          animationEnabled: settings.rainSettings.rainAnimated,
+          onRangeChanged: (range) {
+            settings.rainSettings.setDropSizeRange(range);
+            if (!settings.rainEnabled) settings.rainEnabled = true;
+            onSettingsChanged(settings);
+          },
         ),
-        ValueSlider(
+        RangeLockableSlider(
           label: 'Fall Speed',
-          value: settings.rainSettings.fallSpeed,
-          onChanged: (value) => _onSliderChanged(
-            value,
-            (v) => settings.rainSettings.fallSpeed = v,
-          ),
-          sliderColor: sliderColor,
-          defaultValue: 0.5,
+          range: settings.rainSettings.fallSpeedRange,
+          min: 0.0,
+          max: 1.0,
+          divisions: 100,
+          activeColor: sliderColor,
+          formatValue: (v) => '${(v * 100).round()}%',
+          defaults: ShaderSettings.defaults.rainSettings.fallSpeedRange,
+          parameterId: ParameterIds.rainFallSpeed,
+          animationEnabled: settings.rainSettings.rainAnimated,
+          onRangeChanged: (range) {
+            settings.rainSettings.setFallSpeedRange(range);
+            if (!settings.rainEnabled) settings.rainEnabled = true;
+            onSettingsChanged(settings);
+          },
         ),
-        ValueSlider(
+        RangeLockableSlider(
           label: 'Refraction',
-          value: settings.rainSettings.refraction,
-          onChanged: (value) => _onSliderChanged(
-            value,
-            (v) => settings.rainSettings.refraction = v,
-          ),
-          sliderColor: sliderColor,
-          defaultValue: 0.5,
+          range: settings.rainSettings.refractionRange,
+          min: 0.0,
+          max: 1.0,
+          divisions: 100,
+          activeColor: sliderColor,
+          formatValue: (v) => '${(v * 100).round()}%',
+          defaults: ShaderSettings.defaults.rainSettings.refractionRange,
+          parameterId: ParameterIds.rainRefraction,
+          animationEnabled: settings.rainSettings.rainAnimated,
+          onRangeChanged: (range) {
+            settings.rainSettings.setRefractionRange(range);
+            if (!settings.rainEnabled) settings.rainEnabled = true;
+            onSettingsChanged(settings);
+          },
         ),
-        ValueSlider(
+        RangeLockableSlider(
           label: 'Trail Intensity',
-          value: settings.rainSettings.trailIntensity,
-          onChanged: (value) => _onSliderChanged(
-            value,
-            (v) => settings.rainSettings.trailIntensity = v,
-          ),
-          sliderColor: sliderColor,
-          defaultValue: 0.3,
+          range: settings.rainSettings.trailIntensityRange,
+          min: 0.0,
+          max: 1.0,
+          divisions: 100,
+          activeColor: sliderColor,
+          formatValue: (v) => '${(v * 100).round()}%',
+          defaults: ShaderSettings.defaults.rainSettings.trailIntensityRange,
+          parameterId: ParameterIds.rainTrailIntensity,
+          animationEnabled: settings.rainSettings.rainAnimated,
+          onRangeChanged: (range) {
+            settings.rainSettings.setTrailIntensityRange(range);
+            if (!settings.rainEnabled) settings.rainEnabled = true;
+            onSettingsChanged(settings);
+          },
         ),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -149,24 +186,29 @@ class RainPanel extends StatelessWidget {
     );
   }
 
-  void _onSliderChanged(double value, Function(double) setter) {
-    // Enable the corresponding effect if it's not already enabled
-    if (!settings.rainEnabled) settings.rainEnabled = true;
-
-    // Update the setting value
-    setter(value);
-    // Notify the parent widget
-    onSettingsChanged(settings);
-  }
-
   void _resetRain() {
     final defaults = ShaderSettings.defaults;
     settings.rainEnabled = false;
-    settings.rainSettings.rainIntensity = defaults.rainSettings.rainIntensity;
-    settings.rainSettings.dropSize = defaults.rainSettings.dropSize;
-    settings.rainSettings.fallSpeed = defaults.rainSettings.fallSpeed;
-    settings.rainSettings.refraction = defaults.rainSettings.refraction;
-    settings.rainSettings.trailIntensity = defaults.rainSettings.trailIntensity;
+    settings.rainSettings.rainIntensityRange.resetToDefaults(
+      defaultMin: 0.0,
+      defaultMax: 0.5,
+    );
+    settings.rainSettings.dropSizeRange.resetToDefaults(
+      defaultMin: 0.0,
+      defaultMax: 0.5,
+    );
+    settings.rainSettings.fallSpeedRange.resetToDefaults(
+      defaultMin: 0.0,
+      defaultMax: 0.5,
+    );
+    settings.rainSettings.refractionRange.resetToDefaults(
+      defaultMin: 0.0,
+      defaultMax: 0.5,
+    );
+    settings.rainSettings.trailIntensityRange.resetToDefaults(
+      defaultMin: 0.0,
+      defaultMax: 0.3,
+    );
     settings.rainSettings.rainAnimated = defaults.rainSettings.rainAnimated;
     settings.rainSettings.rainAnimOptions = AnimationOptions();
 
@@ -175,16 +217,39 @@ class RainPanel extends StatelessWidget {
 
   void _applyPreset(Map<String, dynamic> presetData) {
     settings.rainEnabled = presetData['rainEnabled'] ?? settings.rainEnabled;
-    settings.rainSettings.rainIntensity =
-        presetData['rainIntensity'] ?? settings.rainSettings.rainIntensity;
-    settings.rainSettings.dropSize =
-        presetData['dropSize'] ?? settings.rainSettings.dropSize;
-    settings.rainSettings.fallSpeed =
-        presetData['fallSpeed'] ?? settings.rainSettings.fallSpeed;
-    settings.rainSettings.refraction =
-        presetData['refraction'] ?? settings.rainSettings.refraction;
-    settings.rainSettings.trailIntensity =
-        presetData['trailIntensity'] ?? settings.rainSettings.trailIntensity;
+
+    // Apply range data if available, otherwise fall back to legacy values
+    _applyRangeFromPreset(
+      settings.rainSettings.rainIntensityRange,
+      presetData,
+      'rainIntensity',
+      0.5,
+    );
+    _applyRangeFromPreset(
+      settings.rainSettings.dropSizeRange,
+      presetData,
+      'dropSize',
+      0.5,
+    );
+    _applyRangeFromPreset(
+      settings.rainSettings.fallSpeedRange,
+      presetData,
+      'fallSpeed',
+      0.5,
+    );
+    _applyRangeFromPreset(
+      settings.rainSettings.refractionRange,
+      presetData,
+      'refraction',
+      0.5,
+    );
+    _applyRangeFromPreset(
+      settings.rainSettings.trailIntensityRange,
+      presetData,
+      'trailIntensity',
+      0.3,
+    );
+
     settings.rainSettings.rainAnimated =
         presetData['rainAnimated'] ?? settings.rainSettings.rainAnimated;
 
@@ -197,14 +262,52 @@ class RainPanel extends StatelessWidget {
     onSettingsChanged(settings);
   }
 
+  void _applyRangeFromPreset(
+    ParameterRange range,
+    Map<String, dynamic> presetData,
+    String key,
+    double fallback,
+  ) {
+    final value = presetData[key] ?? fallback;
+    final min = presetData['${key}Min'] ?? 0.0;
+    final max = presetData['${key}Max'] ?? value;
+    final current = presetData['${key}Current'] ?? value;
+
+    range
+      ..setUserMin(min)
+      ..setUserMax(max)
+      ..setCurrent(current, syncUserMax: false);
+  }
+
   Future<void> _savePresetForAspect(ShaderAspect aspect, String name) async {
     Map<String, dynamic> presetData = {
       'rainEnabled': settings.rainEnabled,
       'rainIntensity': settings.rainSettings.rainIntensity,
+      'rainIntensityMin': settings.rainSettings.rainIntensityRange.userMin,
+      'rainIntensityMax': settings.rainSettings.rainIntensityRange.userMax,
+      'rainIntensityCurrent': settings.rainSettings.rainIntensityRange.current,
+      'rainIntensityRange': settings.rainSettings.rainIntensityRange.toMap(),
       'dropSize': settings.rainSettings.dropSize,
+      'dropSizeMin': settings.rainSettings.dropSizeRange.userMin,
+      'dropSizeMax': settings.rainSettings.dropSizeRange.userMax,
+      'dropSizeCurrent': settings.rainSettings.dropSizeRange.current,
+      'dropSizeRange': settings.rainSettings.dropSizeRange.toMap(),
       'fallSpeed': settings.rainSettings.fallSpeed,
+      'fallSpeedMin': settings.rainSettings.fallSpeedRange.userMin,
+      'fallSpeedMax': settings.rainSettings.fallSpeedRange.userMax,
+      'fallSpeedCurrent': settings.rainSettings.fallSpeedRange.current,
+      'fallSpeedRange': settings.rainSettings.fallSpeedRange.toMap(),
       'refraction': settings.rainSettings.refraction,
+      'refractionMin': settings.rainSettings.refractionRange.userMin,
+      'refractionMax': settings.rainSettings.refractionRange.userMax,
+      'refractionCurrent': settings.rainSettings.refractionRange.current,
+      'refractionRange': settings.rainSettings.refractionRange.toMap(),
       'trailIntensity': settings.rainSettings.trailIntensity,
+      'trailIntensityMin': settings.rainSettings.trailIntensityRange.userMin,
+      'trailIntensityMax': settings.rainSettings.trailIntensityRange.userMax,
+      'trailIntensityCurrent':
+          settings.rainSettings.trailIntensityRange.current,
+      'trailIntensityRange': settings.rainSettings.trailIntensityRange.toMap(),
       'rainAnimated': settings.rainSettings.rainAnimated,
       'rainAnimOptions': settings.rainSettings.rainAnimOptions.toMap(),
     };
