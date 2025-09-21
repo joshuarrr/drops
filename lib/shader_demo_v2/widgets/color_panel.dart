@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'dart:developer' as developer;
 import '../models/shader_effect.dart';
 import '../models/effect_settings.dart';
+import '../models/color_settings.dart';
 import '../models/animation_options.dart';
 import '../models/presets_manager.dart';
 import '../services/preset_refresh_service.dart';
 import '../controllers/effect_controller.dart';
 import '../controllers/animation_state_manager.dart';
-import 'lockable_slider.dart';
+import '../models/parameter_range.dart';
+import 'range_lockable_slider.dart';
 import 'animation_controls.dart';
 import 'enhanced_panel_header.dart';
 
@@ -61,6 +63,9 @@ class _ColorPanelState extends State<ColorPanel> {
     // Only log builds at debug level
     _log('Building ColorPanel', level: LogLevel.debug);
 
+    final colorSettings = widget.settings.colorSettings;
+    final colorDefaults = ShaderSettings.defaults.colorSettings;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -98,63 +103,7 @@ class _ColorPanelState extends State<ColorPanel> {
           }),
         ),
         if (_showColorControls) ...[
-          LockableSlider(
-            label: 'Hue',
-            value: widget.settings.colorSettings.hue,
-            min: -1.0,
-            max: 1.0,
-            divisions: 200,
-            displayValue:
-                '${(widget.settings.colorSettings.hue * 100).round()}%',
-            onChanged: (value) => _onSliderChanged(
-              value,
-              (v) => widget.settings.colorSettings.hue = v,
-              isOverlay: false,
-              propertyName: 'Hue',
-            ),
-            activeColor: widget.sliderColor,
-            parameterId: ParameterIds.colorHue,
-            animationEnabled: widget.settings.colorSettings.colorAnimated,
-            defaultValue: 0.0,
-          ),
-          LockableSlider(
-            label: 'Saturation',
-            value: widget.settings.colorSettings.saturation,
-            min: -1.0,
-            max: 1.0,
-            divisions: 200,
-            displayValue:
-                '${(widget.settings.colorSettings.saturation * 100).round()}%',
-            onChanged: (value) => _onSliderChanged(
-              value,
-              (v) => widget.settings.colorSettings.saturation = v,
-              isOverlay: false,
-              propertyName: 'Saturation',
-            ),
-            activeColor: widget.sliderColor,
-            parameterId: ParameterIds.colorSaturation,
-            animationEnabled: widget.settings.colorSettings.colorAnimated,
-            defaultValue: 0.0,
-          ),
-          LockableSlider(
-            label: 'Lightness',
-            value: widget.settings.colorSettings.lightness,
-            min: -1.0,
-            max: 1.0,
-            divisions: 200,
-            displayValue:
-                '${(widget.settings.colorSettings.lightness * 100).round()}%',
-            onChanged: (value) => _onSliderChanged(
-              value,
-              (v) => widget.settings.colorSettings.lightness = v,
-              isOverlay: false,
-              propertyName: 'Lightness',
-            ),
-            activeColor: widget.sliderColor,
-            parameterId: ParameterIds.colorLightness,
-            animationEnabled: widget.settings.colorSettings.colorAnimated,
-            defaultValue: 0.0,
-          ),
+          ..._buildColorRangeSliders(colorSettings, colorDefaults),
           // Toggle animation for HSL adjustments
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -240,63 +189,7 @@ class _ColorPanelState extends State<ColorPanel> {
           }),
         ),
         if (_showOverlayControls) ...[
-          LockableSlider(
-            label: 'Overlay Hue',
-            value: widget.settings.colorSettings.overlayHue,
-            min: -1.0,
-            max: 1.0,
-            divisions: 200,
-            displayValue:
-                '${(widget.settings.colorSettings.overlayHue * 100).round()}%',
-            onChanged: (value) => _onSliderChanged(
-              value,
-              (v) => widget.settings.colorSettings.overlayHue = v,
-              isOverlay: true,
-              propertyName: 'Overlay Hue',
-            ),
-            activeColor: widget.sliderColor,
-            parameterId: ParameterIds.overlayHue,
-            animationEnabled: widget.settings.colorSettings.overlayAnimated,
-            defaultValue: 0.0,
-          ),
-          LockableSlider(
-            label: 'Overlay Intensity',
-            value: widget.settings.colorSettings.overlayIntensity,
-            min: -1.0,
-            max: 1.0,
-            divisions: 200,
-            displayValue:
-                '${(widget.settings.colorSettings.overlayIntensity * 100).round()}%',
-            onChanged: (value) => _onSliderChanged(
-              value,
-              (v) => widget.settings.colorSettings.overlayIntensity = v,
-              isOverlay: true,
-              propertyName: 'Overlay Intensity',
-            ),
-            activeColor: widget.sliderColor,
-            parameterId: ParameterIds.overlayIntensity,
-            animationEnabled: widget.settings.colorSettings.overlayAnimated,
-            defaultValue: 0.0,
-          ),
-          LockableSlider(
-            label: 'Overlay Opacity',
-            value: widget.settings.colorSettings.overlayOpacity,
-            min: -1.0,
-            max: 1.0,
-            divisions: 200,
-            displayValue:
-                '${(widget.settings.colorSettings.overlayOpacity * 100).round()}%',
-            onChanged: (value) => _onSliderChanged(
-              value,
-              (v) => widget.settings.colorSettings.overlayOpacity = v,
-              isOverlay: true,
-              propertyName: 'Overlay Opacity',
-            ),
-            activeColor: widget.sliderColor,
-            parameterId: ParameterIds.overlayOpacity,
-            animationEnabled: widget.settings.colorSettings.overlayAnimated,
-            defaultValue: 0.0,
-          ),
+          ..._buildOverlayRangeSliders(colorSettings, colorDefaults),
           // Toggle animation for overlay
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -407,6 +300,131 @@ class _ColorPanelState extends State<ColorPanel> {
   // Cache previous slider values to avoid redundant logs
   final Map<String, double> _lastSliderValues = {};
 
+  List<Widget> _buildColorRangeSliders(
+    ColorSettings colorSettings,
+    ColorSettings colorDefaults,
+  ) {
+    String formatPercent(double value) => '${(value * 100).round()}%';
+
+    return [
+      RangeLockableSlider(
+        label: 'Hue',
+        range: colorSettings.hueRange,
+        min: -1.0,
+        max: 1.0,
+        divisions: 200,
+        activeColor: widget.sliderColor,
+        formatValue: formatPercent,
+        defaults: colorDefaults.hueRange,
+        parameterId: ParameterIds.colorHue,
+        animationEnabled: colorSettings.colorAnimated,
+        onRangeChanged: (range) => _onRangeChanged(
+          range,
+          (settings, updated) => settings.setHueRange(updated),
+          propertyName: 'Hue',
+        ),
+      ),
+      RangeLockableSlider(
+        label: 'Saturation',
+        range: colorSettings.saturationRange,
+        min: -1.0,
+        max: 1.0,
+        divisions: 200,
+        activeColor: widget.sliderColor,
+        formatValue: formatPercent,
+        defaults: colorDefaults.saturationRange,
+        parameterId: ParameterIds.colorSaturation,
+        animationEnabled: colorSettings.colorAnimated,
+        onRangeChanged: (range) => _onRangeChanged(
+          range,
+          (settings, updated) => settings.setSaturationRange(updated),
+          propertyName: 'Saturation',
+        ),
+      ),
+      RangeLockableSlider(
+        label: 'Lightness',
+        range: colorSettings.lightnessRange,
+        min: -1.0,
+        max: 1.0,
+        divisions: 200,
+        activeColor: widget.sliderColor,
+        formatValue: formatPercent,
+        defaults: colorDefaults.lightnessRange,
+        parameterId: ParameterIds.colorLightness,
+        animationEnabled: colorSettings.colorAnimated,
+        onRangeChanged: (range) => _onRangeChanged(
+          range,
+          (settings, updated) => settings.setLightnessRange(updated),
+          propertyName: 'Lightness',
+        ),
+      ),
+    ];
+  }
+
+  List<Widget> _buildOverlayRangeSliders(
+    ColorSettings colorSettings,
+    ColorSettings colorDefaults,
+  ) {
+    String formatPercent(double value) => '${(value * 100).round()}%';
+
+    return [
+      RangeLockableSlider(
+        label: 'Overlay Hue',
+        range: colorSettings.overlayHueRange,
+        min: -1.0,
+        max: 1.0,
+        divisions: 200,
+        activeColor: widget.sliderColor,
+        formatValue: formatPercent,
+        defaults: colorDefaults.overlayHueRange,
+        parameterId: ParameterIds.overlayHue,
+        animationEnabled: colorSettings.overlayAnimated,
+        onRangeChanged: (range) => _onRangeChanged(
+          range,
+          (settings, updated) => settings.setOverlayHueRange(updated),
+          propertyName: 'Overlay Hue',
+          isOverlay: true,
+        ),
+      ),
+      RangeLockableSlider(
+        label: 'Overlay Intensity',
+        range: colorSettings.overlayIntensityRange,
+        min: -1.0,
+        max: 1.0,
+        divisions: 200,
+        activeColor: widget.sliderColor,
+        formatValue: formatPercent,
+        defaults: colorDefaults.overlayIntensityRange,
+        parameterId: ParameterIds.overlayIntensity,
+        animationEnabled: colorSettings.overlayAnimated,
+        onRangeChanged: (range) => _onRangeChanged(
+          range,
+          (settings, updated) => settings.setOverlayIntensityRange(updated),
+          propertyName: 'Overlay Intensity',
+          isOverlay: true,
+        ),
+      ),
+      RangeLockableSlider(
+        label: 'Overlay Opacity',
+        range: colorSettings.overlayOpacityRange,
+        min: -1.0,
+        max: 1.0,
+        divisions: 200,
+        activeColor: widget.sliderColor,
+        formatValue: formatPercent,
+        defaults: colorDefaults.overlayOpacityRange,
+        parameterId: ParameterIds.overlayOpacity,
+        animationEnabled: colorSettings.overlayAnimated,
+        onRangeChanged: (range) => _onRangeChanged(
+          range,
+          (settings, updated) => settings.setOverlayOpacityRange(updated),
+          propertyName: 'Overlay Opacity',
+          isOverlay: true,
+        ),
+      ),
+    ];
+  }
+
   void _onSliderChanged(
     double value,
     Function(double) setter, {
@@ -466,19 +484,129 @@ class _ColorPanelState extends State<ColorPanel> {
     widget.onSettingsChanged(widget.settings);
   }
 
+  void _onRangeChanged(
+    ParameterRange range,
+    void Function(ColorSettings, ParameterRange) setter, {
+    required String propertyName,
+    bool isOverlay = false,
+  }) {
+    if (!widget.settings.colorEnabled) widget.settings.colorEnabled = true;
+
+    setter(widget.settings.colorSettings, range);
+
+    final double valueForLog = range.userMax;
+    final bool shouldLog =
+        !_lastSliderValues.containsKey(propertyName) ||
+        (_lastSliderValues[propertyName]! - valueForLog).abs() > 0.05;
+
+    if (shouldLog) {
+      _log(
+        '$propertyName range -> ${range.userMin.toStringAsFixed(2)} to ${range.userMax.toStringAsFixed(2)}',
+        level: LogLevel.debug,
+      );
+      _lastSliderValues[propertyName] = valueForLog;
+    }
+
+    final overlayIntensity =
+        widget.settings.colorSettings.overlayIntensityRange.userMax;
+    final overlayOpacity =
+        widget.settings.colorSettings.overlayOpacityRange.userMax;
+
+    if (isOverlay) {
+      if (overlayIntensity <= 0.0 || overlayOpacity <= 0.0) {
+        _log(
+          'Overlay effects might not be visible (Intensity: ${overlayIntensity.toStringAsFixed(2)}, Opacity: ${overlayOpacity.toStringAsFixed(2)})',
+          level: LogLevel.debug,
+        );
+      }
+    } else if (overlayIntensity > 0.0 && overlayOpacity > 0.0) {
+      _log(
+        'Color adjustment with active overlay (Intensity: ${overlayIntensity.toStringAsFixed(2)}, Opacity: ${overlayOpacity.toStringAsFixed(2)})',
+        level: LogLevel.debug,
+      );
+    }
+
+    widget.onSettingsChanged(widget.settings);
+  }
+
+  ParameterRange _rangeFromPreset(
+    Map<String, dynamic> presetData, {
+    required String rangeKey,
+    required String valueKey,
+    required String minKey,
+    required String maxKey,
+    required String currentKey,
+  }) {
+    const double hardMin = -1.0;
+    const double hardMax = 1.0;
+
+    final double fallback = _readDouble(
+      presetData[valueKey],
+      0.0,
+    ).clamp(hardMin, hardMax)
+        .toDouble();
+
+    final dynamic payload = presetData[rangeKey];
+    if (payload is Map<String, dynamic>) {
+      return ParameterRange.fromMap(
+        Map<String, dynamic>.from(payload),
+        hardMin: hardMin,
+        hardMax: hardMax,
+        fallbackValue: fallback,
+      );
+    }
+
+    final double userMin = _readDouble(
+      presetData[minKey],
+      0.0,
+    ).clamp(hardMin, hardMax)
+        .toDouble();
+    final double userMax = _readDouble(
+      presetData[maxKey],
+      fallback,
+    ).clamp(hardMin, hardMax)
+        .toDouble();
+    final double current = _readDouble(
+      presetData[currentKey],
+      fallback,
+    ).clamp(hardMin, hardMax)
+        .toDouble();
+
+    return ParameterRange(
+      hardMin: hardMin,
+      hardMax: hardMax,
+      initialValue: current,
+      userMin: userMin,
+      userMax: userMax,
+    );
+  }
+
+  double _readDouble(dynamic value, double fallback) {
+    if (value is num) return value.toDouble();
+    return fallback;
+  }
+
   void _resetColor() {
     final defaults = ShaderSettings.defaults;
     widget.settings.colorEnabled = false;
-    widget.settings.colorSettings.hue = defaults.colorSettings.hue;
-    widget.settings.colorSettings.saturation =
-        defaults.colorSettings.saturation;
-    widget.settings.colorSettings.lightness = defaults.colorSettings.lightness;
-    widget.settings.colorSettings.overlayHue =
-        defaults.colorSettings.overlayHue;
-    widget.settings.colorSettings.overlayIntensity =
-        defaults.colorSettings.overlayIntensity;
-    widget.settings.colorSettings.overlayOpacity =
-        defaults.colorSettings.overlayOpacity;
+    widget.settings.colorSettings.setHueRange(
+      defaults.colorSettings.hueRange,
+    );
+    widget.settings.colorSettings.setSaturationRange(
+      defaults.colorSettings.saturationRange,
+    );
+    widget.settings.colorSettings.setLightnessRange(
+      defaults.colorSettings.lightnessRange,
+    );
+    widget.settings.colorSettings.setOverlayHueRange(
+      defaults.colorSettings.overlayHueRange,
+    );
+    widget.settings.colorSettings.setOverlayIntensityRange(
+      defaults.colorSettings.overlayIntensityRange,
+    );
+    widget.settings.colorSettings.setOverlayOpacityRange(
+      defaults.colorSettings.overlayOpacityRange,
+    );
     widget.settings.colorSettings.colorAnimated = false;
     widget.settings.colorSettings.overlayAnimated = false;
     widget.settings.colorSettings.colorAnimOptions = AnimationOptions();
@@ -493,20 +621,66 @@ class _ColorPanelState extends State<ColorPanel> {
 
     widget.settings.colorEnabled =
         presetData['colorEnabled'] ?? widget.settings.colorEnabled;
-    widget.settings.colorSettings.hue =
-        presetData['hue'] ?? widget.settings.colorSettings.hue;
-    widget.settings.colorSettings.saturation =
-        presetData['saturation'] ?? widget.settings.colorSettings.saturation;
-    widget.settings.colorSettings.lightness =
-        presetData['lightness'] ?? widget.settings.colorSettings.lightness;
-    widget.settings.colorSettings.overlayHue =
-        presetData['overlayHue'] ?? widget.settings.colorSettings.overlayHue;
-    widget.settings.colorSettings.overlayIntensity =
-        presetData['overlayIntensity'] ??
-        widget.settings.colorSettings.overlayIntensity;
-    widget.settings.colorSettings.overlayOpacity =
-        presetData['overlayOpacity'] ??
-        widget.settings.colorSettings.overlayOpacity;
+    widget.settings.colorSettings.setHueRange(
+      _rangeFromPreset(
+        presetData,
+        rangeKey: 'hueRange',
+        valueKey: 'hue',
+        minKey: 'hueMin',
+        maxKey: 'hueMax',
+        currentKey: 'hueCurrent',
+      ),
+    );
+    widget.settings.colorSettings.setSaturationRange(
+      _rangeFromPreset(
+        presetData,
+        rangeKey: 'saturationRange',
+        valueKey: 'saturation',
+        minKey: 'saturationMin',
+        maxKey: 'saturationMax',
+        currentKey: 'saturationCurrent',
+      ),
+    );
+    widget.settings.colorSettings.setLightnessRange(
+      _rangeFromPreset(
+        presetData,
+        rangeKey: 'lightnessRange',
+        valueKey: 'lightness',
+        minKey: 'lightnessMin',
+        maxKey: 'lightnessMax',
+        currentKey: 'lightnessCurrent',
+      ),
+    );
+    widget.settings.colorSettings.setOverlayHueRange(
+      _rangeFromPreset(
+        presetData,
+        rangeKey: 'overlayHueRange',
+        valueKey: 'overlayHue',
+        minKey: 'overlayHueMin',
+        maxKey: 'overlayHueMax',
+        currentKey: 'overlayHueCurrent',
+      ),
+    );
+    widget.settings.colorSettings.setOverlayIntensityRange(
+      _rangeFromPreset(
+        presetData,
+        rangeKey: 'overlayIntensityRange',
+        valueKey: 'overlayIntensity',
+        minKey: 'overlayIntensityMin',
+        maxKey: 'overlayIntensityMax',
+        currentKey: 'overlayIntensityCurrent',
+      ),
+    );
+    widget.settings.colorSettings.setOverlayOpacityRange(
+      _rangeFromPreset(
+        presetData,
+        rangeKey: 'overlayOpacityRange',
+        valueKey: 'overlayOpacity',
+        minKey: 'overlayOpacityMin',
+        maxKey: 'overlayOpacityMax',
+        currentKey: 'overlayOpacityCurrent',
+      ),
+    );
     widget.settings.colorSettings.colorAnimated =
         presetData['colorAnimated'] ??
         widget.settings.colorSettings.colorAnimated;
@@ -534,14 +708,47 @@ class _ColorPanelState extends State<ColorPanel> {
   Future<void> _savePresetForAspect(ShaderAspect aspect, String name) async {
     _log('Saving color preset: $name');
 
+    final hueRange = widget.settings.colorSettings.hueRange;
+    final saturationRange = widget.settings.colorSettings.saturationRange;
+    final lightnessRange = widget.settings.colorSettings.lightnessRange;
+    final overlayHueRange = widget.settings.colorSettings.overlayHueRange;
+    final overlayIntensityRange =
+        widget.settings.colorSettings.overlayIntensityRange;
+    final overlayOpacityRange =
+        widget.settings.colorSettings.overlayOpacityRange;
+
     Map<String, dynamic> presetData = {
       'colorEnabled': widget.settings.colorEnabled,
-      'hue': widget.settings.colorSettings.hue,
-      'saturation': widget.settings.colorSettings.saturation,
-      'lightness': widget.settings.colorSettings.lightness,
-      'overlayHue': widget.settings.colorSettings.overlayHue,
-      'overlayIntensity': widget.settings.colorSettings.overlayIntensity,
-      'overlayOpacity': widget.settings.colorSettings.overlayOpacity,
+      'hue': hueRange.userMax,
+      'hueMin': hueRange.userMin,
+      'hueMax': hueRange.userMax,
+      'hueCurrent': hueRange.current,
+      'hueRange': hueRange.toMap(),
+      'saturation': saturationRange.userMax,
+      'saturationMin': saturationRange.userMin,
+      'saturationMax': saturationRange.userMax,
+      'saturationCurrent': saturationRange.current,
+      'saturationRange': saturationRange.toMap(),
+      'lightness': lightnessRange.userMax,
+      'lightnessMin': lightnessRange.userMin,
+      'lightnessMax': lightnessRange.userMax,
+      'lightnessCurrent': lightnessRange.current,
+      'lightnessRange': lightnessRange.toMap(),
+      'overlayHue': overlayHueRange.userMax,
+      'overlayHueMin': overlayHueRange.userMin,
+      'overlayHueMax': overlayHueRange.userMax,
+      'overlayHueCurrent': overlayHueRange.current,
+      'overlayHueRange': overlayHueRange.toMap(),
+      'overlayIntensity': overlayIntensityRange.userMax,
+      'overlayIntensityMin': overlayIntensityRange.userMin,
+      'overlayIntensityMax': overlayIntensityRange.userMax,
+      'overlayIntensityCurrent': overlayIntensityRange.current,
+      'overlayIntensityRange': overlayIntensityRange.toMap(),
+      'overlayOpacity': overlayOpacityRange.userMax,
+      'overlayOpacityMin': overlayOpacityRange.userMin,
+      'overlayOpacityMax': overlayOpacityRange.userMax,
+      'overlayOpacityCurrent': overlayOpacityRange.current,
+      'overlayOpacityRange': overlayOpacityRange.toMap(),
       'colorAnimated': widget.settings.colorSettings.colorAnimated,
       'overlayAnimated': widget.settings.colorSettings.overlayAnimated,
       'colorAnimOptions': widget.settings.colorSettings.colorAnimOptions

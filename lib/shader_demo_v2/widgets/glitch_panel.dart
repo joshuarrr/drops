@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import '../models/shader_effect.dart';
 import '../models/effect_settings.dart';
 import '../models/animation_options.dart';
+import '../models/parameter_range.dart';
 import '../controllers/animation_state_manager.dart';
 import '../services/preset_refresh_service.dart';
-import 'lockable_slider.dart';
+import 'range_lockable_slider.dart';
 import 'animation_controls.dart';
 import 'enhanced_panel_header.dart';
 
@@ -74,109 +75,140 @@ class _GlitchPanelState extends State<GlitchPanel> {
               const SizedBox(height: 8),
 
               // Opacity slider
-              LockableSlider(
+              RangeLockableSlider(
                 label: 'Effect Opacity',
-                value: widget.settings.glitchSettings.opacity,
+                range: widget.settings.glitchSettings.opacityRange,
                 min: 0.0,
                 max: 1.0,
                 divisions: 100,
-                displayValue:
-                    '${(widget.settings.glitchSettings.opacity * 100).round()}%',
-                onChanged: (value) => _onOpacityChanged(value),
                 activeColor: widget.sliderColor,
+                formatValue: (v) => '${(v * 100).round()}%',
+                defaults: ShaderSettings.defaults.glitchSettings.opacityRange,
                 parameterId: ParameterIds.glitchOpacity,
                 animationEnabled: widget.settings.glitchSettings.effectAnimated,
-                defaultValue: 0.5,
+                onRangeChanged: (range) {
+                  final updatedSettings = widget.settings;
+                  updatedSettings.glitchSettings.setOpacityRange(range);
+                  widget.onSettingsChanged(updatedSettings);
+                },
               ),
 
               const SizedBox(height: 16),
 
               // Intensity slider
-              LockableSlider(
+              RangeLockableSlider(
                 label: 'Intensity',
-                value: widget.settings.glitchSettings.intensity,
+                range: widget.settings.glitchSettings.intensityRange,
                 min: 0.0,
                 max: 1.0,
                 divisions: 100,
-                displayValue:
-                    '${(widget.settings.glitchSettings.intensity * 100).round()}%',
-                onChanged: (value) => _onIntensityChanged(value),
                 activeColor: widget.sliderColor,
+                formatValue: (v) => '${(v * 100).round()}%',
+                defaults: ShaderSettings.defaults.glitchSettings.intensityRange,
                 parameterId: ParameterIds.glitchIntensity,
                 animationEnabled: widget.settings.glitchSettings.effectAnimated,
-                defaultValue: 0.3,
+                onRangeChanged: (range) {
+                  final updatedSettings = widget.settings;
+                  updatedSettings.glitchSettings.setIntensityRange(range);
+                  widget.onSettingsChanged(updatedSettings);
+                },
               ),
 
               const SizedBox(height: 16),
 
               // Frequency slider
-              LockableSlider(
+              RangeLockableSlider(
                 label: 'Frequency',
-                value: widget.settings.glitchSettings.frequency,
+                range: widget.settings.glitchSettings.frequencyRange,
                 min: 0.0,
-                max: 3.0,
-                divisions: 100,
-                displayValue:
-                    '${widget.settings.glitchSettings.frequency.toStringAsFixed(1)}x',
-                onChanged: (value) => _onFrequencyChanged(value),
+                max: 2.0,
+                divisions: 20,
                 activeColor: widget.sliderColor,
+                formatValue: (v) => '${v.toStringAsFixed(1)}x',
+                defaults: ShaderSettings.defaults.glitchSettings.frequencyRange,
                 parameterId: ParameterIds.glitchSpeed,
                 animationEnabled: widget.settings.glitchSettings.effectAnimated,
-                defaultValue: 1.0,
+                onRangeChanged: (range) {
+                  final updatedSettings = widget.settings;
+                  updatedSettings.glitchSettings.setFrequencyRange(range);
+                  widget.onSettingsChanged(updatedSettings);
+                },
               ),
 
               const SizedBox(height: 16),
 
               // Block Size slider
-              LockableSlider(
+              RangeLockableSlider(
                 label: 'Block Size',
-                value: widget.settings.glitchSettings.blockSize,
-                min: 0.0,
+                range: widget.settings.glitchSettings.blockSizeRange,
+                min: 0.01,
                 max: 0.5,
-                divisions: 100,
-                displayValue:
-                    '${(widget.settings.glitchSettings.blockSize * 100).round()}%',
-                onChanged: (value) => _onBlockSizeChanged(value),
+                divisions: 49,
                 activeColor: widget.sliderColor,
+                formatValue: (v) => '${(v * 100).round()}%',
+                defaults: ShaderSettings.defaults.glitchSettings.blockSizeRange,
                 parameterId: ParameterIds.glitchBlockSize,
                 animationEnabled: widget.settings.glitchSettings.effectAnimated,
-                defaultValue: 0.1,
+                onRangeChanged: (range) {
+                  final updatedSettings = widget.settings;
+                  updatedSettings.glitchSettings.setBlockSizeRange(range);
+                  widget.onSettingsChanged(updatedSettings);
+                },
               ),
 
               const SizedBox(height: 16),
 
               // Horizontal Slice Intensity slider
-              LockableSlider(
+              RangeLockableSlider(
                 label: 'Horizontal Slicing',
-                value: widget.settings.glitchSettings.horizontalSliceIntensity,
+                range: widget
+                    .settings
+                    .glitchSettings
+                    .horizontalSliceIntensityRange,
                 min: 0.0,
                 max: 1.0,
                 divisions: 100,
-                displayValue:
-                    '${(widget.settings.glitchSettings.horizontalSliceIntensity * 100).round()}%',
-                onChanged: (value) => _onHorizontalSliceIntensityChanged(value),
                 activeColor: widget.sliderColor,
+                formatValue: (v) => '${(v * 100).round()}%',
+                defaults: ShaderSettings
+                    .defaults
+                    .glitchSettings
+                    .horizontalSliceIntensityRange,
                 parameterId: ParameterIds.glitchHorizontalSliceIntensity,
                 animationEnabled: widget.settings.glitchSettings.effectAnimated,
-                defaultValue: 0.0,
+                onRangeChanged: (range) {
+                  final updatedSettings = widget.settings;
+                  updatedSettings.glitchSettings
+                      .setHorizontalSliceIntensityRange(range);
+                  widget.onSettingsChanged(updatedSettings);
+                },
               ),
 
               const SizedBox(height: 16),
 
               // Vertical Slice Intensity slider
-              LockableSlider(
+              RangeLockableSlider(
                 label: 'Vertical Slicing',
-                value: widget.settings.glitchSettings.verticalSliceIntensity,
+                range:
+                    widget.settings.glitchSettings.verticalSliceIntensityRange,
                 min: 0.0,
                 max: 1.0,
                 divisions: 100,
-                displayValue:
-                    '${(widget.settings.glitchSettings.verticalSliceIntensity * 100).round()}%',
-                onChanged: (value) => _onVerticalSliceIntensityChanged(value),
                 activeColor: widget.sliderColor,
+                formatValue: (v) => '${(v * 100).round()}%',
+                defaults: ShaderSettings
+                    .defaults
+                    .glitchSettings
+                    .verticalSliceIntensityRange,
                 parameterId: ParameterIds.glitchVerticalSliceIntensity,
                 animationEnabled: widget.settings.glitchSettings.effectAnimated,
-                defaultValue: 0.0,
+                onRangeChanged: (range) {
+                  final updatedSettings = widget.settings;
+                  updatedSettings.glitchSettings.setVerticalSliceIntensityRange(
+                    range,
+                  );
+                  widget.onSettingsChanged(updatedSettings);
+                },
               ),
 
               const SizedBox(height: 16),
@@ -209,43 +241,6 @@ class _GlitchPanelState extends State<GlitchPanel> {
         ),
       ],
     );
-  }
-
-  // Handle slider changes
-  void _onOpacityChanged(double value) {
-    final updatedSettings = widget.settings;
-    updatedSettings.glitchSettings.opacity = value;
-    widget.onSettingsChanged(updatedSettings);
-  }
-
-  void _onIntensityChanged(double value) {
-    final updatedSettings = widget.settings;
-    updatedSettings.glitchSettings.intensity = value;
-    widget.onSettingsChanged(updatedSettings);
-  }
-
-  void _onFrequencyChanged(double value) {
-    final updatedSettings = widget.settings;
-    updatedSettings.glitchSettings.frequency = value;
-    widget.onSettingsChanged(updatedSettings);
-  }
-
-  void _onBlockSizeChanged(double value) {
-    final updatedSettings = widget.settings;
-    updatedSettings.glitchSettings.blockSize = value;
-    widget.onSettingsChanged(updatedSettings);
-  }
-
-  void _onHorizontalSliceIntensityChanged(double value) {
-    final updatedSettings = widget.settings;
-    updatedSettings.glitchSettings.horizontalSliceIntensity = value;
-    widget.onSettingsChanged(updatedSettings);
-  }
-
-  void _onVerticalSliceIntensityChanged(double value) {
-    final updatedSettings = widget.settings;
-    updatedSettings.glitchSettings.verticalSliceIntensity = value;
-    widget.onSettingsChanged(updatedSettings);
   }
 
   // Handle animation speed changes
@@ -302,14 +297,84 @@ class _GlitchPanelState extends State<GlitchPanel> {
 
     // Apply preset values
     updatedSettings.glitchEnabled = presetData['effectEnabled'] ?? true;
-    updatedSettings.glitchSettings.opacity = presetData['opacity'] ?? 0.5;
-    updatedSettings.glitchSettings.intensity = presetData['intensity'] ?? 0.3;
-    updatedSettings.glitchSettings.frequency = presetData['frequency'] ?? 1.0;
-    updatedSettings.glitchSettings.blockSize = presetData['blockSize'] ?? 0.1;
-    updatedSettings.glitchSettings.horizontalSliceIntensity =
-        presetData['horizontalSliceIntensity'] ?? 0.0;
-    updatedSettings.glitchSettings.verticalSliceIntensity =
-        presetData['verticalSliceIntensity'] ?? 0.0;
+    updatedSettings.glitchSettings.setOpacityRange(
+      _rangeFromPreset(
+        presetData,
+        rangeKey: 'opacityRange',
+        valueKey: 'opacity',
+        minKey: 'opacityMin',
+        maxKey: 'opacityMax',
+        currentKey: 'opacityCurrent',
+        hardMin: 0.0,
+        hardMax: 1.0,
+        fallbackValue: updatedSettings.glitchSettings.opacity,
+      ),
+    );
+    updatedSettings.glitchSettings.setIntensityRange(
+      _rangeFromPreset(
+        presetData,
+        rangeKey: 'intensityRange',
+        valueKey: 'intensity',
+        minKey: 'intensityMin',
+        maxKey: 'intensityMax',
+        currentKey: 'intensityCurrent',
+        hardMin: 0.0,
+        hardMax: 1.0,
+        fallbackValue: updatedSettings.glitchSettings.intensity,
+      ),
+    );
+    updatedSettings.glitchSettings.setFrequencyRange(
+      _rangeFromPreset(
+        presetData,
+        rangeKey: 'frequencyRange',
+        valueKey: 'frequency',
+        minKey: 'frequencyMin',
+        maxKey: 'frequencyMax',
+        currentKey: 'frequencyCurrent',
+        hardMin: 0.0,
+        hardMax: 2.0,
+        fallbackValue: updatedSettings.glitchSettings.frequency,
+      ),
+    );
+    updatedSettings.glitchSettings.setBlockSizeRange(
+      _rangeFromPreset(
+        presetData,
+        rangeKey: 'blockSizeRange',
+        valueKey: 'blockSize',
+        minKey: 'blockSizeMin',
+        maxKey: 'blockSizeMax',
+        currentKey: 'blockSizeCurrent',
+        hardMin: 0.01,
+        hardMax: 0.5,
+        fallbackValue: updatedSettings.glitchSettings.blockSize,
+      ),
+    );
+    updatedSettings.glitchSettings.setHorizontalSliceIntensityRange(
+      _rangeFromPreset(
+        presetData,
+        rangeKey: 'horizontalSliceIntensityRange',
+        valueKey: 'horizontalSliceIntensity',
+        minKey: 'horizontalSliceIntensityMin',
+        maxKey: 'horizontalSliceIntensityMax',
+        currentKey: 'horizontalSliceIntensityCurrent',
+        hardMin: 0.0,
+        hardMax: 1.0,
+        fallbackValue: updatedSettings.glitchSettings.horizontalSliceIntensity,
+      ),
+    );
+    updatedSettings.glitchSettings.setVerticalSliceIntensityRange(
+      _rangeFromPreset(
+        presetData,
+        rangeKey: 'verticalSliceIntensityRange',
+        valueKey: 'verticalSliceIntensity',
+        minKey: 'verticalSliceIntensityMin',
+        maxKey: 'verticalSliceIntensityMax',
+        currentKey: 'verticalSliceIntensityCurrent',
+        hardMin: 0.0,
+        hardMax: 1.0,
+        fallbackValue: updatedSettings.glitchSettings.verticalSliceIntensity,
+      ),
+    );
     updatedSettings.glitchSettings.effectAnimated =
         presetData['effectAnimated'] ?? false;
     updatedSettings.glitchSettings.animationSpeed =
@@ -356,6 +421,7 @@ class _GlitchPanelState extends State<GlitchPanel> {
 
     // Create preset data
     final presetData = {
+      // Existing scalar values for backward compatibility
       'effectEnabled': true,
       'opacity': widget.settings.glitchSettings.opacity,
       'intensity': widget.settings.glitchSettings.intensity,
@@ -365,6 +431,45 @@ class _GlitchPanelState extends State<GlitchPanel> {
           widget.settings.glitchSettings.horizontalSliceIntensity,
       'verticalSliceIntensity':
           widget.settings.glitchSettings.verticalSliceIntensity,
+      // New range values
+      'opacityMin': widget.settings.glitchSettings.opacityRange.userMin,
+      'opacityMax': widget.settings.glitchSettings.opacityRange.userMax,
+      'opacityCurrent': widget.settings.glitchSettings.opacityRange.current,
+      'opacityRange': widget.settings.glitchSettings.opacityRange.toMap(),
+      'intensityMin': widget.settings.glitchSettings.intensityRange.userMin,
+      'intensityMax': widget.settings.glitchSettings.intensityRange.userMax,
+      'intensityCurrent': widget.settings.glitchSettings.intensityRange.current,
+      'intensityRange': widget.settings.glitchSettings.intensityRange.toMap(),
+      'frequencyMin': widget.settings.glitchSettings.frequencyRange.userMin,
+      'frequencyMax': widget.settings.glitchSettings.frequencyRange.userMax,
+      'frequencyCurrent': widget.settings.glitchSettings.frequencyRange.current,
+      'frequencyRange': widget.settings.glitchSettings.frequencyRange.toMap(),
+      'blockSizeMin': widget.settings.glitchSettings.blockSizeRange.userMin,
+      'blockSizeMax': widget.settings.glitchSettings.blockSizeRange.userMax,
+      'blockSizeCurrent': widget.settings.glitchSettings.blockSizeRange.current,
+      'blockSizeRange': widget.settings.glitchSettings.blockSizeRange.toMap(),
+      'horizontalSliceIntensityMin':
+          widget.settings.glitchSettings.horizontalSliceIntensityRange.userMin,
+      'horizontalSliceIntensityMax':
+          widget.settings.glitchSettings.horizontalSliceIntensityRange.userMax,
+      'horizontalSliceIntensityCurrent':
+          widget.settings.glitchSettings.horizontalSliceIntensityRange.current,
+      'horizontalSliceIntensityRange': widget
+          .settings
+          .glitchSettings
+          .horizontalSliceIntensityRange
+          .toMap(),
+      'verticalSliceIntensityMin':
+          widget.settings.glitchSettings.verticalSliceIntensityRange.userMin,
+      'verticalSliceIntensityMax':
+          widget.settings.glitchSettings.verticalSliceIntensityRange.userMax,
+      'verticalSliceIntensityCurrent':
+          widget.settings.glitchSettings.verticalSliceIntensityRange.current,
+      'verticalSliceIntensityRange': widget
+          .settings
+          .glitchSettings
+          .verticalSliceIntensityRange
+          .toMap(),
       'effectAnimated': widget.settings.glitchSettings.effectAnimated,
       'animationSpeed': widget.settings.glitchSettings.animationSpeed,
       'animOptions': widget.settings.glitchSettings.effectAnimOptions.toMap(),
@@ -389,5 +494,58 @@ class _GlitchPanelState extends State<GlitchPanel> {
     setState(() {
       _refreshCounter++;
     });
+  }
+
+  ParameterRange _rangeFromPreset(
+    Map<String, dynamic> presetData, {
+    required String rangeKey,
+    required String valueKey,
+    required String minKey,
+    required String maxKey,
+    required String currentKey,
+    required double hardMin,
+    required double hardMax,
+    required double fallbackValue,
+  }) {
+    final double fallback = _readDouble(
+      presetData[valueKey],
+      fallbackValue,
+    ).clamp(hardMin, hardMax).toDouble();
+
+    final dynamic payload = presetData[rangeKey];
+    if (payload is Map<String, dynamic>) {
+      return ParameterRange.fromMap(
+        Map<String, dynamic>.from(payload),
+        hardMin: hardMin,
+        hardMax: hardMax,
+        fallbackValue: fallback,
+      );
+    }
+
+    final double userMin = _readDouble(
+      presetData[minKey],
+      hardMin,
+    ).clamp(hardMin, hardMax).toDouble();
+    final double userMax = _readDouble(
+      presetData[maxKey],
+      fallback,
+    ).clamp(hardMin, hardMax).toDouble();
+    final double current = _readDouble(
+      presetData[currentKey],
+      fallback,
+    ).clamp(hardMin, hardMax).toDouble();
+
+    return ParameterRange(
+      hardMin: hardMin,
+      hardMax: hardMax,
+      initialValue: current,
+      userMin: userMin,
+      userMax: userMax,
+    );
+  }
+
+  double _readDouble(dynamic value, double fallback) {
+    if (value is num) return value.toDouble();
+    return fallback;
   }
 }

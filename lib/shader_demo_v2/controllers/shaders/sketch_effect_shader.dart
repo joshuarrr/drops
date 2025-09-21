@@ -192,7 +192,11 @@ class SketchEffectShader extends StatelessWidget {
         animOptions,
         animationValue,
       );
-      final double animatedValue = settings.sketchSettings.opacity * pulse;
+      final double animatedValue =
+          settings.sketchSettings.opacityRange.userMin +
+          (settings.sketchSettings.opacityRange.userMax -
+                  settings.sketchSettings.opacityRange.userMin) *
+              pulse;
       animManager.updateAnimatedValue(
         ParameterIds.sketchOpacity,
         animatedValue,
@@ -210,7 +214,11 @@ class SketchEffectShader extends StatelessWidget {
         animOptions,
         animationValue,
       );
-      final double animatedValue = settings.sketchSettings.imageOpacity * pulse;
+      final double animatedValue =
+          settings.sketchSettings.imageOpacityRange.userMin +
+          (settings.sketchSettings.imageOpacityRange.userMax -
+                  settings.sketchSettings.imageOpacityRange.userMin) *
+              pulse;
       animManager.updateAnimatedValue(
         ParameterIds.sketchImageOpacity,
         animatedValue,
@@ -229,7 +237,10 @@ class SketchEffectShader extends StatelessWidget {
         animationValue,
       );
       final double animatedValue =
-          settings.sketchSettings.lumThreshold1 * pulse;
+          settings.sketchSettings.lumThreshold1Range.userMin +
+          (settings.sketchSettings.lumThreshold1Range.userMax -
+                  settings.sketchSettings.lumThreshold1Range.userMin) *
+              pulse;
       animManager.updateAnimatedValue(
         ParameterIds.sketchLumThreshold1,
         animatedValue,
@@ -248,7 +259,10 @@ class SketchEffectShader extends StatelessWidget {
         animationValue,
       );
       final double animatedValue =
-          settings.sketchSettings.lumThreshold2 * pulse;
+          settings.sketchSettings.lumThreshold2Range.userMin +
+          (settings.sketchSettings.lumThreshold2Range.userMax -
+                  settings.sketchSettings.lumThreshold2Range.userMin) *
+              pulse;
       animManager.updateAnimatedValue(
         ParameterIds.sketchLumThreshold2,
         animatedValue,
@@ -267,7 +281,10 @@ class SketchEffectShader extends StatelessWidget {
         animationValue,
       );
       final double animatedValue =
-          settings.sketchSettings.lumThreshold3 * pulse;
+          settings.sketchSettings.lumThreshold3Range.userMin +
+          (settings.sketchSettings.lumThreshold3Range.userMax -
+                  settings.sketchSettings.lumThreshold3Range.userMin) *
+              pulse;
       animManager.updateAnimatedValue(
         ParameterIds.sketchLumThreshold3,
         animatedValue,
@@ -286,7 +303,10 @@ class SketchEffectShader extends StatelessWidget {
         animationValue,
       );
       final double animatedValue =
-          settings.sketchSettings.lumThreshold4 * pulse;
+          settings.sketchSettings.lumThreshold4Range.userMin +
+          (settings.sketchSettings.lumThreshold4Range.userMax -
+                  settings.sketchSettings.lumThreshold4Range.userMin) *
+              pulse;
       animManager.updateAnimatedValue(
         ParameterIds.sketchLumThreshold4,
         animatedValue,
@@ -304,7 +324,11 @@ class SketchEffectShader extends StatelessWidget {
         animOptions,
         animationValue,
       );
-      final double animatedValue = settings.sketchSettings.lineSpacing * pulse;
+      final double animatedValue =
+          settings.sketchSettings.lineSpacingRange.userMin +
+          (settings.sketchSettings.lineSpacingRange.userMax -
+                  settings.sketchSettings.lineSpacingRange.userMin) *
+              pulse;
       animManager.updateAnimatedValue(
         ParameterIds.sketchLineSpacing,
         animatedValue,
@@ -323,7 +347,10 @@ class SketchEffectShader extends StatelessWidget {
         animationValue,
       );
       final double animatedValue =
-          settings.sketchSettings.lineThickness * pulse;
+          settings.sketchSettings.lineThicknessRange.userMin +
+          (settings.sketchSettings.lineThicknessRange.userMax -
+                  settings.sketchSettings.lineThicknessRange.userMin) *
+              pulse;
       animManager.updateAnimatedValue(
         ParameterIds.sketchLineThickness,
         animatedValue,
@@ -342,7 +369,11 @@ class SketchEffectShader extends StatelessWidget {
         animOptions,
         animationValue,
       );
-      final double animatedValue = settings.sketchSettings.hatchYOffset * pulse;
+      final double animatedValue =
+          settings.sketchSettings.hatchYOffsetRange.userMin +
+          (settings.sketchSettings.hatchYOffsetRange.userMax -
+                  settings.sketchSettings.hatchYOffsetRange.userMin) *
+              pulse;
       animManager.updateAnimatedValue(
         ParameterIds.sketchHatchYOffset,
         animatedValue,

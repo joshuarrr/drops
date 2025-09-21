@@ -126,7 +126,11 @@ class RippleEffectShader extends StatelessWidget {
                   settings.rippleSettings.rippleAnimOptions,
                   animationValue,
                 );
-                speed = settings.rippleSettings.rippleSpeed * pulse;
+                speed =
+                    settings.rippleSettings.rippleSpeedRange.userMin +
+                    (settings.rippleSettings.rippleSpeedRange.userMax -
+                            settings.rippleSettings.rippleSpeedRange.userMin) *
+                        pulse;
                 animManager.updateAnimatedValue(
                   ParameterIds.rippleSpeed,
                   speed,
@@ -145,7 +149,14 @@ class RippleEffectShader extends StatelessWidget {
                   settings.rippleSettings.rippleAnimOptions,
                   animationValue,
                 );
-                opacity = settings.rippleSettings.rippleOpacity * pulse;
+                opacity =
+                    settings.rippleSettings.rippleOpacityRange.userMin +
+                    (settings.rippleSettings.rippleOpacityRange.userMax -
+                            settings
+                                .rippleSettings
+                                .rippleOpacityRange
+                                .userMin) *
+                        pulse;
                 animManager.updateAnimatedValue(
                   ParameterIds.rippleOpacity,
                   opacity,
@@ -164,7 +175,11 @@ class RippleEffectShader extends StatelessWidget {
                   settings.rippleSettings.rippleAnimOptions,
                   animationValue,
                 );
-                colorFactor = settings.rippleSettings.rippleColor * pulse;
+                colorFactor =
+                    settings.rippleSettings.rippleColorRange.userMin +
+                    (settings.rippleSettings.rippleColorRange.userMax -
+                            settings.rippleSettings.rippleColorRange.userMin) *
+                        pulse;
                 animManager.updateAnimatedValue(
                   ParameterIds.rippleColor,
                   colorFactor,
@@ -192,14 +207,14 @@ class RippleEffectShader extends StatelessWidget {
               )) {
                 intensity =
                     ShaderAnimationUtils.computeRandomizedParameterValue(
-                      settings.rippleSettings.rippleIntensity,
+                      settings.rippleSettings.rippleIntensityRange.userMax,
                       settings.rippleSettings.rippleAnimOptions,
                       animationValue,
-                      isLocked: animManager.isParameterLocked(
-                        ParameterIds.rippleIntensity,
-                      ),
-                      minValue: 0.0,
-                      maxValue: 1.0,
+                      isLocked: false,
+                      minValue:
+                          settings.rippleSettings.rippleIntensityRange.userMin,
+                      maxValue:
+                          settings.rippleSettings.rippleIntensityRange.userMax,
                       parameterId: ParameterIds.rippleIntensity,
                     );
                 animManager.updateAnimatedValue(
@@ -217,14 +232,12 @@ class RippleEffectShader extends StatelessWidget {
               // Animate speed if unlocked
               if (!animManager.isParameterLocked(ParameterIds.rippleSpeed)) {
                 speed = ShaderAnimationUtils.computeRandomizedParameterValue(
-                  settings.rippleSettings.rippleSpeed,
+                  settings.rippleSettings.rippleSpeedRange.userMax,
                   settings.rippleSettings.rippleAnimOptions,
                   animationValue,
-                  isLocked: animManager.isParameterLocked(
-                    ParameterIds.rippleSpeed,
-                  ),
-                  minValue: 0.0,
-                  maxValue: 5.0,
+                  isLocked: false,
+                  minValue: settings.rippleSettings.rippleSpeedRange.userMin,
+                  maxValue: settings.rippleSettings.rippleSpeedRange.userMax,
                   parameterId: ParameterIds.rippleSpeed,
                 );
                 animManager.updateAnimatedValue(
@@ -242,14 +255,12 @@ class RippleEffectShader extends StatelessWidget {
               // Animate opacity if unlocked
               if (!animManager.isParameterLocked(ParameterIds.rippleOpacity)) {
                 opacity = ShaderAnimationUtils.computeRandomizedParameterValue(
-                  settings.rippleSettings.rippleOpacity,
+                  settings.rippleSettings.rippleOpacityRange.userMax,
                   settings.rippleSettings.rippleAnimOptions,
                   animationValue,
-                  isLocked: animManager.isParameterLocked(
-                    ParameterIds.rippleOpacity,
-                  ),
-                  minValue: 0.0,
-                  maxValue: 1.0,
+                  isLocked: false,
+                  minValue: settings.rippleSettings.rippleOpacityRange.userMin,
+                  maxValue: settings.rippleSettings.rippleOpacityRange.userMax,
                   parameterId: ParameterIds.rippleOpacity,
                 );
                 animManager.updateAnimatedValue(
@@ -268,14 +279,14 @@ class RippleEffectShader extends StatelessWidget {
               if (!animManager.isParameterLocked(ParameterIds.rippleColor)) {
                 colorFactor =
                     ShaderAnimationUtils.computeRandomizedParameterValue(
-                      settings.rippleSettings.rippleColor,
+                      settings.rippleSettings.rippleColorRange.userMax,
                       settings.rippleSettings.rippleAnimOptions,
                       animationValue,
-                      isLocked: animManager.isParameterLocked(
-                        ParameterIds.rippleColor,
-                      ),
-                      minValue: 0.0,
-                      maxValue: 1.0,
+                      isLocked: false,
+                      minValue:
+                          settings.rippleSettings.rippleColorRange.userMin,
+                      maxValue:
+                          settings.rippleSettings.rippleColorRange.userMax,
                       parameterId: ParameterIds.rippleColor,
                     );
                 animManager.updateAnimatedValue(
@@ -295,26 +306,23 @@ class RippleEffectShader extends StatelessWidget {
               if (!animManager.isParameterLocked(ParameterIds.rippleSize)) {
                 double rawSize =
                     ShaderAnimationUtils.computeRandomizedParameterValue(
-                      settings.rippleSettings.rippleSize,
+                      settings.rippleSettings.rippleSizeRange.userMax,
                       settings.rippleSettings.rippleAnimOptions,
                       animationValue,
-                      isLocked: animManager.isParameterLocked(
-                        ParameterIds.rippleSize,
-                      ),
-                      minValue: 0.0,
-                      maxValue: 1.0,
+                      isLocked: false,
+                      minValue: settings.rippleSettings.rippleSizeRange.userMin,
+                      maxValue: settings.rippleSettings.rippleSizeRange.userMax,
                       parameterId: ParameterIds.rippleSize,
                     );
                 rippleSize = 1.0 - rawSize; // Invert for shader
                 animManager.updateAnimatedValue(
                   ParameterIds.rippleSize,
-                  settings.rippleSettings.rippleSize,
-                ); // Store original value
+                  settings.rippleSettings.rippleSizeRange.userMax,
+                );
               } else {
-                // If locked, keep the slider value
                 animManager.updateAnimatedValue(
                   ParameterIds.rippleSize,
-                  settings.rippleSettings.rippleSize,
+                  settings.rippleSettings.rippleSizeRange.userMax,
                 );
               }
 

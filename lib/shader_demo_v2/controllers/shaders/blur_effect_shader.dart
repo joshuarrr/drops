@@ -134,7 +134,8 @@ class BlurEffectShader extends StatelessWidget {
                 shader.setImageSampler(0, image);
 
                 // Compute animated amount using proper animation utilities
-                double amount = settings.blurSettings.blurAmount;
+                final amountRange = settings.blurSettings.blurAmountRange;
+                double amount = amountRange.userMax;
                 if (settings.blurSettings.blurAnimated) {
                   // Get animation state manager
                   final animManager = AnimationStateManager();
@@ -147,62 +148,55 @@ class BlurEffectShader extends StatelessWidget {
                   // Animation logging disabled
 
                   if (isAmountLocked) {
-                    // If locked, keep the slider value (no animation)
-                    // Just update the animation manager for UI consistency
+                    // Locked parameters stay at the user-defined maximum
                     animManager.updateAnimatedValue(
                       ParameterIds.blurAmount,
                       amount,
                     );
-
-                    // No logging for locked parameters
                   } else {
-                    // If unlocked, animate according to the selected mode
                     if (settings.blurSettings.blurAnimOptions.mode ==
                         AnimationMode.pulse) {
-                      // Use pulse animation - oscillate between slider value and zero
                       final double animValue =
                           ShaderAnimationUtils.computePulseValue(
                             settings.blurSettings.blurAnimOptions,
                             animationValue,
                           );
-
-                      // Animate from slider value to zero and back
-                      amount = settings.blurSettings.blurAmount * animValue;
-
-                      // Pulse animation logging handled in utils
+                      amount = amountRange.userMin +
+                          (amountRange.userMax - amountRange.userMin) *
+                              animValue;
                     } else {
-                      // Use randomized animation - animate across parameter range
                       amount =
                           ShaderAnimationUtils.computeRandomizedParameterValue(
-                            settings.blurSettings.blurAmount,
+                            amountRange.userMax,
                             settings.blurSettings.blurAnimOptions,
                             animationValue,
-                            isLocked: isAmountLocked,
-                            minValue: 0.0,
-                            maxValue: 1.0,
+                            isLocked: false,
+                            minValue: amountRange.userMin,
+                            maxValue: amountRange.userMax,
                             parameterId: ParameterIds.blurAmount,
                           );
-
-                      // Randomized animation logging handled in utils
                     }
 
-                    // Update animation manager with current animated value
                     animManager.updateAnimatedValue(
                       ParameterIds.blurAmount,
                       amount,
                     );
                   }
                 } else {
-                  // Clear animated value when animation is disabled
                   final animManager = AnimationStateManager();
                   animManager.clearAnimatedValue(ParameterIds.blurAmount);
                 }
 
                 // Handle other blur parameters (opacity, intensity, contrast, radius)
-                double opacity = settings.blurSettings.blurOpacity;
-                double intensity = settings.blurSettings.blurIntensity;
-                double contrast = settings.blurSettings.blurContrast;
-                double effectiveRadius = settings.blurSettings.blurRadius;
+                final opacityRange = settings.blurSettings.blurOpacityRange;
+                final intensityRange = settings.blurSettings.blurIntensityRange;
+                final contrastRange = settings.blurSettings.blurContrastRange;
+                final radiusRange = settings.blurSettings.blurRadiusRange;
+
+                double opacity = opacityRange.userMax;
+                double intensity = intensityRange.userMax;
+                double contrast = contrastRange.userMax;
+                double effectiveRadius = radiusRange.userMax;
 
                 // Animate other parameters if animation is enabled
                 if (settings.blurSettings.blurAnimated) {
@@ -219,18 +213,20 @@ class BlurEffectShader extends StatelessWidget {
                             settings.blurSettings.blurAnimOptions,
                             animationValue,
                           );
-                      opacity = settings.blurSettings.blurOpacity * animValue;
+                      opacity = opacityRange.userMin +
+                          (opacityRange.userMax - opacityRange.userMin) *
+                              animValue;
                     } else {
                       opacity =
                           ShaderAnimationUtils.computeRandomizedParameterValue(
-                            settings.blurSettings.blurOpacity,
+                            opacityRange.userMax,
                             settings.blurSettings.blurAnimOptions,
                             animationValue,
                             isLocked: animManager.isParameterLocked(
                               ParameterIds.blurOpacity,
                             ),
-                            minValue: 0.0,
-                            maxValue: 1.0,
+                            minValue: opacityRange.userMin,
+                            maxValue: opacityRange.userMax,
                             parameterId: ParameterIds.blurOpacity,
                           );
                     }
@@ -251,19 +247,20 @@ class BlurEffectShader extends StatelessWidget {
                             settings.blurSettings.blurAnimOptions,
                             animationValue,
                           );
-                      intensity =
-                          settings.blurSettings.blurIntensity * animValue;
+                      intensity = intensityRange.userMin +
+                          (intensityRange.userMax - intensityRange.userMin) *
+                              animValue;
                     } else {
                       intensity =
                           ShaderAnimationUtils.computeRandomizedParameterValue(
-                            settings.blurSettings.blurIntensity,
+                            intensityRange.userMax,
                             settings.blurSettings.blurAnimOptions,
                             animationValue,
                             isLocked: animManager.isParameterLocked(
                               ParameterIds.blurIntensity,
                             ),
-                            minValue: 0.0,
-                            maxValue: 3.0,
+                            minValue: intensityRange.userMin,
+                            maxValue: intensityRange.userMax,
                             parameterId: ParameterIds.blurIntensity,
                           );
                     }
@@ -284,18 +281,20 @@ class BlurEffectShader extends StatelessWidget {
                             settings.blurSettings.blurAnimOptions,
                             animationValue,
                           );
-                      contrast = settings.blurSettings.blurContrast * animValue;
+                      contrast = contrastRange.userMin +
+                          (contrastRange.userMax - contrastRange.userMin) *
+                              animValue;
                     } else {
                       contrast =
                           ShaderAnimationUtils.computeRandomizedParameterValue(
-                            settings.blurSettings.blurContrast,
+                            contrastRange.userMax,
                             settings.blurSettings.blurAnimOptions,
                             animationValue,
                             isLocked: animManager.isParameterLocked(
                               ParameterIds.blurContrast,
                             ),
-                            minValue: 0.0,
-                            maxValue: 2.0,
+                            minValue: contrastRange.userMin,
+                            maxValue: contrastRange.userMax,
                             parameterId: ParameterIds.blurContrast,
                           );
                     }
@@ -314,19 +313,20 @@ class BlurEffectShader extends StatelessWidget {
                             settings.blurSettings.blurAnimOptions,
                             animationValue,
                           );
-                      effectiveRadius =
-                          settings.blurSettings.blurRadius * animValue;
+                      effectiveRadius = radiusRange.userMin +
+                          (radiusRange.userMax - radiusRange.userMin) *
+                              animValue;
                     } else {
                       effectiveRadius =
                           ShaderAnimationUtils.computeRandomizedParameterValue(
-                            settings.blurSettings.blurRadius,
+                            radiusRange.userMax,
                             settings.blurSettings.blurAnimOptions,
                             animationValue,
                             isLocked: animManager.isParameterLocked(
                               ParameterIds.blurRadius,
                             ),
-                            minValue: 0.0,
-                            maxValue: 120.0,
+                            minValue: radiusRange.userMin,
+                            maxValue: radiusRange.userMax,
                             parameterId: ParameterIds.blurRadius,
                           );
                     }

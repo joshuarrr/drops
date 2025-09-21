@@ -100,6 +100,15 @@ class GlitchShader extends StatelessWidget {
         settings.glitchSettings.verticalSliceIntensity;
     double time = settings.glitchSettings.effectAnimated ? animationValue : 0.0;
 
+    // Ensure time is always positive and continuous to prevent glitch timing issues
+    if (time < 0.0) time = 0.0;
+
+    if (enableShaderDebugLogs) {
+      _log(
+        "Time calculation: animationValue=${animationValue.toStringAsFixed(3)}, final time=${time.toStringAsFixed(3)}",
+      );
+    }
+
     if (settings.glitchSettings.effectAnimated) {
       if (enableShaderDebugLogs) {
         _log(
@@ -119,7 +128,11 @@ class GlitchShader extends StatelessWidget {
             settings.glitchSettings.effectAnimOptions,
             animationValue,
           );
-          opacity = settings.glitchSettings.opacity * pulse;
+          opacity =
+              settings.glitchSettings.opacityRange.userMin +
+              (settings.glitchSettings.opacityRange.userMax -
+                      settings.glitchSettings.opacityRange.userMin) *
+                  pulse;
           animManager.updateAnimatedValue(ParameterIds.glitchOpacity, opacity);
         } else {
           animManager.updateAnimatedValue(ParameterIds.glitchOpacity, opacity);
@@ -131,7 +144,11 @@ class GlitchShader extends StatelessWidget {
             settings.glitchSettings.effectAnimOptions,
             animationValue,
           );
-          intensity = settings.glitchSettings.intensity * pulse;
+          intensity =
+              settings.glitchSettings.intensityRange.userMin +
+              (settings.glitchSettings.intensityRange.userMax -
+                      settings.glitchSettings.intensityRange.userMin) *
+                  pulse;
           animManager.updateAnimatedValue(
             ParameterIds.glitchIntensity,
             intensity,
@@ -149,7 +166,11 @@ class GlitchShader extends StatelessWidget {
             settings.glitchSettings.effectAnimOptions,
             animationValue,
           );
-          frequency = settings.glitchSettings.frequency * pulse;
+          frequency =
+              settings.glitchSettings.frequencyRange.userMin +
+              (settings.glitchSettings.frequencyRange.userMax -
+                      settings.glitchSettings.frequencyRange.userMin) *
+                  pulse;
           animManager.updateAnimatedValue(ParameterIds.glitchSpeed, frequency);
         } else {
           animManager.updateAnimatedValue(ParameterIds.glitchSpeed, frequency);
@@ -161,7 +182,11 @@ class GlitchShader extends StatelessWidget {
             settings.glitchSettings.effectAnimOptions,
             animationValue,
           );
-          blockSize = settings.glitchSettings.blockSize * pulse;
+          blockSize =
+              settings.glitchSettings.blockSizeRange.userMin +
+              (settings.glitchSettings.blockSizeRange.userMax -
+                      settings.glitchSettings.blockSizeRange.userMin) *
+                  pulse;
           animManager.updateAnimatedValue(
             ParameterIds.glitchBlockSize,
             blockSize,
@@ -182,7 +207,13 @@ class GlitchShader extends StatelessWidget {
             animationValue,
           );
           horizontalSliceIntensity =
-              settings.glitchSettings.horizontalSliceIntensity * pulse;
+              settings.glitchSettings.horizontalSliceIntensityRange.userMin +
+              (settings.glitchSettings.horizontalSliceIntensityRange.userMax -
+                      settings
+                          .glitchSettings
+                          .horizontalSliceIntensityRange
+                          .userMin) *
+                  pulse;
           animManager.updateAnimatedValue(
             ParameterIds.glitchHorizontalSliceIntensity,
             horizontalSliceIntensity,
@@ -203,7 +234,13 @@ class GlitchShader extends StatelessWidget {
             animationValue,
           );
           verticalSliceIntensity =
-              settings.glitchSettings.verticalSliceIntensity * pulse;
+              settings.glitchSettings.verticalSliceIntensityRange.userMin +
+              (settings.glitchSettings.verticalSliceIntensityRange.userMax -
+                      settings
+                          .glitchSettings
+                          .verticalSliceIntensityRange
+                          .userMin) *
+                  pulse;
           animManager.updateAnimatedValue(
             ParameterIds.glitchVerticalSliceIntensity,
             verticalSliceIntensity,
@@ -224,8 +261,8 @@ class GlitchShader extends StatelessWidget {
             settings.glitchSettings.effectAnimOptions,
             animationValue,
             isLocked: animManager.isParameterLocked(ParameterIds.glitchOpacity),
-            minValue: 0.0,
-            maxValue: 1.0,
+            minValue: settings.glitchSettings.opacityRange.userMin,
+            maxValue: settings.glitchSettings.opacityRange.userMax,
             parameterId: ParameterIds.glitchOpacity,
           );
           animManager.updateAnimatedValue(ParameterIds.glitchOpacity, opacity);
@@ -242,8 +279,8 @@ class GlitchShader extends StatelessWidget {
             isLocked: animManager.isParameterLocked(
               ParameterIds.glitchIntensity,
             ),
-            minValue: 0.0,
-            maxValue: 1.0,
+            minValue: settings.glitchSettings.intensityRange.userMin,
+            maxValue: settings.glitchSettings.intensityRange.userMax,
             parameterId: ParameterIds.glitchIntensity,
           );
           animManager.updateAnimatedValue(
@@ -264,8 +301,8 @@ class GlitchShader extends StatelessWidget {
             settings.glitchSettings.effectAnimOptions,
             animationValue,
             isLocked: animManager.isParameterLocked(ParameterIds.glitchSpeed),
-            minValue: 0.0,
-            maxValue: 3.0,
+            minValue: settings.glitchSettings.frequencyRange.userMin,
+            maxValue: settings.glitchSettings.frequencyRange.userMax,
             parameterId: ParameterIds.glitchSpeed,
           );
           animManager.updateAnimatedValue(ParameterIds.glitchSpeed, frequency);
@@ -282,8 +319,8 @@ class GlitchShader extends StatelessWidget {
             isLocked: animManager.isParameterLocked(
               ParameterIds.glitchBlockSize,
             ),
-            minValue: 0.0,
-            maxValue: 0.5,
+            minValue: settings.glitchSettings.blockSizeRange.userMin,
+            maxValue: settings.glitchSettings.blockSizeRange.userMax,
             parameterId: ParameterIds.glitchBlockSize,
           );
           animManager.updateAnimatedValue(
@@ -309,8 +346,14 @@ class GlitchShader extends StatelessWidget {
                 isLocked: animManager.isParameterLocked(
                   ParameterIds.glitchHorizontalSliceIntensity,
                 ),
-                minValue: 0.0,
-                maxValue: 1.0,
+                minValue: settings
+                    .glitchSettings
+                    .horizontalSliceIntensityRange
+                    .userMin,
+                maxValue: settings
+                    .glitchSettings
+                    .horizontalSliceIntensityRange
+                    .userMax,
                 parameterId: ParameterIds.glitchHorizontalSliceIntensity,
               );
           animManager.updateAnimatedValue(
@@ -336,8 +379,10 @@ class GlitchShader extends StatelessWidget {
                 isLocked: animManager.isParameterLocked(
                   ParameterIds.glitchVerticalSliceIntensity,
                 ),
-                minValue: 0.0,
-                maxValue: 1.0,
+                minValue:
+                    settings.glitchSettings.verticalSliceIntensityRange.userMin,
+                maxValue:
+                    settings.glitchSettings.verticalSliceIntensityRange.userMax,
                 parameterId: ParameterIds.glitchVerticalSliceIntensity,
               );
           animManager.updateAnimatedValue(

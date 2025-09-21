@@ -4,7 +4,8 @@ import '../models/effect_settings.dart';
 import '../models/animation_options.dart';
 import '../models/presets_manager.dart';
 import '../services/preset_refresh_service.dart';
-import 'lockable_slider.dart';
+import '../models/parameter_range.dart';
+import 'range_lockable_slider.dart';
 import 'animation_controls.dart';
 import '../controllers/animation_state_manager.dart';
 import 'enhanced_panel_header.dart';
@@ -25,6 +26,9 @@ class NoisePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final noiseSettings = settings.noiseSettings;
+    final noiseDefaults = ShaderSettings.defaults.noiseSettings;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -49,72 +53,71 @@ class NoisePanel extends StatelessWidget {
             onSettingsChanged(settings);
           },
         ),
-        LockableSlider(
+        RangeLockableSlider(
           label: 'Noise Scale',
-          value: settings.noiseSettings.noiseScale,
+          range: noiseSettings.noiseScaleRange,
           min: 0.1,
           max: 20.0,
           divisions: 199,
-          displayValue: settings.noiseSettings.noiseScale.toStringAsFixed(1),
-          onChanged: (value) => _onSliderChanged(
-            value,
-            (v) => settings.noiseSettings.noiseScale = v,
-          ),
           activeColor: sliderColor,
+          formatValue: (v) => v.toStringAsFixed(1),
+          defaults: noiseDefaults.noiseScaleRange,
           parameterId: ParameterIds.noiseScale,
-          animationEnabled: settings.noiseSettings.noiseAnimated,
+          animationEnabled: noiseSettings.noiseAnimated,
+          onRangeChanged: (range) => _onRangeChanged(
+            range,
+            (updated) => noiseSettings.setNoiseScaleRange(updated),
+          ),
         ),
         // Only show noise speed slider when animation is enabled
         if (settings.noiseSettings.noiseAnimated)
-          LockableSlider(
+          RangeLockableSlider(
             label: 'Noise Speed',
-            value: settings.noiseSettings.noiseSpeed,
+            range: noiseSettings.noiseSpeedRange,
             min: 0.0,
             max: 1.0,
             divisions: null,
-            displayValue: settings.noiseSettings.noiseSpeed.toStringAsFixed(2),
-            onChanged: (value) => _onSliderChanged(
-              value,
-              (v) => settings.noiseSettings.noiseSpeed = v,
-            ),
             activeColor: sliderColor,
+            formatValue: (v) => v.toStringAsFixed(2),
+            defaults: noiseDefaults.noiseSpeedRange,
             parameterId: ParameterIds.noiseSpeed,
-            animationEnabled: settings.noiseSettings.noiseAnimated,
-            defaultValue: 0.5,
+            animationEnabled: noiseSettings.noiseAnimated,
+            onRangeChanged: (range) => _onRangeChanged(
+              range,
+              (updated) => noiseSettings.setNoiseSpeedRange(updated),
+            ),
           ),
-        LockableSlider(
+        RangeLockableSlider(
           label: 'Wave Amount',
-          value: settings.noiseSettings.waveAmount,
+          range: noiseSettings.waveAmountRange,
           min: 0.0,
           max: 0.1,
-          divisions: null,
-          displayValue: settings.noiseSettings.waveAmount.toStringAsFixed(3),
-          onChanged: (value) => _onSliderChanged(
-            value,
-            (v) => settings.noiseSettings.waveAmount = v,
-          ),
+          divisions: 100,
           activeColor: sliderColor,
+          formatValue: (v) => v.toStringAsFixed(3),
+          defaults: noiseDefaults.waveAmountRange,
           parameterId: ParameterIds.waveAmount,
-          animationEnabled: settings.noiseSettings.noiseAnimated,
-          defaultValue: 0.02,
+          animationEnabled: noiseSettings.noiseAnimated,
+          onRangeChanged: (range) => _onRangeChanged(
+            range,
+            (updated) => noiseSettings.setWaveAmountRange(updated),
+          ),
         ),
-        LockableSlider(
+        RangeLockableSlider(
           label: 'Color Intensity',
-          value: settings.noiseSettings.colorIntensity,
+          range: noiseSettings.colorIntensityRange,
           min: 0.0,
           max: 1.0,
-          divisions: null,
-          displayValue: settings.noiseSettings.colorIntensity.toStringAsFixed(
-            2,
-          ),
-          onChanged: (value) => _onSliderChanged(
-            value,
-            (v) => settings.noiseSettings.colorIntensity = v,
-          ),
+          divisions: 100,
           activeColor: sliderColor,
+          formatValue: (v) => v.toStringAsFixed(2),
+          defaults: noiseDefaults.colorIntensityRange,
           parameterId: ParameterIds.colorIntensity,
-          animationEnabled: settings.noiseSettings.noiseAnimated,
-          defaultValue: 0.3,
+          animationEnabled: noiseSettings.noiseAnimated,
+          onRangeChanged: (range) => _onRangeChanged(
+            range,
+            (updated) => noiseSettings.setColorIntensityRange(updated),
+          ),
         ),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -166,24 +169,30 @@ class NoisePanel extends StatelessWidget {
     );
   }
 
-  void _onSliderChanged(double value, Function(double) setter) {
-    // Enable the corresponding effect if it's not already enabled
+  void _onRangeChanged(
+    ParameterRange range,
+    void Function(ParameterRange) apply,
+  ) {
     if (!settings.noiseEnabled) settings.noiseEnabled = true;
-
-    // Update the setting value
-    setter(value);
-    // Notify the parent widget
+    apply(range);
     onSettingsChanged(settings);
   }
 
   void _resetNoise() {
     final defaults = ShaderSettings.defaults;
     settings.noiseEnabled = false;
-    settings.noiseSettings.noiseScale = defaults.noiseSettings.noiseScale;
-    settings.noiseSettings.noiseSpeed = defaults.noiseSettings.noiseSpeed;
-    settings.noiseSettings.colorIntensity =
-        defaults.noiseSettings.colorIntensity;
-    settings.noiseSettings.waveAmount = defaults.noiseSettings.waveAmount;
+    settings.noiseSettings.setNoiseScaleRange(
+      defaults.noiseSettings.noiseScaleRange,
+    );
+    settings.noiseSettings.setNoiseSpeedRange(
+      defaults.noiseSettings.noiseSpeedRange,
+    );
+    settings.noiseSettings.setColorIntensityRange(
+      defaults.noiseSettings.colorIntensityRange,
+    );
+    settings.noiseSettings.setWaveAmountRange(
+      defaults.noiseSettings.waveAmountRange,
+    );
     settings.noiseSettings.noiseAnimated = defaults.noiseSettings.noiseAnimated;
     settings.noiseSettings.noiseAnimOptions = AnimationOptions();
 
@@ -192,14 +201,58 @@ class NoisePanel extends StatelessWidget {
 
   void _applyPreset(Map<String, dynamic> presetData) {
     settings.noiseEnabled = presetData['noiseEnabled'] ?? settings.noiseEnabled;
-    settings.noiseSettings.noiseScale =
-        presetData['noiseScale'] ?? settings.noiseSettings.noiseScale;
-    settings.noiseSettings.noiseSpeed =
-        presetData['noiseSpeed'] ?? settings.noiseSettings.noiseSpeed;
-    settings.noiseSettings.colorIntensity =
-        presetData['colorIntensity'] ?? settings.noiseSettings.colorIntensity;
-    settings.noiseSettings.waveAmount =
-        presetData['waveAmount'] ?? settings.noiseSettings.waveAmount;
+    settings.noiseSettings.setNoiseScaleRange(
+      _rangeFromPreset(
+        presetData,
+        rangeKey: 'noiseScaleRange',
+        valueKey: 'noiseScale',
+        minKey: 'noiseScaleMin',
+        maxKey: 'noiseScaleMax',
+        currentKey: 'noiseScaleCurrent',
+        hardMin: 0.1,
+        hardMax: 20.0,
+        fallbackValue: settings.noiseSettings.noiseScale,
+      ),
+    );
+    settings.noiseSettings.setNoiseSpeedRange(
+      _rangeFromPreset(
+        presetData,
+        rangeKey: 'noiseSpeedRange',
+        valueKey: 'noiseSpeed',
+        minKey: 'noiseSpeedMin',
+        maxKey: 'noiseSpeedMax',
+        currentKey: 'noiseSpeedCurrent',
+        hardMin: 0.0,
+        hardMax: 1.0,
+        fallbackValue: settings.noiseSettings.noiseSpeed,
+      ),
+    );
+    settings.noiseSettings.setColorIntensityRange(
+      _rangeFromPreset(
+        presetData,
+        rangeKey: 'colorIntensityRange',
+        valueKey: 'colorIntensity',
+        minKey: 'colorIntensityMin',
+        maxKey: 'colorIntensityMax',
+        currentKey: 'colorIntensityCurrent',
+        hardMin: 0.0,
+        hardMax: 1.0,
+        fallbackValue: settings.noiseSettings.colorIntensity,
+      ),
+    );
+    settings.noiseSettings.setWaveAmountRange(
+      _rangeFromPreset(
+        presetData,
+        rangeKey: 'waveAmountRange',
+        valueKey: 'waveAmount',
+        minKey: 'waveAmountMin',
+        maxKey: 'waveAmountMax',
+        currentKey: 'waveAmountCurrent',
+        hardMin: 0.0,
+        hardMax: 0.1,
+        fallbackValue: settings.noiseSettings.waveAmount,
+      ),
+    );
     settings.noiseSettings.noiseAnimated =
         presetData['noiseAnimated'] ?? settings.noiseSettings.noiseAnimated;
 
@@ -212,13 +265,86 @@ class NoisePanel extends StatelessWidget {
     onSettingsChanged(settings);
   }
 
+  ParameterRange _rangeFromPreset(
+    Map<String, dynamic> presetData, {
+    required String rangeKey,
+    required String valueKey,
+    required String minKey,
+    required String maxKey,
+    required String currentKey,
+    required double hardMin,
+    required double hardMax,
+    required double fallbackValue,
+  }) {
+    final double fallback = _readDouble(
+      presetData[valueKey],
+      fallbackValue,
+    ).clamp(hardMin, hardMax)
+        .toDouble();
+
+    final dynamic payload = presetData[rangeKey];
+    if (payload is Map<String, dynamic>) {
+      return ParameterRange.fromMap(
+        Map<String, dynamic>.from(payload),
+        hardMin: hardMin,
+        hardMax: hardMax,
+        fallbackValue: fallback,
+      );
+    }
+
+    final double userMin = _readDouble(
+      presetData[minKey],
+      hardMin,
+    ).clamp(hardMin, hardMax)
+        .toDouble();
+    final double userMax = _readDouble(
+      presetData[maxKey],
+      fallback,
+    ).clamp(hardMin, hardMax)
+        .toDouble();
+    final double current = _readDouble(
+      presetData[currentKey],
+      fallback,
+    ).clamp(hardMin, hardMax)
+        .toDouble();
+
+    return ParameterRange(
+      hardMin: hardMin,
+      hardMax: hardMax,
+      initialValue: current,
+      userMin: userMin,
+      userMax: userMax,
+    );
+  }
+
+  double _readDouble(dynamic value, double fallback) {
+    if (value is num) return value.toDouble();
+    return fallback;
+  }
+
   Future<void> _savePresetForAspect(ShaderAspect aspect, String name) async {
     Map<String, dynamic> presetData = {
       'noiseEnabled': settings.noiseEnabled,
       'noiseScale': settings.noiseSettings.noiseScale,
+      'noiseScaleMin': settings.noiseSettings.noiseScaleRange.userMin,
+      'noiseScaleMax': settings.noiseSettings.noiseScaleRange.userMax,
+      'noiseScaleCurrent': settings.noiseSettings.noiseScaleRange.current,
+      'noiseScaleRange': settings.noiseSettings.noiseScaleRange.toMap(),
       'noiseSpeed': settings.noiseSettings.noiseSpeed,
+      'noiseSpeedMin': settings.noiseSettings.noiseSpeedRange.userMin,
+      'noiseSpeedMax': settings.noiseSettings.noiseSpeedRange.userMax,
+      'noiseSpeedCurrent': settings.noiseSettings.noiseSpeedRange.current,
+      'noiseSpeedRange': settings.noiseSettings.noiseSpeedRange.toMap(),
       'colorIntensity': settings.noiseSettings.colorIntensity,
+      'colorIntensityMin': settings.noiseSettings.colorIntensityRange.userMin,
+      'colorIntensityMax': settings.noiseSettings.colorIntensityRange.userMax,
+      'colorIntensityCurrent': settings.noiseSettings.colorIntensityRange.current,
+      'colorIntensityRange': settings.noiseSettings.colorIntensityRange.toMap(),
       'waveAmount': settings.noiseSettings.waveAmount,
+      'waveAmountMin': settings.noiseSettings.waveAmountRange.userMin,
+      'waveAmountMax': settings.noiseSettings.waveAmountRange.userMax,
+      'waveAmountCurrent': settings.noiseSettings.waveAmountRange.current,
+      'waveAmountRange': settings.noiseSettings.waveAmountRange.toMap(),
       'noiseAnimated': settings.noiseSettings.noiseAnimated,
       'noiseAnimOptions': settings.noiseSettings.noiseAnimOptions.toMap(),
     };

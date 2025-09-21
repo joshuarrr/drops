@@ -1,5 +1,6 @@
 import 'animation_options.dart';
 import 'dart:math';
+import 'parameter_range.dart';
 import 'targetable_effect_settings.dart';
 
 class RippleSettings with TargetableEffectSettings {
@@ -7,17 +8,17 @@ class RippleSettings with TargetableEffectSettings {
   bool _rippleEnabled;
 
   // Ripple settings
-  double _rippleIntensity; // Controls number of ripples (0-1)
-  double _rippleSize; // Controls size of ripples (0-1, scaled internally)
-  double _rippleSpeed; // Controls speed of ripple expansion (0-1)
-  double _rippleOpacity; // Controls opacity of ripples (0-1)
-  double _rippleColor; // Controls color influence (0-1)
+  ParameterRange _rippleIntensityRange; // Controls number of ripples (0-1)
+  ParameterRange _rippleSizeRange; // Controls size of ripples (0-1)
+  ParameterRange _rippleSpeedRange; // Controls speed of ripple expansion (0-1)
+  ParameterRange _rippleOpacityRange; // Controls opacity of ripples (0-1)
+  ParameterRange _rippleColorRange; // Controls color influence (0-1)
   int _rippleDropCount; // Controls number of ripple sources (1-30)
   double _rippleSeed; // Randomization seed for drop positions
-  double
-  _rippleOvalness; // Controls how oval the ripples are (0=circles, 1=very oval)
-  double
-  _rippleRotation; // Controls rotation angle of oval ripples (0-1, scaled to 0-2π)
+  ParameterRange
+  _rippleOvalnessRange; // Controls how oval the ripples are (0=circles, 1=very oval)
+  ParameterRange
+  _rippleRotationRange; // Controls rotation angle of oval ripples (0-1, scaled to 0-2π)
 
   // Random generator
   static final Random _random = Random();
@@ -37,29 +38,69 @@ class RippleSettings with TargetableEffectSettings {
     _rippleEnabled = value;
   }
 
-  double get rippleIntensity => _rippleIntensity;
+  double get rippleIntensity => _rippleIntensityRange.userMax;
   set rippleIntensity(double value) {
-    _rippleIntensity = value;
+    _rippleIntensityRange.setCurrent(value);
   }
 
-  double get rippleSize => _rippleSize;
+  ParameterRange get rippleIntensityRange => _rippleIntensityRange.copy();
+  void setRippleIntensityRange(ParameterRange range) {
+    _rippleIntensityRange
+      ..setUserMin(range.userMin)
+      ..setUserMax(range.userMax)
+      ..setCurrent(range.current, syncUserMax: false);
+  }
+
+  double get rippleSize => _rippleSizeRange.userMax;
   set rippleSize(double value) {
-    _rippleSize = value;
+    _rippleSizeRange.setCurrent(value);
   }
 
-  double get rippleSpeed => _rippleSpeed;
+  ParameterRange get rippleSizeRange => _rippleSizeRange.copy();
+  void setRippleSizeRange(ParameterRange range) {
+    _rippleSizeRange
+      ..setUserMin(range.userMin)
+      ..setUserMax(range.userMax)
+      ..setCurrent(range.current, syncUserMax: false);
+  }
+
+  double get rippleSpeed => _rippleSpeedRange.userMax;
   set rippleSpeed(double value) {
-    _rippleSpeed = value;
+    _rippleSpeedRange.setCurrent(value);
   }
 
-  double get rippleOpacity => _rippleOpacity;
+  ParameterRange get rippleSpeedRange => _rippleSpeedRange.copy();
+  void setRippleSpeedRange(ParameterRange range) {
+    _rippleSpeedRange
+      ..setUserMin(range.userMin)
+      ..setUserMax(range.userMax)
+      ..setCurrent(range.current, syncUserMax: false);
+  }
+
+  double get rippleOpacity => _rippleOpacityRange.userMax;
   set rippleOpacity(double value) {
-    _rippleOpacity = value;
+    _rippleOpacityRange.setCurrent(value);
   }
 
-  double get rippleColor => _rippleColor;
+  ParameterRange get rippleOpacityRange => _rippleOpacityRange.copy();
+  void setRippleOpacityRange(ParameterRange range) {
+    _rippleOpacityRange
+      ..setUserMin(range.userMin)
+      ..setUserMax(range.userMax)
+      ..setCurrent(range.current, syncUserMax: false);
+  }
+
+  double get rippleColor => _rippleColorRange.userMax;
   set rippleColor(double value) {
-    _rippleColor = value;
+    _rippleColorRange.setCurrent(value);
+  }
+
+  ParameterRange get rippleColorRange => _rippleColorRange.copy();
+  void setRippleColorRange(ParameterRange range) {
+    _rippleColorRange
+      ..setUserMin(range.userMin)
+      ..setUserMax(range.userMax)
+      ..setCurrent(range.current, syncUserMax: false);
   }
 
   int get rippleDropCount => _rippleDropCount;
@@ -72,14 +113,30 @@ class RippleSettings with TargetableEffectSettings {
     _rippleSeed = value;
   }
 
-  double get rippleOvalness => _rippleOvalness;
+  double get rippleOvalness => _rippleOvalnessRange.userMax;
   set rippleOvalness(double value) {
-    _rippleOvalness = value;
+    _rippleOvalnessRange.setCurrent(value);
   }
 
-  double get rippleRotation => _rippleRotation;
+  ParameterRange get rippleOvalnessRange => _rippleOvalnessRange.copy();
+  void setRippleOvalnessRange(ParameterRange range) {
+    _rippleOvalnessRange
+      ..setUserMin(range.userMin)
+      ..setUserMax(range.userMax)
+      ..setCurrent(range.current, syncUserMax: false);
+  }
+
+  double get rippleRotation => _rippleRotationRange.userMax;
   set rippleRotation(double value) {
-    _rippleRotation = value;
+    _rippleRotationRange.setCurrent(value);
+  }
+
+  ParameterRange get rippleRotationRange => _rippleRotationRange.copy();
+  void setRippleRotationRange(ParameterRange range) {
+    _rippleRotationRange
+      ..setUserMin(range.userMin)
+      ..setUserMax(range.userMax)
+      ..setCurrent(range.current, syncUserMax: false);
   }
 
   // Generate a new random seed to randomize drop positions
@@ -103,28 +160,91 @@ class RippleSettings with TargetableEffectSettings {
   RippleSettings({
     bool rippleEnabled = false,
     double rippleIntensity = 0.5,
+    double? rippleIntensityMin,
+    double? rippleIntensityMax,
+    double? rippleIntensityCurrent,
     double rippleSize = 0.5,
+    double? rippleSizeMin,
+    double? rippleSizeMax,
+    double? rippleSizeCurrent,
     double rippleSpeed = 0.5,
+    double? rippleSpeedMin,
+    double? rippleSpeedMax,
+    double? rippleSpeedCurrent,
     double rippleOpacity = 0.7,
+    double? rippleOpacityMin,
+    double? rippleOpacityMax,
+    double? rippleOpacityCurrent,
     double rippleColor = 0.3,
+    double? rippleColorMin,
+    double? rippleColorMax,
+    double? rippleColorCurrent,
     int rippleDropCount = 9,
     double? rippleSeed,
     double rippleOvalness = 0.0,
+    double? rippleOvalnessMin,
+    double? rippleOvalnessMax,
+    double? rippleOvalnessCurrent,
     double rippleRotation = 0.0,
+    double? rippleRotationMin,
+    double? rippleRotationMax,
+    double? rippleRotationCurrent,
     bool rippleAnimated = false,
     AnimationOptions? rippleAnimOptions,
     bool applyToImage = true, // New parameter with default true
     bool applyToText = true, // New parameter with default true
   }) : _rippleEnabled = rippleEnabled,
-       _rippleIntensity = rippleIntensity,
-       _rippleSize = rippleSize,
-       _rippleSpeed = rippleSpeed,
-       _rippleOpacity = rippleOpacity,
-       _rippleColor = rippleColor,
+       _rippleIntensityRange = ParameterRange(
+         hardMin: 0.0,
+         hardMax: 1.0,
+         initialValue: rippleIntensityCurrent ?? rippleIntensity,
+         userMin: rippleIntensityMin ?? 0.0,
+         userMax: rippleIntensityMax ?? rippleIntensity,
+       ),
+       _rippleSizeRange = ParameterRange(
+         hardMin: 0.0,
+         hardMax: 1.0,
+         initialValue: rippleSizeCurrent ?? rippleSize,
+         userMin: rippleSizeMin ?? 0.0,
+         userMax: rippleSizeMax ?? rippleSize,
+       ),
+       _rippleSpeedRange = ParameterRange(
+         hardMin: 0.0,
+         hardMax: 1.0,
+         initialValue: rippleSpeedCurrent ?? rippleSpeed,
+         userMin: rippleSpeedMin ?? 0.0,
+         userMax: rippleSpeedMax ?? rippleSpeed,
+       ),
+       _rippleOpacityRange = ParameterRange(
+         hardMin: 0.0,
+         hardMax: 1.0,
+         initialValue: rippleOpacityCurrent ?? rippleOpacity,
+         userMin: rippleOpacityMin ?? 0.0,
+         userMax: rippleOpacityMax ?? rippleOpacity,
+       ),
+       _rippleColorRange = ParameterRange(
+         hardMin: 0.0,
+         hardMax: 1.0,
+         initialValue: rippleColorCurrent ?? rippleColor,
+         userMin: rippleColorMin ?? 0.0,
+         userMax: rippleColorMax ?? rippleColor,
+       ),
        _rippleDropCount = rippleDropCount,
        _rippleSeed = rippleSeed ?? _random.nextDouble() * 1000.0,
-       _rippleOvalness = rippleOvalness,
-       _rippleRotation = rippleRotation,
+       _rippleOvalnessRange = ParameterRange(
+         hardMin: 0.0,
+         hardMax: 1.0,
+         initialValue: rippleOvalnessCurrent ?? rippleOvalness,
+         userMin: rippleOvalnessMin ?? 0.0,
+         userMax: rippleOvalnessMax ?? rippleOvalness,
+       ),
+       _rippleRotationRange = ParameterRange(
+         hardMin: 0.0,
+         hardMax: 1.0,
+         initialValue: rippleRotationCurrent ?? rippleRotation,
+         userMin: rippleRotationMin ?? 0.0,
+         userMax: rippleRotationMax ?? rippleRotation,
+       ),
        _rippleAnimated = rippleAnimated,
        _rippleAnimOptions = rippleAnimOptions ?? AnimationOptions() {
     // Set the targeting flags
@@ -136,17 +256,45 @@ class RippleSettings with TargetableEffectSettings {
   Map<String, dynamic> toMap() {
     final map = {
       'rippleEnabled': _rippleEnabled,
-      'rippleIntensity': _rippleIntensity,
-      'rippleSize': _rippleSize,
-      'rippleSpeed': _rippleSpeed,
-      'rippleOpacity': _rippleOpacity,
-      'rippleColor': _rippleColor,
+      'rippleIntensity': rippleIntensity,
+      'rippleSize': rippleSize,
+      'rippleSpeed': rippleSpeed,
+      'rippleOpacity': rippleOpacity,
+      'rippleColor': rippleColor,
       'rippleDropCount': _rippleDropCount,
       'rippleSeed': _rippleSeed,
-      'rippleOvalness': _rippleOvalness,
-      'rippleRotation': _rippleRotation,
+      'rippleOvalness': rippleOvalness,
+      'rippleRotation': rippleRotation,
       'rippleAnimated': _rippleAnimated,
       'rippleAnimOptions': _rippleAnimOptions.toMap(),
+      'rippleIntensityMin': _rippleIntensityRange.userMin,
+      'rippleIntensityMax': _rippleIntensityRange.userMax,
+      'rippleIntensityCurrent': _rippleIntensityRange.current,
+      'rippleIntensityRange': _rippleIntensityRange.toMap(),
+      'rippleSizeMin': _rippleSizeRange.userMin,
+      'rippleSizeMax': _rippleSizeRange.userMax,
+      'rippleSizeCurrent': _rippleSizeRange.current,
+      'rippleSizeRange': _rippleSizeRange.toMap(),
+      'rippleSpeedMin': _rippleSpeedRange.userMin,
+      'rippleSpeedMax': _rippleSpeedRange.userMax,
+      'rippleSpeedCurrent': _rippleSpeedRange.current,
+      'rippleSpeedRange': _rippleSpeedRange.toMap(),
+      'rippleOpacityMin': _rippleOpacityRange.userMin,
+      'rippleOpacityMax': _rippleOpacityRange.userMax,
+      'rippleOpacityCurrent': _rippleOpacityRange.current,
+      'rippleOpacityRange': _rippleOpacityRange.toMap(),
+      'rippleColorMin': _rippleColorRange.userMin,
+      'rippleColorMax': _rippleColorRange.userMax,
+      'rippleColorCurrent': _rippleColorRange.current,
+      'rippleColorRange': _rippleColorRange.toMap(),
+      'rippleOvalnessMin': _rippleOvalnessRange.userMin,
+      'rippleOvalnessMax': _rippleOvalnessRange.userMax,
+      'rippleOvalnessCurrent': _rippleOvalnessRange.current,
+      'rippleOvalnessRange': _rippleOvalnessRange.toMap(),
+      'rippleRotationMin': _rippleRotationRange.userMin,
+      'rippleRotationMax': _rippleRotationRange.userMax,
+      'rippleRotationCurrent': _rippleRotationRange.current,
+      'rippleRotationRange': _rippleRotationRange.toMap(),
     };
 
     // Add targeting flags from the mixin
@@ -156,17 +304,85 @@ class RippleSettings with TargetableEffectSettings {
   }
 
   factory RippleSettings.fromMap(Map<String, dynamic> map) {
+    double _readDouble(dynamic value, double fallback) {
+      if (value is num) return value.toDouble();
+      return fallback;
+    }
+
     final settings = RippleSettings(
       rippleEnabled: map['rippleEnabled'] ?? false,
-      rippleIntensity: map['rippleIntensity'] ?? 0.5,
-      rippleSize: map['rippleSize'] ?? 0.5,
-      rippleSpeed: map['rippleSpeed'] ?? 0.5,
-      rippleOpacity: map['rippleOpacity'] ?? 0.7,
-      rippleColor: map['rippleColor'] ?? 0.3,
+      rippleIntensity: _readDouble(map['rippleIntensity'], 0.5),
+      rippleIntensityMin: _readDouble(map['rippleIntensityMin'], 0.0),
+      rippleIntensityMax: _readDouble(
+        map['rippleIntensityMax'],
+        _readDouble(map['rippleIntensity'], 0.5),
+      ),
+      rippleIntensityCurrent: _readDouble(
+        map['rippleIntensityCurrent'],
+        _readDouble(map['rippleIntensity'], 0.5),
+      ),
+      rippleSize: _readDouble(map['rippleSize'], 0.5),
+      rippleSizeMin: _readDouble(map['rippleSizeMin'], 0.0),
+      rippleSizeMax: _readDouble(
+        map['rippleSizeMax'],
+        _readDouble(map['rippleSize'], 0.5),
+      ),
+      rippleSizeCurrent: _readDouble(
+        map['rippleSizeCurrent'],
+        _readDouble(map['rippleSize'], 0.5),
+      ),
+      rippleSpeed: _readDouble(map['rippleSpeed'], 0.5),
+      rippleSpeedMin: _readDouble(map['rippleSpeedMin'], 0.0),
+      rippleSpeedMax: _readDouble(
+        map['rippleSpeedMax'],
+        _readDouble(map['rippleSpeed'], 0.5),
+      ),
+      rippleSpeedCurrent: _readDouble(
+        map['rippleSpeedCurrent'],
+        _readDouble(map['rippleSpeed'], 0.5),
+      ),
+      rippleOpacity: _readDouble(map['rippleOpacity'], 0.7),
+      rippleOpacityMin: _readDouble(map['rippleOpacityMin'], 0.0),
+      rippleOpacityMax: _readDouble(
+        map['rippleOpacityMax'],
+        _readDouble(map['rippleOpacity'], 0.7),
+      ),
+      rippleOpacityCurrent: _readDouble(
+        map['rippleOpacityCurrent'],
+        _readDouble(map['rippleOpacity'], 0.7),
+      ),
+      rippleColor: _readDouble(map['rippleColor'], 0.3),
+      rippleColorMin: _readDouble(map['rippleColorMin'], 0.0),
+      rippleColorMax: _readDouble(
+        map['rippleColorMax'],
+        _readDouble(map['rippleColor'], 0.3),
+      ),
+      rippleColorCurrent: _readDouble(
+        map['rippleColorCurrent'],
+        _readDouble(map['rippleColor'], 0.3),
+      ),
       rippleDropCount: map['rippleDropCount'] ?? 9,
       rippleSeed: map['rippleSeed'],
-      rippleOvalness: map['rippleOvalness'] ?? 0.0,
-      rippleRotation: map['rippleRotation'] ?? 0.0,
+      rippleOvalness: _readDouble(map['rippleOvalness'], 0.0),
+      rippleOvalnessMin: _readDouble(map['rippleOvalnessMin'], 0.0),
+      rippleOvalnessMax: _readDouble(
+        map['rippleOvalnessMax'],
+        _readDouble(map['rippleOvalness'], 0.0),
+      ),
+      rippleOvalnessCurrent: _readDouble(
+        map['rippleOvalnessCurrent'],
+        _readDouble(map['rippleOvalness'], 0.0),
+      ),
+      rippleRotation: _readDouble(map['rippleRotation'], 0.0),
+      rippleRotationMin: _readDouble(map['rippleRotationMin'], 0.0),
+      rippleRotationMax: _readDouble(
+        map['rippleRotationMax'],
+        _readDouble(map['rippleRotation'], 0.0),
+      ),
+      rippleRotationCurrent: _readDouble(
+        map['rippleRotationCurrent'],
+        _readDouble(map['rippleRotation'], 0.0),
+      ),
       rippleAnimated: map['rippleAnimated'] ?? false,
       rippleAnimOptions: map['rippleAnimOptions'] != null
           ? AnimationOptions.fromMap(
@@ -178,6 +394,77 @@ class RippleSettings with TargetableEffectSettings {
     // Load targeting flags from the map
     settings.loadTargetingFromMap(map);
 
+    _maybeApplyRange(
+      settings._rippleIntensityRange,
+      map['rippleIntensityRange'],
+      hardMin: 0.0,
+      hardMax: 1.0,
+      fallback: settings.rippleIntensity,
+    );
+    _maybeApplyRange(
+      settings._rippleSizeRange,
+      map['rippleSizeRange'],
+      hardMin: 0.0,
+      hardMax: 1.0,
+      fallback: settings.rippleSize,
+    );
+    _maybeApplyRange(
+      settings._rippleSpeedRange,
+      map['rippleSpeedRange'],
+      hardMin: 0.0,
+      hardMax: 1.0,
+      fallback: settings.rippleSpeed,
+    );
+    _maybeApplyRange(
+      settings._rippleOpacityRange,
+      map['rippleOpacityRange'],
+      hardMin: 0.0,
+      hardMax: 1.0,
+      fallback: settings.rippleOpacity,
+    );
+    _maybeApplyRange(
+      settings._rippleColorRange,
+      map['rippleColorRange'],
+      hardMin: 0.0,
+      hardMax: 1.0,
+      fallback: settings.rippleColor,
+    );
+    _maybeApplyRange(
+      settings._rippleOvalnessRange,
+      map['rippleOvalnessRange'],
+      hardMin: 0.0,
+      hardMax: 1.0,
+      fallback: settings.rippleOvalness,
+    );
+    _maybeApplyRange(
+      settings._rippleRotationRange,
+      map['rippleRotationRange'],
+      hardMin: 0.0,
+      hardMax: 1.0,
+      fallback: settings.rippleRotation,
+    );
+
     return settings;
+  }
+
+  static void _maybeApplyRange(
+    ParameterRange target,
+    dynamic payload, {
+    required double hardMin,
+    required double hardMax,
+    required double fallback,
+  }) {
+    if (payload is Map<String, dynamic>) {
+      final range = ParameterRange.fromMap(
+        Map<String, dynamic>.from(payload),
+        hardMin: hardMin,
+        hardMax: hardMax,
+        fallbackValue: fallback,
+      );
+      target
+        ..setUserMin(range.userMin)
+        ..setUserMax(range.userMax)
+        ..setCurrent(range.current, syncUserMax: false);
+    }
   }
 }

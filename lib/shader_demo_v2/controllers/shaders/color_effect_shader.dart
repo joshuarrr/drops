@@ -124,9 +124,13 @@ class ColorEffectShader extends StatelessWidget {
                 shader.setImageSampler(0, image);
 
                 // Compute animated values when requested
-                double hue = settings.colorSettings.hue;
-                double saturation = settings.colorSettings.saturation;
-                double lightness = settings.colorSettings.lightness;
+                final hueRange = settings.colorSettings.hueRange;
+                final saturationRange = settings.colorSettings.saturationRange;
+                final lightnessRange = settings.colorSettings.lightnessRange;
+
+                double hue = hueRange.userMax;
+                double saturation = saturationRange.userMax;
+                double lightness = lightnessRange.userMax;
 
                 if (settings.colorSettings.colorAnimated) {
                   // Get animation state manager
@@ -134,29 +138,24 @@ class ColorEffectShader extends StatelessWidget {
 
                   // Animate hue if unlocked
                   if (!animManager.isParameterLocked(ParameterIds.colorHue)) {
-                    // Animation logging disabled
-
                     if (settings.colorSettings.colorAnimOptions.mode ==
                         AnimationMode.pulse) {
-                      // Use pulse animation - oscillate between slider value and zero
                       final double animValue =
                           ShaderAnimationUtils.computePulseValue(
                             settings.colorSettings.colorAnimOptions,
                             animationValue,
                           );
-                      hue = settings.colorSettings.hue * animValue;
+                      hue = hueRange.userMin +
+                          (hueRange.userMax - hueRange.userMin) * animValue;
                     } else {
-                      // Use randomized animation - animate across the full hue range (0-1)
                       hue =
                           ShaderAnimationUtils.computeRandomizedParameterValue(
-                            settings.colorSettings.hue,
+                            hueRange.userMax,
                             settings.colorSettings.colorAnimOptions,
                             animationValue,
-                            isLocked: animManager.isParameterLocked(
-                              ParameterIds.colorHue,
-                            ),
-                            minValue: 0.0,
-                            maxValue: 1.0,
+                            isLocked: false,
+                            minValue: hueRange.userMin,
+                            maxValue: hueRange.userMax,
                             parameterId: ParameterIds.colorHue,
                           );
                     }
@@ -178,19 +177,19 @@ class ColorEffectShader extends StatelessWidget {
                             settings.colorSettings.colorAnimOptions,
                             animationValue,
                           );
-                      saturation =
-                          settings.colorSettings.saturation * animValue;
+                      saturation = saturationRange.userMin +
+                          (saturationRange.userMax -
+                                  saturationRange.userMin) *
+                              animValue;
                     } else {
                       saturation =
                           ShaderAnimationUtils.computeRandomizedParameterValue(
-                            settings.colorSettings.saturation,
+                            saturationRange.userMax,
                             settings.colorSettings.colorAnimOptions,
                             animationValue,
-                            isLocked: animManager.isParameterLocked(
-                              ParameterIds.colorSaturation,
-                            ),
-                            minValue: 0.0,
-                            maxValue: 1.0,
+                            isLocked: false,
+                            minValue: saturationRange.userMin,
+                            maxValue: saturationRange.userMax,
                             parameterId: ParameterIds.colorSaturation,
                           );
                     }
@@ -216,18 +215,19 @@ class ColorEffectShader extends StatelessWidget {
                             settings.colorSettings.colorAnimOptions,
                             animationValue,
                           );
-                      lightness = settings.colorSettings.lightness * animValue;
+                      lightness = lightnessRange.userMin +
+                          (lightnessRange.userMax -
+                                  lightnessRange.userMin) *
+                              animValue;
                     } else {
                       lightness =
                           ShaderAnimationUtils.computeRandomizedParameterValue(
-                            settings.colorSettings.lightness,
+                            lightnessRange.userMax,
                             settings.colorSettings.colorAnimOptions,
                             animationValue,
-                            isLocked: animManager.isParameterLocked(
-                              ParameterIds.colorLightness,
-                            ),
-                            minValue: 0.0,
-                            maxValue: 1.0,
+                            isLocked: false,
+                            minValue: lightnessRange.userMin,
+                            maxValue: lightnessRange.userMax,
                             parameterId: ParameterIds.colorLightness,
                           );
                     }
@@ -252,10 +252,15 @@ class ColorEffectShader extends StatelessWidget {
                 }
 
                 // Determine overlay values (may animate independently)
-                double overlayHue = settings.colorSettings.overlayHue;
-                double overlayIntensity =
-                    settings.colorSettings.overlayIntensity;
-                double overlayOpacity = settings.colorSettings.overlayOpacity;
+                final overlayHueRange = settings.colorSettings.overlayHueRange;
+                final overlayIntensityRange =
+                    settings.colorSettings.overlayIntensityRange;
+                final overlayOpacityRange =
+                    settings.colorSettings.overlayOpacityRange;
+
+                double overlayHue = overlayHueRange.userMax;
+                double overlayIntensity = overlayIntensityRange.userMax;
+                double overlayOpacity = overlayOpacityRange.userMax;
 
                 if (settings.colorSettings.overlayAnimated) {
                   // Get animation state manager
@@ -263,30 +268,26 @@ class ColorEffectShader extends StatelessWidget {
 
                   // Animate overlay hue if unlocked
                   if (!animManager.isParameterLocked(ParameterIds.overlayHue)) {
-                    // Animation logging disabled
-
                     if (settings.colorSettings.overlayAnimOptions.mode ==
                         AnimationMode.pulse) {
-                      // Use pulse animation - oscillate between slider value and zero
                       final double animValue =
                           ShaderAnimationUtils.computePulseValue(
                             settings.colorSettings.overlayAnimOptions,
                             animationValue,
                           );
-                      overlayHue =
-                          settings.colorSettings.overlayHue * animValue;
+                      overlayHue = overlayHueRange.userMin +
+                          (overlayHueRange.userMax -
+                                  overlayHueRange.userMin) *
+                              animValue;
                     } else {
-                      // Use randomized animation - animate across the full hue range (0-1)
                       overlayHue =
                           ShaderAnimationUtils.computeRandomizedParameterValue(
-                            settings.colorSettings.overlayHue,
+                            overlayHueRange.userMax,
                             settings.colorSettings.overlayAnimOptions,
                             animationValue,
-                            isLocked: animManager.isParameterLocked(
-                              ParameterIds.overlayHue,
-                            ),
-                            minValue: 0.0,
-                            maxValue: 1.0,
+                            isLocked: false,
+                            minValue: overlayHueRange.userMin,
+                            maxValue: overlayHueRange.userMax,
                             parameterId: ParameterIds.overlayHue,
                           );
                     }
@@ -314,19 +315,19 @@ class ColorEffectShader extends StatelessWidget {
                             settings.colorSettings.overlayAnimOptions,
                             animationValue,
                           );
-                      overlayIntensity =
-                          settings.colorSettings.overlayIntensity * animValue;
+                      overlayIntensity = overlayIntensityRange.userMin +
+                          (overlayIntensityRange.userMax -
+                                  overlayIntensityRange.userMin) *
+                              animValue;
                     } else {
                       overlayIntensity =
                           ShaderAnimationUtils.computeRandomizedParameterValue(
-                            settings.colorSettings.overlayIntensity,
+                            overlayIntensityRange.userMax,
                             settings.colorSettings.overlayAnimOptions,
                             animationValue,
-                            isLocked: animManager.isParameterLocked(
-                              ParameterIds.overlayIntensity,
-                            ),
-                            minValue: 0.0,
-                            maxValue: 1.0,
+                            isLocked: false,
+                            minValue: overlayIntensityRange.userMin,
+                            maxValue: overlayIntensityRange.userMax,
                             parameterId: ParameterIds.overlayIntensity,
                           );
                     }
@@ -352,19 +353,19 @@ class ColorEffectShader extends StatelessWidget {
                             settings.colorSettings.overlayAnimOptions,
                             animationValue,
                           );
-                      overlayOpacity =
-                          settings.colorSettings.overlayOpacity * animValue;
+                      overlayOpacity = overlayOpacityRange.userMin +
+                          (overlayOpacityRange.userMax -
+                                  overlayOpacityRange.userMin) *
+                              animValue;
                     } else {
                       overlayOpacity =
                           ShaderAnimationUtils.computeRandomizedParameterValue(
-                            settings.colorSettings.overlayOpacity,
+                            overlayOpacityRange.userMax,
                             settings.colorSettings.overlayAnimOptions,
                             animationValue,
-                            isLocked: animManager.isParameterLocked(
-                              ParameterIds.overlayOpacity,
-                            ),
-                            minValue: 0.0,
-                            maxValue: 1.0,
+                            isLocked: false,
+                            minValue: overlayOpacityRange.userMin,
+                            maxValue: overlayOpacityRange.userMax,
                             parameterId: ParameterIds.overlayOpacity,
                           );
                     }

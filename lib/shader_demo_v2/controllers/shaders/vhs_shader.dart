@@ -100,7 +100,8 @@ class VHSShader extends StatelessWidget {
     double horizontalWaveScreenSize = vhsSettings.horizontalWaveScreenSize;
     double horizontalWaveVerticalSize = vhsSettings.horizontalWaveVerticalSize;
     double dottedNoiseStrength = vhsSettings.dottedNoiseStrength;
-    double horizontalDistortionStrength = vhsSettings.horizontalDistortionStrength;
+    double horizontalDistortionStrength =
+        vhsSettings.horizontalDistortionStrength;
 
     final animManager = AnimationStateManager();
 
@@ -119,15 +120,19 @@ class VHSShader extends StatelessWidget {
             animOptions,
             animationValue,
           );
-          opacity = vhsSettings.opacity * pulse;
+          opacity = ui.lerpDouble(
+            vhsSettings.opacityRange.userMin,
+            vhsSettings.opacityRange.userMax,
+            pulse,
+          )!;
         } else {
           opacity = ShaderAnimationUtils.computeRandomizedParameterValue(
             vhsSettings.opacity,
             animOptions,
             animationValue,
             isLocked: false,
-            minValue: 0.05,
-            maxValue: 1.0,
+            minValue: vhsSettings.opacityRange.userMin,
+            maxValue: vhsSettings.opacityRange.userMax,
             parameterId: ParameterIds.vhsOpacity,
           );
         }
@@ -142,15 +147,19 @@ class VHSShader extends StatelessWidget {
             animOptions,
             animationValue,
           );
-          noiseIntensity = vhsSettings.noiseIntensity * pulse;
+          noiseIntensity = ui.lerpDouble(
+            vhsSettings.noiseIntensityRange.userMin,
+            vhsSettings.noiseIntensityRange.userMax,
+            pulse,
+          )!;
         } else {
           noiseIntensity = ShaderAnimationUtils.computeRandomizedParameterValue(
             vhsSettings.noiseIntensity,
             animOptions,
             animationValue,
             isLocked: false,
-            minValue: 0.0,
-            maxValue: 1.0,
+            minValue: vhsSettings.noiseIntensityRange.userMin,
+            maxValue: vhsSettings.noiseIntensityRange.userMax,
             parameterId: ParameterIds.vhsNoiseIntensity,
           );
         }
@@ -172,39 +181,40 @@ class VHSShader extends StatelessWidget {
             animOptions,
             animationValue,
             isLocked: false,
-            minValue: 0.0,
-            maxValue: 400.0,
+            minValue: vhsSettings.fieldLinesRange.userMin,
+            maxValue: vhsSettings.fieldLinesRange.userMax,
             parameterId: ParameterIds.vhsFieldLines,
           );
         }
-        animManager.updateAnimatedValue(
-          ParameterIds.vhsFieldLines,
-          fieldLines,
-        );
+        animManager.updateAnimatedValue(ParameterIds.vhsFieldLines, fieldLines);
       } else {
-        animManager.updateAnimatedValue(
-          ParameterIds.vhsFieldLines,
-          fieldLines,
-        );
+        animManager.updateAnimatedValue(ParameterIds.vhsFieldLines, fieldLines);
       }
 
-      if (!animManager.isParameterLocked(ParameterIds.vhsHorizontalWaveStrength)) {
+      if (!animManager.isParameterLocked(
+        ParameterIds.vhsHorizontalWaveStrength,
+      )) {
         if (isPulseMode) {
           final pulse = ShaderAnimationUtils.computePulseValue(
             animOptions,
             animationValue,
           );
-          horizontalWaveStrength = vhsSettings.horizontalWaveStrength * pulse;
+          horizontalWaveStrength = ui.lerpDouble(
+            vhsSettings.horizontalWaveStrengthRange.userMin,
+            vhsSettings.horizontalWaveStrengthRange.userMax,
+            pulse,
+          )!;
         } else {
-          horizontalWaveStrength = ShaderAnimationUtils.computeRandomizedParameterValue(
-            vhsSettings.horizontalWaveStrength,
-            animOptions,
-            animationValue,
-            isLocked: false,
-            minValue: 0.0,
-            maxValue: 0.5,
-            parameterId: ParameterIds.vhsHorizontalWaveStrength,
-          );
+          horizontalWaveStrength =
+              ShaderAnimationUtils.computeRandomizedParameterValue(
+                vhsSettings.horizontalWaveStrength,
+                animOptions,
+                animationValue,
+                isLocked: false,
+                minValue: vhsSettings.horizontalWaveStrengthRange.userMin,
+                maxValue: vhsSettings.horizontalWaveStrengthRange.userMax,
+                parameterId: ParameterIds.vhsHorizontalWaveStrength,
+              );
         }
         animManager.updateAnimatedValue(
           ParameterIds.vhsHorizontalWaveStrength,
@@ -217,18 +227,20 @@ class VHSShader extends StatelessWidget {
         );
       }
 
-      if (!animManager.isParameterLocked(ParameterIds.vhsHorizontalWaveScreenSize)) {
+      if (!animManager.isParameterLocked(
+        ParameterIds.vhsHorizontalWaveScreenSize,
+      )) {
         if (!isPulseMode) {
           horizontalWaveScreenSize =
               ShaderAnimationUtils.computeRandomizedParameterValue(
-            vhsSettings.horizontalWaveScreenSize,
-            animOptions,
-            animationValue,
-            isLocked: false,
-            minValue: 10.0,
-            maxValue: 200.0,
-            parameterId: ParameterIds.vhsHorizontalWaveScreenSize,
-          );
+                vhsSettings.horizontalWaveScreenSize,
+                animOptions,
+                animationValue,
+                isLocked: false,
+                minValue: vhsSettings.horizontalWaveScreenSizeRange.userMin,
+                maxValue: vhsSettings.horizontalWaveScreenSizeRange.userMax,
+                parameterId: ParameterIds.vhsHorizontalWaveScreenSize,
+              );
         }
         animManager.updateAnimatedValue(
           ParameterIds.vhsHorizontalWaveScreenSize,
@@ -241,18 +253,20 @@ class VHSShader extends StatelessWidget {
         );
       }
 
-      if (!animManager.isParameterLocked(ParameterIds.vhsHorizontalWaveVerticalSize)) {
+      if (!animManager.isParameterLocked(
+        ParameterIds.vhsHorizontalWaveVerticalSize,
+      )) {
         if (!isPulseMode) {
           horizontalWaveVerticalSize =
               ShaderAnimationUtils.computeRandomizedParameterValue(
-            vhsSettings.horizontalWaveVerticalSize,
-            animOptions,
-            animationValue,
-            isLocked: false,
-            minValue: 10.0,
-            maxValue: 300.0,
-            parameterId: ParameterIds.vhsHorizontalWaveVerticalSize,
-          );
+                vhsSettings.horizontalWaveVerticalSize,
+                animOptions,
+                animationValue,
+                isLocked: false,
+                minValue: vhsSettings.horizontalWaveVerticalSizeRange.userMin,
+                maxValue: vhsSettings.horizontalWaveVerticalSizeRange.userMax,
+                parameterId: ParameterIds.vhsHorizontalWaveVerticalSize,
+              );
         }
         animManager.updateAnimatedValue(
           ParameterIds.vhsHorizontalWaveVerticalSize,
@@ -271,17 +285,22 @@ class VHSShader extends StatelessWidget {
             animOptions,
             animationValue,
           );
-          dottedNoiseStrength = vhsSettings.dottedNoiseStrength * pulse;
+          dottedNoiseStrength = ui.lerpDouble(
+            vhsSettings.dottedNoiseStrengthRange.userMin,
+            vhsSettings.dottedNoiseStrengthRange.userMax,
+            pulse,
+          )!;
         } else {
-          dottedNoiseStrength = ShaderAnimationUtils.computeRandomizedParameterValue(
-            vhsSettings.dottedNoiseStrength,
-            animOptions,
-            animationValue,
-            isLocked: false,
-            minValue: 0.0,
-            maxValue: 1.0,
-            parameterId: ParameterIds.vhsDottedNoiseStrength,
-          );
+          dottedNoiseStrength =
+              ShaderAnimationUtils.computeRandomizedParameterValue(
+                vhsSettings.dottedNoiseStrength,
+                animOptions,
+                animationValue,
+                isLocked: false,
+                minValue: vhsSettings.dottedNoiseStrengthRange.userMin,
+                maxValue: vhsSettings.dottedNoiseStrengthRange.userMax,
+                parameterId: ParameterIds.vhsDottedNoiseStrength,
+              );
         }
         animManager.updateAnimatedValue(
           ParameterIds.vhsDottedNoiseStrength,
@@ -294,25 +313,30 @@ class VHSShader extends StatelessWidget {
         );
       }
 
-      if (!animManager.isParameterLocked(ParameterIds.vhsHorizontalDistortionStrength)) {
+      if (!animManager.isParameterLocked(
+        ParameterIds.vhsHorizontalDistortionStrength,
+      )) {
         if (isPulseMode) {
           final pulse = ShaderAnimationUtils.computePulseValue(
             animOptions,
             animationValue,
           );
-          horizontalDistortionStrength =
-              vhsSettings.horizontalDistortionStrength * pulse;
+          horizontalDistortionStrength = ui.lerpDouble(
+            vhsSettings.horizontalDistortionStrengthRange.userMin,
+            vhsSettings.horizontalDistortionStrengthRange.userMax,
+            pulse,
+          )!;
         } else {
           horizontalDistortionStrength =
               ShaderAnimationUtils.computeRandomizedParameterValue(
-            vhsSettings.horizontalDistortionStrength,
-            animOptions,
-            animationValue,
-            isLocked: false,
-            minValue: 0.0,
-            maxValue: 0.02,
-            parameterId: ParameterIds.vhsHorizontalDistortionStrength,
-          );
+                vhsSettings.horizontalDistortionStrength,
+                animOptions,
+                animationValue,
+                isLocked: false,
+                minValue: vhsSettings.horizontalDistortionStrengthRange.userMin,
+                maxValue: vhsSettings.horizontalDistortionStrengthRange.userMax,
+                parameterId: ParameterIds.vhsHorizontalDistortionStrength,
+              );
         }
         animManager.updateAnimatedValue(
           ParameterIds.vhsHorizontalDistortionStrength,
@@ -331,7 +355,9 @@ class VHSShader extends StatelessWidget {
       animManager.clearAnimatedValue(ParameterIds.vhsFieldLines);
       animManager.clearAnimatedValue(ParameterIds.vhsHorizontalWaveStrength);
       animManager.clearAnimatedValue(ParameterIds.vhsHorizontalWaveScreenSize);
-      animManager.clearAnimatedValue(ParameterIds.vhsHorizontalWaveVerticalSize);
+      animManager.clearAnimatedValue(
+        ParameterIds.vhsHorizontalWaveVerticalSize,
+      );
       animManager.clearAnimatedValue(ParameterIds.vhsDottedNoiseStrength);
       animManager.clearAnimatedValue(
         ParameterIds.vhsHorizontalDistortionStrength,
@@ -347,7 +373,10 @@ class VHSShader extends StatelessWidget {
     shader.setFloat(5, fieldLines); // uFieldLines
     shader.setFloat(6, horizontalWaveStrength); // uHorizontalWaveStrength
     shader.setFloat(7, horizontalWaveScreenSize); // uHorizontalWaveScreenSize
-    shader.setFloat(8, horizontalWaveVerticalSize); // uHorizontalWaveVerticalSize
+    shader.setFloat(
+      8,
+      horizontalWaveVerticalSize,
+    ); // uHorizontalWaveVerticalSize
     shader.setFloat(9, dottedNoiseStrength); // uDottedNoiseStrength
     shader.setFloat(
       10,

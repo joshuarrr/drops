@@ -80,10 +80,15 @@ class ChromaticEffectShader extends StatelessWidget {
           shader.setImageSampler(0, image);
 
           // Compute animated intensity if enabled
-          double intensity = settings.chromaticSettings.intensity;
-          double amount = settings.chromaticSettings.amount;
-          double angle = settings.chromaticSettings.angle;
-          double spread = settings.chromaticSettings.spread;
+          final intensityRange = settings.chromaticSettings.intensityRange;
+          final amountRange = settings.chromaticSettings.amountRange;
+          final angleRange = settings.chromaticSettings.angleRange;
+          final spreadRange = settings.chromaticSettings.spreadRange;
+
+          double intensity = intensityRange.userMax;
+          double amount = amountRange.userMax;
+          double angle = angleRange.userMax;
+          double spread = spreadRange.userMax;
 
           if (settings.chromaticSettings.chromaticAnimated) {
             final animManager = AnimationStateManager();
@@ -101,7 +106,8 @@ class ChromaticEffectShader extends StatelessWidget {
                   settings.chromaticSettings.animOptions,
                   animationValue,
                 );
-                intensity = settings.chromaticSettings.intensity * pulse;
+                intensity = intensityRange.userMin +
+                    (intensityRange.userMax - intensityRange.userMin) * pulse;
                 animManager.updateAnimatedValue(
                   ParameterIds.chromaticIntensity,
                   intensity,
@@ -122,7 +128,8 @@ class ChromaticEffectShader extends StatelessWidget {
                   settings.chromaticSettings.animOptions,
                   animationValue,
                 );
-                amount = settings.chromaticSettings.amount * pulse;
+                amount = amountRange.userMin +
+                    (amountRange.userMax - amountRange.userMin) * pulse;
                 animManager.updateAnimatedValue(
                   ParameterIds.chromaticAmount,
                   amount,
@@ -143,7 +150,8 @@ class ChromaticEffectShader extends StatelessWidget {
                   settings.chromaticSettings.animOptions,
                   animationValue,
                 );
-                spread = settings.chromaticSettings.spread * pulse;
+                spread = spreadRange.userMin +
+                    (spreadRange.userMax - spreadRange.userMin) * pulse;
                 animManager.updateAnimatedValue(
                   ParameterIds.chromaticSpread,
                   spread,
@@ -164,9 +172,8 @@ class ChromaticEffectShader extends StatelessWidget {
                 );
                 // For angle, we do rotation animation rather than pulsing to zero
                 // This provides a more visually appealing rotation effect
-                angle =
-                    (settings.chromaticSettings.angle + (pulse * 180.0)) %
-                    360.0;
+                angle = angleRange.userMin +
+                    (angleRange.userMax - angleRange.userMin) * pulse;
                 animManager.updateAnimatedValue(
                   ParameterIds.chromaticAngle,
                   angle,
@@ -185,18 +192,15 @@ class ChromaticEffectShader extends StatelessWidget {
               if (!animManager.isParameterLocked(
                 ParameterIds.chromaticIntensity,
               )) {
-                intensity =
-                    ShaderAnimationUtils.computeRandomizedParameterValue(
-                      settings.chromaticSettings.intensity,
-                      settings.chromaticSettings.animOptions,
-                      animationValue,
-                      isLocked: animManager.isParameterLocked(
-                        ParameterIds.chromaticIntensity,
-                      ),
-                      minValue: 0.0,
-                      maxValue: 1.0,
-                      parameterId: ParameterIds.chromaticIntensity,
-                    );
+                intensity = ShaderAnimationUtils.computeRandomizedParameterValue(
+                  intensityRange.userMax,
+                  settings.chromaticSettings.animOptions,
+                  animationValue,
+                  isLocked: false,
+                  minValue: intensityRange.userMin,
+                  maxValue: intensityRange.userMax,
+                  parameterId: ParameterIds.chromaticIntensity,
+                );
                 animManager.updateAnimatedValue(
                   ParameterIds.chromaticIntensity,
                   intensity,
@@ -214,14 +218,12 @@ class ChromaticEffectShader extends StatelessWidget {
                 ParameterIds.chromaticAmount,
               )) {
                 amount = ShaderAnimationUtils.computeRandomizedParameterValue(
-                  settings.chromaticSettings.amount,
+                  amountRange.userMax,
                   settings.chromaticSettings.animOptions,
                   animationValue,
-                  isLocked: animManager.isParameterLocked(
-                    ParameterIds.chromaticAmount,
-                  ),
-                  minValue: 0.0,
-                  maxValue: 20.0,
+                  isLocked: false,
+                  minValue: amountRange.userMin,
+                  maxValue: amountRange.userMax,
                   parameterId: ParameterIds.chromaticAmount,
                 );
                 animManager.updateAnimatedValue(
@@ -241,14 +243,12 @@ class ChromaticEffectShader extends StatelessWidget {
                 ParameterIds.chromaticSpread,
               )) {
                 spread = ShaderAnimationUtils.computeRandomizedParameterValue(
-                  settings.chromaticSettings.spread,
+                  spreadRange.userMax,
                   settings.chromaticSettings.animOptions,
                   animationValue,
-                  isLocked: animManager.isParameterLocked(
-                    ParameterIds.chromaticSpread,
-                  ),
-                  minValue: 0.0,
-                  maxValue: 1.0,
+                  isLocked: false,
+                  minValue: spreadRange.userMin,
+                  maxValue: spreadRange.userMax,
                   parameterId: ParameterIds.chromaticSpread,
                 );
                 animManager.updateAnimatedValue(
@@ -268,14 +268,12 @@ class ChromaticEffectShader extends StatelessWidget {
                 // For angle we want full rotation, so use a special approach
                 // We'll animate between 0 and 360 degrees
                 angle = ShaderAnimationUtils.computeRandomizedParameterValue(
-                  settings.chromaticSettings.angle,
+                  angleRange.userMax,
                   settings.chromaticSettings.animOptions,
                   animationValue,
-                  isLocked: animManager.isParameterLocked(
-                    ParameterIds.chromaticAngle,
-                  ),
-                  minValue: 0.0,
-                  maxValue: 360.0,
+                  isLocked: false,
+                  minValue: angleRange.userMin,
+                  maxValue: angleRange.userMax,
                   parameterId: ParameterIds.chromaticAngle,
                 );
                 animManager.updateAnimatedValue(

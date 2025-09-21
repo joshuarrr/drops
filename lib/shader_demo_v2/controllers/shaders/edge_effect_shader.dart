@@ -96,7 +96,11 @@ class EdgeEffectShader extends StatelessWidget {
                   settings.edgeSettings.edgeAnimOptions,
                   animationValue,
                 );
-                opacity = settings.edgeSettings.opacity * pulse;
+                opacity =
+                    settings.edgeSettings.opacityRange.userMin +
+                    (settings.edgeSettings.opacityRange.userMax -
+                            settings.edgeSettings.opacityRange.userMin) *
+                        pulse;
                 animManager.updateAnimatedValue(
                   ParameterIds.edgeOpacity,
                   opacity,
@@ -115,7 +119,11 @@ class EdgeEffectShader extends StatelessWidget {
                   settings.edgeSettings.edgeAnimOptions,
                   animationValue,
                 );
-                intensity = settings.edgeSettings.edgeIntensity * pulse;
+                intensity =
+                    settings.edgeSettings.edgeIntensityRange.userMin +
+                    (settings.edgeSettings.edgeIntensityRange.userMax -
+                            settings.edgeSettings.edgeIntensityRange.userMin) *
+                        pulse;
                 animManager.updateAnimatedValue(
                   ParameterIds.edgeIntensity,
                   intensity,
@@ -134,7 +142,11 @@ class EdgeEffectShader extends StatelessWidget {
                   settings.edgeSettings.edgeAnimOptions,
                   animationValue,
                 );
-                thickness = settings.edgeSettings.edgeThickness * pulse;
+                thickness =
+                    settings.edgeSettings.edgeThicknessRange.userMin +
+                    (settings.edgeSettings.edgeThicknessRange.userMax -
+                            settings.edgeSettings.edgeThicknessRange.userMin) *
+                        pulse;
                 animManager.updateAnimatedValue(
                   ParameterIds.edgeThickness,
                   thickness,
@@ -149,9 +161,16 @@ class EdgeEffectShader extends StatelessWidget {
 
               // Animate edge color if unlocked
               if (!animManager.isParameterLocked(ParameterIds.edgeColor)) {
-                // For color, we'll oscillate through the hue range
+                // For color, we'll oscillate through the user-defined range
+                double pulse = ShaderAnimationUtils.computePulseValue(
+                  settings.edgeSettings.edgeAnimOptions,
+                  animationValue,
+                );
                 edgeColor =
-                    (settings.edgeSettings.edgeColor + animationValue) % 1.0;
+                    settings.edgeSettings.edgeColorRange.userMin +
+                    (settings.edgeSettings.edgeColorRange.userMax -
+                            settings.edgeSettings.edgeColorRange.userMin) *
+                        pulse;
                 animManager.updateAnimatedValue(
                   ParameterIds.edgeColor,
                   edgeColor,
@@ -175,8 +194,8 @@ class EdgeEffectShader extends StatelessWidget {
                   isLocked: animManager.isParameterLocked(
                     ParameterIds.edgeOpacity,
                   ),
-                  minValue: 0.0,
-                  maxValue: 1.0,
+                  minValue: settings.edgeSettings.opacityRange.userMin,
+                  maxValue: settings.edgeSettings.opacityRange.userMax,
                   parameterId: ParameterIds.edgeOpacity,
                 );
                 animManager.updateAnimatedValue(
@@ -201,8 +220,10 @@ class EdgeEffectShader extends StatelessWidget {
                       isLocked: animManager.isParameterLocked(
                         ParameterIds.edgeIntensity,
                       ),
-                      minValue: 0.0,
-                      maxValue: 5.0,
+                      minValue:
+                          settings.edgeSettings.edgeIntensityRange.userMin,
+                      maxValue:
+                          settings.edgeSettings.edgeIntensityRange.userMax,
                       parameterId: ParameterIds.edgeIntensity,
                     );
                 animManager.updateAnimatedValue(
@@ -227,8 +248,10 @@ class EdgeEffectShader extends StatelessWidget {
                       isLocked: animManager.isParameterLocked(
                         ParameterIds.edgeThickness,
                       ),
-                      minValue: 0.5,
-                      maxValue: 5.0,
+                      minValue:
+                          settings.edgeSettings.edgeThicknessRange.userMin,
+                      maxValue:
+                          settings.edgeSettings.edgeThicknessRange.userMax,
                       parameterId: ParameterIds.edgeThickness,
                     );
                 animManager.updateAnimatedValue(
@@ -253,8 +276,8 @@ class EdgeEffectShader extends StatelessWidget {
                       isLocked: animManager.isParameterLocked(
                         ParameterIds.edgeColor,
                       ),
-                      minValue: 0.0,
-                      maxValue: 1.0,
+                      minValue: settings.edgeSettings.edgeColorRange.userMin,
+                      maxValue: settings.edgeSettings.edgeColorRange.userMax,
                       parameterId: ParameterIds.edgeColor,
                     );
                 animManager.updateAnimatedValue(

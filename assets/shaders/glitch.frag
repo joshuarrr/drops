@@ -48,18 +48,24 @@ void main() {
     
     // Apply slice displacement effects
     if (uHorizontalSliceIntensity > 0.0) {
-        // Create erratic timing for horizontal slices
-        float erraticTime = uTime + sin(uTime * 7.3) * 0.5 + cos(uTime * 11.7) * 0.3;
-        float sliceTime = erraticTime * uFrequency;
+        // Create time-based slice occurrence using frequency
+        // Scale frequency for longer animations (30s+) - balanced approach
+        float sliceTime = uTime * uFrequency * 0.3;
         
         // Create horizontal slice pattern - slices are horizontal lines
         float sliceY = floor(uv.y * 20.0); // Create 20 horizontal slices
-        float sliceHash = fract(sin(sliceY * 12.9898 + sliceTime * 2.0) * 43758.5453);
+        float sliceHash = fract(sin(sliceY * 12.9898) * 43758.5453);
         
-        // Slice displacement occurs when hash is below slice intensity threshold
-        if (sliceHash < uHorizontalSliceIntensity) {
-            // Random vertical displacement for this slice
-            float verticalDisplacement = (fract(sin(sliceY * 78.233 + sliceTime * 3.0) * 43758.5453) - 0.5) * 0.1 * uHorizontalSliceIntensity;
+        // Create time-based slice trigger - use fract to create repeating pattern
+        // This is more robust to time discontinuities than sine waves
+        float sliceTrigger = fract(sliceTime);
+        float sliceProbability = smoothstep(0.0, 0.2, sliceTrigger);
+        
+        // Slice displacement occurs when both time-based trigger and position-based hash conditions are met
+        if (sliceProbability > 0.0 && sliceHash < uHorizontalSliceIntensity) {
+            // Create erratic timing for displacement
+            float erraticTime = uTime + sin(uTime * 7.3) * 0.5 + cos(uTime * 11.7) * 0.3;
+            float verticalDisplacement = (fract(sin(sliceY * 78.233 + erraticTime * 3.0) * 43758.5453) - 0.5) * 0.1 * uHorizontalSliceIntensity;
             
             // Apply displacement
             vec2 sliceUV = uv + vec2(0.0, verticalDisplacement);
@@ -72,18 +78,24 @@ void main() {
     }
     
     if (uVerticalSliceIntensity > 0.0) {
-        // Create erratic timing for vertical slices
-        float erraticTime = uTime + sin(uTime * 5.7) * 0.4 + cos(uTime * 13.2) * 0.6;
-        float sliceTime = erraticTime * uFrequency;
+        // Create time-based slice occurrence using frequency
+        // Scale frequency for longer animations (30s+) - balanced approach
+        float sliceTime = uTime * uFrequency * 0.3;
         
         // Create vertical slice pattern - slices are vertical lines
         float sliceX = floor(uv.x * 20.0); // Create 20 vertical slices
-        float sliceHash = fract(sin(sliceX * 12.9898 + sliceTime * 2.5) * 43758.5453);
+        float sliceHash = fract(sin(sliceX * 12.9898) * 43758.5453);
         
-        // Slice displacement occurs when hash is below slice intensity threshold
-        if (sliceHash < uVerticalSliceIntensity) {
-            // Random horizontal displacement for this slice
-            float horizontalDisplacement = (fract(sin(sliceX * 78.233 + sliceTime * 3.5) * 43758.5453) - 0.5) * 0.1 * uVerticalSliceIntensity;
+        // Create time-based slice trigger - use fract to create repeating pattern
+        // This is more robust to time discontinuities than sine waves
+        float sliceTrigger = fract(sliceTime);
+        float sliceProbability = smoothstep(0.0, 0.2, sliceTrigger);
+        
+        // Slice displacement occurs when both time-based trigger and position-based hash conditions are met
+        if (sliceProbability > 0.0 && sliceHash < uVerticalSliceIntensity) {
+            // Create erratic timing for displacement
+            float erraticTime = uTime + sin(uTime * 5.7) * 0.4 + cos(uTime * 13.2) * 0.6;
+            float horizontalDisplacement = (fract(sin(sliceX * 78.233 + erraticTime * 3.5) * 43758.5453) - 0.5) * 0.1 * uVerticalSliceIntensity;
             
             // Apply displacement
             vec2 sliceUV = uv + vec2(horizontalDisplacement, 0.0);
@@ -97,18 +109,24 @@ void main() {
     
     // Apply chromatic aberration glitch effect based on intensity
     if (uIntensity > 0.0) {
-        // Create erratic timing for chromatic aberration glitch
-        float erraticTime = uTime + sin(uTime * 9.1) * 0.7 + cos(uTime * 15.3) * 0.4;
-        float glitchTime = erraticTime * uFrequency;
+        // Create time-based glitch occurrence using frequency
+        // Scale frequency for longer animations (30s+) - balanced approach
+        float glitchTime = uTime * uFrequency * 0.3;
         
         // Create block-based glitch pattern
         vec2 blockUV = floor(uv / uBlockSize) * uBlockSize;
         float blockHash = fract(sin(dot(blockUV, vec2(12.9898, 78.233))) * 43758.5453);
         
-        // Glitch occurs when block hash is below intensity threshold
-        if (blockHash < uIntensity) {
-            // Horizontal displacement
-            float displacement = sin(glitchTime * 10.0 + blockHash * 6.28) * 0.1 * uIntensity;
+        // Create time-based glitch trigger - use fract to create repeating pattern
+        // This is more robust to time discontinuities than sine waves
+        float glitchTrigger = fract(glitchTime);
+        float glitchProbability = smoothstep(0.0, 0.2, glitchTrigger);
+        
+        // Glitch occurs when both time-based trigger and position-based hash conditions are met
+        if (glitchProbability > 0.0 && blockHash < uIntensity) {
+            // Create erratic displacement based on time and position
+            float erraticTime = uTime + sin(uTime * 9.1) * 0.7 + cos(uTime * 15.3) * 0.4;
+            float displacement = sin(erraticTime * 10.0 + blockHash * 6.28) * 0.1 * uIntensity;
             vec2 glitchUV = uv + vec2(displacement, 0.0);
             
             // Sample with displacement

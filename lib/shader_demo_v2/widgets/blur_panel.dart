@@ -3,10 +3,12 @@ import '../models/shader_effect.dart';
 import '../models/effect_settings.dart';
 import '../controllers/effect_controls_bridge.dart';
 import '../models/animation_options.dart';
+import '../models/blur_settings.dart';
 import '../models/presets_manager.dart';
 import '../services/preset_refresh_service.dart';
 import '../controllers/animation_state_manager.dart';
-import 'lockable_slider.dart';
+import '../models/parameter_range.dart';
+import 'range_lockable_slider.dart';
 import 'animation_controls.dart';
 import 'enhanced_panel_header.dart';
 
@@ -33,6 +35,9 @@ class BlurPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final blurSettings = settings.blurSettings;
+    final blurDefaults = ShaderSettings.defaults.blurSettings;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -55,82 +60,7 @@ class BlurPanel extends StatelessWidget {
             _updateSettings((s) => s.blurSettings.applyToText = value);
           },
         ),
-        LockableSlider(
-          label: 'Shatter Amount',
-          value: settings.blurSettings.blurAmount,
-          min: 0.0,
-          max: 1.0,
-          divisions: 100,
-          displayValue: '${(settings.blurSettings.blurAmount * 100).round()}%',
-          onChanged: (value) =>
-              _onSliderChanged(value, (s, v) => s.blurSettings.blurAmount = v),
-          activeColor: sliderColor,
-          parameterId: ParameterIds.blurAmount,
-          animationEnabled: settings.blurSettings.blurAnimated,
-          defaultValue: 0.0,
-        ),
-        LockableSlider(
-          label: 'Shatter Radius',
-          value: settings.blurSettings.blurRadius,
-          min: 0.0,
-          max: 120.0,
-          divisions: 120,
-          displayValue: '${settings.blurSettings.blurRadius.round()}px',
-          onChanged: (value) =>
-              _onSliderChanged(value, (s, v) => s.blurSettings.blurRadius = v),
-          activeColor: sliderColor,
-          parameterId: ParameterIds.blurRadius,
-          animationEnabled: settings.blurSettings.blurAnimated,
-          defaultValue: 15.0,
-        ),
-        LockableSlider(
-          label: 'Shatter Opacity',
-          value: settings.blurSettings.blurOpacity,
-          min: 0.0,
-          max: 1.0,
-          divisions: 100,
-          displayValue: '${(settings.blurSettings.blurOpacity * 100).round()}%',
-          onChanged: (value) =>
-              _onSliderChanged(value, (s, v) => s.blurSettings.blurOpacity = v),
-          activeColor: sliderColor,
-          parameterId: ParameterIds.blurOpacity,
-          animationEnabled: settings.blurSettings.blurAnimated,
-          defaultValue: 1.0,
-        ),
-        LockableSlider(
-          label: 'Intensity',
-          value: settings.blurSettings.blurIntensity,
-          min: 0.0,
-          max: 3.0,
-          divisions: null, // Removed divisions to get rid of dots
-          displayValue:
-              '${settings.blurSettings.blurIntensity.toStringAsFixed(1)}x',
-          onChanged: (value) => _onSliderChanged(
-            value,
-            (s, v) => s.blurSettings.blurIntensity = v,
-          ),
-          activeColor: sliderColor,
-          parameterId: ParameterIds.blurIntensity,
-          animationEnabled: settings.blurSettings.blurAnimated,
-          defaultValue: 1.0,
-        ),
-        LockableSlider(
-          label: 'Contrast',
-          value: settings.blurSettings.blurContrast,
-          min: 0.0,
-          max: 2.0,
-          divisions: null, // Removed divisions to get rid of dots
-          displayValue:
-              '${(settings.blurSettings.blurContrast * 100).round()}%',
-          onChanged: (value) => _onSliderChanged(
-            value,
-            (s, v) => s.blurSettings.blurContrast = v,
-          ),
-          activeColor: sliderColor,
-          parameterId: ParameterIds.blurContrast,
-          animationEnabled: settings.blurSettings.blurAnimated,
-          defaultValue: 0.0,
-        ),
+        ..._buildRangeSliders(blurSettings, blurDefaults),
         Padding(
           padding: const EdgeInsets.only(top: 8, bottom: 8),
           child: Column(
@@ -218,16 +148,105 @@ class BlurPanel extends StatelessWidget {
     );
   }
 
-  void _onSliderChanged(
-    double value,
-    void Function(ShaderSettings, double) setter,
+  List<Widget> _buildRangeSliders(
+    BlurSettings blurSettings,
+    BlurSettings blurDefaults,
+  ) {
+    String formatPercent(double value) => '${(value * 100).round()}%';
+    String formatPixels(double value) => '${value.round()}px';
+    String formatMultiplier(double value) => '${value.toStringAsFixed(1)}x';
+
+    return [
+      RangeLockableSlider(
+        label: 'Shatter Amount',
+        range: blurSettings.blurAmountRange,
+        min: 0.0,
+        max: 1.0,
+        divisions: 100,
+        activeColor: sliderColor,
+        formatValue: formatPercent,
+        defaults: blurDefaults.blurAmountRange,
+        parameterId: ParameterIds.blurAmount,
+        animationEnabled: blurSettings.blurAnimated,
+        onRangeChanged: (range) => _onRangeChanged(
+          range,
+          (s, updated) => s.blurSettings.setBlurAmountRange(updated),
+        ),
+      ),
+      RangeLockableSlider(
+        label: 'Shatter Radius',
+        range: blurSettings.blurRadiusRange,
+        min: 0.0,
+        max: 120.0,
+        divisions: 120,
+        activeColor: sliderColor,
+        formatValue: formatPixels,
+        defaults: blurDefaults.blurRadiusRange,
+        parameterId: ParameterIds.blurRadius,
+        animationEnabled: blurSettings.blurAnimated,
+        onRangeChanged: (range) => _onRangeChanged(
+          range,
+          (s, updated) => s.blurSettings.setBlurRadiusRange(updated),
+        ),
+      ),
+      RangeLockableSlider(
+        label: 'Shatter Opacity',
+        range: blurSettings.blurOpacityRange,
+        min: 0.0,
+        max: 1.0,
+        divisions: 100,
+        activeColor: sliderColor,
+        formatValue: formatPercent,
+        defaults: blurDefaults.blurOpacityRange,
+        parameterId: ParameterIds.blurOpacity,
+        animationEnabled: blurSettings.blurAnimated,
+        onRangeChanged: (range) => _onRangeChanged(
+          range,
+          (s, updated) => s.blurSettings.setBlurOpacityRange(updated),
+        ),
+      ),
+      RangeLockableSlider(
+        label: 'Intensity',
+        range: blurSettings.blurIntensityRange,
+        min: 0.0,
+        max: 3.0,
+        divisions: null,
+        activeColor: sliderColor,
+        formatValue: formatMultiplier,
+        defaults: blurDefaults.blurIntensityRange,
+        parameterId: ParameterIds.blurIntensity,
+        animationEnabled: blurSettings.blurAnimated,
+        onRangeChanged: (range) => _onRangeChanged(
+          range,
+          (s, updated) => s.blurSettings.setBlurIntensityRange(updated),
+        ),
+      ),
+      RangeLockableSlider(
+        label: 'Contrast',
+        range: blurSettings.blurContrastRange,
+        min: 0.0,
+        max: 2.0,
+        divisions: null,
+        activeColor: sliderColor,
+        formatValue: formatPercent,
+        defaults: blurDefaults.blurContrastRange,
+        parameterId: ParameterIds.blurContrast,
+        animationEnabled: blurSettings.blurAnimated,
+        onRangeChanged: (range) => _onRangeChanged(
+          range,
+          (s, updated) => s.blurSettings.setBlurContrastRange(updated),
+        ),
+      ),
+    ];
+  }
+
+  void _onRangeChanged(
+    ParameterRange range,
+    void Function(ShaderSettings, ParameterRange) setter,
   ) {
     _updateSettings((s) {
-      // Enable the corresponding effect if it's not already enabled
       if (!s.blurEnabled) s.blurEnabled = true;
-
-      // Update the setting value
-      setter(s, value);
+      setter(s, range);
     });
   }
 
@@ -235,13 +254,23 @@ class BlurPanel extends StatelessWidget {
     final defaults = ShaderSettings.defaults;
     _updateSettings((s) {
       s.blurEnabled = false;
-      s.blurSettings.blurAmount = defaults.blurSettings.blurAmount;
-      s.blurSettings.blurRadius = defaults.blurSettings.blurRadius;
-      s.blurSettings.blurOpacity = defaults.blurSettings.blurOpacity;
+      s.blurSettings.setBlurAmountRange(
+        defaults.blurSettings.blurAmountRange,
+      );
+      s.blurSettings.setBlurRadiusRange(
+        defaults.blurSettings.blurRadiusRange,
+      );
+      s.blurSettings.setBlurOpacityRange(
+        defaults.blurSettings.blurOpacityRange,
+      );
       s.blurSettings.blurBlendMode = defaults.blurSettings.blurBlendMode;
-      s.blurSettings.blurIntensity = defaults.blurSettings.blurIntensity;
-      s.blurSettings.blurContrast = defaults.blurSettings.blurContrast;
-      s.blurSettings.blurAnimated = false;
+      s.blurSettings.setBlurIntensityRange(
+        defaults.blurSettings.blurIntensityRange,
+      );
+      s.blurSettings.setBlurContrastRange(
+        defaults.blurSettings.blurContrastRange,
+      );
+      s.blurSettings.blurAnimated = defaults.blurSettings.blurAnimated;
       s.blurSettings.blurAnimOptions = AnimationOptions();
     });
   }
@@ -249,18 +278,73 @@ class BlurPanel extends StatelessWidget {
   void _applyPreset(Map<String, dynamic> presetData) {
     _updateSettings((s) {
       s.blurEnabled = presetData['blurEnabled'] ?? s.blurEnabled;
-      s.blurSettings.blurAmount =
-          presetData['blurAmount'] ?? s.blurSettings.blurAmount;
-      s.blurSettings.blurRadius =
-          presetData['blurRadius'] ?? s.blurSettings.blurRadius;
-      s.blurSettings.blurOpacity =
-          presetData['blurOpacity'] ?? s.blurSettings.blurOpacity;
+      s.blurSettings.setBlurAmountRange(
+        _rangeFromPreset(
+          presetData,
+          rangeKey: 'blurAmountRange',
+          valueKey: 'blurAmount',
+          minKey: 'blurAmountMin',
+          maxKey: 'blurAmountMax',
+          currentKey: 'blurAmountCurrent',
+          hardMin: 0.0,
+          hardMax: 1.0,
+          defaultValue: s.blurSettings.blurAmount,
+        ),
+      );
+      s.blurSettings.setBlurRadiusRange(
+        _rangeFromPreset(
+          presetData,
+          rangeKey: 'blurRadiusRange',
+          valueKey: 'blurRadius',
+          minKey: 'blurRadiusMin',
+          maxKey: 'blurRadiusMax',
+          currentKey: 'blurRadiusCurrent',
+          hardMin: 0.0,
+          hardMax: 120.0,
+          defaultValue: s.blurSettings.blurRadius,
+        ),
+      );
+      s.blurSettings.setBlurOpacityRange(
+        _rangeFromPreset(
+          presetData,
+          rangeKey: 'blurOpacityRange',
+          valueKey: 'blurOpacity',
+          minKey: 'blurOpacityMin',
+          maxKey: 'blurOpacityMax',
+          currentKey: 'blurOpacityCurrent',
+          hardMin: 0.0,
+          hardMax: 1.0,
+          defaultValue: s.blurSettings.blurOpacity,
+        ),
+      );
       s.blurSettings.blurBlendMode =
           presetData['blurBlendMode'] ?? s.blurSettings.blurBlendMode;
-      s.blurSettings.blurIntensity =
-          presetData['blurIntensity'] ?? s.blurSettings.blurIntensity;
-      s.blurSettings.blurContrast =
-          presetData['blurContrast'] ?? s.blurSettings.blurContrast;
+      s.blurSettings.setBlurIntensityRange(
+        _rangeFromPreset(
+          presetData,
+          rangeKey: 'blurIntensityRange',
+          valueKey: 'blurIntensity',
+          minKey: 'blurIntensityMin',
+          maxKey: 'blurIntensityMax',
+          currentKey: 'blurIntensityCurrent',
+          hardMin: 0.0,
+          hardMax: 3.0,
+          defaultValue: s.blurSettings.blurIntensity,
+        ),
+      );
+      s.blurSettings.setBlurContrastRange(
+        _rangeFromPreset(
+          presetData,
+          rangeKey: 'blurContrastRange',
+          valueKey: 'blurContrast',
+          minKey: 'blurContrastMin',
+          maxKey: 'blurContrastMax',
+          currentKey: 'blurContrastCurrent',
+          hardMin: 0.0,
+          hardMax: 2.0,
+          defaultValue: s.blurSettings.blurContrast,
+        ),
+      );
       s.blurSettings.blurAnimated =
           presetData['blurAnimated'] ?? s.blurSettings.blurAnimated;
 
@@ -272,15 +356,98 @@ class BlurPanel extends StatelessWidget {
     });
   }
 
+  ParameterRange _rangeFromPreset(
+    Map<String, dynamic> presetData, {
+    required String rangeKey,
+    required String valueKey,
+    required String minKey,
+    required String maxKey,
+    required String currentKey,
+    required double hardMin,
+    required double hardMax,
+    required double defaultValue,
+  }) {
+    final dynamic payload = presetData[rangeKey];
+    final double fallback = _readDouble(
+      presetData[valueKey],
+      defaultValue,
+    ).clamp(hardMin, hardMax)
+        .toDouble();
+
+    if (payload is Map<String, dynamic>) {
+      return ParameterRange.fromMap(
+        Map<String, dynamic>.from(payload),
+        hardMin: hardMin,
+        hardMax: hardMax,
+        fallbackValue: fallback,
+      );
+    }
+
+    final double userMin = _readDouble(
+      presetData[minKey],
+      hardMin,
+    ).clamp(hardMin, hardMax)
+        .toDouble();
+    final double userMax = _readDouble(
+      presetData[maxKey],
+      fallback,
+    ).clamp(hardMin, hardMax)
+        .toDouble();
+    final double current = _readDouble(
+      presetData[currentKey],
+      fallback,
+    ).clamp(hardMin, hardMax)
+        .toDouble();
+
+    return ParameterRange(
+      hardMin: hardMin,
+      hardMax: hardMax,
+      initialValue: current,
+      userMin: userMin,
+      userMax: userMax,
+    );
+  }
+
+  double _readDouble(dynamic value, double fallback) {
+    if (value is num) return value.toDouble();
+    return fallback;
+  }
+
   Future<void> _savePresetForAspect(ShaderAspect aspect, String name) async {
+    final amountRange = settings.blurSettings.blurAmountRange;
+    final radiusRange = settings.blurSettings.blurRadiusRange;
+    final opacityRange = settings.blurSettings.blurOpacityRange;
+    final intensityRange = settings.blurSettings.blurIntensityRange;
+    final contrastRange = settings.blurSettings.blurContrastRange;
+
     Map<String, dynamic> presetData = {
       'blurEnabled': settings.blurEnabled,
-      'blurAmount': settings.blurSettings.blurAmount,
-      'blurRadius': settings.blurSettings.blurRadius,
-      'blurOpacity': settings.blurSettings.blurOpacity,
+      'blurAmount': amountRange.userMax,
+      'blurAmountMin': amountRange.userMin,
+      'blurAmountMax': amountRange.userMax,
+      'blurAmountCurrent': amountRange.current,
+      'blurAmountRange': amountRange.toMap(),
+      'blurRadius': radiusRange.userMax,
+      'blurRadiusMin': radiusRange.userMin,
+      'blurRadiusMax': radiusRange.userMax,
+      'blurRadiusCurrent': radiusRange.current,
+      'blurRadiusRange': radiusRange.toMap(),
+      'blurOpacity': opacityRange.userMax,
+      'blurOpacityMin': opacityRange.userMin,
+      'blurOpacityMax': opacityRange.userMax,
+      'blurOpacityCurrent': opacityRange.current,
+      'blurOpacityRange': opacityRange.toMap(),
       'blurBlendMode': settings.blurSettings.blurBlendMode,
-      'blurIntensity': settings.blurSettings.blurIntensity,
-      'blurContrast': settings.blurSettings.blurContrast,
+      'blurIntensity': intensityRange.userMax,
+      'blurIntensityMin': intensityRange.userMin,
+      'blurIntensityMax': intensityRange.userMax,
+      'blurIntensityCurrent': intensityRange.current,
+      'blurIntensityRange': intensityRange.toMap(),
+      'blurContrast': contrastRange.userMax,
+      'blurContrastMin': contrastRange.userMin,
+      'blurContrastMax': contrastRange.userMax,
+      'blurContrastCurrent': contrastRange.current,
+      'blurContrastRange': contrastRange.toMap(),
       'blurAnimated': settings.blurSettings.blurAnimated,
       'blurAnimOptions': settings.blurSettings.blurAnimOptions.toMap(),
     };

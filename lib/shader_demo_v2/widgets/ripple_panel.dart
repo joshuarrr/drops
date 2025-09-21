@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import '../models/shader_effect.dart';
 import '../models/effect_settings.dart';
-import '../models/ripple_settings.dart';
 import '../models/presets_manager.dart';
 import '../services/preset_refresh_service.dart';
 import 'lockable_slider.dart';
+import 'range_lockable_slider.dart';
 import '../controllers/animation_state_manager.dart';
+import '../models/parameter_range.dart';
 
 import 'animation_controls.dart';
 import 'enhanced_panel_header.dart';
@@ -111,144 +112,144 @@ class _RipplePanelState extends State<RipplePanel> {
                 ],
               ),
 
-              LockableSlider(
+              RangeLockableSlider(
                 label: 'Ovalness',
-                value: widget.settings.rippleSettings.rippleOvalness,
+                range: widget.settings.rippleSettings.rippleOvalnessRange,
                 min: 0.0,
                 max: 1.0,
                 divisions: 100,
-                displayValue: widget.settings.rippleSettings.rippleOvalness
-                    .toStringAsFixed(2),
-                onChanged: (value) {
-                  final updatedSettings = widget.settings;
-                  updatedSettings.rippleSettings.rippleOvalness = value;
-                  updatedSettings.rippleEnabled = true; // Ensure it's enabled
-                  widget.onSettingsChanged(updatedSettings);
-                },
                 activeColor: widget.sliderColor,
+                formatValue: (v) => v.toStringAsFixed(2),
+                defaults:
+                    ShaderSettings.defaults.rippleSettings.rippleOvalnessRange,
                 parameterId: ParameterIds.rippleOvalness,
                 animationEnabled: widget.settings.rippleSettings.rippleAnimated,
-                defaultValue: 0.0,
+                onRangeChanged: (range) {
+                  final updatedSettings = widget.settings;
+                  updatedSettings.rippleSettings.setRippleOvalnessRange(range);
+                  updatedSettings.rippleEnabled = true;
+                  widget.onSettingsChanged(updatedSettings);
+                },
               ),
 
-              LockableSlider(
+              RangeLockableSlider(
                 label: 'Rotation',
-                value: widget.settings.rippleSettings.rippleRotation,
+                range: widget.settings.rippleSettings.rippleRotationRange,
                 min: 0.0,
                 max: 1.0,
                 divisions: 100,
-                displayValue: widget.settings.rippleSettings.rippleRotation
-                    .toStringAsFixed(2),
-                onChanged: (value) {
-                  final updatedSettings = widget.settings;
-                  updatedSettings.rippleSettings.rippleRotation = value;
-                  updatedSettings.rippleEnabled = true; // Ensure it's enabled
-                  widget.onSettingsChanged(updatedSettings);
-                },
                 activeColor: widget.sliderColor,
+                formatValue: (v) => v.toStringAsFixed(2),
+                defaults:
+                    ShaderSettings.defaults.rippleSettings.rippleRotationRange,
                 parameterId: ParameterIds.rippleRotation,
                 animationEnabled: widget.settings.rippleSettings.rippleAnimated,
-                defaultValue: 0.0,
+                onRangeChanged: (range) {
+                  final updatedSettings = widget.settings;
+                  updatedSettings.rippleSettings.setRippleRotationRange(range);
+                  updatedSettings.rippleEnabled = true;
+                  widget.onSettingsChanged(updatedSettings);
+                },
               ),
 
-              LockableSlider(
+              RangeLockableSlider(
                 label: 'Intensity',
-                value: widget.settings.rippleSettings.rippleIntensity,
+                range: widget.settings.rippleSettings.rippleIntensityRange,
                 min: 0.0,
                 max: 1.0,
                 divisions: 100,
-                displayValue: widget.settings.rippleSettings.rippleIntensity
-                    .toStringAsFixed(2),
-                onChanged: (value) {
-                  final updatedSettings = widget.settings;
-                  updatedSettings.rippleSettings.rippleIntensity = value;
-                  updatedSettings.rippleEnabled = true; // Ensure it's enabled
-                  widget.onSettingsChanged(updatedSettings);
-                },
                 activeColor: widget.sliderColor,
+                formatValue: (v) => v.toStringAsFixed(2),
+                defaults:
+                    ShaderSettings.defaults.rippleSettings.rippleIntensityRange,
                 parameterId: ParameterIds.rippleIntensity,
                 animationEnabled: widget.settings.rippleSettings.rippleAnimated,
-                defaultValue: 0.5,
+                onRangeChanged: (range) {
+                  final updatedSettings = widget.settings;
+                  updatedSettings.rippleSettings.setRippleIntensityRange(range);
+                  updatedSettings.rippleEnabled = true;
+                  widget.onSettingsChanged(updatedSettings);
+                },
               ),
 
-              LockableSlider(
+              RangeLockableSlider(
                 label: 'Size',
-                value: widget.settings.rippleSettings.rippleSize,
+                range: widget.settings.rippleSettings.rippleSizeRange,
                 min: 0.0,
                 max: 1.0,
                 divisions: 100,
-                displayValue: widget.settings.rippleSettings.rippleSize
-                    .toStringAsFixed(2),
-                onChanged: (value) {
-                  final updatedSettings = widget.settings;
-                  updatedSettings.rippleSettings.rippleSize = value;
-                  updatedSettings.rippleEnabled = true; // Ensure it's enabled
-                  widget.onSettingsChanged(updatedSettings);
-                },
                 activeColor: widget.sliderColor,
+                formatValue: (v) => v.toStringAsFixed(2),
+                defaults:
+                    ShaderSettings.defaults.rippleSettings.rippleSizeRange,
                 parameterId: ParameterIds.rippleSize,
                 animationEnabled: widget.settings.rippleSettings.rippleAnimated,
-                defaultValue: 0.5,
+                onRangeChanged: (range) {
+                  final updatedSettings = widget.settings;
+                  updatedSettings.rippleSettings.setRippleSizeRange(range);
+                  updatedSettings.rippleEnabled = true;
+                  widget.onSettingsChanged(updatedSettings);
+                },
               ),
 
-              LockableSlider(
+              RangeLockableSlider(
                 label: 'Speed',
-                value: widget.settings.rippleSettings.rippleSpeed,
+                range: widget.settings.rippleSettings.rippleSpeedRange,
                 min: 0.0,
                 max: 1.0,
                 divisions: 100,
-                displayValue: widget.settings.rippleSettings.rippleSpeed
-                    .toStringAsFixed(2),
-                onChanged: (value) {
-                  final updatedSettings = widget.settings;
-                  updatedSettings.rippleSettings.rippleSpeed = value;
-                  updatedSettings.rippleEnabled = true; // Ensure it's enabled
-                  widget.onSettingsChanged(updatedSettings);
-                },
                 activeColor: widget.sliderColor,
+                formatValue: (v) => v.toStringAsFixed(2),
+                defaults:
+                    ShaderSettings.defaults.rippleSettings.rippleSpeedRange,
                 parameterId: ParameterIds.rippleSpeed,
                 animationEnabled: widget.settings.rippleSettings.rippleAnimated,
-                defaultValue: 0.5,
+                onRangeChanged: (range) {
+                  final updatedSettings = widget.settings;
+                  updatedSettings.rippleSettings.setRippleSpeedRange(range);
+                  updatedSettings.rippleEnabled = true;
+                  widget.onSettingsChanged(updatedSettings);
+                },
               ),
 
-              LockableSlider(
+              RangeLockableSlider(
                 label: 'Opacity',
-                value: widget.settings.rippleSettings.rippleOpacity,
+                range: widget.settings.rippleSettings.rippleOpacityRange,
                 min: 0.0,
                 max: 1.0,
                 divisions: 100,
-                displayValue: widget.settings.rippleSettings.rippleOpacity
-                    .toStringAsFixed(2),
-                onChanged: (value) {
-                  final updatedSettings = widget.settings;
-                  updatedSettings.rippleSettings.rippleOpacity = value;
-                  updatedSettings.rippleEnabled = true; // Ensure it's enabled
-                  widget.onSettingsChanged(updatedSettings);
-                },
                 activeColor: widget.sliderColor,
+                formatValue: (v) => v.toStringAsFixed(2),
+                defaults:
+                    ShaderSettings.defaults.rippleSettings.rippleOpacityRange,
                 parameterId: ParameterIds.rippleOpacity,
                 animationEnabled: widget.settings.rippleSettings.rippleAnimated,
-                defaultValue: 0.8,
+                onRangeChanged: (range) {
+                  final updatedSettings = widget.settings;
+                  updatedSettings.rippleSettings.setRippleOpacityRange(range);
+                  updatedSettings.rippleEnabled = true;
+                  widget.onSettingsChanged(updatedSettings);
+                },
               ),
 
-              LockableSlider(
+              RangeLockableSlider(
                 label: 'Color',
-                value: widget.settings.rippleSettings.rippleColor,
+                range: widget.settings.rippleSettings.rippleColorRange,
                 min: 0.0,
                 max: 1.0,
                 divisions: 100,
-                displayValue: widget.settings.rippleSettings.rippleColor
-                    .toStringAsFixed(2),
-                onChanged: (value) {
-                  final updatedSettings = widget.settings;
-                  updatedSettings.rippleSettings.rippleColor = value;
-                  updatedSettings.rippleEnabled = true; // Ensure it's enabled
-                  widget.onSettingsChanged(updatedSettings);
-                },
                 activeColor: widget.sliderColor,
+                formatValue: (v) => v.toStringAsFixed(2),
+                defaults:
+                    ShaderSettings.defaults.rippleSettings.rippleColorRange,
                 parameterId: ParameterIds.rippleColor,
                 animationEnabled: widget.settings.rippleSettings.rippleAnimated,
-                defaultValue: 0.5,
+                onRangeChanged: (range) {
+                  final updatedSettings = widget.settings;
+                  updatedSettings.rippleSettings.setRippleColorRange(range);
+                  updatedSettings.rippleEnabled = true;
+                  widget.onSettingsChanged(updatedSettings);
+                },
               ),
 
               SizedBox(height: 16),
@@ -324,21 +325,28 @@ class _RipplePanelState extends State<RipplePanel> {
   }
 
   void _resetRipple() {
-    final defaultSettings = RippleSettings();
+    final defaults = ShaderSettings.defaults.rippleSettings;
     widget.settings.rippleEnabled = false;
-    widget.settings.rippleSettings.rippleIntensity =
-        defaultSettings.rippleIntensity;
-    widget.settings.rippleSettings.rippleSize = defaultSettings.rippleSize;
-    widget.settings.rippleSettings.rippleSpeed = defaultSettings.rippleSpeed;
-    widget.settings.rippleSettings.rippleOpacity =
-        defaultSettings.rippleOpacity;
-    widget.settings.rippleSettings.rippleColor = defaultSettings.rippleColor;
-    widget.settings.rippleSettings.rippleDropCount =
-        defaultSettings.rippleDropCount;
-    widget.settings.rippleSettings.rippleOvalness =
-        defaultSettings.rippleOvalness;
-    widget.settings.rippleSettings.rippleRotation =
-        defaultSettings.rippleRotation;
+    widget.settings.rippleSettings.setRippleIntensityRange(
+      defaults.rippleIntensityRange,
+    );
+    widget.settings.rippleSettings.setRippleSizeRange(defaults.rippleSizeRange);
+    widget.settings.rippleSettings.setRippleSpeedRange(
+      defaults.rippleSpeedRange,
+    );
+    widget.settings.rippleSettings.setRippleOpacityRange(
+      defaults.rippleOpacityRange,
+    );
+    widget.settings.rippleSettings.setRippleColorRange(
+      defaults.rippleColorRange,
+    );
+    widget.settings.rippleSettings.rippleDropCount = defaults.rippleDropCount;
+    widget.settings.rippleSettings.setRippleOvalnessRange(
+      defaults.rippleOvalnessRange,
+    );
+    widget.settings.rippleSettings.setRippleRotationRange(
+      defaults.rippleRotationRange,
+    );
     widget.settings.rippleSettings.rippleAnimated = false;
     widget.settings.rippleSettings.applyToImage = true;
     widget.settings.rippleSettings.applyToText = true;
@@ -354,35 +362,101 @@ class _RipplePanelState extends State<RipplePanel> {
     if (presetData.containsKey('rippleEnabled')) {
       widget.settings.rippleEnabled = presetData['rippleEnabled'];
     }
-    if (presetData.containsKey('rippleIntensity')) {
-      widget.settings.rippleSettings.rippleIntensity =
-          presetData['rippleIntensity'];
-    }
-    if (presetData.containsKey('rippleSize')) {
-      widget.settings.rippleSettings.rippleSize = presetData['rippleSize'];
-    }
-    if (presetData.containsKey('rippleSpeed')) {
-      widget.settings.rippleSettings.rippleSpeed = presetData['rippleSpeed'];
-    }
-    if (presetData.containsKey('rippleOpacity')) {
-      widget.settings.rippleSettings.rippleOpacity =
-          presetData['rippleOpacity'];
-    }
-    if (presetData.containsKey('rippleColor')) {
-      widget.settings.rippleSettings.rippleColor = presetData['rippleColor'];
-    }
+    widget.settings.rippleSettings.setRippleIntensityRange(
+      _rangeFromPreset(
+        presetData,
+        rangeKey: 'rippleIntensityRange',
+        valueKey: 'rippleIntensity',
+        minKey: 'rippleIntensityMin',
+        maxKey: 'rippleIntensityMax',
+        currentKey: 'rippleIntensityCurrent',
+        hardMin: 0.0,
+        hardMax: 1.0,
+        fallbackValue: widget.settings.rippleSettings.rippleIntensity,
+      ),
+    );
+    widget.settings.rippleSettings.setRippleSizeRange(
+      _rangeFromPreset(
+        presetData,
+        rangeKey: 'rippleSizeRange',
+        valueKey: 'rippleSize',
+        minKey: 'rippleSizeMin',
+        maxKey: 'rippleSizeMax',
+        currentKey: 'rippleSizeCurrent',
+        hardMin: 0.0,
+        hardMax: 1.0,
+        fallbackValue: widget.settings.rippleSettings.rippleSize,
+      ),
+    );
+    widget.settings.rippleSettings.setRippleSpeedRange(
+      _rangeFromPreset(
+        presetData,
+        rangeKey: 'rippleSpeedRange',
+        valueKey: 'rippleSpeed',
+        minKey: 'rippleSpeedMin',
+        maxKey: 'rippleSpeedMax',
+        currentKey: 'rippleSpeedCurrent',
+        hardMin: 0.0,
+        hardMax: 1.0,
+        fallbackValue: widget.settings.rippleSettings.rippleSpeed,
+      ),
+    );
+    widget.settings.rippleSettings.setRippleOpacityRange(
+      _rangeFromPreset(
+        presetData,
+        rangeKey: 'rippleOpacityRange',
+        valueKey: 'rippleOpacity',
+        minKey: 'rippleOpacityMin',
+        maxKey: 'rippleOpacityMax',
+        currentKey: 'rippleOpacityCurrent',
+        hardMin: 0.0,
+        hardMax: 1.0,
+        fallbackValue: widget.settings.rippleSettings.rippleOpacity,
+      ),
+    );
+    widget.settings.rippleSettings.setRippleColorRange(
+      _rangeFromPreset(
+        presetData,
+        rangeKey: 'rippleColorRange',
+        valueKey: 'rippleColor',
+        minKey: 'rippleColorMin',
+        maxKey: 'rippleColorMax',
+        currentKey: 'rippleColorCurrent',
+        hardMin: 0.0,
+        hardMax: 1.0,
+        fallbackValue: widget.settings.rippleSettings.rippleColor,
+      ),
+    );
     if (presetData.containsKey('rippleDropCount')) {
       widget.settings.rippleSettings.rippleDropCount =
           presetData['rippleDropCount'];
     }
-    if (presetData.containsKey('rippleOvalness')) {
-      widget.settings.rippleSettings.rippleOvalness =
-          presetData['rippleOvalness'];
-    }
-    if (presetData.containsKey('rippleRotation')) {
-      widget.settings.rippleSettings.rippleRotation =
-          presetData['rippleRotation'];
-    }
+    widget.settings.rippleSettings.setRippleOvalnessRange(
+      _rangeFromPreset(
+        presetData,
+        rangeKey: 'rippleOvalnessRange',
+        valueKey: 'rippleOvalness',
+        minKey: 'rippleOvalnessMin',
+        maxKey: 'rippleOvalnessMax',
+        currentKey: 'rippleOvalnessCurrent',
+        hardMin: 0.0,
+        hardMax: 1.0,
+        fallbackValue: widget.settings.rippleSettings.rippleOvalness,
+      ),
+    );
+    widget.settings.rippleSettings.setRippleRotationRange(
+      _rangeFromPreset(
+        presetData,
+        rangeKey: 'rippleRotationRange',
+        valueKey: 'rippleRotation',
+        minKey: 'rippleRotationMin',
+        maxKey: 'rippleRotationMax',
+        currentKey: 'rippleRotationCurrent',
+        hardMin: 0.0,
+        hardMax: 1.0,
+        fallbackValue: widget.settings.rippleSettings.rippleRotation,
+      ),
+    );
     if (presetData.containsKey('rippleAnimated')) {
       widget.settings.rippleSettings.rippleAnimated =
           presetData['rippleAnimated'];
@@ -400,13 +474,65 @@ class _RipplePanelState extends State<RipplePanel> {
     Map<String, dynamic> presetData = {
       'rippleEnabled': widget.settings.rippleEnabled,
       'rippleIntensity': widget.settings.rippleSettings.rippleIntensity,
+      'rippleIntensityMin':
+          widget.settings.rippleSettings.rippleIntensityRange.userMin,
+      'rippleIntensityMax':
+          widget.settings.rippleSettings.rippleIntensityRange.userMax,
+      'rippleIntensityCurrent':
+          widget.settings.rippleSettings.rippleIntensityRange.current,
+      'rippleIntensityRange': widget
+          .settings
+          .rippleSettings
+          .rippleIntensityRange
+          .toMap(),
       'rippleSize': widget.settings.rippleSettings.rippleSize,
+      'rippleSizeMin': widget.settings.rippleSettings.rippleSizeRange.userMin,
+      'rippleSizeMax': widget.settings.rippleSettings.rippleSizeRange.userMax,
+      'rippleSizeCurrent':
+          widget.settings.rippleSettings.rippleSizeRange.current,
+      'rippleSizeRange': widget.settings.rippleSettings.rippleSizeRange.toMap(),
       'rippleSpeed': widget.settings.rippleSettings.rippleSpeed,
+      'rippleSpeedMin': widget.settings.rippleSettings.rippleSpeedRange.userMin,
+      'rippleSpeedMax': widget.settings.rippleSettings.rippleSpeedRange.userMax,
+      'rippleSpeedCurrent':
+          widget.settings.rippleSettings.rippleSpeedRange.current,
+      'rippleSpeedRange': widget.settings.rippleSettings.rippleSpeedRange
+          .toMap(),
       'rippleOpacity': widget.settings.rippleSettings.rippleOpacity,
+      'rippleOpacityMin':
+          widget.settings.rippleSettings.rippleOpacityRange.userMin,
+      'rippleOpacityMax':
+          widget.settings.rippleSettings.rippleOpacityRange.userMax,
+      'rippleOpacityCurrent':
+          widget.settings.rippleSettings.rippleOpacityRange.current,
+      'rippleOpacityRange': widget.settings.rippleSettings.rippleOpacityRange
+          .toMap(),
       'rippleColor': widget.settings.rippleSettings.rippleColor,
+      'rippleColorMin': widget.settings.rippleSettings.rippleColorRange.userMin,
+      'rippleColorMax': widget.settings.rippleSettings.rippleColorRange.userMax,
+      'rippleColorCurrent':
+          widget.settings.rippleSettings.rippleColorRange.current,
+      'rippleColorRange': widget.settings.rippleSettings.rippleColorRange
+          .toMap(),
       'rippleDropCount': widget.settings.rippleSettings.rippleDropCount,
       'rippleOvalness': widget.settings.rippleSettings.rippleOvalness,
+      'rippleOvalnessMin':
+          widget.settings.rippleSettings.rippleOvalnessRange.userMin,
+      'rippleOvalnessMax':
+          widget.settings.rippleSettings.rippleOvalnessRange.userMax,
+      'rippleOvalnessCurrent':
+          widget.settings.rippleSettings.rippleOvalnessRange.current,
+      'rippleOvalnessRange': widget.settings.rippleSettings.rippleOvalnessRange
+          .toMap(),
       'rippleRotation': widget.settings.rippleSettings.rippleRotation,
+      'rippleRotationMin':
+          widget.settings.rippleSettings.rippleRotationRange.userMin,
+      'rippleRotationMax':
+          widget.settings.rippleSettings.rippleRotationRange.userMax,
+      'rippleRotationCurrent':
+          widget.settings.rippleSettings.rippleRotationRange.current,
+      'rippleRotationRange': widget.settings.rippleSettings.rippleRotationRange
+          .toMap(),
       'rippleAnimated': widget.settings.rippleSettings.rippleAnimated,
       'applyToImage': widget.settings.rippleSettings.applyToImage,
       'applyToText': widget.settings.rippleSettings.applyToText,
@@ -448,5 +574,58 @@ class _RipplePanelState extends State<RipplePanel> {
       PresetRefreshService().refreshAspect(aspect);
     }
     return success;
+  }
+
+  ParameterRange _rangeFromPreset(
+    Map<String, dynamic> presetData, {
+    required String rangeKey,
+    required String valueKey,
+    required String minKey,
+    required String maxKey,
+    required String currentKey,
+    required double hardMin,
+    required double hardMax,
+    required double fallbackValue,
+  }) {
+    final double fallback = _readDouble(
+      presetData[valueKey],
+      fallbackValue,
+    ).clamp(hardMin, hardMax).toDouble();
+
+    final dynamic payload = presetData[rangeKey];
+    if (payload is Map<String, dynamic>) {
+      return ParameterRange.fromMap(
+        Map<String, dynamic>.from(payload),
+        hardMin: hardMin,
+        hardMax: hardMax,
+        fallbackValue: fallback,
+      );
+    }
+
+    final double userMin = _readDouble(
+      presetData[minKey],
+      hardMin,
+    ).clamp(hardMin, hardMax).toDouble();
+    final double userMax = _readDouble(
+      presetData[maxKey],
+      fallback,
+    ).clamp(hardMin, hardMax).toDouble();
+    final double current = _readDouble(
+      presetData[currentKey],
+      fallback,
+    ).clamp(hardMin, hardMax).toDouble();
+
+    return ParameterRange(
+      hardMin: hardMin,
+      hardMax: hardMax,
+      initialValue: current,
+      userMin: userMin,
+      userMax: userMax,
+    );
+  }
+
+  double _readDouble(dynamic value, double fallback) {
+    if (value is num) return value.toDouble();
+    return fallback;
   }
 }

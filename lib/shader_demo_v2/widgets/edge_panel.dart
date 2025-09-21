@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import '../models/shader_effect.dart';
 import '../models/effect_settings.dart';
 import '../models/animation_options.dart';
+import '../models/parameter_range.dart';
 import '../services/preset_refresh_service.dart';
 import '../controllers/animation_state_manager.dart';
-import 'lockable_slider.dart';
+import 'range_lockable_slider.dart';
 import 'animation_controls.dart';
 import 'enhanced_panel_header.dart';
 
@@ -61,74 +62,87 @@ class _EdgePanelState extends State<EdgePanel> {
               const SizedBox(height: 8),
 
               // Opacity slider
-              LockableSlider(
+              RangeLockableSlider(
                 label: 'Edge Opacity',
-                value: widget.settings.edgeSettings.opacity,
+                range: widget.settings.edgeSettings.opacityRange,
                 min: 0.0,
                 max: 1.0,
                 divisions: 100,
-                displayValue:
-                    '${(widget.settings.edgeSettings.opacity * 100).round()}%',
-                onChanged: (value) => _onOpacityChanged(value),
                 activeColor: widget.sliderColor,
+                formatValue: (v) => '${(v * 100).round()}%',
+                defaults: ShaderSettings.defaults.edgeSettings.opacityRange,
                 parameterId: ParameterIds.edgeOpacity,
                 animationEnabled: widget.settings.edgeSettings.edgeAnimated,
-                defaultValue: 0.7,
+                onRangeChanged: (range) {
+                  final updatedSettings = widget.settings;
+                  updatedSettings.edgeSettings.setOpacityRange(range);
+                  widget.onSettingsChanged(updatedSettings);
+                },
               ),
 
               const SizedBox(height: 16),
 
               // Edge Intensity slider
-              LockableSlider(
+              RangeLockableSlider(
                 label: 'Edge Intensity',
-                value: widget.settings.edgeSettings.edgeIntensity,
+                range: widget.settings.edgeSettings.edgeIntensityRange,
                 min: 0.1,
                 max: 5.0,
                 divisions: 49,
-                displayValue: widget.settings.edgeSettings.edgeIntensity
-                    .toStringAsFixed(1),
-                onChanged: (value) => _onIntensityChanged(value),
                 activeColor: widget.sliderColor,
+                formatValue: (v) => v.toStringAsFixed(1),
+                defaults:
+                    ShaderSettings.defaults.edgeSettings.edgeIntensityRange,
                 parameterId: ParameterIds.edgeIntensity,
                 animationEnabled: widget.settings.edgeSettings.edgeAnimated,
-                defaultValue: 1.5,
+                onRangeChanged: (range) {
+                  final updatedSettings = widget.settings;
+                  updatedSettings.edgeSettings.setEdgeIntensityRange(range);
+                  widget.onSettingsChanged(updatedSettings);
+                },
               ),
 
               const SizedBox(height: 16),
 
               // Edge Thickness slider
-              LockableSlider(
+              RangeLockableSlider(
                 label: 'Edge Thickness',
-                value: widget.settings.edgeSettings.edgeThickness,
+                range: widget.settings.edgeSettings.edgeThicknessRange,
                 min: 0.1,
                 max: 5.0,
                 divisions: 49,
-                displayValue: widget.settings.edgeSettings.edgeThickness
-                    .toStringAsFixed(1),
-                onChanged: (value) => _onThicknessChanged(value),
                 activeColor: widget.sliderColor,
+                formatValue: (v) => v.toStringAsFixed(1),
+                defaults:
+                    ShaderSettings.defaults.edgeSettings.edgeThicknessRange,
                 parameterId: ParameterIds.edgeThickness,
                 animationEnabled: widget.settings.edgeSettings.edgeAnimated,
-                defaultValue: 1.0,
+                onRangeChanged: (range) {
+                  final updatedSettings = widget.settings;
+                  updatedSettings.edgeSettings.setEdgeThicknessRange(range);
+                  widget.onSettingsChanged(updatedSettings);
+                },
               ),
 
               const SizedBox(height: 16),
 
               // Edge Color slider
-              LockableSlider(
+              RangeLockableSlider(
                 label: 'Edge Color',
-                value: widget.settings.edgeSettings.edgeColor,
+                range: widget.settings.edgeSettings.edgeColorRange,
                 min: 0.0,
                 max: 1.0,
                 divisions: 100,
-                displayValue: _getEdgeColorLabel(
-                  widget.settings.edgeSettings.edgeColor,
-                ),
-                onChanged: (value) => _onColorChanged(value),
                 activeColor: widget.sliderColor,
+                formatValue: (v) => _getEdgeColorLabel(v),
+                defaults: ShaderSettings.defaults.edgeSettings.edgeColorRange,
                 parameterId: ParameterIds.edgeColor,
                 animationEnabled: widget.settings.edgeSettings.edgeAnimated,
-                defaultValue: 0.0,
+                onRangeChanged: (range) {
+                  final updatedSettings = widget.settings;
+                  updatedSettings.edgeSettings.setEdgeColorRange(range);
+                  widget.onSettingsChanged(updatedSettings);
+                },
               ),
 
               const SizedBox(height: 16),
@@ -172,31 +186,6 @@ class _EdgePanelState extends State<EdgePanel> {
     } else {
       return 'White';
     }
-  }
-
-  // Handle slider changes
-  void _onOpacityChanged(double value) {
-    final updatedSettings = widget.settings;
-    updatedSettings.edgeSettings.opacity = value;
-    widget.onSettingsChanged(updatedSettings);
-  }
-
-  void _onIntensityChanged(double value) {
-    final updatedSettings = widget.settings;
-    updatedSettings.edgeSettings.edgeIntensity = value;
-    widget.onSettingsChanged(updatedSettings);
-  }
-
-  void _onThicknessChanged(double value) {
-    final updatedSettings = widget.settings;
-    updatedSettings.edgeSettings.edgeThickness = value;
-    widget.onSettingsChanged(updatedSettings);
-  }
-
-  void _onColorChanged(double value) {
-    final updatedSettings = widget.settings;
-    updatedSettings.edgeSettings.edgeColor = value;
-    widget.onSettingsChanged(updatedSettings);
   }
 
   // Handle animation toggle
@@ -253,12 +242,58 @@ class _EdgePanelState extends State<EdgePanel> {
 
     // Apply preset values
     updatedSettings.edgeEnabled = presetData['edgeEnabled'] ?? true;
-    updatedSettings.edgeSettings.opacity = presetData['opacity'] ?? 0.7;
-    updatedSettings.edgeSettings.edgeIntensity =
-        presetData['edgeIntensity'] ?? 1.5;
-    updatedSettings.edgeSettings.edgeThickness =
-        presetData['edgeThickness'] ?? 1.0;
-    updatedSettings.edgeSettings.edgeColor = presetData['edgeColor'] ?? 0.0;
+    updatedSettings.edgeSettings.setOpacityRange(
+      _rangeFromPreset(
+        presetData,
+        rangeKey: 'opacityRange',
+        valueKey: 'opacity',
+        minKey: 'opacityMin',
+        maxKey: 'opacityMax',
+        currentKey: 'opacityCurrent',
+        hardMin: 0.0,
+        hardMax: 1.0,
+        fallbackValue: updatedSettings.edgeSettings.opacity,
+      ),
+    );
+    updatedSettings.edgeSettings.setEdgeIntensityRange(
+      _rangeFromPreset(
+        presetData,
+        rangeKey: 'edgeIntensityRange',
+        valueKey: 'edgeIntensity',
+        minKey: 'edgeIntensityMin',
+        maxKey: 'edgeIntensityMax',
+        currentKey: 'edgeIntensityCurrent',
+        hardMin: 0.1,
+        hardMax: 5.0,
+        fallbackValue: updatedSettings.edgeSettings.edgeIntensity,
+      ),
+    );
+    updatedSettings.edgeSettings.setEdgeThicknessRange(
+      _rangeFromPreset(
+        presetData,
+        rangeKey: 'edgeThicknessRange',
+        valueKey: 'edgeThickness',
+        minKey: 'edgeThicknessMin',
+        maxKey: 'edgeThicknessMax',
+        currentKey: 'edgeThicknessCurrent',
+        hardMin: 0.1,
+        hardMax: 5.0,
+        fallbackValue: updatedSettings.edgeSettings.edgeThickness,
+      ),
+    );
+    updatedSettings.edgeSettings.setEdgeColorRange(
+      _rangeFromPreset(
+        presetData,
+        rangeKey: 'edgeColorRange',
+        valueKey: 'edgeColor',
+        minKey: 'edgeColorMin',
+        maxKey: 'edgeColorMax',
+        currentKey: 'edgeColorCurrent',
+        hardMin: 0.0,
+        hardMax: 1.0,
+        fallbackValue: updatedSettings.edgeSettings.edgeColor,
+      ),
+    );
     updatedSettings.edgeSettings.edgeAnimated =
         presetData['edgeAnimated'] ?? false;
     updatedSettings.edgeSettings.animationSpeed =
@@ -304,11 +339,37 @@ class _EdgePanelState extends State<EdgePanel> {
 
     // Create preset data
     final presetData = {
+      // Existing scalar values for backward compatibility
       'edgeEnabled': true,
       'opacity': widget.settings.edgeSettings.opacity,
       'edgeIntensity': widget.settings.edgeSettings.edgeIntensity,
       'edgeThickness': widget.settings.edgeSettings.edgeThickness,
       'edgeColor': widget.settings.edgeSettings.edgeColor,
+      // New range values
+      'opacityMin': widget.settings.edgeSettings.opacityRange.userMin,
+      'opacityMax': widget.settings.edgeSettings.opacityRange.userMax,
+      'opacityCurrent': widget.settings.edgeSettings.opacityRange.current,
+      'opacityRange': widget.settings.edgeSettings.opacityRange.toMap(),
+      'edgeIntensityMin':
+          widget.settings.edgeSettings.edgeIntensityRange.userMin,
+      'edgeIntensityMax':
+          widget.settings.edgeSettings.edgeIntensityRange.userMax,
+      'edgeIntensityCurrent':
+          widget.settings.edgeSettings.edgeIntensityRange.current,
+      'edgeIntensityRange': widget.settings.edgeSettings.edgeIntensityRange
+          .toMap(),
+      'edgeThicknessMin':
+          widget.settings.edgeSettings.edgeThicknessRange.userMin,
+      'edgeThicknessMax':
+          widget.settings.edgeSettings.edgeThicknessRange.userMax,
+      'edgeThicknessCurrent':
+          widget.settings.edgeSettings.edgeThicknessRange.current,
+      'edgeThicknessRange': widget.settings.edgeSettings.edgeThicknessRange
+          .toMap(),
+      'edgeColorMin': widget.settings.edgeSettings.edgeColorRange.userMin,
+      'edgeColorMax': widget.settings.edgeSettings.edgeColorRange.userMax,
+      'edgeColorCurrent': widget.settings.edgeSettings.edgeColorRange.current,
+      'edgeColorRange': widget.settings.edgeSettings.edgeColorRange.toMap(),
       'edgeAnimated': widget.settings.edgeSettings.edgeAnimated,
       'animationSpeed': widget.settings.edgeSettings.animationSpeed,
       'animOptions': widget.settings.edgeSettings.edgeAnimOptions.toMap(),
@@ -333,5 +394,58 @@ class _EdgePanelState extends State<EdgePanel> {
     setState(() {
       _refreshCounter++;
     });
+  }
+
+  ParameterRange _rangeFromPreset(
+    Map<String, dynamic> presetData, {
+    required String rangeKey,
+    required String valueKey,
+    required String minKey,
+    required String maxKey,
+    required String currentKey,
+    required double hardMin,
+    required double hardMax,
+    required double fallbackValue,
+  }) {
+    final double fallback = _readDouble(
+      presetData[valueKey],
+      fallbackValue,
+    ).clamp(hardMin, hardMax).toDouble();
+
+    final dynamic payload = presetData[rangeKey];
+    if (payload is Map<String, dynamic>) {
+      return ParameterRange.fromMap(
+        Map<String, dynamic>.from(payload),
+        hardMin: hardMin,
+        hardMax: hardMax,
+        fallbackValue: fallback,
+      );
+    }
+
+    final double userMin = _readDouble(
+      presetData[minKey],
+      hardMin,
+    ).clamp(hardMin, hardMax).toDouble();
+    final double userMax = _readDouble(
+      presetData[maxKey],
+      fallback,
+    ).clamp(hardMin, hardMax).toDouble();
+    final double current = _readDouble(
+      presetData[currentKey],
+      fallback,
+    ).clamp(hardMin, hardMax).toDouble();
+
+    return ParameterRange(
+      hardMin: hardMin,
+      hardMax: hardMax,
+      initialValue: current,
+      userMin: userMin,
+      userMax: userMax,
+    );
+  }
+
+  double _readDouble(dynamic value, double fallback) {
+    if (value is num) return value.toDouble();
+    return fallback;
   }
 }

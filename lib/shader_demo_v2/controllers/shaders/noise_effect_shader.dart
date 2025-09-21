@@ -127,11 +127,15 @@ class NoiseEffectShader extends StatelessWidget {
         : 0.1; // Provide small time value for static wave effects
 
     // The noise speed to use, which can be 0 even when animated
-    double noiseSpeed = settings.noiseSettings.noiseSpeed;
-    double noiseScale = settings.noiseSettings.noiseScale;
+    final noiseScaleRange = settings.noiseSettings.noiseScaleRange;
+    final noiseSpeedRange = settings.noiseSettings.noiseSpeedRange;
+    final colorIntensityRange = settings.noiseSettings.colorIntensityRange;
+    final waveAmountRange = settings.noiseSettings.waveAmountRange;
 
-    double colorIntensity = settings.noiseSettings.colorIntensity;
-    double waveAmount = settings.noiseSettings.waveAmount;
+    double noiseScale = noiseScaleRange.userMax;
+    double noiseSpeed = noiseSpeedRange.userMax;
+    double colorIntensity = colorIntensityRange.userMax;
+    double waveAmount = waveAmountRange.userMax;
 
     // Compute animation values if animation is enabled
     if (settings.noiseSettings.noiseAnimated) {
@@ -149,32 +153,27 @@ class NoiseEffectShader extends StatelessWidget {
         // PULSE MODE: Unlocked parameters pulse from 0 to slider value
         // Locked parameters stay at slider value
         if (animManager.isParameterLocked(ParameterIds.noiseScale)) {
-          // Locked: use slider value
-          noiseScale = settings.noiseSettings.noiseScale;
           animManager.clearAnimatedValue(ParameterIds.noiseScale);
         } else {
-          // Unlocked: pulse from 0 to slider value
-          noiseScale = settings.noiseSettings.noiseScale * pulse;
+          noiseScale = noiseScaleRange.userMin +
+              (noiseScaleRange.userMax - noiseScaleRange.userMin) * pulse;
           animManager.updateAnimatedValue(ParameterIds.noiseScale, noiseScale);
         }
 
         if (animManager.isParameterLocked(ParameterIds.noiseSpeed)) {
-          // Locked: use slider value
-          noiseSpeed = settings.noiseSettings.noiseSpeed;
           animManager.clearAnimatedValue(ParameterIds.noiseSpeed);
         } else {
-          // Unlocked: pulse from 0 to slider value
-          noiseSpeed = settings.noiseSettings.noiseSpeed * pulse;
+          noiseSpeed = noiseSpeedRange.userMin +
+              (noiseSpeedRange.userMax - noiseSpeedRange.userMin) * pulse;
           animManager.updateAnimatedValue(ParameterIds.noiseSpeed, noiseSpeed);
         }
 
         if (animManager.isParameterLocked(ParameterIds.colorIntensity)) {
-          // Locked: use slider value
-          colorIntensity = settings.noiseSettings.colorIntensity;
           animManager.clearAnimatedValue(ParameterIds.colorIntensity);
         } else {
-          // Unlocked: pulse from 0 to slider value
-          colorIntensity = settings.noiseSettings.colorIntensity * pulse;
+          colorIntensity = colorIntensityRange.userMin +
+              (colorIntensityRange.userMax - colorIntensityRange.userMin) *
+                  pulse;
           animManager.updateAnimatedValue(
             ParameterIds.colorIntensity,
             colorIntensity,
@@ -182,12 +181,10 @@ class NoiseEffectShader extends StatelessWidget {
         }
 
         if (animManager.isParameterLocked(ParameterIds.waveAmount)) {
-          // Locked: use slider value
-          waveAmount = settings.noiseSettings.waveAmount;
           animManager.clearAnimatedValue(ParameterIds.waveAmount);
         } else {
-          // Unlocked: pulse from 0 to slider value
-          waveAmount = settings.noiseSettings.waveAmount * pulse;
+          waveAmount = waveAmountRange.userMin +
+              (waveAmountRange.userMax - waveAmountRange.userMin) * pulse;
           animManager.updateAnimatedValue(ParameterIds.waveAmount, waveAmount);
         }
       } else {
@@ -201,59 +198,55 @@ class NoiseEffectShader extends StatelessWidget {
         // RANDOMIZED MODE: Locked parameters animate 0 to slider value
         // Unlocked parameters animate across full range
         if (animManager.isParameterLocked(ParameterIds.noiseScale)) {
-          // Locked: animate between 0 and slider value
-          noiseScale = settings.noiseSettings.noiseScale * animValue;
+          noiseScale = noiseScaleRange.userMin +
+              (noiseScaleRange.userMax - noiseScaleRange.userMin) * animValue;
           animManager.updateAnimatedValue(ParameterIds.noiseScale, noiseScale);
         } else {
-          // Unlocked: animate across full range
           noiseScale = ShaderAnimationUtils.computeRandomizedParameterValue(
-            settings.noiseSettings.noiseScale,
+            noiseScaleRange.userMax,
             settings.noiseSettings.noiseAnimOptions,
             animationValue,
-            isLocked: animManager.isParameterLocked(ParameterIds.noiseScale),
-            minValue: 0.1,
-            maxValue: 20.0,
+            isLocked: false,
+            minValue: noiseScaleRange.userMin,
+            maxValue: noiseScaleRange.userMax,
             parameterId: ParameterIds.noiseScale,
           );
           animManager.updateAnimatedValue(ParameterIds.noiseScale, noiseScale);
         }
 
         if (animManager.isParameterLocked(ParameterIds.noiseSpeed)) {
-          // Locked: animate between 0 and slider value
-          noiseSpeed = settings.noiseSettings.noiseSpeed * animValue;
+          noiseSpeed = noiseSpeedRange.userMin +
+              (noiseSpeedRange.userMax - noiseSpeedRange.userMin) * animValue;
           animManager.updateAnimatedValue(ParameterIds.noiseSpeed, noiseSpeed);
         } else {
-          // Unlocked: animate across full range
           noiseSpeed = ShaderAnimationUtils.computeRandomizedParameterValue(
-            settings.noiseSettings.noiseSpeed,
+            noiseSpeedRange.userMax,
             settings.noiseSettings.noiseAnimOptions,
             animationValue,
-            isLocked: animManager.isParameterLocked(ParameterIds.noiseSpeed),
-            minValue: 0.0,
-            maxValue: 1.0,
+            isLocked: false,
+            minValue: noiseSpeedRange.userMin,
+            maxValue: noiseSpeedRange.userMax,
             parameterId: ParameterIds.noiseSpeed,
           );
           animManager.updateAnimatedValue(ParameterIds.noiseSpeed, noiseSpeed);
         }
 
         if (animManager.isParameterLocked(ParameterIds.colorIntensity)) {
-          // Locked: animate between 0 and slider value
-          colorIntensity = settings.noiseSettings.colorIntensity * animValue;
+          colorIntensity = colorIntensityRange.userMin +
+              (colorIntensityRange.userMax - colorIntensityRange.userMin) *
+                  animValue;
           animManager.updateAnimatedValue(
             ParameterIds.colorIntensity,
             colorIntensity,
           );
         } else {
-          // Unlocked: animate across full range
           colorIntensity = ShaderAnimationUtils.computeRandomizedParameterValue(
-            settings.noiseSettings.colorIntensity,
+            colorIntensityRange.userMax,
             settings.noiseSettings.noiseAnimOptions,
             animationValue,
-            isLocked: animManager.isParameterLocked(
-              ParameterIds.colorIntensity,
-            ),
-            minValue: 0.0,
-            maxValue: 1.0,
+            isLocked: false,
+            minValue: colorIntensityRange.userMin,
+            maxValue: colorIntensityRange.userMax,
             parameterId: ParameterIds.colorIntensity,
           );
           animManager.updateAnimatedValue(
@@ -263,18 +256,17 @@ class NoiseEffectShader extends StatelessWidget {
         }
 
         if (animManager.isParameterLocked(ParameterIds.waveAmount)) {
-          // Locked: animate between 0 and slider value
-          waveAmount = settings.noiseSettings.waveAmount * animValue;
+          waveAmount = waveAmountRange.userMin +
+              (waveAmountRange.userMax - waveAmountRange.userMin) * animValue;
           animManager.updateAnimatedValue(ParameterIds.waveAmount, waveAmount);
         } else {
-          // Unlocked: animate across full range
           waveAmount = ShaderAnimationUtils.computeRandomizedParameterValue(
-            settings.noiseSettings.waveAmount,
+            waveAmountRange.userMax,
             settings.noiseSettings.noiseAnimOptions,
             animationValue,
-            isLocked: animManager.isParameterLocked(ParameterIds.waveAmount),
-            minValue: 0.0,
-            maxValue: 0.1,
+            isLocked: false,
+            minValue: waveAmountRange.userMin,
+            maxValue: waveAmountRange.userMax,
             parameterId: ParameterIds.waveAmount,
           );
           animManager.updateAnimatedValue(ParameterIds.waveAmount, waveAmount);
@@ -284,10 +276,10 @@ class NoiseEffectShader extends StatelessWidget {
       // CRITICAL FIX: When animation is disabled, use slider values directly
       // Don't clear animated values as this breaks static wave effects
       // The shader still needs the original values for static wave distortion
-      noiseScale = settings.noiseSettings.noiseScale;
-      noiseSpeed = settings.noiseSettings.noiseSpeed;
-      colorIntensity = settings.noiseSettings.colorIntensity;
-      waveAmount = settings.noiseSettings.waveAmount;
+      noiseScale = noiseScaleRange.userMax;
+      noiseSpeed = noiseSpeedRange.userMax;
+      colorIntensity = colorIntensityRange.userMax;
+      waveAmount = waveAmountRange.userMax;
     }
 
     // CRITICAL FIX: Special handling for text content

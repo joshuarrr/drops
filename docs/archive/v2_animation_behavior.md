@@ -1,49 +1,44 @@
 # Shader Demo V2 Animation Behavior
 
-## Current Issues
+**Affected Shaders**:
 
-The current animation implementation in Shader Demo V2 is using the v3 simple animation. It currently has the following issues:
-
-1. **Animation is working but not respecting slider controls**:
-   - Animations are visible but don't respect user-defined slider values
-   - Animation speed, mode, and easing settings from UI controls have no effect
-   - Parameter locking system is currently bypassed
-
-2. **Affected Shaders**:
-   - Color Effect Shader
-   - Blur Effect Shader
-   - Noise Effect Shader
-   - Chromatic Effect Shader
-   - Rain Effect Shader
-   - Ripple Effect Shader
+- Color Effect Shader
+- Blur Effect Shader
+- Noise Effect Shader
+- Chromatic Effect Shader
+- Rain Effect Shader
+- Ripple Effect Shader
 
 ## Desired Animation Behavior
+
+All lockable sliders now capture a **user-defined range**. By default the slider presents a single handle (max) with the minimum pinned at 0. When animation is toggled on—or when users lower the min—the dual-handle range becomes visible. Animations read exclusively from this min/max envelope.
 
 ### Animation Modes
 
 1. **Pulse Mode**:
-   - Creates a smooth oscillation between the user-defined slider value and zero, then back to the slider value
+   - Creates a smooth oscillation between the user-defined **min** and **max** values on the range slider
    - Should follow a sine wave pattern
    - Speed controlled by the animation speed slider (affects only transition speed)
-   - Animation should always start from the current slider value (no jumping)
+   - Animation should always start from the current value marker (no jumping)
 
 2. **Randomized Mode**:
-   - For unlocked parameters: Smoothly animates from the user-defined slider value to random values across the parameter's full range (min to max)
-   - Should continuously generate new random values to animate between with smooth transitions (no abrupt jumps)
+   - For unlocked parameters: Smoothly animates between random values constrained to the user-defined min/max window
+   - Should continuously generate new random values with smooth transitions (no abrupt jumps)
    - Speed controlled by the animation speed slider (affects only transition speed)
-   - Animation should always start from the current slider value (no jumping)
+   - Animation should always start from the current value marker (no jumping)
 
 ### Parameter Locking System
 
 1. **Locked Parameters**:
    - When a parameter is locked:
-     - Parameter stays fixed at the slider value (no animation)
+     - Parameter stays fixed at the user’s max handle value (no animation)
+     - Range slider collapses to a single static handle
      - This applies to both Pulse and Randomized modes
 
 2. **Unlocked Parameters**:
    - When a parameter is unlocked:
-     - In Pulse mode: Parameter oscillates between the slider value and zero, then back to the slider value
-     - In Randomized mode: Parameter animates between the slider value and random values across the parameter's full range
+     - In Pulse mode: Parameter oscillates between the user-defined min and max handles
+     - In Randomized mode: Parameter animates between random values within the user-defined min/max window
 
 ### Animation Controls
 
@@ -62,11 +57,11 @@ The current animation implementation in Shader Demo V2 is using the v3 simple an
 
 ## Implementation Priorities
 
-1. **Restore proper animation behavior**:
+1. **Ensure proper animation behavior**:
    - Make animations respect the user-defined slider values
    - Ensure animation speed, mode, and easing settings work correctly
 
-2. **Fix parameter locking**:
+2. **Parameter locking**:
    - Make locked parameters stay at their slider values
    - Make unlocked parameters animate according to the selected mode
 
@@ -78,10 +73,11 @@ The current animation implementation in Shader Demo V2 is using the v3 simple an
 
 ## Additional Requirements
 
-1. **UI Feedback**:
-   - Sliders should move to reflect the current animated value
-   - Slider positions should always match the actual parameter values during animation
+1. **Range Slider & UI Feedback**:
+   - Range sliders expose two handles (min/max) only when animation is enabled or the user adjusts the min handle; default state shows a single max handle with min anchored at 0
+   - During animation the handles remain fixed; a single amber marker animates to reflect the live value being rendered
+   - When animation is disabled the amber marker is hidden and the single handle resumes representing the stored max
 
 2. **Preset Handling**:
    - When loading a preset with animations enabled, animations should automatically start
-   - Preset should preserve all animation settings (mode, speed, easing, lock states)
+   - Presets must preserve animation settings (mode, speed, easing, lock states) **and** the stored min/max range for every parameter

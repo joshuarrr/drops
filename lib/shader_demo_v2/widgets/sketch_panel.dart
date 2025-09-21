@@ -4,7 +4,7 @@ import '../models/effect_settings.dart';
 import '../models/animation_options.dart';
 import '../services/preset_refresh_service.dart';
 import '../controllers/animation_state_manager.dart';
-import 'lockable_slider.dart';
+import 'range_lockable_slider.dart';
 import 'animation_controls.dart';
 import 'enhanced_panel_header.dart';
 
@@ -75,163 +75,198 @@ class _SketchPanelState extends State<SketchPanel> {
               const SizedBox(height: 8),
 
               // Image Opacity slider
-              LockableSlider(
+              RangeLockableSlider(
                 label: 'Image Opacity',
-                value: widget.settings.sketchSettings.imageOpacity,
+                range: widget.settings.sketchSettings.imageOpacityRange,
                 min: 0.0,
                 max: 1.0,
                 divisions: 100,
-                displayValue:
-                    '${(widget.settings.sketchSettings.imageOpacity * 100).round()}%',
-                onChanged: (value) => _onImageOpacityChanged(value),
                 activeColor: widget.sliderColor,
+                formatValue: (v) => '${(v * 100).round()}%',
+                defaults:
+                    ShaderSettings.defaults.sketchSettings.imageOpacityRange,
                 parameterId: ParameterIds.sketchImageOpacity,
                 animationEnabled: widget.settings.sketchSettings.sketchAnimated,
-                defaultValue: 1.0,
+                onRangeChanged: (range) {
+                  final updatedSettings = widget.settings;
+                  updatedSettings.sketchSettings.setImageOpacityRange(range);
+                  widget.onSettingsChanged(updatedSettings);
+                },
               ),
 
               const SizedBox(height: 16),
 
               // Sketch Opacity slider
-              LockableSlider(
+              RangeLockableSlider(
                 label: 'Sketch Opacity',
-                value: widget.settings.sketchSettings.opacity,
+                range: widget.settings.sketchSettings.opacityRange,
                 min: 0.0,
                 max: 1.0,
                 divisions: 100,
-                displayValue:
-                    '${(widget.settings.sketchSettings.opacity * 100).round()}%',
-                onChanged: (value) => _onOpacityChanged(value),
                 activeColor: widget.sliderColor,
+                formatValue: (v) => '${(v * 100).round()}%',
+                defaults: ShaderSettings.defaults.sketchSettings.opacityRange,
                 parameterId: ParameterIds.sketchOpacity,
                 animationEnabled: widget.settings.sketchSettings.sketchAnimated,
-                defaultValue: 0.8,
+                onRangeChanged: (range) {
+                  final updatedSettings = widget.settings;
+                  updatedSettings.sketchSettings.setOpacityRange(range);
+                  widget.onSettingsChanged(updatedSettings);
+                },
               ),
 
               const SizedBox(height: 16),
 
               // Luminance threshold 1 slider
-              LockableSlider(
+              RangeLockableSlider(
                 label: 'Luminance Threshold 1',
-                value: widget.settings.sketchSettings.lumThreshold1,
+                range: widget.settings.sketchSettings.lumThreshold1Range,
                 min: 0.0,
                 max: 1.0,
                 divisions: 100,
-                displayValue:
-                    '${(widget.settings.sketchSettings.lumThreshold1 * 100).round()}%',
-                onChanged: (value) => _onLumThreshold1Changed(value),
                 activeColor: widget.sliderColor,
+                formatValue: (v) => '${(v * 100).round()}%',
+                defaults:
+                    ShaderSettings.defaults.sketchSettings.lumThreshold1Range,
                 parameterId: ParameterIds.sketchLumThreshold1,
                 animationEnabled: widget.settings.sketchSettings.sketchAnimated,
-                defaultValue: 0.8,
+                onRangeChanged: (range) {
+                  final updatedSettings = widget.settings;
+                  updatedSettings.sketchSettings.setLumThreshold1Range(range);
+                  widget.onSettingsChanged(updatedSettings);
+                },
               ),
 
               const SizedBox(height: 16),
 
               // Luminance threshold 2 slider
-              LockableSlider(
+              RangeLockableSlider(
                 label: 'Luminance Threshold 2',
-                value: widget.settings.sketchSettings.lumThreshold2,
+                range: widget.settings.sketchSettings.lumThreshold2Range,
                 min: 0.0,
                 max: 1.0,
                 divisions: 100,
-                displayValue:
-                    '${(widget.settings.sketchSettings.lumThreshold2 * 100).round()}%',
-                onChanged: (value) => _onLumThreshold2Changed(value),
                 activeColor: widget.sliderColor,
+                formatValue: (v) => '${(v * 100).round()}%',
+                defaults:
+                    ShaderSettings.defaults.sketchSettings.lumThreshold2Range,
                 parameterId: ParameterIds.sketchLumThreshold2,
                 animationEnabled: widget.settings.sketchSettings.sketchAnimated,
-                defaultValue: 0.6,
+                onRangeChanged: (range) {
+                  final updatedSettings = widget.settings;
+                  updatedSettings.sketchSettings.setLumThreshold2Range(range);
+                  widget.onSettingsChanged(updatedSettings);
+                },
               ),
 
               const SizedBox(height: 16),
 
               // Luminance threshold 3 slider
-              LockableSlider(
+              RangeLockableSlider(
                 label: 'Luminance Threshold 3',
-                value: widget.settings.sketchSettings.lumThreshold3,
+                range: widget.settings.sketchSettings.lumThreshold3Range,
                 min: 0.0,
                 max: 1.0,
                 divisions: 100,
-                displayValue:
-                    '${(widget.settings.sketchSettings.lumThreshold3 * 100).round()}%',
-                onChanged: (value) => _onLumThreshold3Changed(value),
                 activeColor: widget.sliderColor,
+                formatValue: (v) => '${(v * 100).round()}%',
+                defaults:
+                    ShaderSettings.defaults.sketchSettings.lumThreshold3Range,
                 parameterId: ParameterIds.sketchLumThreshold3,
                 animationEnabled: widget.settings.sketchSettings.sketchAnimated,
-                defaultValue: 0.4,
+                onRangeChanged: (range) {
+                  final updatedSettings = widget.settings;
+                  updatedSettings.sketchSettings.setLumThreshold3Range(range);
+                  widget.onSettingsChanged(updatedSettings);
+                },
               ),
 
               const SizedBox(height: 16),
 
               // Luminance threshold 4 slider
-              LockableSlider(
+              RangeLockableSlider(
                 label: 'Luminance Threshold 4',
-                value: widget.settings.sketchSettings.lumThreshold4,
+                range: widget.settings.sketchSettings.lumThreshold4Range,
                 min: 0.0,
                 max: 1.0,
                 divisions: 100,
-                displayValue:
-                    '${(widget.settings.sketchSettings.lumThreshold4 * 100).round()}%',
-                onChanged: (value) => _onLumThreshold4Changed(value),
                 activeColor: widget.sliderColor,
+                formatValue: (v) => '${(v * 100).round()}%',
+                defaults:
+                    ShaderSettings.defaults.sketchSettings.lumThreshold4Range,
                 parameterId: ParameterIds.sketchLumThreshold4,
                 animationEnabled: widget.settings.sketchSettings.sketchAnimated,
-                defaultValue: 0.2,
+                onRangeChanged: (range) {
+                  final updatedSettings = widget.settings;
+                  updatedSettings.sketchSettings.setLumThreshold4Range(range);
+                  widget.onSettingsChanged(updatedSettings);
+                },
               ),
 
               const SizedBox(height: 16),
 
               // Hatch Y Offset slider
-              LockableSlider(
+              RangeLockableSlider(
                 label: 'Hatch Y Offset',
-                value: widget.settings.sketchSettings.hatchYOffset,
+                range: widget.settings.sketchSettings.hatchYOffsetRange,
                 min: 0.0,
                 max: 50.0,
                 divisions: 100,
-                displayValue:
-                    '${widget.settings.sketchSettings.hatchYOffset.round()}px',
-                onChanged: (value) => _onHatchYOffsetChanged(value),
                 activeColor: widget.sliderColor,
+                formatValue: (v) => '${v.round()}px',
+                defaults:
+                    ShaderSettings.defaults.sketchSettings.hatchYOffsetRange,
                 parameterId: ParameterIds.sketchHatchYOffset,
                 animationEnabled: widget.settings.sketchSettings.sketchAnimated,
-                defaultValue: 0.0,
+                onRangeChanged: (range) {
+                  final updatedSettings = widget.settings;
+                  updatedSettings.sketchSettings.setHatchYOffsetRange(range);
+                  widget.onSettingsChanged(updatedSettings);
+                },
               ),
 
               const SizedBox(height: 16),
 
               // Line Spacing slider
-              LockableSlider(
+              RangeLockableSlider(
                 label: 'Line Spacing',
-                value: widget.settings.sketchSettings.lineSpacing,
+                range: widget.settings.sketchSettings.lineSpacingRange,
                 min: 5.0,
                 max: 50.0,
                 divisions: 90,
-                displayValue:
-                    '${widget.settings.sketchSettings.lineSpacing.round()}px',
-                onChanged: (value) => _onLineSpacingChanged(value),
                 activeColor: widget.sliderColor,
+                formatValue: (v) => '${v.round()}px',
+                defaults:
+                    ShaderSettings.defaults.sketchSettings.lineSpacingRange,
                 parameterId: ParameterIds.sketchLineSpacing,
                 animationEnabled: widget.settings.sketchSettings.sketchAnimated,
-                defaultValue: 15.0,
+                onRangeChanged: (range) {
+                  final updatedSettings = widget.settings;
+                  updatedSettings.sketchSettings.setLineSpacingRange(range);
+                  widget.onSettingsChanged(updatedSettings);
+                },
               ),
 
               const SizedBox(height: 16),
 
               // Line Thickness slider
-              LockableSlider(
+              RangeLockableSlider(
                 label: 'Line Thickness',
-                value: widget.settings.sketchSettings.lineThickness,
+                range: widget.settings.sketchSettings.lineThicknessRange,
                 min: 0.5,
                 max: 5.0,
                 divisions: 45,
-                displayValue:
-                    '${widget.settings.sketchSettings.lineThickness.toStringAsFixed(1)}px',
-                onChanged: (value) => _onLineThicknessChanged(value),
                 activeColor: widget.sliderColor,
+                formatValue: (v) => '${v.toStringAsFixed(1)}px',
+                defaults:
+                    ShaderSettings.defaults.sketchSettings.lineThicknessRange,
                 parameterId: ParameterIds.sketchLineThickness,
                 animationEnabled: widget.settings.sketchSettings.sketchAnimated,
-                defaultValue: 1.5,
+                onRangeChanged: (range) {
+                  final updatedSettings = widget.settings;
+                  updatedSettings.sketchSettings.setLineThicknessRange(range);
+                  widget.onSettingsChanged(updatedSettings);
+                },
               ),
 
               const SizedBox(height: 16),
@@ -264,61 +299,6 @@ class _SketchPanelState extends State<SketchPanel> {
         ),
       ],
     );
-  }
-
-  // Handle slider changes
-  void _onImageOpacityChanged(double value) {
-    final updatedSettings = widget.settings;
-    updatedSettings.sketchSettings.imageOpacity = value;
-    widget.onSettingsChanged(updatedSettings);
-  }
-
-  void _onOpacityChanged(double value) {
-    final updatedSettings = widget.settings;
-    updatedSettings.sketchSettings.opacity = value;
-    widget.onSettingsChanged(updatedSettings);
-  }
-
-  void _onLumThreshold1Changed(double value) {
-    final updatedSettings = widget.settings;
-    updatedSettings.sketchSettings.lumThreshold1 = value;
-    widget.onSettingsChanged(updatedSettings);
-  }
-
-  void _onLumThreshold2Changed(double value) {
-    final updatedSettings = widget.settings;
-    updatedSettings.sketchSettings.lumThreshold2 = value;
-    widget.onSettingsChanged(updatedSettings);
-  }
-
-  void _onLumThreshold3Changed(double value) {
-    final updatedSettings = widget.settings;
-    updatedSettings.sketchSettings.lumThreshold3 = value;
-    widget.onSettingsChanged(updatedSettings);
-  }
-
-  void _onLumThreshold4Changed(double value) {
-    final updatedSettings = widget.settings;
-    updatedSettings.sketchSettings.lumThreshold4 = value;
-    widget.onSettingsChanged(updatedSettings);
-  }
-
-  void _onHatchYOffsetChanged(double value) {
-    final updatedSettings = widget.settings;
-    updatedSettings.sketchSettings.hatchYOffset = value;
-    widget.onSettingsChanged(updatedSettings);
-  }
-
-  void _onLineSpacingChanged(double value) {
-    final updatedSettings = widget.settings;
-    updatedSettings.sketchSettings.lineSpacing = value;
-    widget.onSettingsChanged(updatedSettings);
-  }
-
-  void _onLineThicknessChanged(double value) {
-    final updatedSettings = widget.settings;
-    updatedSettings.sketchSettings.lineThickness = value;
-    widget.onSettingsChanged(updatedSettings);
   }
 
   // Handle animation toggle
